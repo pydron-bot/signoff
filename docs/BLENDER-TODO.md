@@ -39,7 +39,7 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 | Textures | Up to 2048² per material; we'll convert to KTX2 on our side. Keep texture count low |
 | Skeleton | **One shared humanoid skeleton for all human fighters** (bone names identical) so clips can be retargeted. Mister Mumbles and Test Pattern may need their own later |
 | Animation | 60 fps, one Action per clip, named exactly as the clip names below; no root motion baked into the hips for gameplay moves (the game moves the fighter); in-place clips |
-| Files | `.blend` sources in `art/` (one per fighter, plus `art/stage-weather.blend`); exports to `public/assets/fighters/<id>.glb` and `public/assets/stages/weather.glb`. If a `.blend` grows past about 50 MB, say so before committing (we'd move them to Git LFS) |
+| Files | `.blend` sources in `art/` (one per fighter, plus `art/rig.blend` and `art/stage-weather.blend`); exports to `public/assets/fighters/<id>.glb` and `public/assets/stages/weather.glb`. If a `.blend` grows past about 50 MB, say so before committing (we'd move them to Git LFS) |
 | Draw calls | The whole scene must stay under 100 on iPhone: keep each fighter to its 2 materials and merge static set pieces by material |
 
 Size each fighter to their hurtboxes, the grey boxes you see in the game
@@ -53,13 +53,74 @@ Size each fighter to their hurtboxes, the grey boxes you see in the game
 The broadcast look censors gore with static and stand-by cards, so no gore
 assets are needed.
 
+## The pipeline
+
+The art is built by Python scripts run in headless Blender (5.2), like
+Curbside's: `blender/build.py` drives `blender/lib/` (helpers, the rig) and
+one module per fighter in `blender/fighters/`.
+
+```sh
+npm run art                  # all: art/rig.blend, art/dale.blend, public/assets/fighters/dale.glb
+npm run art -- --only dale   # one target
+npx -y -p playwright@1.63.0 node tools/art-check.mjs   # measures each GLB in three.js, screenshots to art-out/
+npm test                     # tests/assets.test.ts checks every GLB against this file
+```
+
+**The scripts are the source for now:** a rebuild overwrites `art/*.blend`.
+If the style moves to hand modelling, the `.blend` files become the source
+and the scripts stop writing them (say which in this file).
+
+The build fails if a strike misses: for each move it animates, the striking
+limb's tip must be inside the hitbox (±4 cm) on every active frame. The
+**art viewer** loads a GLB the way the game will, with the hurtbox and each
+move's hitboxes drawn on their active frames:
+http://hive1:5174/tools/viewer/?f=dale on the dev server (`npm run dev`),
+or `?clip=s.FP&frame=7` to open a frame.
+
+### The rig
+
+Deform bones, the same in every human fighter (`blender/lib/rig.py`,
+checked by `tests/assets.test.ts`). `.L` is the character's left (Blender
++X, as the character faces −Y):
+
+| Bones | Parent |
+| --- | --- |
+| `root` (at the floor, between the feet) | — |
+| `hips` → `spine` → `chest` → `neck` → `head` | `root` |
+| `shoulder.L` → `upper_arm.L` → `forearm.L` → `hand.L` (and `.R`) | `chest` |
+| `thigh.L` → `shin.L` → `foot.L` → `toe.L` (and `.R`) | `hips` |
+
+Controls, not exported (the exporter bakes what they do into the bones
+above): `ik_hand.L/R` and `ik_foot.L/R` (IK targets; the hand and foot copy
+their rotation), `pole_elbow.L/R` and `pole_knee.L/R`. Rest pose is an A-pose
+for 1.80 m; joints scale with each fighter's height. Keep `root` still in
+gameplay clips (the game moves the fighter); it's there for knockdowns and
+cinematics.
+
+### Frames and clip lengths
+
+- **Blender frame n is move frame n**, starting at 1, exactly as the table
+  numbers them: `s.FP`'s active frames 7–8 are Blender frames 7 and 8. The
+  export slides every clip to start at 0 s, so the game samples move frame
+  n at (n − 1) / 60 s. A move of N frames is keyed 1…N (lasting (N − 1)/60 s).
+- **A loop of N frames is keyed 1…N+1**, with frame N+1 equal to frame 1, so
+  it lasts exactly N/60 s and wraps without a stutter.
+- Each clip's Action has its manual frame range set to those frames.
+
+### Facing
+
+The game should **mirror** a fighter to face left (scale −1 along the
+stage), not turn them round: stances are open toward the camera, so a turn
+would show the camera their back. The viewer's FACING button does this. Clips
+are authored facing right with the left foot and left hand leading.
+
 ## TODO
 
 ### 1. Rig and blockout (first)
 
-- [ ] Shared humanoid skeleton (`art/rig.blend`), with IK for feet and hands, and bone names documented here once settled
-- [ ] Dale Storm blockout at the sizes above, skinned to the rig
-- [ ] Test export of Dale as `public/assets/fighters/dale.glb` with the `idle` clip; check it loads in https://gltf-viewer.donmccurdy.com/ (three.js-based) at the right size and facing
+- [x] Shared humanoid skeleton (`art/rig.blend`), with IK for feet and hands; bone names under *The rig* below
+- [x] Dale Storm blockout at the sizes above, skinned to the rig (1,040 triangles, rigid parts in flat colours)
+- [x] Test export of Dale as `public/assets/fighters/dale.glb` with the `idle` clip, plus `s.FP` to prove the hitbox check; checked in three.js at the right size and facing (`tools/viewer/`, below)
 - [ ] Agree the style with Derek before detailing
 
 ### 2. Dale Storm
@@ -204,4 +265,5 @@ Notes from the art side go here: timings that are hard to animate, a move
 that would read better with a different hitbox, questions. They'll be
 worked into the move data, and the table above updates itself.
 
-- (none yet)
+- **Mirroring (game side):** face left by mirroring the model, not turning it (see *Facing*).
+- **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.

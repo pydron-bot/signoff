@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.3.1',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: ['Dale Storm has a first 3D model (a rough blockout to settle the art style). The fights still use grey boxes for now.'],
+  },
+  {
     version: '0.3.0',
     date: '2026-11-08',
     title: 'The forecast comes true',

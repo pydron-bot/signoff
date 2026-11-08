@@ -6,7 +6,7 @@ Safari on an iPhone 15 Pro (landscape, touch) and desktop (keyboard,
 gamepad). Served from https://deeek.org/signoff/.
 
 Read first: `docs/DESIGN.md` (the game design: systems, roster, stages,
-controls, technical rules). Art work: `docs/BLENDER-TODO.md`.
+controls, technical rules). Art work: `docs/BLENDER-TODO.md` (contracts, rig, pipeline); the art viewer is `/tools/viewer/` on the dev server.
 
 ## Commands
 
@@ -15,6 +15,8 @@ npm ci                 # Node ≥ 22.12 (.nvmrc: 24); unset NODE_ENV on hive1
 npm run dev            # vite --host, port 5174 (Curbside has 5173)
 npm test               # vitest
 npm run docs:clips     # rewrite the clip table in docs/BLENDER-TODO.md after changing moves
+npm run art            # headless Blender: art/*.blend and public/assets/fighters/*.glb
+npx -y -p playwright@1.63.0 node tools/art-check.mjs  # GLBs measured in three.js, screenshots
 npm run build          # tsc --noEmit && vite build
 SIGNOFF_BASE=/signoff/ npx vite build   # what the Pages deploy builds
 npx -y -p playwright@1.63.0 node tools/smoke.mjs      # smoke test

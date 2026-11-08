@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>SIGN-OFF art viewer</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #15161c;
+        color: #f1ede0;
+        font: 13px ui-monospace, Menlo, Consolas, monospace;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      .bar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        padding: calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 10px) 8px calc(env(safe-area-inset-left) + 10px);
+        background: rgba(10, 10, 16, 0.7);
+      }
+      button,
+      select {
+        font: inherit;
+        color: inherit;
+        background: #262a44;
+        border: 1px solid #4a4f7a;
+        padding: 6px 10px;
+        min-height: 36px;
+      }
+      button.on {
+        background: #1b2fa8;
+      }
+      .info {
+        position: fixed;
+        left: calc(env(safe-area-inset-left) + 10px);
+        bottom: calc(env(safe-area-inset-bottom) + 10px);
+        white-space: pre;
+        line-height: 1.4;
+        opacity: 0.85;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <select id="fighter"></select>
+      <select id="clip"></select>
+      <button id="play">PAUSE</button>
+      <button id="prev">◀ FRAME</button>
+      <button id="next">FRAME ▶</button>
+      <select id="view">
+        <option value="game">GAME VIEW</option>
+        <option value="three">3/4 VIEW</option>
+        <option value="front">FRONT</option>
+      </select>
+      <button id="boxes" class="on">BOXES</button>
+      <button id="facing">FACING RIGHT</button>
+    </div>
+    <div class="info" id="info"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
