@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.8.1',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: ['Work in progress can be played before it ships, at deeek.org/signoff/preview/. The game itself is unchanged.'],
+  },
+  {
     version: '0.8.0',
     date: '2026-11-08',
     title: 'Encore',

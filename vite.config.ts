@@ -14,8 +14,14 @@ function buildId(): string {
       sha = 'dev'; // no git (e.g. a source tarball)
     }
   }
-  return `${sha.slice(0, 7)} ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z`;
+  const id = `${sha.slice(0, 7)} ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z`;
+  return PREVIEW ? `${id} · preview of ${PREVIEW}` : id;
 }
+
+// A branch preview (tools/build-previews.sh) names its branch here. Previews
+// have no service worker: they're always fresh, and only the real game at
+// /signoff/ installs and works offline.
+const PREVIEW = process.env.SIGNOFF_PREVIEW ?? '';
 
 export default defineConfig({
   // '/' locally, '/signoff/' when the Pages workflow builds it for
@@ -42,6 +48,7 @@ export default defineConfig({
   },
   plugins: [
     VitePWA({
+      disable: PREVIEW !== '',
       // A new version waits for a safe moment (not mid-match) to reload.
       registerType: 'prompt',
       includeManifestIcons: false,
@@ -66,7 +73,8 @@ export default defineConfig({
         globIgnores: ['**/node_modules/**/*', '**/icons/*512.png'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         // The shell answers navigations to the game only, not files opened by URL.
-        navigateFallbackDenylist: [/^[^?]*\.(?!html?\b)\w+(?:\?.*)?$/],
+        // Nor branch previews (/signoff/preview/...), which are their own pages.
+        navigateFallbackDenylist: [/^[^?]*\.(?!html?\b)\w+(?:\?.*)?$/, /\/preview\//],
         // GLBs are copied unhashed from public/: only Vite's hashed bundles may skip a revision.
         dontCacheBustURLsMatching: /^assets\/.+-[\w-]{8}\.(?:js|css)$/,
       },

@@ -1,6 +1,7 @@
 # Checks every branch and pull request before it reaches main (pages.yml
 # deploys main): types, unit tests, then the browser smoke test
-# (tools/smoke.mjs) on desktop and the iPhone profile.
+# (tools/smoke.mjs) on desktop and the iPhone profile. A pushed branch that
+# passes then gets a preview at deeek.org/signoff/preview/<branch>/.
 name: CI
 
 on:
@@ -47,3 +48,16 @@ jobs:
           name: smoke-screenshots
           path: smoke-out
           if-no-files-found: ignore
+
+  # Rebuild the site with this branch's preview: pages.yml runs on main
+  # (Pages deploys only from main) and builds every unmerged branch.
+  preview:
+    needs: [test, smoke]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run pages.yml --repo "${{ github.repository }}" --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}

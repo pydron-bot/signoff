@@ -1,6 +1,9 @@
 # Builds the game and publishes it to GitHub Pages at deeek.org/signoff/
 # (the pydron-bot.github.io user site owns the deeek.org domain; this
-# project site appears under it at /signoff/).
+# project site appears under it at /signoff/), with previews of unmerged
+# branches at /signoff/preview/<branch>/ (tools/build-previews.sh). Runs on
+# pushes to main, and from ci.yml after a branch's tests pass (always with
+# main checked out, as Pages only deploys from main).
 name: Deploy to GitHub Pages
 
 on:
@@ -23,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Every branch, for the previews.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -32,6 +38,7 @@ jobs:
       - run: npm run build
         env:
           SIGNOFF_BASE: /signoff/
+      - run: tools/build-previews.sh
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -61,3 +61,9 @@ Pushing to `main` deploys to https://deeek.org/signoff/ via
 `.github/workflows/pages.yml` (it runs the tests first); other branches and
 pull requests run `ci.yml` (types, tests, smoke test). Run the smoke test
 before pushing to main.
+
+Branch previews: once a pushed branch passes `ci.yml`, it can be played at
+https://deeek.org/signoff/preview/<branch>/ (slashes become dashes; the
+list is at /signoff/preview/). `ci.yml` re-runs `pages.yml` on main, which
+builds every unmerged branch from the last 14 days (`tools/build-previews.sh`).
+Previews have no service worker and are dropped once merged.
