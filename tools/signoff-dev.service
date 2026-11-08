@@ -1,0 +1,17 @@
+# Copy of the hive1 user unit (~/.config/systemd/user/signoff-dev.service), kept here so it can be reinstalled:
+#   cp tools/signoff-dev.service ~/.config/systemd/user/ && systemctl --user daemon-reload && systemctl --user enable --now signoff-dev
+[Unit]
+Description=SIGN-OFF Vite dev server (:5174, HTTPS via tailscale serve :8444)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/dev/signoff
+Environment=PATH=%h/.local/opt/node24/bin:/usr/bin:/bin
+Environment=NODE_ENV=development
+ExecStart=%h/.local/opt/node24/bin/npx vite --host
+Restart=on-failure
+RestartSec=5
+MemoryMax=1G
+
+[Install]
+WantedBy=default.target

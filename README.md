@@ -28,3 +28,10 @@ npm ci
 npm run dev    # http://localhost:5174
 npm test
 ```
+
+On hive1 the dev server runs as the user unit `signoff-dev` (enabled, starts
+on boot; `systemctl --user status|restart|stop signoff-dev`). Open
+`http://hive1:5174` from a device on the tailnet; the art viewer is
+`http://hive1:5174/tools/viewer/?f=dale`. HTTPS (needed for the service
+worker on a phone) is `https://hive1.tail078432.ts.net:8444` once
+`sudo tailscale serve --bg --https=8444 http://127.0.0.1:5174` has been run.
