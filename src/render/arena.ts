@@ -1,13 +1,17 @@
 /**
- * The grey-box view: the Weather at Eleven set as flat panels, fighters as
- * boxes the size of their hurtboxes, attacks as limb boxes (lit red while
- * they can hit), projectiles as boxes. It reads the latest match step and
- * the step's events and never changes the match. About 16 draw calls.
+ * The fight view: the Weather at Eleven set as flat panels and the fighters'
+ * 3D models posed by sim frame (src/render/pose.ts), or grey boxes the size
+ * of their hurtboxes with attacks as limb boxes (lit red while they can
+ * hit). Projectiles and effect hits use the fighters' fx meshes where there
+ * are some, else boxes. It reads the latest match step and the step's events
+ * and never changes the match. About 16 draw calls, plus 3 to 7 a model.
  */
 import * as THREE from 'three';
-import { fighterData, moveData, type FighterState, type MatchState, type SimEvent } from '../sim';
+import { fighterData, moveData, type MatchState, type SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
+import { FighterModel, loadFighterArt } from './fighterModel';
+import { PoseTracker, type Pose } from './pose';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
@@ -15,6 +19,20 @@ const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
+const FLASH = 0x9a9a9a;
+
+/**
+ * Effect meshes by fighter and move: a projectile's look, or (for moves
+ * without one) shown over the move's first hit, stretched to its hitbox.
+ */
+const EFFECTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  dale: { 'Cold Front': 'fx_cold_front', 'Cold Front+': 'fx_cold_front', 'Pressure Drop': 'fx_hail', 'Pressure Drop+': 'fx_hail' },
+  hollis: { Flashlight: 'fx_flashlight_beam', 'Flashlight+': 'fx_flashlight_beam' },
+  mumbles: { 'Hand Puppet': 'fx_hand_puppet', 'Hand Puppet+': 'fx_hand_puppet' },
+};
+/** fx_flashlight_beam's size: 1.8 m long (glTF +z), 0.82 m across. */
+const BEAM_LENGTH = 1.8;
+const BEAM_WIDTH = 0.82;
 
 interface FighterView {
   group: THREE.Group;
@@ -24,6 +42,41 @@ interface FighterView {
   bodyMat: THREE.MeshLambertMaterial;
   limbMat: THREE.MeshLambertMaterial;
   flash: number;
+  /** The 3D model once loaded, and which fighter it's for. */
+  model: FighterModel | null;
+  id: string;
+  /** The effect hit (a beam) shown over a move's first hit. */
+  effect: EffectSlot;
+}
+
+/** Holds copies of fx meshes, one per name, made on first use and kept. */
+class EffectSlot {
+  readonly holder = new THREE.Group();
+  private readonly copies = new Map<string, THREE.Object3D>();
+  private shown: THREE.Object3D | null = null;
+
+  constructor(scene: THREE.Scene) {
+    this.holder.visible = false;
+    scene.add(this.holder);
+  }
+
+  /** Shows a copy of `source` (or nothing), facing glTF +z along the holder's +x. */
+  show(name: string, source: THREE.Object3D | undefined): boolean {
+    let o = source ? this.copies.get(name) : undefined;
+    if (source && !o) {
+      o = source.clone();
+      o.rotation.y = Math.PI / 2;
+      this.copies.set(name, o);
+      this.holder.add(o);
+    }
+    if (this.shown !== (o ?? null)) {
+      if (this.shown) this.shown.visible = false;
+      if (o) o.visible = true;
+      this.shown = o ?? null;
+    }
+    this.holder.visible = o !== undefined;
+    return this.holder.visible;
+  }
 }
 
 export class Arena {
@@ -31,6 +84,11 @@ export class Arena {
   readonly camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.1, 80);
   private readonly fighters: FighterView[];
   private readonly projectiles: THREE.Mesh[] = [];
+  private readonly projectileFx: EffectSlot[] = [];
+  private readonly poses = new PoseTracker();
+  private readonly pose: Pose = { clip: '', frame: 1, loop: false };
+  /** 3D models (when loaded) or grey boxes. */
+  models = true;
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
   private shake = 0;
   private camX = 0;
@@ -45,6 +103,8 @@ export class Arena {
   private projectileMat!: THREE.MeshBasicMaterial;
   /** The hand puppet decoy: a little wooden figure, not a blast of wind. */
   private readonly decoyMat = new THREE.MeshLambertMaterial({ color: 0xa8804e });
+  /** Boxes drawn over a model or an fx mesh in the hitbox view: see-through. */
+  private readonly overlayMat = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.3, depthWrite: false });
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
@@ -63,6 +123,7 @@ export class Arena {
       p.visible = false;
       this.projectiles.push(p);
       this.scene.add(p);
+      this.projectileFx.push(new EffectSlot(this.scene));
     }
     const edges = new THREE.EdgesGeometry(this.unit);
     const lm = new THREE.LineBasicMaterial({ color: 0x40ff80 });
@@ -102,21 +163,51 @@ export class Arena {
   private fighterView(): FighterView {
     const group = new THREE.Group();
     const bodyMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    const limbMat = new THREE.MeshLambertMaterial({ color: LIMB });
+    // See-through over a model (the hitbox view); solid on a grey box.
+    const limbMat = new THREE.MeshLambertMaterial({ color: LIMB, transparent: true, depthWrite: false });
     const body = new THREE.Mesh(this.unit, bodyMat);
     const head = new THREE.Mesh(this.unit, bodyMat);
     const limb = new THREE.Mesh(this.unit, limbMat);
     group.add(body, head, limb);
     this.scene.add(group);
-    return { group, body, head, limb, bodyMat, limbMat, flash: 0 };
+    return { group, body, head, limb, bodyMat, limbMat, flash: 0, model: null, id: '', effect: new EffectSlot(this.scene) };
   }
 
-  setFighters(m: MatchState): void {
-    m.fighters.forEach((f, i) => this.fighters[i].bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc));
+  /**
+   * A new match: the fighters' colours, and their models (loaded in the
+   * background; grey boxes until they arrive). Resolves when the models are
+   * in the scene, so shaders can be compiled before the fight.
+   */
+  setFighters(m: MatchState): Promise<void> {
+    this.poses.reset();
+    const loads: Promise<void>[] = [];
+    m.fighters.forEach((f, i) => {
+      const v = this.fighters[i];
+      v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
+      if (v.id === f.fighter) return;
+      v.model?.dispose();
+      v.model = null;
+      v.id = f.fighter;
+      const id = f.fighter;
+      loads.push(
+        loadFighterArt(id).then(
+          (art) => {
+            // A newer match may have picked someone else meanwhile.
+            if (v.id !== id) return;
+            v.model = new FighterModel(art);
+            this.scene.add(v.model.root);
+          },
+          // No GLB (or offline before it was cached): grey boxes.
+          () => undefined,
+        ),
+      );
+    });
+    return Promise.all(loads).then(() => undefined);
   }
 
   /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
-  step(ev: readonly SimEvent[]): void {
+  step(m: MatchState, ev: readonly SimEvent[]): void {
+    this.poses.step(m, ev);
     this.sparks.update();
     for (const v of this.fighters) if (v.flash > 0) v.flash--;
     this.sparks.onEvents(ev);
@@ -139,15 +230,27 @@ export class Arena {
     const [a, b] = m.fighters;
     this.frame++;
     this.stage.update(m, this.frame);
-    for (let i = 0; i < 2; i++) this.drawFighter(m.fighters[i], this.fighters[i], i);
+    for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
       const mesh = this.projectiles[i];
-      mesh.visible = p.active;
-      if (!p.active) continue;
-      const pd = moveData(m.fighters[p.owner].fighter, p.move).spawns[p.spawn].projectile;
-      mesh.material = pd.decoy ? this.decoyMat : this.projectileMat;
+      const slot = this.projectileFx[i];
+      if (!p?.active) {
+        mesh.visible = false;
+        slot.show('', undefined);
+        continue;
+      }
+      const owner = m.fighters[p.owner].fighter;
+      const pd = moveData(owner, p.move).spawns[p.spawn].projectile;
+      // The fx mesh stands on the bottom centre of the projectile's box; the box stays as an overlay.
+      const fx = this.showFx(slot, owner, p.move);
+      mesh.visible = !fx || this.showBoxes;
+      mesh.material = fx ? this.overlayMat : pd.decoy ? this.decoyMat : this.projectileMat;
       placeBox(mesh, pd.box, toFloat(p.x), toFloat(p.y), p.dir, pd.decoy ? 0.4 : 0.6);
+      if (fx) {
+        slot.holder.position.set(mesh.position.x, toFloat(p.y) + toFloat(pd.box.y), 0);
+        slot.holder.scale.set(p.dir, 1, 1);
+      }
     }
     // Follow the midpoint; pull back as the fighters part.
     const mid = (toFloat(a.x) + toFloat(b.x)) / 2;
@@ -167,18 +270,37 @@ export class Arena {
     this.camera.lookAt(this.camX + sx * 0.5, 1.35, 0);
   }
 
-  private drawFighter(f: FighterState, v: FighterView, i: number): void {
+  /** Shows the fx mesh for a fighter's move in `slot`, if it has one and the art is loaded. */
+  private showFx(slot: EffectSlot, fighter: string, move: string): boolean {
+    const name = this.models ? EFFECTS[fighter]?.[move] : undefined;
+    const v = this.fighters[0].id === fighter ? this.fighters[0] : this.fighters[1];
+    return slot.show(name ?? '', name ? v.model?.art.fx.get(name) : undefined);
+  }
+
+  private drawFighter(m: MatchState, i: number): void {
+    const f = m.fighters[i];
+    const v = this.fighters[i];
     const d = fighterData(f.fighter);
     const x = toFloat(f.x);
     const y = toFloat(f.y);
+    const model = this.models ? v.model : null;
     v.group.position.set(0, 0, 0);
     // Off screen mid-teleport.
     const mv = f.mode === 'move' ? moveData(f.fighter, f.move) : null;
-    v.group.visible = !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
+    const shown = !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
+    v.group.visible = shown;
+    v.body.visible = !model;
+    if (v.model) v.model.root.visible = shown && model !== null;
     const air = f.y > 0 || f.mode === 'air' || f.mode === 'launched';
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
     const hurt = air ? d.hurt.air : f.crouching ? d.hurt.crouch : d.hurt.stand;
-    if (lying) {
+    if (model) {
+      v.head.visible = false;
+      model.root.position.set(x, y, 0);
+      model.root.scale.x = f.facing;
+      const p = this.poses.pose(m, i, this.pose);
+      model.pose(p.clip, p.frame, p.loop);
+    } else if (lying) {
       // Flat on the floor; rising during getup.
       const h = f.mode === 'getup' ? 0.4 : 0.3;
       v.body.scale.set(1.6, h, 0.5);
@@ -194,22 +316,34 @@ export class Arena {
     }
     v.body.rotation.z = f.mode === 'launched' ? f.facing * 0.5 : 0;
     // The limb: the current move's active hitbox, else its hurtbox reach.
+    // With a model it's only drawn as part of the hitbox view.
     v.limb.visible = false;
-    if (f.mode === 'move') {
-      const mv = moveData(f.fighter, f.move);
+    let beam: Box | null = null;
+    if (mv) {
       // Plain loops: this runs every frame, so no closures.
       let active: Box | null = null;
       let box: Box | null = null;
       for (const h of mv.hits) if (f.moveFrame >= h.frames[0] && f.moveFrame <= h.frames[1]) active = h.box;
       for (const h of mv.hurt) if (f.moveFrame >= h.frames[0] && f.moveFrame <= h.frames[1]) box = h.box;
+      const h0 = mv.hits[0];
+      if (h0 && f.moveFrame >= h0.frames[0] && f.moveFrame <= h0.frames[1]) beam = h0.box;
       box = active ?? box;
-      if (box) {
+      if (box && (!model || this.showBoxes)) {
         v.limb.visible = true;
         placeBox(v.limb, box, x, y, f.facing, 0.35);
         v.limbMat.color.setHex(active ? ACTIVE : LIMB);
+        v.limbMat.opacity = model ? 0.4 : 1;
       }
     }
-    // Flash white when hit; dim while invulnerable on the floor.
+    // An effect hit (the Flashlight's beam) stretched over the first hit's box.
+    if (beam && shown && this.showFx(v.effect, f.fighter, f.move)) {
+      const bx = toFloat(beam.x);
+      const bw = toFloat(beam.w);
+      const bh = toFloat(beam.h);
+      v.effect.holder.position.set(x + f.facing * bx, y + toFloat(beam.y) + bh / 2, 0);
+      v.effect.holder.scale.set(f.facing * (bw / BEAM_LENGTH), bh / BEAM_WIDTH, 1);
+    } else v.effect.show('', undefined);
+    // Flash when hit; dim while invulnerable on the floor.
     const base = COLORS[f.fighter] ?? 0xcccccc;
     v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);
     // Glows: armour orange, an unblockable winding up purple, guarding blue.
@@ -219,8 +353,9 @@ export class Arena {
     else if (mv && mv.armor && !f.armorUsed && f.moveFrame >= mv.armor[0] && f.moveFrame <= mv.armor[1]) glow = 0x803000;
     else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') glow = 0x501070;
     v.bodyMat.emissive.setHex(glow);
+    model?.setTint(v.flash > 0 ? FLASH : glow);
     const o = this.hurtOverlays[i];
-    o.visible = this.showBoxes && !lying;
+    o.visible = this.showBoxes && !lying && shown;
     if (o.visible) placeBox(o, hurt, x, y, f.facing, 0.55);
   }
 }

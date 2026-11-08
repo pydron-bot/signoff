@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.5.0',
+    date: '2026-11-08',
+    title: 'Now in 3D',
+    notes: [
+      'The fighters are their 3D models in every fight, posed frame by frame with the action, so what you see is what hits.',
+      'Cold Front, the hail, the Flashlight beam and the hand puppet have their own looks.',
+      'Hit boxes in Training show through the models. FIGHTERS on the title screen switches back to grey boxes.',
+      'The models are saved for offline play with the rest of the game.',
+    ],
+  },
+  {
     version: '0.4.2',
     date: '2026-11-08',
     title: 'Behind the scenes',

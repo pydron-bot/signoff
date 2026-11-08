@@ -57,13 +57,14 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // The chosen fighters and CPU level, remembered between visits.
-const setup = { p1: 0, p2: 1, level: 1, sound: 0, studio: 0 };
+const setup = { p1: 0, p2: 1, level: 1, sound: 0, studio: 0, models: 0 };
 try {
   Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) ?? '{}'));
 } catch {
   // private mode or bad data: defaults
 }
 sound.mode = SOUND_MODES[setup.sound] ?? 'on';
+arena.models = setup.models === 0;
 const saveSetup = () => {
   try {
     localStorage.setItem(SETUP_KEY, JSON.stringify(setup));
@@ -81,7 +82,8 @@ const clock = new FixedStep();
 
 function newSession(mode: Mode, p1: string, p2: string): Session {
   const s = new Session({ mode, p1, p2, level: LEVELS[setup.level], seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1 });
-  arena.setFighters(s.match);
+  // Compile the models' shaders as they arrive, not on their first frame.
+  void arena.setFighters(s.match).then(() => renderer.compile(arena.scene, arena.camera));
   clock.reset();
   return s;
 }
@@ -128,6 +130,16 @@ function showTitle(): void {
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
     { label: 'RULES', options: ['LIVE BROADCAST', 'STUDIO'], value: setup.studio, onChange: (v) => ((setup.studio = v), saveSetup()) },
+    {
+      label: 'FIGHTERS',
+      options: ['3D MODELS', 'GREY BOXES'],
+      value: setup.models,
+      onChange: (v) => {
+        setup.models = v;
+        arena.models = v === 0;
+        saveSetup();
+      },
+    },
     {
       label: 'SOUND',
       options: ['ON', 'NO ANNOUNCER', 'OFF'],
@@ -237,7 +249,7 @@ renderer.setAnimationLoop((now) => {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
       s.tick(frame[0], frame[1], ev);
-      arena.step(ev);
+      arena.step(s.match, ev);
       if (!demo) {
         hud.onEvents(s.match, ev);
         hud.step();
