@@ -10,8 +10,8 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 
 > **Open decision:** the design doc hasn't settled the art style (hand-made
 > Blender models as for Curbside, or a simpler stylised look to start).
-> Start with **step 1** below (a blockout of one fighter and the rig), which
-> is useful either way, and check with Derek before going to full detail.
+> The generated stylised low-poly look (0.4.2) is the working style until
+> Derek decides; fix readability (step 7) before adding detail.
 
 ## How the game uses the art
 
@@ -196,6 +196,39 @@ one per round (DESIGN.md has the details):
 - [ ] Segment 2, The Forecast Comes True: the same set in a storm (a darker light rig, papers blowing); a lightning bolt mesh (`fx_lightning`, about 8 m tall) and a floor scorch decal
 - [ ] Segment 3, Flood Warning: knee-deep water plane (`fx_water`) at about 0.22 m, and two live puddles (1.6 m wide) at x = ±3 m with sparking cables
 - [ ] Studio lighting suggestion per segment (the game uses a fixed light setup per segment; note the colours and angles you used)
+
+### 7. Fixes from the first review (Nov 8, game side)
+
+Found by playing every clip in the viewer and measuring it; details under
+*Review, Nov 8* in Feedback. In priority order:
+
+- [ ] **`ko` ends standing up.** All four fighters fall (0.5 m tall at frame 60) but frames 89–90 are back at idle height (Dale 1.72 m). The game holds the last frame of `ko` for the rest of the round, so it must end lying down, like `down`.
+- [ ] **`getup` ends lying down.** Frame 20 is still 0.45–0.60 m tall; the game goes straight to `idle` after it, so it pops. It should rise and finish in the idle pose (frame 20 = `idle` frame 1).
+- [ ] **Stand as tall as the hurtbox.** `idle` frame 1 is 3–13 cm under the standing hurtbox (Dale 1.72/1.80, Rox 1.62/1.75, Hollis 1.78/1.90, Mumbles 1.24/1.30), so hits that connect look like they pass over the head. Aim for the head top within 3 cm of the box top in `idle`, `walk_*` and `block_stand` (scale the rest pose up or bend the knees less). Mumbles' `crouch_idle` is 6 cm over its box (0.86/0.80). Add this to the build's checks, like the hitbox check.
+- [ ] **Overheads must read as overheads.** Blocking high or low is the core guessing game, so an overhead needs a clear high-to-low arc: hand or foot raised above the head during startup, chopping down into the hitbox on the active frames. Today `f.BP` (Dale) keeps the fist at chest height through all 39 frames, and Rox's `f.FK` is a front kick. The overheads: Dale `f.BP`, `FK BP`; Rox `f.FK`, `FK FK BP`, `Star Jump`; Hollis `f.BP`, `FK FK BP`; Mumbles `b.BP`, `BP FK BP`. Lows should likewise drop and sweep (they mostly do).
+- [ ] **Moves that travel need feet that travel.** `Grapevine` covers 2.6 m in 20 frames with the feet planted (frames 3–22 are the same pose). The same applies to `Leg Warmer Lariat`, `Night Shift`, `Star Jump`, `dash`, `backdash` and Tape Skip's dash. Step at the move's speed (the `motion` windows and speeds are in `blender/data/fighters.json`), as the walks already do. A grapevine is the aerobics side-step: step out, cross behind, step out.
+- [ ] **Knock-Knock's wind-up must be impossible to miss.** It's unblockable; the only defence is to see it and jump. Frames 1–29 barely change today. Make it big: a lean back, an arm raised to knock on an invisible door, two knocks on frames 4 and 16 (the game plays the knock sounds then), then the swing low on 30. The game also tints him purple during the wind-up.
+- [ ] **Heat Lightning should rise.** It's an invulnerable uppercut reversal with a hitbox from 0.8 to 2.2 m, but frames 3–14 hold the guard pose. Rising uppercut: crouch on 1–5, fist driving up through the box on 6–9 with the body lifting onto the toes (a little `root` lift is fine), arm high through recovery.
+- [ ] **Clocking In should reach.** It's a command grab with a range of 1.1 m on frames 10–12: both hands reaching forward at chest height, then (on a whiff, 13–50) an over-reach and a slow recovery so the miss is punishable and looks it. Today the hand rises to the head.
+- [ ] **Bigger hit reactions.** `hit_high` moves the head a few degrees; `hit_low` similarly. Snap the head and torso back 15–25° in the first 3 frames and ease back, so a hit reads at phone size. The game holds the clip for as long as the stun lasts.
+- [ ] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
+- [ ] **The hand puppet should look like a puppet.** `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
+
+### 8. Effects (for the moves whose effect is the hit)
+
+Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now; the game places and animates copies.
+
+- [ ] `fx_isobar_lasso` (Dale): a curling isobar line with pressure numbers, reaching from the hand to 2.6 m at 0.8–1.4 m high
+- [ ] `fx_key_ring` (Hollis): the chain and keys, sweeping low to 1.9 m
+- [ ] `fx_heat_lightning` (Dale): a crackle around the rising fist
+- [ ] `fx_lariat_trail` (Rox): a pink ribbon arc for the spin
+- [ ] `fx_tape_skip`: a VHS-smear afterimage (one shared mesh, used for every fighter's Tape Skip dash; put it in `dale.glb` for now)
+- [ ] `fx_cold_front` reads as stacked ice; fine for a cold front, but give it a swirl so it reads as wind moving forward
+
+### 9. Next
+
+- [ ] Weather at Eleven (step 6 above) is next after the fixes: it's the only stage, and every match is played on it.
+- [ ] Clip variety (later): a second `win` and `intro` per fighter.
 
 ### State clips (every fighter)
 
@@ -392,4 +425,14 @@ worked into the move data, and the table above updates itself.
 - **Walk loops are shorter than 40 frames** (forward: Dale 16, Rox 12, Hollis 22, Mumbles 12): at these walk speeds a 40-frame cycle would need a stride far wider than a fighting stance, so the loop length follows the stride (0.36 m per foot, scaled) and the feet don't skate. The asset test accepts any loop of 12 frames or more for walks.
 - **Root motion in a few clips (game side):** `down`, `getup`, `thrown`, `ko` and `launched` move and turn `root` (lying down, being thrown); Mumbles' teleports lift `root` 4 m up off screen over their hidden frames and lower him back in; Rox's `Star Jump` hops 0.35 m. Gameplay moves otherwise keep `root` still. The game should let these play as they are, not cancel `root`.
 - **Effect hits:** Isobar Lasso, Flashlight and Key Ring reach further than any limb (up to 2.6 m), so the effect is the hit and the hand only points the way; those moves skip the limb check.
+- **Review, Nov 8 (game side).** Checked all four GLBs in the viewer: every clip frame-exact, every strike inside its hitbox, 1,468 to 1,684 triangles, 3 to 7 draw calls a fighter, 0.73 MB each. The stylised low-poly look reads well at game distance and the four silhouettes are distinct (Hollis's bulk, Rox's hair and leg warmers, Mumbles' size and strings): a good base. What needs work is *readability in play*, listed as step 7 under TODO. Measured with the viewer's height readout:
+
+  | | Dale | Rox | Hollis | Mumbles |
+  | --- | --- | --- | --- | --- |
+  | `idle` / standing hurtbox | 1.72 / 1.80 | 1.62 / 1.75 | 1.78 / 1.90 | 1.24 / 1.30 |
+  | `crouch_idle` / crouching hurtbox | 1.11 / 1.10 | 1.04 / 1.05 | 1.19 / 1.20 | 0.86 / 0.80 |
+  | `ko` frame 60 → 90 | 0.51 → 1.72 | 0.49 → 1.62 | 0.55 → 1.77 | 0.35 → 1.24 |
+  | `getup` frame 20 (should be idle height) | 0.60 | 0.55 | 0.53 | 0.45 |
+
+- **Answers to the notes above (game side):** mirroring to face left, the shorter walk loops, the root motion in `down`, `getup`, `thrown`, `ko`, `launched`, the teleports and `Star Jump`, and effect-only hits are all fine; the game will follow them when it loads the GLBs (next on the game side, with the clips played by simulation frame). Rox having one material is fine (the contract is body plus *at most* props).
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.
