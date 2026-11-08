@@ -5,6 +5,7 @@
  */
 import { Cpu, type CpuLevel } from '../ai/cpu';
 import { Input, METER_MAX, ROUND_FRAMES, createMatch, moveData, saveMatch, step, type MatchState, type SimEvent } from '../sim';
+import { setupRound } from '../sim/stage';
 import { AdvantageTracker } from './advantage';
 
 /** demo: CPU against CPU, behind the title screen. */
@@ -18,6 +19,8 @@ export interface SessionOptions {
   p2: string;
   level: CpuLevel;
   seed: number;
+  /** Studio rules: one segment, hazards off. */
+  studio?: boolean;
 }
 
 /** Frames both fighters must be at rest before training refills health. */
@@ -29,11 +32,11 @@ export class Session {
   dummy: Dummy = 'stand';
   private readonly cpu: Cpu | null;
   private readonly cpu1: Cpu | null;
-  private readonly start: MatchState | null = null;
+  private start: MatchState | null = null;
   private rest = 0;
 
   constructor(readonly options: SessionOptions) {
-    this.match = createMatch({ p1: options.p1, p2: options.p2, seed: options.seed });
+    this.match = createMatch({ p1: options.p1, p2: options.p2, seed: options.seed, studio: options.studio });
     this.cpu = options.mode === 'versus' ? null : new Cpu(1, options.level, options.seed);
     this.cpu1 = options.mode === 'demo' ? new Cpu(0, options.level, options.seed * 7 + 1) : null;
     if (options.mode === 'training') {
@@ -57,6 +60,15 @@ export class Session {
     step(m, in1, in2, ev);
     if (this.training) this.trainingAfter(ev, from);
     this.adv.update(m, from ? ev.slice(from) : ev);
+  }
+
+  /** Training: practise on another segment of the stage (and reset to it). */
+  setSegment(segment: number): void {
+    if (!this.training) return;
+    this.reset();
+    this.match.segment = segment;
+    setupRound(this.match);
+    this.start = saveMatch(this.match);
   }
 
   /** Training: back to the starting positions. */

@@ -1,6 +1,6 @@
 {
   "name": "signoff",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "2.5D one-on-one fighting game set inside a haunted 1987 UHF channel (PWA, three.js).",
   "type": "module",
@@ -12,7 +12,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docs:clips": "UPDATE_DOCS=1 vitest run tests/blender-doc.test.ts"
   },
   "dependencies": {
     "three": "0.186.1"

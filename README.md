@@ -5,7 +5,7 @@ stage is a TV show, and the show changes between rounds.
 
 Play: https://deeek.org/signoff/ (iPhone landscape or desktop)
 
-Design: [docs/DESIGN.md](docs/DESIGN.md) · Notes for contributors: [CLAUDE.md](CLAUDE.md)
+Design: [docs/DESIGN.md](docs/DESIGN.md) · Art hand-off: [docs/BLENDER-TODO.md](docs/BLENDER-TODO.md) · Notes for contributors: [CLAUDE.md](CLAUDE.md)
 
 ## Controls
 

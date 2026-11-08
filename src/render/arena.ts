@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { fighterData, moveData, type FighterState, type MatchState, type SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
+import { Sparks } from './sparks';
+import { StageView } from './stageView';
 
 const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a };
 const LIMB = 0x9a9a9a;
@@ -36,6 +38,10 @@ export class Arena {
   reduceMotion = false;
   showBoxes = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
+  private readonly wallMat = new THREE.MeshBasicMaterial({ color: 0x0d1a4a });
+  private readonly stage: StageView;
+  private readonly sparks: Sparks;
+  private frame = 0;
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
@@ -44,6 +50,8 @@ export class Arena {
     key.position.set(-3, 6, 8);
     this.scene.add(key);
     this.buildSet();
+    this.stage = new StageView(this.scene, this.wallMat);
+    this.sparks = new Sparks(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
     for (let i = 0; i < 8; i++) {
@@ -68,7 +76,7 @@ export class Arena {
     floor.rotation.x = -Math.PI / 2;
     floor.position.z = 8;
     this.scene.add(floor);
-    const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 10), new THREE.MeshBasicMaterial({ color: 0x0d1a4a }));
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 10), this.wallMat);
     wall.position.set(0, 4, -4);
     this.scene.add(wall);
     // The map: a few coastline-ish slabs on the wall, one mesh per colour.
@@ -103,13 +111,18 @@ export class Arena {
     m.fighters.forEach((f, i) => this.fighters[i].bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc));
   }
 
-  onEvents(ev: readonly SimEvent[]): void {
+  /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
+  step(ev: readonly SimEvent[]): void {
+    this.sparks.update();
+    for (const v of this.fighters) if (v.flash > 0) v.flash--;
+    this.sparks.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
         this.fighters[e.defender].flash = 6;
         this.shake = Math.max(this.shake, e.damage >= 60 ? 0.12 : 0.05);
       } else if (e.type === 'block') this.fighters[e.defender].flash = 3;
       else if (e.type === 'superHit') this.shake = 0.25;
+      else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.shake = Math.max(this.shake, 0.15);
     }
   }
 
@@ -120,6 +133,8 @@ export class Arena {
 
   render(m: MatchState): void {
     const [a, b] = m.fighters;
+    this.frame++;
+    this.stage.update(m, this.frame);
     for (let i = 0; i < 2; i++) this.drawFighter(m.fighters[i], this.fighters[i], i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
@@ -188,10 +203,7 @@ export class Arena {
     }
     // Flash white when hit; dim while invulnerable on the floor.
     const base = COLORS[f.fighter] ?? 0xcccccc;
-    if (v.flash > 0) {
-      v.bodyMat.color.setHex(0xffffff);
-      v.flash--;
-    } else v.bodyMat.color.setHex(base);
+    v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);
     v.bodyMat.emissive.setHex(f.mode === 'cinematic' ? 0x401010 : f.mode === 'guard' || f.mode === 'blockstun' ? 0x10203a : 0);
     const o = this.hurtOverlays[i];
     o.visible = this.showBoxes && !lying;

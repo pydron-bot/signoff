@@ -473,3 +473,92 @@ body[data-scene='title'] #app {
 .t-block { right: -4px; top: 150px; width: 76px; height: 76px; border-color: #e8e04a; }
 .t-throw { right: 6px; top: 96px; width: 50px; height: 50px; font-size: 0.65rem; }
 .t-td { right: 196px; top: 0; border-color: #ff4a3a; font-size: 0.55rem; }
+
+/* ---- VHS reactions ---- */
+#app.wobble {
+  animation: tracking 0.2s steps(2) infinite;
+  filter: drop-shadow(3px 0 rgba(255, 0, 60, 0.6)) drop-shadow(-3px 0 rgba(0, 200, 255, 0.6));
+}
+
+@keyframes tracking {
+  0% { transform: translate(0, 0) skewX(0deg); }
+  25% { transform: translate(-6px, 2px) skewX(1.5deg); }
+  50% { transform: translate(5px, -1px) skewX(-1deg); }
+  75% { transform: translate(-3px, 0) skewX(0.5deg); }
+}
+
+.vhs-static {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  background-size: 256px 256px;
+  image-rendering: pixelated;
+  animation: snow 0.12s steps(3) infinite;
+  z-index: 3;
+}
+
+@keyframes snow {
+  0% { background-position: 0 0; }
+  33% { background-position: -71px 43px; }
+  66% { background-position: 37px -89px; }
+}
+
+.standby {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  background: repeating-linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%, #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%, #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%, #0000c0 85.71% 100%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.standby-card {
+  padding: 0.4rem 1.4rem;
+  background: #1b2fa8;
+  font-size: clamp(1.4rem, 5vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.standby-sub {
+  padding: 0.2rem 0.8rem;
+  background: #000;
+  font-size: clamp(0.6rem, 1.6vw, 0.85rem);
+  letter-spacing: 0.2em;
+}
+
+/* Hazard warnings: an emergency crawl across the top. */
+.hud-warning {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top) + 108px);
+  padding: 4px 0;
+  background: #b0121a;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  animation: blink 0.5s steps(1) infinite;
+}
+
+.hud-counter {
+  position: absolute;
+  top: 34%;
+  font-weight: 800;
+  color: #ffe040;
+  letter-spacing: 0.15em;
+}
+
+.t-interact { right: 196px; top: 64px; border-color: #7affd8; font-size: 0.65rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-warning {
+    animation: none;
+  }
+}

@@ -5,6 +5,7 @@
  * step's events.
  */
 import { BAR, STEPS_PER_SECOND, fighterData, stageData, type MatchState, type SimEvent } from '../sim';
+import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
 
 const SEGMENTS = 20;
@@ -34,6 +35,10 @@ export class Hud {
   private readonly captionSub: HTMLElement;
   private readonly breakCard: HTMLElement;
   private readonly training: HTMLElement;
+  private readonly warning: HTMLElement;
+  private readonly counter: HTMLElement;
+  private warningLeft = 0;
+  private counterLeft = 0;
   private captionLeft = 0;
   private comboLeft = [0, 0];
   private lastHealth = [-1, -1];
@@ -58,9 +63,14 @@ export class Hud {
     this.breakCard.hidden = true;
     this.training = div('hud-training');
     this.training.hidden = true;
+    this.warning = div('hud-warning');
+    this.warning.hidden = true;
+    this.counter = div('hud-counter');
+    this.counter.textContent = 'COUNTER';
+    this.counter.hidden = true;
     const meters = div('hud-meters');
     meters.append(this.sides[0].meter, this.sides[1].meter);
-    this.root.append(top, logo, cap, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo);
+    this.root.append(top, logo, cap, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo);
     parent.append(this.root);
   }
 
@@ -103,6 +113,8 @@ export class Hud {
     this.clock.classList.toggle('off', training);
     this.breakCard.hidden = true;
     this.captionLeft = 0;
+    this.warningLeft = 0;
+    this.counterLeft = 0;
     this.caption.textContent = '';
     this.captionSub.textContent = '';
     this.lastHealth = [-1, -1];
@@ -157,7 +169,19 @@ export class Hud {
         case 'cutAway':
           this.say('CUT AWAY', '', 40);
           break;
+        case 'hazardWarn':
+          this.warning.textContent = `⚠ ${e.caption} ⚠`;
+          this.warningLeft = segmentData(m.stage, m.segment).hazards.find((h) => h.id === e.hazard)?.warn ?? 60;
+          break;
+        case 'hazardStrike':
+          this.warningLeft = 0;
+          break;
         case 'hit':
+          if (e.counter) {
+            this.counter.style.left = e.attacker === 0 ? '20px' : '';
+            this.counter.style.right = e.attacker === 1 ? '20px' : '';
+            this.counterLeft = 45;
+          }
           if (e.combo >= 2) {
             const c = this.sides[e.attacker].combo;
             c.textContent = `${e.combo} HITS`;
@@ -166,6 +190,19 @@ export class Hud {
           break;
       }
     }
+  }
+
+  /** Once per simulation step: captions and callouts keep sim time. */
+  step(): void {
+    for (let i = 0; i < 2; i++) if (this.comboLeft[i] > 0 && --this.comboLeft[i] === 0) this.sides[i].combo.textContent = '';
+    if (this.captionLeft > 0 && --this.captionLeft === 0) {
+      this.caption.textContent = '';
+      this.captionSub.textContent = '';
+    }
+    if (this.warningLeft > 0) this.warningLeft--;
+    if (this.warning.hidden !== (this.warningLeft === 0)) this.warning.hidden = this.warningLeft === 0;
+    if (this.counterLeft > 0) this.counterLeft--;
+    if (this.counter.hidden !== (this.counterLeft === 0)) this.counter.hidden = this.counterLeft === 0;
   }
 
   /** Every frame: touches the DOM only where something changed. */
@@ -193,16 +230,11 @@ export class Hud {
           s.meterFill[k].classList.toggle('full', v >= 1);
         }
       }
-      if (this.comboLeft[i] > 0 && --this.comboLeft[i] === 0) s.combo.textContent = '';
     }
     const secs = Math.max(0, Math.ceil(m.timer / STEPS_PER_SECOND));
     if (secs !== this.lastSecs) {
       this.lastSecs = secs;
       this.clock.textContent = `0:${String(secs).padStart(2, '0')}`;
-    }
-    if (this.captionLeft > 0 && --this.captionLeft === 0) {
-      this.caption.textContent = '';
-      this.captionSub.textContent = '';
     }
     if (!this.training.hidden) {
       const a = adv ? `${adv.move} on ${adv.kind}: ${adv.frames > 0 ? '+' : ''}${adv.frames}` : 'Hit or block for frame advantage';

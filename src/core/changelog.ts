@@ -14,6 +14,19 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.3.0',
+    date: '2026-11-08',
+    title: 'The forecast comes true',
+    notes: [
+      'Weather at Eleven changes every round: kick the camera dollies, fight through wind and lightning, then knee-deep water with live puddles. Every hazard is announced first.',
+      'New specials: Dale\'s Heat Lightning (a reversal, neutral + Special) and Rox\'s Star Jump (an overhead hop).',
+      'Rebalanced Dale and Rox: Rox hits harder, Dale has less health and slower zoning.',
+      'Sound: hits, blocks, the station ident, an announcer, a laugh track with bad timing, and the sign-off tone.',
+      'Big hits wobble the tape, KOs crackle with static, and Technical Difficulties cuts to PLEASE STAND BY.',
+      'Rules option (Studio: one segment, no hazards), sound options, and a segment picker in Training.',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-11-08',
     title: 'First fight',

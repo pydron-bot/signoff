@@ -6,7 +6,7 @@
  */
 import { Input } from '../sim';
 
-const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW } = Input;
+const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT } = Input;
 const DEAD = 14;
 /** sin 22.5°: an 8-way stick with equal sectors. */
 const SECTOR = 0.38;
@@ -23,6 +23,7 @@ export class TouchControls {
   private readonly base: HTMLElement;
   private readonly knob: HTMLElement;
   private readonly td: HTMLElement;
+  private readonly interact: HTMLElement;
 
   constructor(parent: HTMLElement) {
     this.root = el('div', 'touch');
@@ -51,6 +52,8 @@ export class TouchControls {
     btn('t-throw', 'THR', THROW);
     this.td = btn('t-td', 'TECH\nDIFF', BLOCK | SPECIAL);
     this.td.hidden = true;
+    this.interact = btn('t-interact', 'USE', INTERACT);
+    this.interact.hidden = true;
     this.root.append(pad);
     parent.append(this.root);
 
@@ -122,7 +125,12 @@ export class TouchControls {
   }
 
   setTD(on: boolean): void {
-    this.td.hidden = !on;
+    if (this.td.hidden === on) this.td.hidden = !on;
+  }
+
+  /** The Interact button appears only near something to use. */
+  setInteract(on: boolean): void {
+    if (this.interact.hidden === on) this.interact.hidden = !on;
   }
 
   clear(): void {

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { registerSW } from 'virtual:pwa-register';
 import type { CpuLevel } from './ai/cpu';
+import { Sound, type SoundMode } from './audio/sound';
 import { BUILD_ID } from './core/build';
 import { VERSION } from './core/changelog';
 import { FixedStep } from './game/loop';
@@ -11,11 +12,14 @@ import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
 import { Input, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
+import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
+import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 
 const FIGHTER_IDS = ['dale', 'rox'];
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
+const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 const SETUP_KEY = 'signoff.setup';
 
 const app = document.getElementById('app')!;
@@ -25,7 +29,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 app.appendChild(renderer.domElement);
 
 const arena = new Arena();
-arena.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+arena.reduceMotion = reduceMotion;
+const sound = new Sound();
+const glitch = new Glitch(document.body, reduceMotion);
 const hud = new Hud(document.body);
 const touch = new TouchControls(document.body);
 touch.bindHold(hud.p1Meter, Input.METER);
@@ -38,6 +45,8 @@ pauseBtn.textContent = 'II';
 pauseBtn.hidden = true;
 document.body.append(pauseBtn);
 initKeyboard();
+// Audio may only start from a gesture (iOS Safari).
+for (const t of ['pointerdown', 'keydown'] as const) window.addEventListener(t, () => sound.unlock());
 
 let touchUi = window.matchMedia('(pointer: coarse)').matches;
 window.addEventListener('pointerdown', (e) => {
@@ -48,12 +57,13 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // The chosen fighters and CPU level, remembered between visits.
-const setup = { p1: 0, p2: 1, level: 1 };
+const setup = { p1: 0, p2: 1, level: 1, sound: 0, studio: 0 };
 try {
   Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) ?? '{}'));
 } catch {
   // private mode or bad data: defaults
 }
+sound.mode = SOUND_MODES[setup.sound] ?? 'on';
 const saveSetup = () => {
   try {
     localStorage.setItem(SETUP_KEY, JSON.stringify(setup));
@@ -70,7 +80,7 @@ const ev: SimEvent[] = [];
 const clock = new FixedStep();
 
 function newSession(mode: Mode, p1: string, p2: string): Session {
-  const s = new Session({ mode, p1, p2, level: LEVELS[setup.level], seed: (Date.now() & 0x7fffffff) || 1 });
+  const s = new Session({ mode, p1, p2, level: LEVELS[setup.level], seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1 });
   arena.setFighters(s.match);
   clock.reset();
   return s;
@@ -86,6 +96,7 @@ function startDemo(): void {
   pauseBtn.hidden = true;
   pauseMenu.hide();
   title.hidden = false;
+  glitch.clear();
   document.body.dataset.scene = 'title';
   showTitle();
 }
@@ -113,6 +124,17 @@ function showTitle(): void {
     { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
+    { label: 'RULES', options: ['LIVE BROADCAST', 'STUDIO'], value: setup.studio, onChange: (v) => ((setup.studio = v), saveSetup()) },
+    {
+      label: 'SOUND',
+      options: ['ON', 'NO ANNOUNCER', 'OFF'],
+      value: setup.sound,
+      onChange: (v) => {
+        setup.sound = v;
+        sound.mode = SOUND_MODES[v];
+        saveSetup();
+      },
+    },
   ]);
 }
 
@@ -133,6 +155,7 @@ function pause(on: boolean): void {
   if (s.training) {
     rows.push(
       { label: 'RESET POSITIONS (R)', run: () => (s.reset(), pause(false)) },
+      { label: 'SEGMENT', options: ['1 THE STUDIO', '2 THE FORECAST', '3 FLOOD WARNING'], value: s.match.segment, onChange: (v) => s.setSegment(v) },
       { label: 'DUMMY', options: ['STAND', 'BLOCK ALL', 'CROUCH BLOCK', 'CPU'], value: DUMMIES.indexOf(s.dummy), onChange: (v) => (s.dummy = DUMMIES[v]) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );
@@ -211,8 +234,14 @@ renderer.setAnimationLoop((now) => {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
       s.tick(frame[0], frame[1], ev);
-      arena.onEvents(ev);
-      if (!demo) hud.onEvents(s.match, ev);
+      arena.step(ev);
+      if (!demo) {
+        hud.onEvents(s.match, ev);
+        hud.step();
+        sound.onEvents(s.match, ev);
+        glitch.onEvents(ev);
+      }
+      glitch.step();
       for (const e of ev) {
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();
@@ -228,6 +257,7 @@ renderer.setAnimationLoop((now) => {
     hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : '');
     const p1 = m.fighters[0];
     touch.setTD(!p1.tdUsed && p1.health > 0 && p1.health * 100 < p1.maxHealth * TD_HEALTH_PCT);
+    touch.setInteract(propInReach(m, p1) >= 0);
   }
   renderer.render(arena.scene, arena.camera);
 });
