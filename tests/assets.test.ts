@@ -42,6 +42,8 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   ko: { frames: 90 },
   win: { frames: 120 },
   intro: { frames: 90 },
+  win_2: { frames: 120 },
+  intro_2: { frames: 90 },
   td_cinematic: { frames: 150 },
 };
 const MAX_TRIANGLES = 20000;

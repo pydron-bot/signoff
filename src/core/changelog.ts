@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.8.0',
+    date: '2026-11-08',
+    title: 'Encore',
+    notes: [
+      'Every fighter has a second round intro and a second victory pose, and they take turns from round to round.',
+      "Dale signs off the forecast, Rox marches it out, Hollis checks his watch and yawns, and Mister Mumbles can't stop laughing.",
+      'Before a round, Rox stretches, Hollis cracks his knuckles, Dale fixes his tie and his hair, and Mumbles hangs limp until his strings snap him awake.',
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-11-08',
     title: 'Weather at Eleven, built',

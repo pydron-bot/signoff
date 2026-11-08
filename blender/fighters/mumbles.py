@@ -184,6 +184,28 @@ class STANCE(Stance):
             hand_L={"pos": self.s((0.1, 0.22, 1.0)), "aim": (0, 0.3, -1)},
             hand_R={"pos": self.s((-0.38, -0.05, 1.25)), "aim": (-0.6, 0, 0.5)})
 
+    def win_2(self, base):
+        """Laughing: head thrown back, jaw clacking, hands on his tummy."""
+        def laugh(jaw, shake):
+            return self.base(drop=0.03).but(
+                chest=(-14, -10, 6 * shake), head=(-24, 0, 14 * shake),
+                hand_L={"pos": self.s((0.12, 0.22, 0.98)), "aim": (-0.5, 0.2, -0.6)},
+                hand_R={"pos": self.s((-0.12, 0.22, 0.96)), "aim": (0.5, 0.2, -0.6)}).shaped(win=1.0, jaw=jaw)
+        keys = [(1, base), (14, laugh(0.0, 0))]
+        for i, f in enumerate(range(18, 106, 4)):
+            keys.append((f, laugh(1.0 if i % 2 == 0 else 0.1, 1 if i % 4 < 2 else -1)))
+        return keys + [(110, laugh(0.0, 0)), (120, laugh(0.0, 0))]
+
+    def intro_2(self, relaxed, base):
+        """Slumped and lifeless until the strings snap him up; the head lolls
+        round, the jaw clacks, and he's ready."""
+        slump = relaxed.but(hips={"offset": (0, 0, -0.06 * self.k), "turn": (0, 0, 0)}, spine=(18, 0, 0), chest=(38, 0, 0), neck=(20, 0, 0), head=(40, 0, 6),
+                            hand_L={"pos": self.s((0.24, 0.16, 0.7)), "aim": (0, 0.2, -1)},
+                            hand_R={"pos": self.s((-0.24, 0.16, 0.72)), "aim": (0, 0.2, -1)}).shaped(fist_L=0.0, fist_R=0.0)
+        loll = relaxed.but(head=(-6, -40, 32)).shaped(jaw=0.9)
+        return [(1, slump), (24, slump), (30, relaxed.but(head=(-12, 0, 0))), (40, loll), (46, loll.shaped(jaw=0.0)), (50, loll.shaped(jaw=1.0)),
+                (54, loll.shaped(jaw=0.0)), (64, relaxed), (80, base), (90, base)]
+
 
 OVERRIDES = {
     "Strings Attached": {"style": "teleport", "limb": "hand.R"},

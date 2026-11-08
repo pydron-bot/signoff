@@ -89,7 +89,11 @@ export class PoseTracker {
       const f = m.fighters[i];
       const t = this.tracks[i];
       const s = stateOf(m, i);
-      if (s !== t.state) this.enter(t, f, s);
+      if (s !== t.state) {
+        this.enter(t, f, s);
+        // Two victory poses: the round number picks one.
+        if (s === 'win') t.clip = m.round % 2 === 0 ? 'win_2' : 'win';
+      }
       // The sim froze this fighter if hitstop was left over from the last step.
       else if (t.hitstop === 0) t.since++;
       t.hitstop = f.hitstop;
@@ -132,7 +136,8 @@ export class PoseTracker {
     out.loop = false;
     switch (s) {
       case 'intro':
-        out.clip = 'intro';
+        // Two intros, alternating by round and player, so the two fighters differ.
+        out.clip = (m.round + i) % 2 === 0 ? 'intro_2' : 'intro';
         out.frame = Math.min(INTRO_FRAMES, Math.max(1, INTRO_FRAMES - m.phaseTimer + 1));
         return out;
       case 'move':

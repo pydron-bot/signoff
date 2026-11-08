@@ -35,6 +35,11 @@ describe('poses', () => {
     const t = new PoseTracker();
     expect(t.pose(m, 0, { clip: '', frame: 0, loop: false })).toEqual({ clip: 'intro', frame: 1, loop: false });
     expect(drive(m, t, 10)).toEqual({ clip: 'intro', frame: 11, loop: false });
+    // The other fighter plays the second intro, and the next round swaps them.
+    expect(t.pose(m, 1, { clip: '', frame: 0, loop: false }).clip).toBe('intro_2');
+    m.round = 2;
+    expect(t.pose(m, 0, { clip: '', frame: 0, loop: false }).clip).toBe('intro_2');
+    m.round = 1;
     const p = drive(m, t, INTRO_FRAMES + 5);
     expect(p.clip).toBe('idle');
     expect(p.loop).toBe(true);
@@ -156,6 +161,8 @@ describe('poses', () => {
       expect([...missing]).toEqual([]);
       // The match got as far as a winner's pose.
       expect(used).toContain('win');
+      expect(used).toContain('intro_2');
+      expect(used).toContain('win_2');
       expect(used).toContain('ko');
     }
   });

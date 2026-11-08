@@ -209,6 +209,20 @@ class Stance:
         """The round intro: rolls the shoulders, then squares up."""
         return self.base(drop=0.03).but(chest=(4 + 6 * t, -10 - 20 * t, 0), head=(-6, 10 - 10 * t, 0))
 
+    def win_2(self, base):
+        """The second victory (keys over 120 frames): the rear fist up instead.
+        Fighters override it with something of their own."""
+        up = self.base(drop=0.02).but(
+            hand_R={"pos": self.s((-0.16, 0.1, 2.0)), "aim": (-0.1, 0.1, 1), "hint": (0, 1, 0)},
+            hand_L={"pos": self.s((0.2, 0.05, 0.95)), "aim": (0.1, 0.1, -1)},
+            chest=(-6, -16, 0), head=(-12, 0, 0)).shaped(win=1.0)
+        return [(1, base), (20, up), (120, up)]
+
+    def intro_2(self, relaxed, base):
+        """The second round intro (keys over 90 frames, in stance by 80): a
+        stretch of the neck to each side. Fighters override it."""
+        return [(1, relaxed), (25, relaxed.but(head=(0, 0, 20))), (45, relaxed.but(head=(0, 0, -20))), (62, self.intro(1)), (80, base), (90, base)]
+
     def windup(self):
         """Technical Difficulties: a huge wind-up (seen in the first 20 frames)."""
         return self.base(drop=self.drop + 0.05).but(
@@ -370,6 +384,9 @@ def state_clips(rig, st, data):
                        foot_L={"pos": st.s((0.11, 0.03, 0.09)), "turn": (0, -10, 0)}, foot_R={"pos": st.s((-0.11, -0.03, 0.09)), "turn": (0, -10, 0)},
                        hand_L={"pos": st.s((0.24, 0.02, 0.86)), "aim": (0.1, 0.05, -1)}, hand_R={"pos": st.s((-0.24, 0.02, 0.86)), "aim": (-0.1, 0.05, -1)})
     clip("intro", 90, [(1, relaxed), (30, st.intro()), (60, st.intro(1)), (80, base), (90, base)])
+    # Second versions, for variety: the game alternates them by round.
+    clip("win_2", 120, st.win_2(base))
+    clip("intro_2", 90, st.intro_2(relaxed, base))
     clip("td_cinematic", 150, [(1, base), (20, st.windup()), (130, st.windup()), (140, st.finish()), (150, st.finish())])
     return out
 

@@ -340,7 +340,7 @@ Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now;
 ### 10. Next
 
 - [x] Weather at Eleven (step 6 above) after the fixes and the detail pass: it's the only stage, and every match is played on it.
-- [ ] Clip variety (later): a second `win` and `intro` per fighter.
+- [x] Clip variety: a second `win` and `intro` per fighter. *Done (Nov 8): `win_2` and `intro_2` (rows below); the game alternates them by round.*
 
 ### State clips (every fighter)
 
@@ -367,6 +367,7 @@ Loop where noted; lengths are suggestions unless given.
 | `ko` | 90 | Falling and staying down |
 | `win` | 120 | Victory pose |
 | `intro` | 90 | Round intro |
+| `win_2`, `intro_2` | 120, 90 | Second versions. Dale: "…and that's the forecast", clicking the map / straightens the tie and the quiff. Rox: hands on hips, high knees / an overhead side stretch. Hollis: checks his watch and yawns / touches his cap, cracks his knuckles. Mumbles: laughs, jaw clacking / slumped until the strings snap him up |
 | `td_cinematic` | 150 | Technical Difficulties: plays under a "PLEASE STAND BY" card, so only the first and last 20 frames are really seen |
 
 ### Move clips
@@ -560,4 +561,5 @@ worked into the move data, and the table above updates itself.
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.
 - **In the game (0.5.0, game side).** The fights play the GLBs, posed by sim frame (`src/render/pose.ts` picks clip and frame from the state; `src/render/fighterModel.ts` loads and samples them). One-shot clips clamp on their last frame (`LoopOnce`, `clampWhenFinished`); `tape_skip` plays for Tape Skip with `fx_tape_skip` from `dale.glb`; morph targets play from the clips as they are. Materials are switched to Lambert (same colour, atlas and vertex colours) to light like the set and cost less on a phone. Effects: projectiles stand on their box's bottom centre (`fx_cold_front`, `fx_hail`, `fx_hand_puppet`); `fx_flashlight_beam` is stretched over its hitbox; `fx_isobar_lasso`, `fx_key_ring`, `fx_lariat_trail` and `fx_tape_skip` sit on the fighter as modelled; `fx_heat_lightning` follows the raised hand. Move effects show from the first hit to 4 frames after the last. `tests/pose.test.ts` plays CPU matches with every fighter and fails if the game asks for a clip a GLB doesn't have.
 - **Weather at Eleven (Nov 8, art and game side).** The stage is built like the fighters (`npm run art -- --only weather`) and checked by `tests/assets.test.ts` (objects, materials, atlas sizes, a light rig per segment, the dollies' places and size, the hazards' sizes). In the game (0.7.0) `src/render/stageView.ts` swaps the flat stand-in panels for it once loaded and sets the segment's lights; the stand-ins stay if the GLB can't load. Three passes for the whole set: `set`, `seg_storm`, `seg_flood`, plus the props and effects, about 10 draw calls with everything on show.
+- **Second win and intro (Nov 8, art and game side).** Each fighter's `STANCE` has `win_2` and `intro_2` (keys over the clip; a generic version in `lib/anim.py` for any fighter that doesn't override them); `intro_2` is in stance by frame 80, like `intro`. In the game (0.8.0) `src/render/pose.ts` picks them: the round winner plays `win` in odd rounds and `win_2` in even ones; in the intro, player 1 plays `intro` in odd rounds and `intro_2` in even ones, and player 2 the other, so the two never match.
 - **Vertex colours (game side, Nov 8).** The GLBs keep each part's flat colour as `COLOR_0`, and three.js multiplies a material's atlas by its vertex colours, so the fighters were drawn with their atlases tinted twice (skin about a quarter darker and oranger than painted). Fixed in 0.7.0: materials with an atlas ignore vertex colours, in the game and the viewer. The art is unchanged; it now shows as painted.

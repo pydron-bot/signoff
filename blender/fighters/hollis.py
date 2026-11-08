@@ -147,6 +147,29 @@ class STANCE(Stance):
             elbow_L=self.s((0.4, 0.3, 1.1)), elbow_R=self.s((-0.4, 0.3, 1.1)),
             chest=(-4, -10, 0), head=(-8, 0, 0))
 
+    def win_2(self, base):
+        """End of shift: checks his watch, then a long yawn."""
+        belt = {"pos": self.s((-0.24, 0.02, 1.0)), "aim": (0, -0.2, -1)}
+        watch = self.base(drop=0.0).but(
+            chest=(4, -14, 0), head=(22, -10, 0),
+            hand_L={"pos": self.s((0.04, 0.34, 1.32)), "aim": (-1, 0.2, 0.1)},
+            hand_R=belt).shaped(win=1.0, fist_L=0.6, fist_R=0.3)
+        yawn = self.base(drop=0.0).but(
+            chest=(-12, -12, 0), head=(-26, 0, 0),
+            hand_L={"pos": self.s((0.32, 0.05, 1.05)), "aim": (0.2, 0, -1)},
+            hand_R={"pos": self.s((-0.02, 0.2, 1.6)), "aim": (0.3, 0.2, 1)}).shaped(win=0.4, ko=0.5)
+        done = watch.but(head=(4, 0, 0))
+        return [(1, base), (18, watch), (40, watch.but(head=(26, -10, 0))), (54, watch), (70, yawn), (98, yawn), (112, done), (120, done)]
+
+    def intro_2(self, relaxed, base):
+        """Touches the cap's peak, then cracks his knuckles."""
+        cap = relaxed.but(head=(8, 0, 0), hand_L={"pos": self.s((0.05, 0.22, 1.7)), "aim": (0, 0.2, 1)})
+        crack = relaxed.but(chest=(8, -10, 0), head=(6, 0, 0),
+                            hand_L={"pos": self.s((0.03, 0.34, 1.24)), "aim": (-0.4, 0.6, 0.4)},
+                            hand_R={"pos": self.s((-0.03, 0.32, 1.22)), "aim": (0.4, 0.6, 0.4)}).shaped(fist_L=1.0, fist_R=0.5)
+        push = crack.but(hand_L={"pos": self.s((0.03, 0.44, 1.24)), "aim": (-0.4, 0.6, 0.4)}, hand_R={"pos": self.s((-0.03, 0.42, 1.22)), "aim": (0.4, 0.6, 0.4)})
+        return [(1, relaxed), (16, cap), (28, cap), (44, crack), (52, push), (58, crack), (66, push), (80, base), (90, base)]
+
 
 OVERRIDES = {
     # The beam and the chain make these hits (effects); the hand points them.

@@ -153,6 +153,31 @@ class STANCE(Stance):
             hand_R={"pos": self.s((-0.42, 0.05, 1.98 - 0.03 * t)), "aim": (-0.5, 0, 1)},
             chest=(-8, -10, 0), head=(-14, 0, 0))
 
+    def win_2(self, base):
+        """Hands on hips, marching it out: high knees, and… hold."""
+        def march(knee=None):
+            p = self.base(drop=0.02).but(
+                chest=(-4, -14, 0), head=(-10, 0, 0),
+                hand_L={"pos": self.s((0.2, 0.02, 1.0)), "aim": (0.3, -0.2, -1)}, elbow_L=self.s((0.5, 0.05, 1.15)),
+                hand_R={"pos": self.s((-0.2, 0.02, 1.0)), "aim": (-0.3, -0.2, -1)}, elbow_R=self.s((-0.5, 0.05, 1.15)),
+            ).shaped(win=1.0, fist_L=0.0, fist_R=0.0)
+            if knee == "L":
+                p = p.but(foot_L={"pos": self.s((0.11, 0.24, 0.42)), "turn": (30, -15, 0)}, knee_L=self.s((0.11, 0.9, 0.8)))
+            elif knee == "R":
+                p = p.but(foot_R={"pos": self.s((-0.13, -0.1, 0.42)), "turn": (30, -50, 0)}, knee_R=self.s((-0.13, 0.7, 0.8)))
+            return p
+        keys = [(1, base), (12, march())]
+        for i in range(9):
+            f = 12 + 10 * i
+            keys += [(f + 5, march("LR"[i % 2])), (f + 10, march())]
+        return keys + [(120, march())]
+
+    def intro_2(self, relaxed, base):
+        """An overhead stretch, reaching to each side."""
+        up = relaxed.but(hand_L={"pos": self.s((0.1, 0.08, 2.02)), "aim": (0, 0, 1)}, hand_R={"pos": self.s((-0.1, 0.08, 2.04)), "aim": (0, 0, 1)},
+                         head=(-10, 0, 0)).shaped(fist_L=0.0, fist_R=0.0)
+        return [(1, relaxed), (16, up), (32, up.but(spine=(0, 0, 10), chest=(0, -6, 20))), (48, up.but(spine=(0, 0, -10), chest=(0, -6, -20))), (60, up), (80, base), (90, base)]
+
 
 OVERRIDES = {
     "Leg Warmer Lariat": {"style": "spin"},

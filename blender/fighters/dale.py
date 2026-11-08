@@ -121,6 +121,28 @@ def costume(p, b):
 class STANCE(Stance):
     """Upright and smiling: a weatherman's half-turn to camera, hands up."""
 
+    def win_2(self, base):
+        """"…and that's the forecast": hand on hip, clicking the map along."""
+        def present(click=0.0):
+            return self.base(drop=0.01).but(
+                chest=(-4, -48, 0), head=(-8, -18, 8),
+                hand_L={"pos": self.s((0.28, 0.42, 1.62 - 0.05 * click)), "aim": (0.2, 1, 0.45 - 0.3 * click), "hint": (0, 1, 0)},
+                hand_R={"pos": self.s((-0.22, 0.0, 1.0)), "aim": (0.1, -0.4, -1)}, elbow_R=self.s((-0.5, -0.1, 1.15)),
+            ).shaped(win=1.0, fist_L=0.9, fist_R=0.2)
+        keys = [(1, base), (18, present())]
+        for f in (40, 58, 76):
+            keys += [(f, present(1)), (f + 5, present())]
+        return keys + [(120, present())]
+
+    def intro_2(self, relaxed, base):
+        """Straightens the tie, smooths the quiff, then squares up."""
+        tie = relaxed.but(head=(14, 0, 0),
+                          hand_L={"pos": self.s((0.03, 0.17, 1.44)), "aim": (0, 0.2, 1)},
+                          hand_R={"pos": self.s((-0.02, 0.16, 1.36)), "aim": (0, 0.2, 1)})
+        tug = tie.but(hand_L={"pos": self.s((0.03, 0.18, 1.5)), "aim": (0, 0.2, 1)}, head=(6, 0, 0))
+        quiff = relaxed.but(head=(-6, 0, 0), hand_L={"pos": self.s((0.08, 0.1, 1.86)), "aim": (-0.3, -0.6, 0.3)}).shaped(win=1.0)
+        return [(1, relaxed), (18, tie), (26, tug), (34, tie), (50, quiff), (62, quiff.but(hand_L={"pos": self.s((0.06, -0.06, 1.88)), "aim": (-0.3, -0.8, 0)})), (80, base), (90, base)]
+
 
 OVERRIDES = {
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
