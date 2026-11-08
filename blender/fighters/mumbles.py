@@ -28,7 +28,7 @@ POLE = (120, 90, 60)
 
 def costume(p, b):
     c = {"skin": WOOD, "top": SUIT, "bottom": TROUSERS, "shoes": SHOES, "hair": HAIR}
-    torso(p, b, c)
+    torso(p, b, c, waist=0.93)
     p.hull("shirt", [b.p(x, f, u) for f in (0.104, 0.116) for x, u in ((-0.07, 1.455), (0.07, 1.455), (0, 1.3))], SHIRT, "chest")
     for s in (1, -1):
         p.blob(f"bow{s}", b.p(s * 0.04, 0.125, 1.43), (0.03, 0.015, 0.02), RED, "chest")

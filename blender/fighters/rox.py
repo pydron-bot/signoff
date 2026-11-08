@@ -2,7 +2,7 @@
 a hot-pink leotard over purple tights, teal leg warmers and headband,
 sweatbands, big permed hair, white high-tops. Rushdown: fast, relentless."""
 from lib.anim import Stance
-from lib.body import arms, head, legs
+from lib.body import arms, head, legs, torso
 
 ID = "rox"
 HEIGHT = 1.75
@@ -19,10 +19,10 @@ LIPS = (200, 40, 80)
 
 def costume(p, b):
     c = {"skin": SKIN, "top": LEOTARD, "bottom": LEOTARD, "shoes": SHOES, "hair": HAIR, "shoulders": 0.19}
-    # The leotard: a high-cut body over tights; no jacket hem.
-    p.hull("pelvis", b.ring(0.16, 0.095, 0.035, 0.86) + b.ring(0.165, 0.095, 0.035, 1.02), LEOTARD, "hips")
-    p.hull("belly", b.ring(0.15, 0.095, 0.03, 1.0) + b.ring(0.155, 0.095, 0.03, 1.26), LEOTARD, "spine")
-    p.hull("chest", b.ring(0.155, 0.1, 0.03, 1.23) + b.ring(0.19, 0.1, 0.04, 1.44), LEOTARD, "chest")
+    # The leotard, all one colour from the hips up, with a narrower waist.
+    torso(p, b, c, waist=0.8, shape=[
+        (0.80, 0.13, 0.085), (0.88, 0.158, 0.094), (0.98, 0.16, 0.094), (1.08, 0.146, 0.09), (1.17, 0.143, 0.092),
+        (1.26, 0.155, 0.1), (1.35, 0.178, 0.104), (1.43, 0.19, 0.1), (1.475, 0.15, 0.072)])
     p.hull("neckline", [b.p(x, 0.104, u) for x, u in ((-0.08, 1.445), (0.08, 1.445), (0, 1.36))] + [b.p(x, 0.09, u) for x, u in ((-0.08, 1.445), (0.08, 1.445), (0, 1.36))], SKIN, "chest")
 
     hp, hr = head(p, b, c)

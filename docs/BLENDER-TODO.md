@@ -62,8 +62,13 @@ Curbside's: `blender/build.py` drives `blender/lib/` and one module per
 fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
 
 - `lib/rig.py`: the shared skeleton and posing in fighter space.
-- `lib/body.py`: the shared blockout (torso, head, arms, legs) scaled to
-  each fighter's height and girth; fighters add their costume parts.
+- `lib/body.py`: the shared body, scaled to each fighter's height and
+  girth; fighters add their costume parts. **Stylised low-poly** (flat
+  colours, faceted): the torso (pelvis to shoulders), neck, arms (shoulder
+  to wrist) and legs (hip to ankle) are continuous meshes whose skin weights
+  blend across each joint, so elbows, knees, hips, waist and neck bend
+  instead of hinging; hands, heads, shoes and costume pieces are rigid
+  parts on one bone. About 1,500 triangles a fighter.
 - `lib/anim.py`: **every clip is generated.** State clips come from the
   fighter's stance. Move clips come from the move data
   (`blender/data/fighters.json`, written from `src/sim` by
@@ -158,20 +163,20 @@ are authored facing right with the left foot and left hand leading.
 
 ### 2. Dale Storm
 
-- [ ] Model and textures (≤ 20k triangles, 2 materials). *Blockout done (1,040 triangles); detail waits on the style.*
+- [ ] Model and textures (≤ 20k triangles, 2 materials). *Stylised low-poly with blended joints (1,468 triangles); more detail waits on the style.*
 - [x] State clips (table below)
 - [x] Move clips (generated table below), each matched to its active frames and hitbox
 - [x] Projectile visuals as separate small meshes in the same file: `fx_cold_front` (a rolling wall of wind, about 0.7 × 1.4 m) and `fx_hail` (a hailstone, about 0.6 × 0.5 m)
 
 ### 3. Rox Vega
 
-- [ ] Model and textures. *Blockout done: leotard, tights, leg warmers, headband, big hair (1,036 triangles).*
+- [ ] Model and textures. *Stylised low-poly: leotard, tights, leg warmers, headband, big hair (1,468 triangles).*
 - [x] State clips
 - [x] Move clips
 
 ### 4. Hollis Bey
 
-- [ ] Model and textures; the flashlight and key ring as props in the `props` material. *Blockout done: uniform, cap, moustache, belt with flashlight and keys as props (1,160 triangles).*
+- [ ] Model and textures; the flashlight and key ring as props in the `props` material. *Blockout done: uniform, cap, moustache, belt with flashlight and keys as props (1,616 triangles).*
 - [x] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
 - [x] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
 

@@ -53,14 +53,17 @@ def vertex_colour_material(name, roughness=0.75):
 
 
 class Parts:
-    """Collects mesh parts, each rigidly bound to one bone and painted one
-    colour, then joins them into a single skinned mesh."""
+    """Collects mesh parts (rigid ones bound to one bone, tubes blended
+    across joints), then joins them into a single skinned mesh."""
 
     def __init__(self, materials):
         self.materials = materials
         self.objects = []
 
-    def _add(self, name, bm, colour, bone, mat=0):
+    def _add(self, name, bm, colour, bone, mat=0, face_colours=None, weights=None):
+        """A part from a bmesh. One colour and one bone by default; or a
+        colour per face (`face_colours`) and per-vertex bone weights
+        (`weights`: a {bone: weight} dict per vertex), for blended joints."""
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         mesh = bpy.data.meshes.new(name)
         bm.to_mesh(mesh)
@@ -76,10 +79,66 @@ class Parts:
         lin = (*srgb_to_linear(colour), 1.0)
         for c in col.data:
             c.color = lin
-        vg = obj.vertex_groups.new(name=bone)
-        vg.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+        if face_colours:
+            for p, fc in zip(mesh.polygons, face_colours):
+                lc = (*srgb_to_linear(fc), 1.0)
+                for li in p.loop_indices:
+                    col.data[li].color = lc
+        if weights is None:
+            vg = obj.vertex_groups.new(name=bone)
+            vg.add(list(range(len(mesh.vertices))), 1.0, "REPLACE")
+        else:
+            groups = {}
+            for vi, wd in enumerate(weights):
+                for bname, w in wd.items():
+                    if w <= 0:
+                        continue
+                    if bname not in groups:
+                        groups[bname] = obj.vertex_groups.new(name=bname)
+                    groups[bname].add([vi], w, "REPLACE")
         self.objects.append(obj)
         return obj
+
+    def tube(self, name, rings, verts=10, mat=0, caps=True):
+        """A continuous tube through rings of (centre, radius, weights,
+        colour): `weights` is {bone: weight} for the ring's vertices, and the
+        colour paints the span from this ring to the next. Frames are carried
+        along the tube (parallel transport) so it never twists. Radius may
+        be (r_side, r_depth) for an oval section."""
+        import math
+
+        bm = bmesh.new()
+        cs = [fighter(*r[0]) for r in rings]
+        tangents = []
+        for i in range(len(cs)):
+            a, b = cs[max(0, i - 1)], cs[min(len(cs) - 1, i + 1)]
+            tangents.append((b - a).normalized())
+        u = Vector((1, 0, 0)) if abs(tangents[0].x) < 0.9 else Vector((0, 1, 0))
+        u = (u - tangents[0] * u.dot(tangents[0])).normalized()
+        loops, vweights = [], []
+        for i, (c, (_, rad, wts, _col)) in enumerate(zip(cs, rings)):
+            t = tangents[i]
+            u = (u - t * u.dot(t)).normalized()
+            v = t.cross(u)
+            rx, ry = rad if isinstance(rad, tuple) else (rad, rad)
+            ring = []
+            for k in range(verts):
+                a = 2 * math.pi * k / verts
+                ring.append(bm.verts.new(c + u * math.cos(a) * rx + v * math.sin(a) * ry))
+                vweights.append(wts)
+            loops.append(ring)
+        face_colours = []
+        for i in range(len(loops) - 1):
+            for k in range(verts):
+                j = (k + 1) % verts
+                bm.faces.new((loops[i][k], loops[i][j], loops[i + 1][j], loops[i + 1][k]))
+                face_colours.append(rings[i][3])
+        if caps:
+            bm.faces.new(list(reversed(loops[0])))
+            face_colours.append(rings[0][3])
+            bm.faces.new(loops[-1])
+            face_colours.append(rings[-2][3])
+        return self._add(name, bm, rings[0][3], None, mat, face_colours, vweights)
 
     def seg(self, name, a, b, ra, rb, colour, bone, verts=8, mat=0, spin=0.0):
         """A tapered tube from a to b (fighter space), radius ra at a and rb at b."""

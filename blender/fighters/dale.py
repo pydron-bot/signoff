@@ -25,7 +25,7 @@ WIND = (170, 205, 225)
 
 def costume(p, b):
     c = {"skin": SKIN, "top": JACKET, "bottom": TROUSERS, "shoes": SHOES, "hair": HAIR}
-    torso(p, b, c)
+    torso(p, b, c, waist=0.93)  # the blazer covers the hips
     p.hull("shirt", [b.p(-0.075, 0.104, 1.455), b.p(0.075, 0.104, 1.455), b.p(0, 0.104, 1.25),
                      b.p(-0.075, 0.116, 1.455), b.p(0.075, 0.116, 1.455), b.p(0, 0.116, 1.25)], SHIRT, "chest")
     # The wide tie, 1987's widest.

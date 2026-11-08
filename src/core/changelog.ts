@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.4.2',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: ['The fighters\' 3D models now bend smoothly at the elbows, knees, hips and waist, in a stylised low-poly look. The fights still use grey boxes for now.'],
+  },
+  {
     version: '0.4.1',
     date: '2026-11-08',
     title: 'Behind the scenes',

@@ -21,7 +21,7 @@ BEAM = (255, 240, 170)
 
 def costume(p, b):
     c = {"skin": SKIN, "top": SHIRT, "bottom": NAVY, "shoes": BOOTS, "hair": HAIR, "shoulders": 0.23}
-    torso(p, b, c, hem=False)
+    torso(p, b, c)  # shirt tucked in at the belt
     p.hull("belt", b.ring(0.175, 0.105, 0.035, 0.94) + b.ring(0.175, 0.105, 0.035, 1.0), BELT, "hips")
     p.box("buckle", b.p(0, 0.112, 0.97), (0.05, 0.012, 0.04), METAL, "hips", mat=1)
     p.box("badge", b.p(0.08, 0.118, 1.36), (0.035, 0.01, 0.045), GOLD, "chest", mat=1)
