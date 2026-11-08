@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.10.0',
+    date: '2026-11-08',
+    title: 'Move list',
+    notes: [
+      'MOVE LIST on the title screen and in the pause menu: every special, string, finisher and system move for each fighter, with its input and what it does (heights, launches, knockdowns, safe on block).',
+      'In Training it also shows frame data: startup, and advantage on block and on hit.',
+      'Switch fighters with ‹ › (or left and right); the controls for keyboard, gamepad and touch are at the bottom.',
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-11-08',
     title: 'Stay tuned',

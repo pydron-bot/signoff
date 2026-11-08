@@ -1,0 +1,21 @@
+// The move list is built from the data: every special, string and finisher
+// shows up, with an input a player can follow.
+import { describe, expect, it } from 'vitest';
+import { moveList } from '../src/game/moveList';
+import { FIGHTERS } from '../src/sim';
+
+describe('move list', () => {
+  for (const f of Object.values(FIGHTERS)) {
+    it(`${f.name}: every special, string and finisher, with its input`, () => {
+      const list = moveList(f.id);
+      const section = (t: string) => list.find((s) => s.title.startsWith(t))!.rows;
+      expect(section('Specials').map((r) => r.name).sort()).toEqual(Object.values(f.specials).map((id) => f.moves[id].name).sort());
+      expect(section('Specials').every((r) => r.input.endsWith('SP'))).toBe(true);
+      expect(section('Strings').map((r) => r.name)).toEqual(f.strings.map((s) => s.name));
+      for (const r of section('Strings')) expect(r.input).toMatch(/^(↓ |→ |← )?(FP|BP|FK|BK)( · (FP|BP|FK|BK))+$/);
+      expect(section('Finishers').map((r) => r.name).sort()).toEqual(f.finishers.map((x) => x.name).sort());
+      for (const r of section('Finishers')) expect(r.input).toMatch(/^([←→↑↓] )+(FP|BP|FK|BK|BLOCK)$|^win with /);
+      for (const s of list) for (const r of s.rows) expect(r.input.length).toBeGreaterThan(0);
+    });
+  }
+});

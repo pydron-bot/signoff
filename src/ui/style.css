@@ -698,3 +698,79 @@ body[data-scene='title'] #app {
     display: none;
   }
 }
+
+/* ---- Move list (over the pause menu) ---- */
+.movelist {
+  position: fixed;
+  inset: calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 16px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 10, 30, 0.96);
+  border: 2px solid #1b2fa8;
+  z-index: 21;
+  pointer-events: auto;
+  text-shadow: none;
+}
+
+.movelist-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(241, 237, 224, 0.2);
+}
+
+.movelist-title {
+  flex: 1;
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-size: clamp(0.8rem, 2.4vw, 1.1rem);
+}
+
+.movelist-btn {
+  font: inherit;
+  min-width: 44px;
+  min-height: 36px;
+  color: #f1ede0;
+  background: rgba(20, 22, 40, 0.75);
+  border: 1px solid rgba(241, 237, 224, 0.3);
+  cursor: pointer;
+}
+
+.movelist-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.3rem 0.8rem 0.8rem;
+  font-size: clamp(0.65rem, 1.8vw, 0.85rem);
+}
+
+.movelist-section {
+  margin: 0.8rem 0 0.3rem;
+  color: #7fd7ff;
+  letter-spacing: 0.2em;
+}
+
+.movelist-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) minmax(7rem, 1fr) 2fr;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(241, 237, 224, 0.08);
+}
+
+.movelist-input {
+  color: #ffd75e;
+  white-space: nowrap;
+}
+
+.movelist-notes {
+  opacity: 0.85;
+  white-space: pre-line;
+}
+
+.movelist-legend {
+  margin-top: 1rem;
+  opacity: 0.7;
+  white-space: pre-line;
+  font-size: 0.9em;
+}

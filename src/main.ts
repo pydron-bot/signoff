@@ -17,6 +17,7 @@ import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
+import { MoveListPanel } from './ui/moveListPanel';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
@@ -50,6 +51,7 @@ pauseBtn.textContent = 'II';
 pauseBtn.hidden = true;
 document.body.append(pauseBtn);
 const replayBar = new ReplayBar(document.body);
+const moveListPanel = new MoveListPanel(document.body);
 initKeyboard();
 // Audio may only start from a gesture (iOS Safari).
 for (const t of ['pointerdown', 'keydown'] as const) window.addEventListener(t, () => sound.unlock());
@@ -224,6 +226,7 @@ function showTitle(): void {
     { label: 'TRAINING', id: 'play-training', run: () => play('training') },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
+    { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle) },
     { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
@@ -251,6 +254,14 @@ function showTitle(): void {
   ]);
 }
 
+/** The move list, starting on one fighter (the others a swipe away); `back` reopens whatever menu it came from. */
+function showMoves(first: string, frames: boolean, back: () => void): void {
+  titleMenu.hide();
+  pauseMenu.hide();
+  moveListPanel.onClose = back;
+  moveListPanel.show(FIGHTER_IDS, Math.max(0, FIGHTER_IDS.indexOf(first)), frames);
+}
+
 function pause(on: boolean): void {
   if (!session || demo || over) return;
   paused = on;
@@ -275,6 +286,7 @@ function pause(on: boolean): void {
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );
   }
+  rows.splice(1, 0, { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(s.match.fighters[0].fighter, s.training, () => pause(true)) });
   rows.push({ label: 'QUIT TO TITLE', run: startDemo });
   pauseMenu.show('PAUSED', rows);
 }
@@ -353,7 +365,8 @@ renderer.compile(arena.scene, arena.camera);
 
 renderer.setAnimationLoop((now) => {
   for (const k of menuPresses()) {
-    if (pauseMenu.open) {
+    if (moveListPanel.open) moveListPanel.key(k);
+    else if (pauseMenu.open) {
       if (k === 'pause' && !over) pause(false);
       else pauseMenu.key(k);
     } else if (titleMenu.open && demo) titleMenu.key(k);
