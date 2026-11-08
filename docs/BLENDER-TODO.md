@@ -97,6 +97,11 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   `fist_R`, `hurt`, `ko`, `win` (and `jaw` for Mumbles), keyed by every
   clip in the same action (strikes close the fist, hits swap to `hurt`, KO
   closes the eyes, `win` grins).
+- `lib/stage.py` and `blender/stages/weather.py`: the stage, built the same
+  way without a rig: plain meshes merged per object, painted atlases (`set`
+  2048², `props` 512², written to `art/textures/stage-weather_*.png`), a
+  translucent `water` material, and the light rig per segment in the
+  `lights` node's extras. See *What's in the stage's GLB*.
 - `lib/glb.py`: compacts each export without changing it: channels that
   never leave the rest pose are dropped, rotations are stored as normalised
   16-bit integers, all animation data shares one bufferView. It also writes
@@ -107,7 +112,7 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
 
 ```sh
 npm run art                  # all: art/*.blend, public/assets/fighters/*.glb
-npm run art -- --only dale   # one target
+npm run art -- --only dale   # one target (rig, a fighter, or weather for the stage)
 npx -y -p playwright@1.63.0 node tools/art-check.mjs   # measures each GLB in three.js, screenshots to art-out/
 npm test                     # tests/assets.test.ts checks every GLB against this file
 ```
@@ -136,6 +141,36 @@ face or `&view=fx` for the effect meshes.
 - `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
   skinned, in the `props` material. **The game should detach and hide them**
   and place copies itself; the viewer lines them up beside the fighter.
+
+### What's in the stage's GLB
+
+`public/assets/stages/weather.glb` (2,856 triangles, 0.74 MB). Stage space:
+x along the stage, y up, z toward the camera; the origin is the arena's
+centre on the floor. The fighters fight on z = 0; the walls (studio flats)
+stand at x = ±6.4 and the weather-map wall at z = −4.
+
+| Object | What | The game |
+| --- | --- | --- |
+| `set` | The studio, every static piece in one mesh (`set`): floor with tape marks, the cyclorama wall, the weather map and its header, the green screen on its stand, the flats, and beyond them a monitor cart with colour bars, a spare camera, a lamp, apple boxes and a coil of cable | Always shown |
+| `seg_storm` | The storm map over the weather map, papers on the floor | Shown in segments 2 and 3 |
+| `seg_flood` | The flood map in front of that; junction boxes and cables snaking from the wall to the puddles, bare wires at x = ±3.0, z = −0.6 | Shown in segment 3 |
+| `prop_dolly_left`, `prop_dolly_right` | TV cameras on pedestal dollies, 0.9 × 1.0 × 0.7 m, lens toward the centre; origin on the floor under the middle, placed at x = ∓4.6, z = −0.2 | Moved to the prop's x; spun while rolling |
+| `fx_lightning` | An 8 m bolt with two branches and a ground flash, foot at the origin | At the struck spot during the strike, every other frame |
+| `fx_scorch` | A scorch mark 1.2 m across | Left on each struck spot for the rest of the round |
+| `fx_paper` | One sheet of forecast paper | Instanced, blowing with the wind |
+| `fx_water` | The flood: a 28 × 15 m plane at 0.22 m, in `water` (45% opaque) | Segment 3 |
+| `fx_puddle` | A live puddle, 1.6 m across, painted with rings | At the hazard's spots in segment 3; glows on the warning and the shock |
+| `fx_spark` | A crackle about 0.5 m across | At the bare wires: now and then, flickering on the warning, constant on the shock |
+| `lights` (no mesh) | `extras.segments`: one light rig per segment, JSON (below) | Set on each segment change |
+
+The light rig per segment (three.js space; positions are directions for
+directional lights):
+
+| Segment | Background | Ambient | Key | Rim |
+| --- | --- | --- | --- | --- |
+| The Studio | `#07070c` | `#ffffff` × 1.4 | `#fff1e0` × 2.2 from (−3, 6, 8) | `#9fb4ff` × 0.6 from (2, 5, −4) |
+| The Forecast Comes True | `#04050a` | `#a8b4d8` × 0.85, + 3.5 `#e8f0ff` with each bolt | `#c8d4ff` × 1.5 from (4, 7, 6) | `#7a88c8` × 0.8 from (−2, 6, −4) |
+| Flood Warning | `#03080a` | `#9cc8d0` × 1.0 | `#d8f0f4` × 1.7 from (−2, 6, 7) | `#4fa8c8` × 0.7 from (0, −1, 4), the water's bounce |
 
 ### The rig
 
@@ -213,11 +248,13 @@ are authored facing right with the left foot and left hand leading.
 The arena runs from −6 m to +6 m; fighters start at ±1.5 m. Three segments,
 one per round (DESIGN.md has the details):
 
-- [ ] Segment 1, The Studio: studio floor, the weather-map wall behind (about 40 × 10 m at 4 m back), a green screen (4 × 3 m), studio flats at the walls (±6.4 m)
-- [ ] Two camera dollies (0.9 × 1.0 × 0.7 m) at x = ±4.6 m: they get kicked and roll along the floor, so model them as separate objects (`prop_dolly_left`, `prop_dolly_right`)
-- [ ] Segment 2, The Forecast Comes True: the same set in a storm (a darker light rig, papers blowing); a lightning bolt mesh (`fx_lightning`, about 8 m tall) and a floor scorch decal
-- [ ] Segment 3, Flood Warning: knee-deep water plane (`fx_water`) at about 0.22 m, and two live puddles (1.6 m wide) at x = ±3 m with sparking cables
-- [ ] Studio lighting suggestion per segment (the game uses a fixed light setup per segment; note the colours and angles you used)
+*Done (Nov 8): `blender/stages/weather.py`, in the game in 0.7.0. Contents under* What's in the stage's GLB.
+
+- [x] Segment 1, The Studio: studio floor, the weather-map wall behind (about 40 × 10 m at 4 m back), a green screen (4 × 3 m), studio flats at the walls (±6.4 m)
+- [x] Two camera dollies (0.9 × 1.0 × 0.7 m) at x = ±4.6 m: they get kicked and roll along the floor, so model them as separate objects (`prop_dolly_left`, `prop_dolly_right`)
+- [x] Segment 2, The Forecast Comes True: the same set in a storm (a darker light rig, papers blowing); a lightning bolt mesh (`fx_lightning`, about 8 m tall) and a floor scorch decal
+- [x] Segment 3, Flood Warning: knee-deep water plane (`fx_water`) at about 0.22 m, and two live puddles (1.6 m wide) at x = ±3 m with sparking cables
+- [x] Studio lighting suggestion per segment (the game uses a fixed light setup per segment; note the colours and angles you used)
 
 ### 7. Fixes from the first review (Nov 8, game side)
 
@@ -302,7 +339,7 @@ Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now;
 
 ### 10. Next
 
-- [ ] Weather at Eleven (step 6 above) after the fixes and the detail pass: it's the only stage, and every match is played on it.
+- [x] Weather at Eleven (step 6 above) after the fixes and the detail pass: it's the only stage, and every match is played on it.
 - [ ] Clip variety (later): a second `win` and `intro` per fighter.
 
 ### State clips (every fighter)
@@ -522,3 +559,5 @@ worked into the move data, and the table above updates itself.
 - **Answers to the notes above (game side):** mirroring to face left, the shorter walk loops, the root motion in `down`, `getup`, `thrown`, `ko`, `launched`, the teleports and `Star Jump`, and effect-only hits are all fine; the game will follow them when it loads the GLBs (next on the game side, with the clips played by simulation frame). Rox having one material is fine (the contract is body plus *at most* props).
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.
 - **In the game (0.5.0, game side).** The fights play the GLBs, posed by sim frame (`src/render/pose.ts` picks clip and frame from the state; `src/render/fighterModel.ts` loads and samples them). One-shot clips clamp on their last frame (`LoopOnce`, `clampWhenFinished`); `tape_skip` plays for Tape Skip with `fx_tape_skip` from `dale.glb`; morph targets play from the clips as they are. Materials are switched to Lambert (same colour, atlas and vertex colours) to light like the set and cost less on a phone. Effects: projectiles stand on their box's bottom centre (`fx_cold_front`, `fx_hail`, `fx_hand_puppet`); `fx_flashlight_beam` is stretched over its hitbox; `fx_isobar_lasso`, `fx_key_ring`, `fx_lariat_trail` and `fx_tape_skip` sit on the fighter as modelled; `fx_heat_lightning` follows the raised hand. Move effects show from the first hit to 4 frames after the last. `tests/pose.test.ts` plays CPU matches with every fighter and fails if the game asks for a clip a GLB doesn't have.
+- **Weather at Eleven (Nov 8, art and game side).** The stage is built like the fighters (`npm run art -- --only weather`) and checked by `tests/assets.test.ts` (objects, materials, atlas sizes, a light rig per segment, the dollies' places and size, the hazards' sizes). In the game (0.7.0) `src/render/stageView.ts` swaps the flat stand-in panels for it once loaded and sets the segment's lights; the stand-ins stay if the GLB can't load. Three passes for the whole set: `set`, `seg_storm`, `seg_flood`, plus the props and effects, about 10 draw calls with everything on show.
+- **Vertex colours (game side, Nov 8).** The GLBs keep each part's flat colour as `COLOR_0`, and three.js multiplies a material's atlas by its vertex colours, so the fighters were drawn with their atlases tinted twice (skin about a quarter darker and oranger than painted). Fixed in 0.7.0: materials with an atlas ignore vertex colours, in the game and the viewer. The art is unchanged; it now shows as painted.

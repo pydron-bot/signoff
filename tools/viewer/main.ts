@@ -74,6 +74,11 @@ async function load(id: string): Promise<void> {
   model = gltf.scene;
   // The model faces glTF +Z: a quarter turn faces it along +x, and the holder's mirror flips it.
   model.rotation.y = Math.PI / 2;
+  // As the game does: the atlas already holds each part's flat colour (COLOR_0), so don't tint it twice.
+  model.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+    if (m?.map) m.vertexColors = false;
+  });
   // Effect meshes (fx_*) ride along in the file; the game places them itself.
   // Here they're lined up behind and to the right, 1 m apart.
   let n = 0;

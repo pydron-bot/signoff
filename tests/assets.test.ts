@@ -1,10 +1,11 @@
 // Checks every fighter GLB in public/assets/fighters against the contracts
 // in docs/BLENDER-TODO.md: the shared skeleton, the budget, the size, and
 // each clip's exact length (move clips from the move data). Fighters without
-// a GLB yet are skipped.
+// a GLB yet are skipped. The stage GLB (public/assets/stages/weather.glb) is
+// checked for the objects, materials and lights the game reads.
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { FIGHTERS } from '../src/sim';
+import { FIGHTERS, STAGES } from '../src/sim';
 import { toFloat } from '../src/sim/fixed';
 
 /** The shared skeleton's deform bones (blender/lib/rig.py DEFORM). */
@@ -49,9 +50,9 @@ const MAX_TEXTURE: Record<string, number> = { body: 1024, props: 512 };
 const FPS = 60;
 
 interface Gltf {
-  nodes: { name: string; mesh?: number; skin?: number }[];
+  nodes: { name: string; mesh?: number; skin?: number; translation?: number[]; extras?: Record<string, unknown> }[];
   skins?: { joints: number[] }[];
-  materials?: { name: string; pbrMetallicRoughness?: { baseColorTexture?: { index: number } } }[];
+  materials?: { name: string; alphaMode?: string; pbrMetallicRoughness?: { baseColorTexture?: { index: number } } }[];
   textures?: { source: number }[];
   images?: { bufferView: number; mimeType: string }[];
   bufferViews: { byteOffset?: number; byteLength: number }[];
@@ -153,3 +154,74 @@ for (const f of Object.values(FIGHTERS)) {
     });
   });
 }
+
+/** What the game reads from a stage GLB (src/render/stageView.ts). */
+const STAGE_OBJECTS = ['set', 'seg_storm', 'seg_flood', 'prop_dolly_left', 'prop_dolly_right', 'fx_lightning', 'fx_scorch', 'fx_paper', 'fx_water', 'fx_puddle', 'fx_spark'];
+const STAGE_TEXTURE: Record<string, number> = { set: 2048, props: 512 };
+
+const stagePath = 'public/assets/stages/weather.glb';
+describe.skipIf(!existsSync(stagePath))('weather.glb', () => {
+  const g = existsSync(stagePath) ? readGlb(stagePath) : ({} as ReturnType<typeof readGlb>);
+  const node = (name: string) => g.nodes.find((n) => n.name === name);
+  /** A mesh node's bounds, in its own space: [min, max] of x, y, z. */
+  const bounds = (name: string): [number[], number[]] => {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const p of g.meshes[node(name)!.mesh!].primitives) {
+      const a = g.accessors[p.attributes.POSITION];
+      for (let k = 0; k < 3; k++) {
+        lo[k] = Math.min(lo[k], a.min![k]);
+        hi[k] = Math.max(hi[k], a.max![k]);
+      }
+    }
+    return [lo, hi];
+  };
+
+  it('has every object the game shows, as plain meshes', () => {
+    for (const name of STAGE_OBJECTS) expect(node(name)?.mesh, name).toBeDefined();
+    expect(g.skins ?? []).toEqual([]);
+  });
+
+  it('keeps to set, props and water: atlases within size, water a translucent flat colour', () => {
+    let tris = 0;
+    for (const m of g.meshes) for (const p of m.primitives) tris += g.accessors[p.indices ?? p.attributes.POSITION].count / 3;
+    expect(tris).toBeLessThanOrEqual(20000);
+    for (const m of g.materials ?? []) {
+      expect(['set', 'props', 'water']).toContain(m.name);
+      const tex = m.pbrMetallicRoughness?.baseColorTexture;
+      if (m.name === 'water') {
+        expect(m.alphaMode).toBe('BLEND');
+        continue;
+      }
+      const img = g.images![g.textures![tex!.index].source];
+      const view = g.bufferViews[img.bufferView];
+      const [w, h] = pngSize(g.bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+      expect(Math.max(w, h), `${m.name} atlas size`).toBeLessThanOrEqual(STAGE_TEXTURE[m.name]);
+    }
+  });
+
+  it('has a light rig for each segment', () => {
+    const lights = JSON.parse(String(node('lights')?.extras?.segments)) as { segment: string }[];
+    expect(lights.map((l) => l.segment)).toEqual(STAGES.weather.segments.map((s) => s.name));
+  });
+
+  it('puts the dollies where the sim does, at the size of their box', () => {
+    const props = STAGES.weather.segments[0].props;
+    for (const [k, name] of ['prop_dolly_left', 'prop_dolly_right'].entries()) {
+      expect(node(name)!.translation![0]).toBeCloseTo(toFloat(props[k].x), 3);
+      const [lo, hi] = bounds(name);
+      expect(lo[1]).toBeCloseTo(0, 2);
+      expect(hi[0] - lo[0]).toBeLessThanOrEqual(0.9 + 1e-3);
+      expect(hi[1] - lo[1]).toBeLessThanOrEqual(1.0 + 1e-3);
+      expect(hi[2] - lo[2]).toBeLessThanOrEqual(0.7 + 1e-3);
+    }
+  });
+
+  it('sizes the hazards to their data: an 8 m bolt, a 1.6 m puddle, water at 0.22 m', () => {
+    expect(bounds('fx_lightning')[1][1]).toBeCloseTo(8, 1);
+    expect(bounds('fx_lightning')[0][1]).toBeCloseTo(0, 1);
+    const [plo, phi] = bounds('fx_puddle');
+    expect(phi[0] - plo[0]).toBeCloseTo(1.6, 1);
+    expect(bounds('fx_water')[0][1]).toBeCloseTo(0.22, 2);
+  });
+});

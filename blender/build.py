@@ -1,8 +1,9 @@
 """Build the game's art headless (docs/BLENDER-TODO.md has the contracts).
 
-    blender -b --factory-startup -P blender/build.py -- [--only rig|dale] [--out public/assets] [--art art]
+    blender -b --factory-startup -P blender/build.py -- [--only rig|dale|weather] [--out public/assets] [--art art]
 
-Writes the .blend sources to art/ and the GLBs to public/assets/. The
+Writes the .blend sources to art/ and the GLBs to public/assets/ (fighters/
+and stages/). The
 scripts are the source of truth for now: rebuilding overwrites art/*.blend.
 """
 import argparse
@@ -14,7 +15,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-TARGETS = ["rig", "dale", "rox", "hollis", "mumbles"]
+TARGETS = ["rig", "dale", "rox", "hollis", "mumbles", "weather"]
+STAGES = {"weather"}
 
 
 def build_rig_file(out_dir, art_dir):
@@ -45,6 +47,10 @@ def main():
         try:
             if name == "rig":
                 build_rig_file(out, art)
+            elif name in STAGES:
+                from lib.stage import build as build_stage
+
+                build_stage(importlib.import_module(f"stages.{name}"), out, art)
             else:
                 from lib.fighter import build
 

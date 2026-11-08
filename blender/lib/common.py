@@ -66,11 +66,12 @@ class Parts:
         self.objects = []
         self.meta = []
 
-    def _add(self, name, bm, colour, bone, mat=0, face_colours=None, weights=None, paint=None, shapes=None):
+    def _add(self, name, bm, colour, bone, mat=0, face_colours=None, weights=None, paint=None, shapes=None, recalc=True):
         """A part from a bmesh. One colour and one bone by default; or a
         colour per face (`face_colours`) and per-vertex bone weights
         (`weights`: a {bone: weight} dict per vertex), for blended joints."""
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        if recalc:
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         mesh = bpy.data.meshes.new(name)
         bm.to_mesh(mesh)
         bm.free()
@@ -188,6 +189,16 @@ class Parts:
         bmesh.ops.convex_hull(bm, input=bm.verts)
         bmesh.ops.dissolve_limit(bm, angle_limit=0.01, verts=bm.verts, edges=bm.edges)
         return self._add(name, bm, colour, bone, mat, paint=paint, shapes=shapes)
+
+    def poly(self, name, points, colour, bone, facing, mat=0, paint=None):
+        """One flat, one-sided face through fighter-space points (walls,
+        floors, decals), its front toward `facing` (a fighter-space direction)."""
+        bm = bmesh.new()
+        f = bm.faces.new([bm.verts.new(fighter(*p)) for p in points])
+        f.normal_update()
+        if f.normal.dot(fighter(*facing)) < 0:
+            f.normal_flip()
+        return self._add(name, bm, colour, bone, mat, paint=paint, recalc=False)
 
     def box(self, name, centre, size, colour, bone, mat=0, paint=None, shapes=None):
         """An axis-aligned box (size in side, fwd, up)."""

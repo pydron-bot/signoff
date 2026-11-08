@@ -52,12 +52,14 @@ function prepare(id: string, g: GLTF): FighterArt {
 /**
  * Lambert, not the file's PBR material: the flat-coloured, faceted style
  * doesn't need it, it lights the same as the set, and it's cheaper on a phone.
+ * The GLBs keep each part's flat colour as COLOR_0, already painted into the
+ * atlas: with an atlas, vertex colours would tint it a second time.
  */
-function lambert(src: THREE.MeshStandardMaterial): THREE.MeshLambertMaterial {
+export function lambert(src: THREE.MeshStandardMaterial): THREE.MeshLambertMaterial {
   const m = new THREE.MeshLambertMaterial({
     color: src.color,
     map: src.map,
-    vertexColors: src.vertexColors,
+    vertexColors: src.vertexColors && !src.map,
     transparent: src.transparent,
     opacity: src.opacity,
     alphaTest: src.alphaTest,

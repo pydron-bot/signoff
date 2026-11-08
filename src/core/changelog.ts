@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.7.0',
+    date: '2026-11-08',
+    title: 'Weather at Eleven, built',
+    notes: [
+      "Channel 0's weather studio is now a real set: the forecast map, the green screen, studio flats, and TV cameras on dollies you can kick.",
+      'Round 2, the forecast comes true: a storm map, papers blowing in the wind, lightning bolts that light up the studio and scorch the floor.',
+      'Round 3, flood warning: knee-deep water, live cables crackling in the puddles, and the puddles glow when the current runs.',
+      'Each segment has its own lighting.',
+      'The fighters show their painted colours as intended (they were drawn a little dark).',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-11-08',
     title: 'Instant replay',

@@ -1,5 +1,6 @@
 /**
- * The fight view: the Weather at Eleven set as flat panels and the fighters'
+ * The fight view: the Weather at Eleven set (its GLB, src/render/stageView.ts,
+ * or flat stand-in panels until it loads) and the fighters'
  * 3D models posed by sim frame (src/render/pose.ts), or grey boxes the size
  * of their hurtboxes with attacks as limb boxes (lit red while they can
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
@@ -144,12 +145,12 @@ export class Arena {
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+    const ambient = new THREE.AmbientLight(0xffffff, 1.4);
+    this.scene.add(ambient);
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(-3, 6, 8);
     this.scene.add(key);
-    this.buildSet();
-    this.stage = new StageView(this.scene, this.wallMat);
+    this.stage = new StageView(this.scene, this.buildSet(), this.wallMat, { ambient, key });
     this.sparks = new Sparks(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
@@ -175,29 +176,32 @@ export class Arena {
     }
   }
 
-  /** Weather at Eleven: studio floor, the weather map wall and a green screen. */
-  private buildSet(): void {
+  /** Weather at Eleven's stand-in until its GLB loads: studio floor, the weather map wall and a green screen. */
+  private buildSet(): THREE.Group {
+    const set = new THREE.Group();
+    this.scene.add(set);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 24), new THREE.MeshLambertMaterial({ color: 0x24242c }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.z = 8;
-    this.scene.add(floor);
+    set.add(floor);
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 10), this.wallMat);
     wall.position.set(0, 4, -4);
-    this.scene.add(wall);
+    set.add(wall);
     // The map: a few coastline-ish slabs on the wall, one mesh per colour.
     const land = new THREE.Mesh(new THREE.BoxGeometry(5, 2.4, 0.05), new THREE.MeshBasicMaterial({ color: 0x2f6b3a }));
     land.position.set(-2.5, 2.8, -3.95);
-    this.scene.add(land);
+    set.add(land);
     const screen = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ color: 0x1fa64a }));
     screen.position.set(4.2, 2.3, -3.9);
-    this.scene.add(screen);
+    set.add(screen);
     // The arena walls at ±6: studio flats.
     const flatMat = new THREE.MeshLambertMaterial({ color: 0x3a3440 });
     for (const x of [-6.4, 6.4]) {
       const flat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5, 4), flatMat);
       flat.position.set(x, 2.5, -1);
-      this.scene.add(flat);
+      set.add(flat);
     }
+    return set;
   }
 
   private fighterView(): FighterView {
@@ -214,13 +218,14 @@ export class Arena {
   }
 
   /**
-   * A new match: the fighters' colours, and their models (loaded in the
-   * background; grey boxes until they arrive). Resolves when the models are
-   * in the scene, so shaders can be compiled before the fight.
+   * A new match: the fighters' colours, and their models and the stage's
+   * (loaded in the background; grey boxes and flat panels until they
+   * arrive). Resolves when they are in the scene, so shaders can be
+   * compiled before the fight.
    */
   setFighters(m: MatchState): Promise<void> {
     this.poses.reset();
-    const loads: Promise<void>[] = [];
+    const loads: Promise<void>[] = [this.stage.load()];
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
       v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
