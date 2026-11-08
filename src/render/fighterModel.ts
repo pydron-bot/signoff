@@ -85,6 +85,8 @@ export class FighterModel {
   private clip = '';
   private frame = -1;
   private tint = -1;
+  private readonly handL: THREE.Object3D;
+  private readonly handR: THREE.Object3D;
 
   constructor(art: FighterArt) {
     this.art = art;
@@ -108,9 +110,18 @@ export class FighterModel {
       m.material = mat;
     });
     this.root.add(model);
+    // GLTFLoader drops the dot from bone names (hand.L is handL).
+    this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
+    this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
     this.mixer = new THREE.AnimationMixer(model);
     for (const [name, c] of art.clips) {
       const action = this.mixer.clipAction(c);
+      // One-shot clips clamp on their last frame: repeating would wrap the
+      // last frame (time = duration) back to the first (a KO would stand up).
+      if (!LOOPS.has(name)) {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      }
       action.paused = true;
       this.actions.set(name, { action, frames: clipFrames(c) });
     }
@@ -118,6 +129,19 @@ export class FighterModel {
 
   has(clip: string): boolean {
     return this.actions.has(clip);
+  }
+
+  /**
+   * The world position of whichever hand is higher (an uppercut's fist),
+   * into `out`. Poses the skeleton first, so call after pose().
+   */
+  raisedHand(out: THREE.Vector3): THREE.Vector3 {
+    this.root.updateMatrixWorld(true);
+    this.handL.getWorldPosition(out);
+    const ly = out.y;
+    this.handR.getWorldPosition(out);
+    if (ly > out.y) this.handL.getWorldPosition(out);
+    return out;
   }
 
   /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */

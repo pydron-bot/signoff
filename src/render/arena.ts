@@ -7,7 +7,7 @@
  * and never changes the match. About 16 draw calls, plus 3 to 7 a model.
  */
 import * as THREE from 'three';
-import { fighterData, moveData, type MatchState, type SimEvent } from '../sim';
+import { fighterData, moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
 import { FighterModel, loadFighterArt } from './fighterModel';
@@ -22,14 +22,47 @@ const PROJECTILE = 0x9fe8ff;
 const FLASH = 0x9a9a9a;
 
 /**
- * Effect meshes by fighter and move: a projectile's look, or (for moves
- * without one) shown over the move's first hit, stretched to its hitbox.
+ * How an effect mesh is placed: on a projectile (its look), stretched over
+ * the move's first hitbox, on the fighter as modelled (in fighter space,
+ * mirrored with them), or on the raised fist. All but projectiles show from
+ * the move's first hit to its last, plus a few frames to read.
  */
-const EFFECTS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  dale: { 'Cold Front': 'fx_cold_front', 'Cold Front+': 'fx_cold_front', 'Pressure Drop': 'fx_hail', 'Pressure Drop+': 'fx_hail' },
-  hollis: { Flashlight: 'fx_flashlight_beam', 'Flashlight+': 'fx_flashlight_beam' },
-  mumbles: { 'Hand Puppet': 'fx_hand_puppet', 'Hand Puppet+': 'fx_hand_puppet' },
+type Place = 'projectile' | 'stretch' | 'fighter' | 'fist';
+interface Effect {
+  readonly fx: string;
+  readonly place: Place;
+}
+const fx = (name: string, place: Place): Effect => ({ fx: name, place });
+const EFFECTS: Readonly<Record<string, Readonly<Record<string, Effect>>>> = {
+  dale: {
+    'Cold Front': fx('fx_cold_front', 'projectile'),
+    'Cold Front+': fx('fx_cold_front', 'projectile'),
+    'Pressure Drop': fx('fx_hail', 'projectile'),
+    'Pressure Drop+': fx('fx_hail', 'projectile'),
+    'Isobar Lasso': fx('fx_isobar_lasso', 'fighter'),
+    'Isobar Lasso+': fx('fx_isobar_lasso', 'fighter'),
+    'Heat Lightning': fx('fx_heat_lightning', 'fist'),
+  },
+  rox: {
+    'Leg Warmer Lariat': fx('fx_lariat_trail', 'fighter'),
+    'Leg Warmer Lariat+': fx('fx_lariat_trail', 'fighter'),
+  },
+  hollis: {
+    Flashlight: fx('fx_flashlight_beam', 'stretch'),
+    'Flashlight+': fx('fx_flashlight_beam', 'stretch'),
+    'Key Ring': fx('fx_key_ring', 'fighter'),
+    'Key Ring+': fx('fx_key_ring', 'fighter'),
+  },
+  mumbles: {
+    'Hand Puppet': fx('fx_hand_puppet', 'projectile'),
+    'Hand Puppet+': fx('fx_hand_puppet', 'projectile'),
+  },
 };
+/** Tape Skip's smear, shared by every fighter; it lives in Dale's GLB. */
+const TAPE_SKIP_FX = 'fx_tape_skip';
+const TAPE_SKIP_ART = 'dale';
+/** Frames an effect lingers after the move's last hit. */
+const EFFECT_LINGER = 4;
 /** fx_flashlight_beam's size: 1.8 m long (glTF +z), 0.82 m across. */
 const BEAM_LENGTH = 1.8;
 const BEAM_WIDTH = 0.82;
@@ -89,6 +122,9 @@ export class Arena {
   private readonly pose: Pose = { clip: '', frame: 1, loop: false };
   /** 3D models (when loaded) or grey boxes. */
   models = true;
+  /** Effects shared by every fighter (Tape Skip's smear), once loaded. */
+  private shared: Map<string, THREE.Object3D> | null = null;
+  private readonly fist = new THREE.Vector3();
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
   private shake = 0;
   private camX = 0;
@@ -125,6 +161,10 @@ export class Arena {
       this.scene.add(p);
       this.projectileFx.push(new EffectSlot(this.scene));
     }
+    loadFighterArt(TAPE_SKIP_ART).then(
+      (art) => (this.shared = art.fx),
+      () => undefined,
+    );
     const edges = new THREE.EdgesGeometry(this.unit);
     const lm = new THREE.LineBasicMaterial({ color: 0x40ff80 });
     for (let i = 0; i < 2; i++) {
@@ -277,9 +317,41 @@ export class Arena {
 
   /** Shows the fx mesh for a fighter's move in `slot`, if it has one and the art is loaded. */
   private showFx(slot: EffectSlot, fighter: string, move: string): boolean {
-    const name = this.models ? EFFECTS[fighter]?.[move] : undefined;
+    const e = this.models ? EFFECTS[fighter]?.[move] : undefined;
     const v = this.fighters[0].id === fighter ? this.fighters[0] : this.fighters[1];
-    return slot.show(name ?? '', name ? v.model?.art.fx.get(name) : undefined);
+    return slot.show(e?.fx ?? '', e ? v.model?.art.fx.get(e.fx) : undefined);
+  }
+
+  /** A fighter's effect for this frame (not projectiles): the move's, or Tape Skip's smear. */
+  private drawEffect(f: FighterState, v: FighterView, mv: MoveData | null, x: number, y: number, clip: string): void {
+    const slot = v.effect;
+    const model = this.models ? v.model : null;
+    if (model && clip === 'tape_skip' && slot.show(TAPE_SKIP_FX, this.shared?.get(TAPE_SKIP_FX))) {
+      slot.holder.position.set(x, y, 0);
+      slot.holder.scale.set(f.facing, 1, 1);
+      return;
+    }
+    const e = mv && model ? EFFECTS[f.fighter]?.[f.move] : undefined;
+    const first = mv?.hits[0];
+    const last = mv?.hits[mv.hits.length - 1];
+    if (!e || e.place === 'projectile' || !first || !last || f.moveFrame < first.frames[0] || f.moveFrame > last.frames[1] + EFFECT_LINGER) {
+      slot.show('', undefined);
+      return;
+    }
+    if (!slot.show(e.fx, model!.art.fx.get(e.fx))) return;
+    const h = slot.holder;
+    if (e.place === 'stretch') {
+      const b = first.box;
+      const bh = toFloat(b.h);
+      h.position.set(x + f.facing * toFloat(b.x), y + toFloat(b.y) + bh / 2, 0);
+      h.scale.set(f.facing * (toFloat(b.w) / BEAM_LENGTH), bh / BEAM_WIDTH, 1);
+    } else if (e.place === 'fist') {
+      h.position.copy(model!.raisedHand(this.fist));
+      h.scale.set(f.facing, 1, 1);
+    } else {
+      h.position.set(x, y, 0);
+      h.scale.set(f.facing, 1, 1);
+    }
   }
 
   private drawFighter(m: MatchState, i: number): void {
@@ -323,15 +395,12 @@ export class Arena {
     // The limb: the current move's active hitbox, else its hurtbox reach.
     // With a model it's only drawn as part of the hitbox view.
     v.limb.visible = false;
-    let beam: Box | null = null;
     if (mv) {
       // Plain loops: this runs every frame, so no closures.
       let active: Box | null = null;
       let box: Box | null = null;
       for (const h of mv.hits) if (f.moveFrame >= h.frames[0] && f.moveFrame <= h.frames[1]) active = h.box;
       for (const h of mv.hurt) if (f.moveFrame >= h.frames[0] && f.moveFrame <= h.frames[1]) box = h.box;
-      const h0 = mv.hits[0];
-      if (h0 && f.moveFrame >= h0.frames[0] && f.moveFrame <= h0.frames[1]) beam = h0.box;
       box = active ?? box;
       if (box && (!model || this.showBoxes)) {
         v.limb.visible = true;
@@ -340,14 +409,8 @@ export class Arena {
         v.limbMat.opacity = model ? 0.4 : 1;
       }
     }
-    // An effect hit (the Flashlight's beam) stretched over the first hit's box.
-    if (beam && shown && this.showFx(v.effect, f.fighter, f.move)) {
-      const bx = toFloat(beam.x);
-      const bw = toFloat(beam.w);
-      const bh = toFloat(beam.h);
-      v.effect.holder.position.set(x + f.facing * bx, y + toFloat(beam.y) + bh / 2, 0);
-      v.effect.holder.scale.set(f.facing * (bw / BEAM_LENGTH), bh / BEAM_WIDTH, 1);
-    } else v.effect.show('', undefined);
+    if (shown) this.drawEffect(f, v, mv, x, y, model ? this.pose.clip : '');
+    else v.effect.show('', undefined);
     // Flash when hit; dim while invulnerable on the floor.
     const base = COLORS[f.fighter] ?? 0xcccccc;
     v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);

@@ -3,7 +3,7 @@
 Nov 8, 2026 · for a Claude instance (or person) working in Blender
 
 This is the art hand-off for SIGN-OFF, a 2.5D fighting game in the browser
-(three.js). The game is playable today with grey boxes; this file lists the
+(three.js). The fights use these models (0.5.0; FIGHTERS on the title switches to grey boxes); this file lists the
 models, rig and animation clips it needs, and the rules they must follow to
 drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 `CLAUDE.md` has the codebase rules; nothing here asks you to touch game code.
@@ -521,3 +521,4 @@ worked into the move data, and the table above updates itself.
   - The viewer has two new views: FACE (a close-up, for expressions) and EFFECTS.
 - **Answers to the notes above (game side):** mirroring to face left, the shorter walk loops, the root motion in `down`, `getup`, `thrown`, `ko`, `launched`, the teleports and `Star Jump`, and effect-only hits are all fine; the game will follow them when it loads the GLBs (next on the game side, with the clips played by simulation frame). Rox having one material is fine (the contract is body plus *at most* props).
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.
+- **In the game (0.5.0, game side).** The fights play the GLBs, posed by sim frame (`src/render/pose.ts` picks clip and frame from the state; `src/render/fighterModel.ts` loads and samples them). One-shot clips clamp on their last frame (`LoopOnce`, `clampWhenFinished`); `tape_skip` plays for Tape Skip with `fx_tape_skip` from `dale.glb`; morph targets play from the clips as they are. Materials are switched to Lambert (same colour, atlas and vertex colours) to light like the set and cost less on a phone. Effects: projectiles stand on their box's bottom centre (`fx_cold_front`, `fx_hail`, `fx_hand_puppet`); `fx_flashlight_beam` is stretched over its hitbox; `fx_isobar_lasso`, `fx_key_ring`, `fx_lariat_trail` and `fx_tape_skip` sit on the fighter as modelled; `fx_heat_lightning` follows the raised hand. Move effects show from the first hit to 4 frames after the last. `tests/pose.test.ts` plays CPU matches with every fighter and fails if the game asks for a clip a GLB doesn't have.

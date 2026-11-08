@@ -8,7 +8,7 @@ import { PoseTracker, type Pose } from '../src/render/pose';
 import { FIGHTERS, INTRO_FRAMES, Input, createMatch, step, type MatchState, type SimEvent } from '../src/sim';
 import { place, ready } from './sim-helpers';
 
-const { RIGHT, DOWN, UP, FP, FK, BLOCK } = Input;
+const { RIGHT, DOWN, UP, FP, FK, BLOCK, METER } = Input;
 
 /** Runs the match with a tracker, as the arena does; returns P1's (or `who`'s) pose after. */
 function drive(m: MatchState, t: PoseTracker, n: number, in0: number | ((k: number) => number) = 0, in1 = 0, who = 0): Pose {
@@ -112,6 +112,21 @@ describe('poses', () => {
     seen.clear();
     for (let k = 0; k < 60; k++) seen.add(drive(m, t, 1).clip);
     expect(seen).toContain('land_attack');
+  });
+
+  it('plays the tape_skip clip for a Tape Skip, not the dash', () => {
+    const m = ready();
+    place(m, -2, 2);
+    m.fighters[0].meter = 3000;
+    const t = new PoseTracker();
+    drive(m, t, 1);
+    // A jab, then Tape Skip once it's past startup.
+    const p = drive(m, t, 12, (k) => (k === 0 ? FP : k === 9 ? METER : 0));
+    expect(m.fighters[0].mode).toBe('dash');
+    expect(p.clip).toBe('tape_skip');
+    // A plain dash is still a dash.
+    drive(m, t, 40);
+    expect(drive(m, t, 6, (k) => (k === 0 || k === 2 ? RIGHT : 0)).clip).toBe('dash');
   });
 
   it('every clip asked for in CPU matches is in the fighter\'s GLB, at a frame from 1', () => {

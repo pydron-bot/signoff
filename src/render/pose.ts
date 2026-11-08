@@ -95,8 +95,13 @@ export class PoseTracker {
       t.hitstop = f.hitstop;
       t.wasCrouching = f.crouching;
     }
-    // A fresh hit restarts the reaction, high or low.
+    // A fresh hit restarts the reaction, high or low; Tape Skip's dash has a clip of its own.
     for (const e of ev) {
+      if (e.type === 'tapeSkip') {
+        const t = this.tracks[e.player];
+        if (t.state === 'dash') t.clip = 'tape_skip';
+        continue;
+      }
       if (e.type !== 'hit' && e.type !== 'hazardHit') continue;
       const i = e.type === 'hit' ? e.defender : e.player;
       const t = this.tracks[i];

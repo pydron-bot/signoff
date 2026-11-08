@@ -29,7 +29,7 @@ export const CHANGELOG: readonly Release[] = [
     title: 'Now in 3D',
     notes: [
       'The fighters are their 3D models in every fight, posed frame by frame with the action, so what you see is what hits.',
-      'Cold Front, the hail, the Flashlight beam and the hand puppet have their own looks.',
+      'The specials\' effects are in: Cold Front, the hail, the Isobar Lasso and Heat Lightning; the Lariat\'s ribbon; the Flashlight beam and the Key Ring; the hand puppet; and Tape Skip\'s VHS smear.',
       'Hit boxes in Training show through the models. FIGHTERS on the title screen switches back to grey boxes.',
       'The models are saved for offline play with the rest of the game.',
     ],
