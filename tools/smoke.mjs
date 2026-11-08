@@ -1,6 +1,7 @@
 // Smoke test: builds for /signoff/, serves dist, and loads the game on
-// desktop and the iPhone 15 Pro landscape profile, failing on any page
-// error or a blank canvas. Screenshots land in smoke-out/.
+// desktop and the iPhone 15 Pro landscape profile, then starts a fight
+// against the CPU and lets it run, failing on any page error, a blank
+// canvas or a HUD that never appears. Screenshots land in smoke-out/.
 //   npx -y -p playwright@1.63.0 node tools/smoke.mjs
 import { execSync, spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -63,8 +64,15 @@ try {
         ),
     );
     await page.screenshot({ path: `smoke-out/${name}.png` });
-    const ok = errors.length === 0 && drew && /^v\d/.test(version ?? '');
-    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}`);
+    // Into a fight: the HUD shows and the clock runs.
+    await page.click('#play-cpu');
+    await page.waitForTimeout(4000);
+    const hud = await page.isVisible('.hud');
+    const clock = await page.textContent('.hud-clock');
+    await page.screenshot({ path: `smoke-out/${name}-fight.png` });
+    const fought = hud && /^0:\d\d$/.test(clock ?? '');
+    const ok = errors.length === 0 && drew && fought && /^v\d/.test(version ?? '');
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : '  (no fight)'}`);
     for (const e of errors) console.log(`     ${e}`);
     failed ||= !ok;
     await ctx.close();

@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.2.0',
+    date: '2026-11-08',
+    title: 'First fight',
+    notes: [
+      'Dale Storm and Rox Vega fight on Weather at Eleven, in grey boxes: strings, specials, throws, the Signal meter and Technical Difficulties all work.',
+      'VS CPU (easy, normal, hard), Training with frame advantage and a dummy, and VS Player with gamepads.',
+      'Keyboard, gamepad and touch controls. Best of three, with a commercial break between rounds.',
+    ],
+  },
+  {
     version: '0.1.0',
     date: '2026-11-07',
     title: 'Test card',
