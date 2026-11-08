@@ -11,7 +11,7 @@ import type { Box } from '../sim/types';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a };
+const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b };
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
@@ -42,6 +42,9 @@ export class Arena {
   private readonly stage: StageView;
   private readonly sparks: Sparks;
   private frame = 0;
+  private projectileMat!: THREE.MeshBasicMaterial;
+  /** The hand puppet decoy: a little wooden figure, not a blast of wind. */
+  private readonly decoyMat = new THREE.MeshLambertMaterial({ color: 0xa8804e });
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
@@ -54,6 +57,7 @@ export class Arena {
     this.sparks = new Sparks(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
+    this.projectileMat = pm;
     for (let i = 0; i < 8; i++) {
       const p = new THREE.Mesh(this.unit, pm);
       p.visible = false;
@@ -141,8 +145,9 @@ export class Arena {
       const mesh = this.projectiles[i];
       mesh.visible = p.active;
       if (!p.active) continue;
-      const box = moveData(m.fighters[p.owner].fighter, p.move).spawns[p.spawn].projectile.box;
-      placeBox(mesh, box, toFloat(p.x), toFloat(p.y), p.dir, 0.6);
+      const pd = moveData(m.fighters[p.owner].fighter, p.move).spawns[p.spawn].projectile;
+      mesh.material = pd.decoy ? this.decoyMat : this.projectileMat;
+      placeBox(mesh, pd.box, toFloat(p.x), toFloat(p.y), p.dir, pd.decoy ? 0.4 : 0.6);
     }
     // Follow the midpoint; pull back as the fighters part.
     const mid = (toFloat(a.x) + toFloat(b.x)) / 2;
@@ -167,6 +172,9 @@ export class Arena {
     const x = toFloat(f.x);
     const y = toFloat(f.y);
     v.group.position.set(0, 0, 0);
+    // Off screen mid-teleport.
+    const mv = f.mode === 'move' ? moveData(f.fighter, f.move) : null;
+    v.group.visible = !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
     const air = f.y > 0 || f.mode === 'air' || f.mode === 'launched';
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
     const hurt = air ? d.hurt.air : f.crouching ? d.hurt.crouch : d.hurt.stand;
@@ -204,7 +212,13 @@ export class Arena {
     // Flash white when hit; dim while invulnerable on the floor.
     const base = COLORS[f.fighter] ?? 0xcccccc;
     v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);
-    v.bodyMat.emissive.setHex(f.mode === 'cinematic' ? 0x401010 : f.mode === 'guard' || f.mode === 'blockstun' ? 0x10203a : 0);
+    // Glows: armour orange, an unblockable winding up purple, guarding blue.
+    let glow = 0;
+    if (f.mode === 'cinematic') glow = 0x401010;
+    else if (f.mode === 'guard' || f.mode === 'blockstun') glow = 0x10203a;
+    else if (mv && mv.armor && !f.armorUsed && f.moveFrame >= mv.armor[0] && f.moveFrame <= mv.armor[1]) glow = 0x803000;
+    else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') glow = 0x501070;
+    v.bodyMat.emissive.setHex(glow);
     const o = this.hurtOverlays[i];
     o.visible = this.showBoxes && !lying;
     if (o.visible) placeBox(o, hurt, x, y, f.facing, 0.55);

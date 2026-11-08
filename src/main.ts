@@ -11,13 +11,13 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
-import { Input, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
+import { FIGHTERS, Input, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 
-const FIGHTER_IDS = ['dale', 'rox'];
+const FIGHTER_IDS = Object.keys(FIGHTERS);
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 const SETUP_KEY = 'signoff.setup';
@@ -90,7 +90,10 @@ function startDemo(): void {
   demo = true;
   over = false;
   paused = false;
-  session = newSession('demo', 'dale', 'rox');
+  // A different pairing behind the title each time.
+  const a = Math.floor(Math.random() * FIGHTER_IDS.length);
+  const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
+  session = newSession('demo', FIGHTER_IDS[a], FIGHTER_IDS[b]);
   hud.hide();
   touch.show(false);
   pauseBtn.hidden = true;
@@ -114,7 +117,7 @@ function play(mode: Mode): void {
   document.body.dataset.scene = 'fight';
 }
 
-const names = FIGHTER_IDS.map((id) => fighterData(id).name);
+const names = FIGHTER_IDS.map((id) => `${fighterData(id).name} · ${fighterData(id).style}`);
 
 function showTitle(): void {
   titleMenu.show('', [

@@ -24,14 +24,16 @@ interface Level {
   tech: number;
   antiAir: number;
   boost: number;
+  /** Chance a decoy draws its attention. */
+  fooled: number;
   /** Frames between decisions. */
   think: number;
 }
 
 const LEVELS: Readonly<Record<CpuLevel, Level>> = {
-  easy: { delay: 24, block: 20, tech: 10, antiAir: 15, boost: 0, think: 26 },
-  normal: { delay: 15, block: 50, tech: 35, antiAir: 45, boost: 30, think: 14 },
-  hard: { delay: 10, block: 78, tech: 60, antiAir: 75, boost: 80, think: 7 },
+  easy: { delay: 24, block: 20, tech: 10, antiAir: 15, boost: 0, fooled: 70, think: 26 },
+  normal: { delay: 15, block: 50, tech: 35, antiAir: 45, boost: 30, fooled: 40, think: 14 },
+  hard: { delay: 10, block: 78, tech: 60, antiAir: 75, boost: 80, fooled: 15, think: 7 },
 };
 
 const HISTORY = 32;
@@ -49,6 +51,10 @@ interface Seen {
   projectile: boolean;
   /** Visibly stuck in the recovery of a move. */
   recovering: boolean;
+  /** Winding up an attack that can't be blocked, in reach. */
+  unblockable: boolean;
+  /** Holding a guard. */
+  guarding: boolean;
 }
 
 /** A plan gives the input for each frame until it returns null. */
@@ -57,12 +63,17 @@ type Plan = (me: FighterState, t: number) => number | null;
 export class Cpu {
   private readonly rng: RngState;
   private readonly level: Level;
-  private readonly seen: Seen[] = Array.from({ length: HISTORY }, () => ({ x: 0, y: 0, mode: 'idle', move: '', threat: false, low: false, projectile: false, recovering: false }));
+  private readonly seen: Seen[] = Array.from({ length: HISTORY }, () => ({ x: 0, y: 0, mode: 'idle', move: '', threat: false, low: false, projectile: false, recovering: false, unblockable: false, guarding: false }));
   private frames = 0;
   private plan: Plan | null = null;
   private planT = 0;
   private wait = 0;
   private techTried = false;
+  /** Whether the opponent's current decoy has its attention. */
+  private decoyFools = false;
+  private decoyWas = false;
+  /** It has a decoy of its own out. */
+  private ownDecoy = false;
 
   constructor(
     private readonly player: 0 | 1,
@@ -110,13 +121,19 @@ export class Cpu {
       this.start(hold(away, 18));
       return this.next0(me);
     }
-    if (s.threat && me.fighter === 'dale' && Math.abs(s.x - me.x) < fx(1.2) && this.roll(this.level.block / 4)) {
+    // An unblockable is jumped, not blocked.
+    if (s.unblockable && this.roll(this.level.block)) {
+      this.start(hold(UP | (me.facing > 0 ? LEFT : RIGHT), 4));
+      return this.next0(me);
+    }
+    const style = fighterData(me.fighter).style;
+    if (s.threat && style === 'zoner' && Math.abs(s.x - me.x) < fx(1.2) && this.roll(this.level.block / 4)) {
       // Heat Lightning goes through the attack.
       this.start(tap(SPECIAL));
       return this.next0(me);
     }
     // Rushdown jumps over projectiles from range.
-    if (s.projectile && me.fighter === 'rox' && this.roll(this.level.antiAir)) {
+    if (s.projectile && (style === 'rushdown' || style === 'trickster') && this.roll(this.level.antiAir)) {
       this.start(hold(UP | (me.facing > 0 ? RIGHT : LEFT), 4));
       return this.next0(me);
     }
@@ -153,14 +170,34 @@ export class Cpu {
     s.y = them.y;
     s.mode = them.mode;
     s.move = them.move;
+    s.guarding = them.mode === 'guard' || them.mode === 'blockstun';
+    // A decoy on screen may draw its attention: decided once per decoy.
+    let decoyX: Fx | null = null;
+    for (let p = 0; p < m.projectiles.length; p++) {
+      const P = m.projectiles[p];
+      if (P.active && P.owner !== this.player && moveData(them.fighter, P.move).spawns[P.spawn].projectile.decoy) decoyX = P.x;
+    }
+    this.ownDecoy = false;
+    for (let p = 0; p < m.projectiles.length; p++) {
+      const P = m.projectiles[p];
+      if (P.active && P.owner === this.player && moveData(me.fighter, P.move).spawns[P.spawn].projectile.decoy) this.ownDecoy = true;
+    }
+    if (decoyX !== null && !this.decoyWas) this.decoyFools = this.roll(this.level.fooled);
+    this.decoyWas = decoyX !== null;
+    if (decoyX !== null && this.decoyFools) {
+      s.x = decoyX;
+      s.y = 0;
+    }
     const dist = Math.abs(them.x - me.x);
     let threat = false;
     let low = false;
     s.recovering = false;
+    s.unblockable = false;
     if (them.mode === 'move') {
       const mv = moveData(them.fighter, them.move);
       s.recovering = mv.lastActive > 0 && them.moveFrame > mv.lastActive && mv.total - them.moveFrame > 8;
       threat = mv.hits.length > 0 && dist < reach(mv) + fx(0.4);
+      s.unblockable = threat && mv.hits.some((h) => h.height === 'unblockable');
       // A crouching attack is the tell for a low.
       low = mv.stance === 'crouch';
     }
@@ -196,7 +233,6 @@ export class Cpu {
     const dist = Math.abs(s.x - me.x);
     const fwd = me.facing > 0 ? RIGHT : LEFT;
     const back = me.facing > 0 ? LEFT : RIGHT;
-    const zoner = me.fighter === 'dale';
     const r = nextInt(this.rng, 100);
 
     if (!me.tdUsed && me.health * 100 < me.maxHealth * TD_HEALTH_PCT && dist < fx(1.3) && this.roll(25)) {
@@ -209,38 +245,58 @@ export class Cpu {
     }
     // Punish what it can see recovering.
     if (s.recovering && dist < fx(1.3) && this.roll(this.level.antiAir)) {
-      this.start(r < 60 ? this.string(d, me) : tap(DOWN | BK));
+      this.start(d.style === 'grappler' && r < 50 ? this.special(me, fwd | SPECIAL) : r < 60 ? this.string(d, me) : tap(DOWN | BK));
       return;
     }
-    if (s.recovering && !zoner && dist < fx(2.4) && this.roll(this.level.antiAir)) {
+    if (s.recovering && d.style === 'rushdown' && dist < fx(2.4) && this.roll(this.level.antiAir)) {
       this.start(this.special(me, back | SPECIAL));
       return;
     }
+    switch (d.style) {
+      case 'zoner':
+        return this.zoner(me, d, dist, r, fwd, back);
+      case 'rushdown':
+        return this.rushdown(me, d, dist, r, fwd, back);
+      case 'grappler':
+        return this.grappler(me, d, s, dist, r, fwd, back);
+      case 'trickster':
+        return this.trickster(me, d, s, dist, r, fwd, back);
+    }
+  }
+
+  /** Keeps out: projectiles from range, the lasso at mid range. */
+  private zoner(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
     if (dist < fx(1.05)) {
       if (r < 50) this.start(this.string(d, me));
       else if (r < 62) this.start(tap(THROW));
-      else if (r < 74) this.start(tap(DOWN | (zoner ? BK : FK)));
-      else if (r < 86) this.start(this.special(me, (zoner ? back : DOWN) | SPECIAL));
-      else this.start(zoner ? taps([back, 0, back]) : hold(BLOCK, 16));
+      else if (r < 74) this.start(tap(DOWN | BK));
+      else if (r < 86) this.start(this.special(me, back | SPECIAL));
+      else this.start(taps([back, 0, back]));
+    } else if (dist > fx(2.6)) {
+      if (r < 45) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 70) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 85) this.start(hold(fwd, 20));
+      else this.start(hold(0, 10));
+    } else if (dist > fx(1.4)) {
+      if (r < 35) this.start(this.special(me, back | SPECIAL));
+      else if (r < 55) this.start(tap(DOWN | FK));
+      else if (r < 80) this.start(hold(back, 18));
+      else this.start(this.special(me, fwd | SPECIAL));
+    } else {
+      this.start(r < 50 ? hold(fwd, 10) : r < 75 ? tap(DOWN | FK) : taps([back, 0, back]));
+    }
+  }
+
+  /** Gets in and stays in. */
+  private rushdown(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+    if (dist < fx(1.05)) {
+      if (r < 50) this.start(this.string(d, me));
+      else if (r < 62) this.start(tap(THROW));
+      else if (r < 74) this.start(tap(DOWN | FK));
+      else if (r < 86) this.start(this.special(me, DOWN | SPECIAL));
+      else this.start(hold(BLOCK, 16));
       return;
     }
-    if (zoner) {
-      if (dist > fx(2.6)) {
-        if (r < 45) this.start(this.special(me, fwd | SPECIAL));
-        else if (r < 70) this.start(this.special(me, DOWN | SPECIAL));
-        else if (r < 85) this.start(hold(fwd, 20));
-        else this.start(hold(0, 10));
-      } else if (dist > fx(1.4)) {
-        if (r < 35) this.start(this.special(me, back | SPECIAL));
-        else if (r < 55) this.start(tap(DOWN | FK));
-        else if (r < 80) this.start(hold(back, 18));
-        else this.start(this.special(me, fwd | SPECIAL));
-      } else {
-        this.start(r < 50 ? hold(fwd, 10) : r < 75 ? tap(DOWN | FK) : taps([back, 0, back]));
-      }
-      return;
-    }
-    // Rushdown: get in.
     if (r < 40) this.start(taps([fwd, 0, fwd]));
     else if (r < 60) this.start(hold(fwd, 24));
     else if (r < 72 && dist < fx(2.2)) this.start(this.special(me, back | SPECIAL));
@@ -248,6 +304,53 @@ export class Cpu {
     else if (r < 86 && dist > fx(1.2) && dist < fx(2.6)) this.start(this.special(me, SPECIAL));
     else if (r < 92) this.start(hold(UP | fwd, 4));
     else this.start(hold(fwd, 12));
+  }
+
+  /** Walks in behind armour; grabs anyone who blocks. */
+  private grappler(me: FighterState, d: FighterData, s: Seen, dist: Fx, r: number, fwd: number, back: number): void {
+    if (dist < fx(1.1)) {
+      const grab = s.guarding ? 40 : 22;
+      if (r < grab) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < grab + 25) this.start(this.string(d, me));
+      else if (r < grab + 33) this.start(tap(THROW));
+      else if (r < grab + 40) this.start(tap(DOWN | BK));
+      else this.start(hold(BLOCK, 14));
+    } else if (dist < fx(2.2)) {
+      if (r < 25) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 42) this.start(this.special(me, back | SPECIAL));
+      else if (r < 70) this.start(hold(fwd, 20));
+      else if (r < 88) this.start(this.special(me, SPECIAL));
+      else this.start(taps([fwd, 0, fwd]));
+    } else {
+      if (r < 45) this.start(hold(fwd, 30));
+      else if (r < 65) this.start(taps([fwd, 0, fwd]));
+      else if (r < 85) this.start(this.special(me, SPECIAL));
+      else this.start(hold(back, 10));
+    }
+  }
+
+  /** Never where you expect: teleports, decoys, the joke, but mostly pressure. */
+  private trickster(me: FighterState, d: FighterData, s: Seen, dist: Fx, r: number, fwd: number, back: number): void {
+    const puppetOut = this.ownDecoy;
+    if (dist < fx(1.05)) {
+      const joke = s.guarding ? 18 : 6;
+      if (r < 55) this.start(this.string(d, me));
+      else if (r < 66) this.start(tap(THROW));
+      else if (r < 66 + joke) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 78 + joke) this.start(tap(back | BP));
+      else this.start(this.special(me, back | SPECIAL));
+    } else if (dist < fx(2.5)) {
+      if (r < 12) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 20 && !puppetOut) this.start(this.special(me, SPECIAL));
+      else if (r < 75) this.start(taps([fwd, 0, fwd]));
+      else if (r < 88) this.start(hold(UP | fwd, 4));
+      else this.start(hold(fwd, 14));
+    } else {
+      if (r < 20 && !puppetOut) this.start(this.special(me, SPECIAL));
+      else if (r < 70) this.start(taps([fwd, 0, fwd]));
+      else if (r < 85) this.start(this.special(me, fwd | SPECIAL));
+      else this.start(hold(fwd, 24));
+    }
   }
 
   /** A special, boosted when it has the meter and the nerve. */

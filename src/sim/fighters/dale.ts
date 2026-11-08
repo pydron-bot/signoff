@@ -39,7 +39,7 @@ const moves = table(
     kind: 'special',
     total: 48,
     boost: 'Cold Front+',
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 40, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
   }),
   move('Cold Front+', {
     name: 'Cold Front (boosted)',
@@ -99,7 +99,7 @@ export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
   style: 'zoner',
-  health: 860,
+  health: 830,
   walkFwd: fx(0.04),
   walkBack: fx(0.035),
   jumpVy: fx(0.2),

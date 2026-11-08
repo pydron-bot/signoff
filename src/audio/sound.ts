@@ -132,7 +132,21 @@ export class Sound {
           this.tone(300, 0.15, 0.2, 'sawtooth', 200);
           break;
         case 'special':
-          this.tone(200, 0.16, 0.06, 'sawtooth', 600);
+          if (e.move.startsWith('Knock-Knock')) {
+            // Two knocks on a wooden door.
+            this.tone(180, 0.08, 0.35, 'triangle', 120, 0.05);
+            this.tone(180, 0.08, 0.35, 'triangle', 120, 0.25);
+            this.say("Knock knock. Who's there?");
+          } else this.tone(200, 0.16, 0.06, 'sawtooth', 600);
+          break;
+        case 'teleport':
+          // A puppet string pulled tight.
+          this.tone(330, 0.25, 0.1, 'triangle', 990);
+          break;
+        case 'decoyPop':
+          this.tone(900, 0.12, 0.15, 'square', 200);
+          this.noise(0.1, 2000, 0.15);
+          if (Math.random() < 0.5) this.laugh(0.1);
           break;
         case 'boost':
           [660, 880, 1320].forEach((f, k) => this.tone(f, 0.08, 0.07, 'square', undefined, k * 0.05));
@@ -141,6 +155,8 @@ export class Sound {
           this.noise(0.25, 900, 0.3);
           break;
         case 'throw':
+          // Clocking In punches the time clock.
+          if (e.move.startsWith('Clocking In')) this.tone(1400, 0.05, 0.15, 'square', undefined, 0.02);
           this.tone(90, 0.25, 0.4, 'sine', 50);
           this.noise(0.12, 500, 0.2, 'lowpass');
           break;
