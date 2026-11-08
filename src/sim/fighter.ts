@@ -554,7 +554,8 @@ function spawnProjectile(m: MatchState, i: number, mv: MoveData, k: number): voi
   p.y = f.y + pd.y;
   p.life = pd.life;
   p.hitsLeft = pd.hits;
-  p.rehit = 0;
+  // A delayed projectile can't hit until it sets off.
+  p.rehit = pd.delay ?? 0;
 }
 
 /** Pushboxes keep the fighters apart, except where a move passes through. */
@@ -593,8 +594,11 @@ export function updateProjectiles(m: MatchState): void {
   for (const p of m.projectiles) {
     if (!p.active) continue;
     const pd = moveData(m.fighters[p.owner].fighter, p.move).spawns[p.spawn].projectile;
-    p.x += p.dir * pd.vx;
-    p.y += pd.vy;
+    // A delayed one holds still where it appeared until its delay is up.
+    if (pd.life - p.life >= (pd.delay ?? 0)) {
+      p.x += p.dir * pd.vx;
+      p.y += pd.vy;
+    }
     p.life--;
     if (p.rehit > 0) p.rehit--;
     const edge = stageData(m.stage).segments[m.segment].halfWidth + fx(1);

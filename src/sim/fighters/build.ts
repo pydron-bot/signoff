@@ -67,6 +67,7 @@ export interface ProjectileSpec {
   rehit?: number;
   groundEnds?: boolean;
   decoy?: boolean;
+  delay?: number;
   effect: EffectSpec;
 }
 
@@ -82,6 +83,7 @@ export function projectile(s: ProjectileSpec): ProjectileData {
     rehit: s.rehit ?? 0,
     groundEnds: s.groundEnds,
     decoy: s.decoy,
+    delay: s.delay,
     effect: effect(s.effect),
   };
 }
@@ -98,6 +100,7 @@ export interface MoveSpec {
   passThrough?: Window;
   invuln?: Window;
   armor?: Window;
+  counter?: MoveData['counter'];
   chain?: Partial<Record<Attack, string>>;
   cancel?: Window;
   boost?: string;
@@ -116,6 +119,11 @@ export function move(id: string, s: MoveSpec): MoveData {
     starts.push(s.throwData.frames[0]);
     ends.push(s.throwData.frames[1]);
   }
+  // A counter is "active" while it reads.
+  if (s.counter) {
+    starts.push(s.counter.frames[0]);
+    ends.push(s.counter.frames[1]);
+  }
   return {
     id,
     name: s.name,
@@ -129,6 +137,7 @@ export function move(id: string, s: MoveSpec): MoveData {
     passThrough: s.passThrough,
     invuln: s.invuln,
     armor: s.armor,
+    counter: s.counter,
     chain: s.chain ?? {},
     cancel: s.cancel,
     boost: s.boost,

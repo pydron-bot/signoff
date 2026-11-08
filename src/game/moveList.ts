@@ -42,7 +42,10 @@ function traits(m: MoveData): string {
   if (heights.length) t.push(heights.join(', '));
   if (m.hits.length > 1) t.push(`${m.hits.length} hits`);
   if (m.spawns.some((s) => s.projectile.decoy)) t.push('decoy');
+  else if (m.spawns.some((s) => s.projectile.delay)) t.push('delayed projectile');
   else if (m.spawns.length) t.push('projectile');
+  if (m.counter) t.push('counters strikes');
+  if (m.hits.some((h) => h.hitstun >= 30)) t.push('staggers');
   if (m.throwData) t.push(m.throwData.untechable ? 'grab, unbreakable' : 'grab');
   const last = m.hits.at(-1);
   if (last?.launch !== undefined) t.push('launches');

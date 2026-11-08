@@ -95,6 +95,15 @@ export const ENDINGS: Readonly<Record<string, { title: string; lines: readonly s
       'THE PROGRAMME DIRECTOR: "Clock in, Hollis. You\'re management now."',
     ],
   },
+  margaret: {
+    title: 'THE ELEVEN O\'CLOCK NEWS, ALL NIGHT',
+    lines: [
+      'Anchored by Margaret Okafor.',
+      'Every story is good news now. She writes them herself, and they all come true.',
+      'The viewers sleep soundly. They have not woken up in some time.',
+      'THE PROGRAMME DIRECTOR: "Stay on script, Margaret. Mine."',
+    ],
+  },
   mumbles: {
     title: 'MISTER MUMBLES\' VERY OWN HOUR',
     lines: [

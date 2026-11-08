@@ -100,7 +100,7 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
         if (!w) continue;
         expect(w[0] >= 1 && w[1] >= w[0] && w[1] <= mv.total, mv.id).toBe(true);
       }
-      expect(mv.hits.length + mv.spawns.length + (mv.throwData ? 1 : 0) + mv.motion.length + (mv.interactFrame ? 1 : 0) + (mv.teleport ? 1 : 0), `${mv.id} does something`).toBeGreaterThan(0);
+      expect(mv.hits.length + mv.spawns.length + (mv.throwData ? 1 : 0) + mv.motion.length + (mv.interactFrame ? 1 : 0) + (mv.teleport ? 1 : 0) + (mv.counter ? 1 : 0), `${mv.id} does something`).toBeGreaterThan(0);
     }
   });
 

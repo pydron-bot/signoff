@@ -132,7 +132,9 @@ meter. Every number below is a starting value to tune.
   double kicks; Hollis has an armoured kick, the only link in the game
   (Nightstick into jab) and a string that ends in a grab (Cuff 'Em);
   Mumbles ducks under high attacks, reels people in on a string, and ends
-  combos with his Hand Puppet.
+  combos with his Hand Puppet; Margaret has the best all-round normals
+  (fast, long enough, safe), a step-in kick, and a stagger (Breaking) that
+  leaves time for a normal after it.
 - Specials: 4 to 6 per fighter, entered as direction + Special (or classic
   motions on keyboard and gamepad, see Controls).
 
@@ -210,7 +212,7 @@ card: the loser's own show going off the air.
   camera in close, then the cut, more blows heard over it, and the card.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
-  Hollis: Clocking In; Mumbles: Knock-Knock). Straight after the K.O., the
+  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -225,6 +227,7 @@ often lets the moment pass. Finisher inputs:
 | Rox Vega (*Feel the Burn at Dawn*) | Cool-Down: close, forward, back, FK | Feel the Burn: mid, down, forward, BK |
 | Hollis Bey (*The Night Watch*) | Lights Out: close, back, down, BP | End of Shift: mid, forward, down, BK |
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
+| Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
 
 ### The broadcast look
 
@@ -336,7 +339,8 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** four fighters and Weather at Eleven are in.
+      practice:** five fighters (Margaret Okafor joined in 0.15.0) and two
+      stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.
 - [ ] Should SIGN-OFF reference Curbside's city? **Leaning towards a universe

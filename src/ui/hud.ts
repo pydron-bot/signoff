@@ -185,6 +185,9 @@ export class Hud {
         case 'cutAway':
           this.say('CUT AWAY', '', 40);
           break;
+        case 'counter':
+          this.say('OFF THE SCRIPT', '', 40);
+          break;
         case 'hazardWarn':
           this.warning.textContent = `⚠ ${e.caption} ⚠`;
           this.warningLeft = segmentData(m.stage, m.segment).hazards.find((h) => h.id === e.hazard)?.warn ?? 60;

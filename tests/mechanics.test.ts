@@ -114,3 +114,61 @@ describe('decoy (Mumbles: Hand Puppet)', () => {
     expect(count(ev, 'hit')).toBe(0);
   });
 });
+
+describe('counter (Margaret: Teleprompter)', () => {
+  const MARGARET = FIGHTERS.margaret;
+
+  it('reads a strike in its window: nothing lands, and her answer knocks them down', () => {
+    const m = ready('margaret', 'dale');
+    place(m, -0.6, 0.6);
+    // Margaret starts Teleprompter; Dale jabs into its window.
+    const ev = run(m, 60, presses({ 0: LEFT | SPECIAL }), presses({ 6: FP }));
+    expect(ev.find((e) => e.type === 'counter')).toMatchObject({ player: 0, move: 's.FP' });
+    expect(m.fighters[0].health).toBe(MARGARET.health);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, defender: 1, move: 'Teleprompter Read' });
+    expect(['launched', 'down']).toContain(m.fighters[1].mode);
+  });
+
+  it('cannot read a throw', () => {
+    const m = ready('margaret', 'dale');
+    place(m, -0.5, 0.5);
+    const ev = run(m, 40, presses({ 0: LEFT | SPECIAL }), presses({ 10: THROW }));
+    expect(count(ev, 'counter')).toBe(0);
+    expect(ev.find((e) => e.type === 'throw')).toMatchObject({ thrower: 1 });
+  });
+
+  it('a strike before the window opens lands as usual', () => {
+    const m = ready('margaret', 'dale');
+    place(m, -0.6, 0.6);
+    const [a, d] = m.fighters;
+    a.mode = 'move';
+    a.move = 'Teleprompter';
+    a.moveFrame = 1;
+    d.mode = 'move';
+    d.move = 's.FP';
+    d.moveFrame = DALE.moves['s.FP'].startup - 1;
+    const ev = run(m, 3);
+    expect(count(ev, 'counter')).toBe(0);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 1, defender: 0 });
+  });
+});
+
+describe('delayed projectile (Margaret: Live Feed)', () => {
+  it('waits where it appeared, unable to hit, then goes out', () => {
+    const m = ready('margaret', 'dale');
+    place(m, -1.5, -0.4);
+    run(m, 14, presses({ 0: RIGHT | SPECIAL }));
+    const p = m.projectiles.find((q) => q.active)!;
+    expect(p).toBeDefined();
+    const x0 = p.x;
+    // Dale stands right on it while it's on standby: no hit.
+    m.fighters[1].x = x0;
+    const waiting = run(m, 25);
+    expect(p.x).toBe(x0);
+    expect(count(waiting, 'hit')).toBe(0);
+    // Then it goes out, and hits him further along.
+    m.fighters[1].x = x0 + fx(1.2);
+    const out = run(m, 30);
+    expect(out.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, move: 'Live Feed' });
+  });
+});

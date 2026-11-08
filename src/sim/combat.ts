@@ -6,6 +6,7 @@
 import {
   BLOCKSTOP,
   COUNTER_HITSTOP,
+  COUNTER_READ_STOP,
   COUNTER_HITSTUN,
   HITSTOP,
   JUGGLE_POP,
@@ -19,7 +20,7 @@ import {
   THROW_HOLD,
 } from './constants';
 import type { SimEvent } from './events';
-import { airborne, inWindow, launch, moveOf, setSlide, takeDamage, tech, wallX } from './fighter';
+import { airborne, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
 import { BLOCK, DOWN } from './input';
@@ -32,6 +33,8 @@ const pendingMove = ['', ''];
 const pendingBlocked = [false, false];
 const pendingCounter = [false, false];
 const pendingThrow = [false, false];
+/** The defender is in a counter's window: the strike is read, not landed. */
+const pendingRead = [false, false];
 /** The decoy a strike hit instead of the fighter, or -1. */
 const pendingDecoy = [-1, -1];
 const projHits: number[] = [];
@@ -129,6 +132,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     pendingHit[i] = -1;
     pendingThrow[i] = false;
     pendingDecoy[i] = -1;
+    pendingRead[i] = false;
     const a = fs[i];
     const d = fs[1 - i];
     if (frozen[i] || a.mode !== 'move') continue;
@@ -151,6 +155,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
         pendingMove[i] = a.move;
         pendingBlocked[i] = blocks(d, h.height);
         pendingCounter[i] = isCounter(d);
+        pendingRead[i] = countering(d);
       }
       break;
     }
@@ -201,6 +206,10 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
       a.hitstop = BLOCKSTOP;
       continue;
     }
+    if (pendingRead[i]) {
+      read(fs[1 - i], a, 1 - i, ev);
+      continue;
+    }
     a.contact = pendingBlocked[i] ? 'block' : 'hit';
     applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev);
   }
@@ -218,6 +227,21 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
   if (t0 && t1) tech(m, ev, 0);
   else if (t0) grab(m, 0, ev);
   else if (t1) grab(m, 1, ev);
+}
+
+/** In a counter's window (Teleprompter), reading strikes. */
+function countering(d: FighterState): boolean {
+  return d.mode === 'move' && inWindow(d.moveFrame, moveOf(d).counter?.frames);
+}
+
+/** The strike is read: nothing lands (and it can't be cancelled from), both freeze, and the reader answers. */
+function read(d: FighterState, a: FighterState, di: number, ev: SimEvent[]): void {
+  const into = moveOf(d).counter!.into;
+  ev.push({ type: 'counter', player: di, move: a.move });
+  a.contact = 'block';
+  a.hitstop = COUNTER_READ_STOP;
+  startMove(d, into);
+  d.hitstop = COUNTER_READ_STOP;
 }
 
 function projData(m: MatchState, p: number) {

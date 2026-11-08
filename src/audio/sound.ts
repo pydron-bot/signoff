@@ -167,6 +167,11 @@ export class Sound {
         case 'armor':
           this.tone(300, 0.15, 0.2, 'sawtooth', 200);
           break;
+        case 'counter':
+          // The teleprompter's bell: she saw it coming.
+          this.tone(1320, 0.4, 0.12, 'sine');
+          this.tone(1980, 0.3, 0.06, 'sine', undefined, 0.02);
+          break;
         case 'special':
           if (e.move.startsWith('Knock-Knock')) {
             // Two knocks on a wooden door.

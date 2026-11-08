@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.15.0',
+    date: '2026-11-08',
+    title: 'Good evening',
+    notes: [
+      "A fifth fighter: Margaret Okafor, the anchor of The Eleven O'Clock News. Footsies: the best all-round normals in the game, Breaking (a fast strike that staggers, time for a normal after it), Teleprompter (reads the next strike and answers it: OFF THE SCRIPT), Live Feed (a signal that waits on standby, then goes out) and Lead Story (a stepping overhead).",
+      'Her Sign-Offs: Breaking News (close: ↓ → BP) and And That Was the News (mid: ← ↓ BK). Win with Breaking to stop the presses.',
+      'She plays as a grey box until her model is made.',
+    ],
+  },
+  {
     version: '0.14.0',
     date: '2026-11-08',
     title: 'Feel the Burn at Dawn',

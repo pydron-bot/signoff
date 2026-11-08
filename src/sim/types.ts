@@ -66,6 +66,8 @@ export interface ProjectileData {
   readonly groundEnds?: boolean;
   /** A decoy: hits nobody, but soaks one attack or projectile meant for its owner. */
   readonly decoy?: boolean;
+  /** Frames it waits where it appeared before it moves or can hit (it can still be shot down). */
+  readonly delay?: number;
   readonly effect: HitEffect;
 }
 
@@ -97,6 +99,8 @@ export interface MoveData {
   readonly invuln?: Window;
   /** Absorbs one hit (takes the damage, ignores the stun). */
   readonly armor?: Window;
+  /** A counter: a strike landing in these frames is read and stopped, and the fighter answers with `into`. */
+  readonly counter?: { readonly frames: Window; readonly into: string };
   /** Strings: the next step for each button, inside the cancel window. */
   readonly chain: Readonly<Partial<Record<Attack, string>>>;
   /** When chains and special cancels are allowed. */
@@ -174,7 +178,7 @@ export interface FinisherData {
 }
 
 /** How the fighter plays; the CPU plays to it. */
-export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster';
+export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies';
 
 export interface FighterData {
   readonly id: string;

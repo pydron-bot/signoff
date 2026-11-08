@@ -18,7 +18,7 @@ import { PoseTracker, type Pose } from './pose';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b };
+const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a };
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
@@ -59,6 +59,10 @@ const EFFECTS: Readonly<Record<string, Readonly<Record<string, Effect>>>> = {
   mumbles: {
     'Hand Puppet': fx('fx_hand_puppet', 'projectile'),
     'Hand Puppet+': fx('fx_hand_puppet', 'projectile'),
+  },
+  margaret: {
+    'Live Feed': fx('fx_live_feed', 'projectile'),
+    'Live Feed+': fx('fx_live_feed', 'projectile'),
   },
 };
 /** Tape Skip's smear, shared by every fighter; it lives in Dale's GLB. */
@@ -273,7 +277,9 @@ export class Arena {
       const pd = moveData(owner, p.move).spawns[p.spawn].projectile;
       // The fx mesh stands on the bottom centre of the projectile's box; the box stays as an overlay.
       const fx = this.showFx(slot, owner, p.move);
-      mesh.visible = !fx || this.showBoxes;
+      // On standby (a delayed projectile) it blinks, like a camera's tally light.
+      const standby = pd.delay !== undefined && pd.life - p.life < pd.delay && this.frame % 8 < 3;
+      mesh.visible = (!fx || this.showBoxes) && !standby;
       mesh.material = fx ? this.overlayMat : pd.decoy ? this.decoyMat : this.projectileMat;
       placeBox(mesh, pd.box, toFloat(p.x), toFloat(p.y), p.dir, pd.decoy ? 0.4 : 0.6);
       if (fx) {

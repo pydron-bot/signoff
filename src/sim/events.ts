@@ -12,6 +12,8 @@ export type SimEvent =
   | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; x: Fx; y: Fx }
   | { type: 'block'; attacker: number; defender: number; move: string; chip: number; x: Fx; y: Fx }
   | { type: 'armor'; player: number; move: string }
+  /** A counter read the opponent's strike (`move`) and answers it. */
+  | { type: 'counter'; player: number; move: string }
   | { type: 'special'; player: number; move: string }
   | { type: 'boost'; player: number; move: string }
   | { type: 'projectileClash'; x: Fx; y: Fx }

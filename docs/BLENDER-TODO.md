@@ -52,6 +52,7 @@ Size each fighter to their hurtboxes, the grey boxes you see in the game
 | Rox Vega (`rox`) | 1.75 m | 1.05 m | Aerobics host, 1983 forever: leotard, leg warmers, headband, sweatband |
 | Hollis Bey (`hollis`) | 1.90 m | 1.20 m | Night security guard of the transmitter building: broad, heavy, uniform, cap, flashlight and key ring on the belt. Hurtbox 0.7 m wide |
 | Mister Mumbles (`mumbles`) | 1.30 m | 0.80 m | A ventriloquist's dummy with no ventriloquist: painted wooden head with a hinged jaw, little suit, visible puppet strings that go up out of frame. Hurtbox 0.5 m wide |
+| Margaret Okafor (`margaret`) | 1.75 m | 1.05 m | The evening news anchor, 1987: a power suit with shoulder pads, a blouse with a pussy-bow, pearl earrings, a sharp bob, a sheaf of script pages. Step 15 |
 
 The broadcast look censors gore with static and stand-by cards, so no gore
 assets are needed.
@@ -221,14 +222,12 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 8, evening).** Steps 1–10 are done. Work the open steps
-> in this order; the game side is meanwhile building the second stage and the
-> next fighters, and will add their contracts here as their data lands.
+> **Start here (Nov 8, evening).** Steps 1–13 are done (11–13 in 0.13.0).
+> Work the open steps in this order; the game side is building the next
+> fighters and stages, and will add their contracts here as their data lands.
 >
-> 1. **Step 12, `launched` lies in its box.** Juggles miss the body until it does.
-> 2. **Step 13, the combat pass's moves.** Four new clips are stand-ins in the game, and seven re-poses for changed hitboxes.
-> 3. **Step 11, `dazed`.** Every finisher starts from it.
-> 4. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is being built against this contract).
+> 1. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is in: 0.14.0), and `interact_throw` for the four built fighters.
+> 2. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, and will check `burn.glb` once it exists.
 
@@ -422,7 +421,7 @@ writing `art/stage-burn.blend`, `art/textures/stage-burn_*.png` and
 z toward the camera, origin at the arena's centre on the floor; fighters on
 z = 0), the same materials (`set` 2048², `props` 512²; no `water` needed) and
 a `lights` node with one rig per segment, named exactly as below. The game
-side is in (0.13.0: `src/sim/stages.ts`, `src/render/burnSet.ts`); until
+side is in (0.14.0: `src/sim/stages.ts`, `src/render/burnSet.ts`); until
 the GLB exists it plays on flat stand-ins in these colours and places.
 
 | Segment | The game | The set |
@@ -462,6 +461,30 @@ The light rig per segment (suggested; tune by eye):
 - [ ] `fx_shard`, `fx_shatter`, `fx_mark`
 - [ ] `interact_throw` (22 frames) for every fighter, in the state clips table below: picking up the boombox and hurling it
 - [ ] Pass `tests/assets.test.ts`'s `burn.glb` checks (already written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place, the shard's length)
+
+### 15. Margaret Okafor (Nov 8, game side)
+
+The evening news anchor of *The Eleven O'Clock News*: calm, precise, never
+off-script. Footsies: the best all-round normals in the game. Her data is
+in `src/sim/fighters/margaret.ts` and `blender/data/fighters.json`; her
+move clips are in the generated table below. New fighter, same contracts as
+the others: the shared rig at 1.75 m (crouch 1.05 m, hurtbox 0.6 m wide),
+`body` and `props` materials, every state clip, and a module
+`blender/fighters/margaret.py` (add `margaret` to `TARGETS` in
+`blender/build.py`). The asset test checks her GLB like the others once it
+exists.
+
+- [ ] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some.
+- [ ] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick).
+- [ ] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight."
+- [ ] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials:
+  - `Breaking`, `Breaking+`: a sharp, fast straight (the pages rolled into a baton is a nice touch); the boosted one adds a second strike with the other hand.
+  - `Teleprompter`, `Teleprompter+`: the counter stance. She stands tall, the lead hand raised palm out, eyes reading something just off screen; held through the window (frames 8–26, or 8–34 boosted). Readable from across the screen: it's what the opponent must learn not to hit.
+  - `Teleprompter Read`, `Teleprompter Read+`: the answer, played the moment a strike is read: a fast, wide backhand with the pages, hitting on 3–5 out to 1.8 m (an effect-sized reach: mark it `prop` like the Isobar Lasso if the arm can't reach), the boosted one sweeping upward (it launches).
+  - `Live Feed`, `Live Feed+`: she points two fingers at the camera, "We go live", and the feed spawns on frame 14 in front of her.
+  - `Lead Story`: steps in over frames 4–14 and slams the pages down overhead on 20–21. The boosted one walks through a hit (armour, the game tints it orange).
+  - `f.FK` Field Report: steps forward while kicking (frames 1–10), foot out at mid height on 12–14.
+- [ ] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward.
 
 ### State clips (every fighter)
 
@@ -653,6 +676,46 @@ plain one), `interact` is kicking a stage prop.
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.30, y 0.30…1.60 (mid) |
+
+#### Margaret Okafor (`margaret`): 35 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Cue Card | normal | stand | 16 | 6–7: x 0.20…1.00, y 1.15…1.45 (mid) |
+| `s.BP` | Lead Paragraph | normal | stand | 25 | 9–11: x 0.20…1.15, y 1.00…1.50 (mid) |
+| `s.FK` | Pointed Shoe | normal | stand | 24 | 9–11: x 0.20…1.40, y 0.55…0.90 (mid) |
+| `s.BK` | Anchor Kick | normal | stand | 32 | 13–15: x 0.20…1.55, y 0.90…1.40 (mid) |
+| `c.FP` | Footnote | normal | crouch | 17 | 7–8: x 0.20…0.95, y 0.60…0.90 (mid) |
+| `c.BP` | Rising Headline | normal | crouch | 31 | 9–12: x 0.10…0.80, y 1.00…1.90 (mid) |
+| `c.FK` | Low Bulletin | normal | crouch | 22 | 8–9: x 0.20…1.30, y 0.00…0.30 (low) |
+| `c.BK` | Cut the Wires | normal | crouch | 36 | 12–14: x 0.20…1.40, y 0.00…0.30 (low) |
+| `f.BP` | Paperweight | normal | stand | 37 | 19–20: x 0.20…1.00, y 1.00…1.60 (overhead) |
+| `f.FK` | Field Report | normal | stand | 29 | 12–14: x 0.20…1.30, y 0.60…1.00 (mid) |
+| `j.FP` | Jumping Cue | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
+| `j.BP` | Jumping Headline | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
+| `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Jumping Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `FP FP` | Top Story | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.10…1.45 (mid) |
+| `FP FP BP` | And Finally | normal | stand | 31 | 11–13: x 0.20…1.25, y 0.90…1.40 (mid) |
+| `FP FK` | Correspondent | normal | stand | 25 | 9–10: x 0.20…1.35, y 0.00…0.35 (low) |
+| `BP BP` | Developing Story | normal | stand | 28 | 10–12: x 0.20…1.20, y 1.00…1.45 (mid) |
+| `BP BP BK` | We Go Live | normal | stand | 33 | 12–14: x 0.20…1.30, y 0.80…1.60 (mid) |
+| `FK BK` | Weather and Sport | normal | stand | 32 | 12–14: x 0.20…1.45, y 0.90…1.40 (mid) |
+| `c.FP FK` | Small Print | normal | crouch | 28 | 9–10: x 0.20…1.35, y 0.00…0.30 (low) |
+| `f.BP BP` | Exclusive | normal | stand | 31 | 11–13: x 0.20…1.20, y 0.90…1.40 (mid) |
+| `Breaking` | Breaking | special | stand | 32 | 8–9: x 0.20…1.15, y 0.90…1.40 (mid) |
+| `Breaking+` | Breaking (boosted) | special | stand | 40 | 8–9: x 0.20…1.15, y 0.90…1.40 (mid); 16–17: x 0.20…1.20, y 0.90…1.40 (mid) |
+| `Teleprompter` | Teleprompter | special | stand | 44 | 8–26: counter stance; a strike read here plays `Teleprompter Read` |
+| `Teleprompter+` | Teleprompter (boosted) | special | stand | 44 | 8–34: counter stance; a strike read here plays `Teleprompter Read+` |
+| `Teleprompter Read` | Teleprompter: Read | special | stand | 30 | 3–5: x 0.10…1.80, y 0.30…1.80 (mid) |
+| `Teleprompter Read+` | Teleprompter: Read (boosted) | special | stand | 34 | 3–5: x 0.10…1.80, y 0.30…1.80 (mid) |
+| `Live Feed` | Live Feed | special | stand | 40 | 14: spawns projectile at x 0.70, y 0.00 (waits 30 frames) |
+| `Live Feed+` | Live Feed (boosted) | special | stand | 40 | 14: spawns projectile at x 0.70, y 0.00 (waits 12 frames) |
+| `Lead Story` | Lead Story | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead) |
+| `Lead Story+` | Lead Story (boosted) | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead); 4–19: armour (glows) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
 <!-- clips:end -->
 

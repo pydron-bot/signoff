@@ -29,6 +29,8 @@ export const HITSTOP = 8;
 export const BLOCKSTOP = 6;
 export const COUNTER_HITSTUN = 4;
 export const COUNTER_HITSTOP = 4;
+/** The freeze when a counter (Teleprompter) reads a strike, so it reads on screen too. */
+export const COUNTER_READ_STOP = 12;
 /** Each further hit in a combo does 10% less, down to 30%. */
 export const SCALE_STEP = 10;
 export const SCALE_MIN = 30;
