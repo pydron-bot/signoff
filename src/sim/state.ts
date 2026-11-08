@@ -85,6 +85,19 @@ export interface ProjectileState {
   rehit: number;
 }
 
+/** A stage hazard this round: which spot it picked and whom it has hit this strike. */
+export interface HazardState {
+  spot: number;
+  hitMask: number;
+}
+
+export interface PropState {
+  x: Fx;
+  mode: 'idle' | 'rolling' | 'spent';
+  dir: 1 | -1;
+  owner: number;
+}
+
 export type Phase = 'intro' | 'fight' | 'ko' | 'break' | 'stayTuned' | 'over';
 
 export interface MatchState {
@@ -96,6 +109,12 @@ export interface MatchState {
   segment: number;
   /** Round clock in frames. */
   timer: number;
+  /** Frames of fighting this round: stage hazards keep time by it. */
+  roundFrame: number;
+  /** This round's wind push per frame (signed), 0 for none. */
+  wind: Fx;
+  hazards: HazardState[];
+  props: PropState[];
   stage: string;
   /** Studio rules: one segment, hazards off. */
   studio: boolean;

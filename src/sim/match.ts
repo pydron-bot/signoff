@@ -18,6 +18,7 @@ import { control, physics, resolvePush, tick, updateProjectiles } from './fighte
 import { fighterData } from './fighters';
 import { readInput } from './input';
 import { createRng } from './rng';
+import { setupRound, updateStage } from './stage';
 import { stageData } from './stages';
 import { PROJECTILE_SLOTS, createFighter, createProjectile, type MatchState } from './state';
 
@@ -35,13 +36,17 @@ export function createMatch(o: MatchOptions): MatchState {
   fighterData(o.p2);
   const stage = o.stage ?? 'weather';
   stageData(stage);
-  return {
+  const m: MatchState = {
     frame: 0,
     phase: 'intro',
     phaseTimer: INTRO_FRAMES,
     round: 1,
     segment: 0,
     timer: ROUND_FRAMES,
+    roundFrame: 0,
+    wind: 0,
+    hazards: [],
+    props: [],
     stage,
     studio: o.studio ?? false,
     roundWinner: -1,
@@ -50,6 +55,8 @@ export function createMatch(o: MatchOptions): MatchState {
     fighters: [createFighter(o.p1, 0), createFighter(o.p2, 1)],
     projectiles: Array.from({ length: PROJECTILE_SLOTS }, createProjectile),
   };
+  setupRound(m);
+  return m;
 }
 
 const frozen = [false, false];
@@ -75,6 +82,7 @@ export function step(m: MatchState, in0: number, in1: number, ev: SimEvent[]): v
       }
       return;
     case 'fight':
+      m.roundFrame++;
       simulate(m, ev, true);
       // The clock stops for the Technical Difficulties cinematic.
       if (fs[0].mode !== 'cinematic' && fs[1].mode !== 'cinematic') m.timer--;
@@ -105,7 +113,10 @@ function simulate(m: MatchState, ev: SimEvent[], hits: boolean): void {
   for (let i = 0; i < 2; i++) if (!frozen[i]) physics(m, i, ev);
   resolvePush(m);
   updateProjectiles(m);
-  if (hits) resolveHits(m, ev, frozen);
+  if (hits) {
+    resolveHits(m, ev, frozen);
+    updateStage(m, ev);
+  }
 }
 
 function checkRoundOver(m: MatchState, ev: SimEvent[]): void {
@@ -167,6 +178,7 @@ function nextRound(m: MatchState, ev: SimEvent[]): void {
   for (const p of m.projectiles) p.active = false;
   m.timer = ROUND_FRAMES;
   m.roundWinner = -1;
+  setupRound(m);
   if (changed) ev.push({ type: 'segmentChange', segment: seg });
   m.phase = 'intro';
   m.phaseTimer = INTRO_FRAMES;

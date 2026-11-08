@@ -5,6 +5,7 @@
  */
 import {
   BLOCKSTOP,
+  COUNTER_HITSTOP,
   COUNTER_HITSTUN,
   HITSTOP,
   JUGGLE_POP,
@@ -41,7 +42,7 @@ function boxesTouch(ax: Fx, ay: Fx, adir: number, ab: Box, bx: Fx, by: Fx, bdir:
 }
 
 /** Does a box at (x, y) facing dir touch any of this fighter's hurtboxes? */
-function touchesFighter(x: Fx, y: Fx, dir: number, b: Box, d: FighterState): boolean {
+export function touchesFighter(x: Fx, y: Fx, dir: number, b: Box, d: FighterState): boolean {
   const hurt = fighterData(d.fighter).hurt;
   const base = airborne(d) ? hurt.air : d.crouching ? hurt.crouch : hurt.stand;
   if (boxesTouch(x, y, dir, b, d.x, d.y, d.facing, base)) return true;
@@ -216,7 +217,7 @@ function grab(m: MatchState, i: number, ev: SimEvent[]): void {
   ev.push({ type: 'throw', thrower: i });
 }
 
-function applyHit(
+export function applyHit(
   m: MatchState,
   ai: number,
   e: HitEffect,
@@ -285,6 +286,8 @@ function applyHit(
     return;
   }
 
+  // Counter hits freeze a little longer, so they read.
+  const hitStop = stop + (counter ? COUNTER_HITSTOP : 0);
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const dmg = Math.max(1, Math.floor((e.damage * scale) / 100));
   d.combo++;
@@ -303,8 +306,8 @@ function applyHit(
     setSlide(d, dir, e.push);
   }
   if (e.pull !== undefined) pull(m, a, d, e.pull);
-  d.hitstop = stop;
-  if (!projectile) a.hitstop = stop;
+  d.hitstop = hitStop;
+  if (!projectile) a.hitstop = hitStop;
   gainMeter(a, dmg + (dmg >> 1));
   gainMeter(d, dmg);
   ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, x: d.x, y });
@@ -315,4 +318,25 @@ function pull(m: MatchState, a: FighterState, d: FighterState, dist: Fx): void {
   const w = wallX(m, d);
   d.x = clamp(a.x + a.facing * dist, -w, w);
   d.slide = 0;
+}
+
+/** A stage hazard: unblockable (it was announced), no combo scaling, no meter. */
+export function applyHazardHit(m: MatchState, di: number, e: HitEffect, hazard: string, ev: SimEvent[]): void {
+  const d = m.fighters[di];
+  const o = m.fighters[1 - di];
+  const dir = d.x >= o.x ? 1 : -1;
+  const wasAir = airborne(d);
+  const ko = takeDamage(d, e.damage);
+  d.move = '';
+  if (ko) launch(d, dir, KNOCK_VY, false);
+  else if (wasAir || e.launch !== undefined || e.knockdown) launch(d, dir, e.launch ?? KNOCK_VY, false);
+  else {
+    d.mode = 'hitstun';
+    d.timer = e.hitstun;
+    d.vx = 0;
+    setSlide(d, dir, e.push);
+  }
+  d.hitstop = HITSTOP;
+  ev.push({ type: 'hazardHit', player: di, hazard, damage: e.damage });
+  if (ko) ev.push({ type: 'ko', player: di });
 }

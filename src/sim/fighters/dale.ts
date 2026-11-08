@@ -4,7 +4,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, move, normal, projectile, strike, table, technicalDifficulties, throwMove } from './build';
+import { box, interactMove, move, normal, projectile, strike, table, technicalDifficulties, throwMove } from './build';
 
 const moves = table(
   // Standing
@@ -37,15 +37,15 @@ const moves = table(
   move('Cold Front', {
     name: 'Cold Front',
     kind: 'special',
-    total: 40,
+    total: 48,
     boost: 'Cold Front+',
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 60, hitstun: 20, blockstun: 16, push: 0.05, chip: 10 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
   }),
   move('Cold Front+', {
     name: 'Cold Front (boosted)',
     kind: 'special',
-    total: 40,
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.04, chip: 8 } }) }],
+    total: 48,
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 38, hitstun: 20, blockstun: 16, push: 0.04, chip: 7 } }) }],
   }),
   move('Pressure Drop', {
     name: 'Pressure Drop',
@@ -67,17 +67,26 @@ const moves = table(
   move('Isobar Lasso', {
     name: 'Isobar Lasso',
     kind: 'special',
-    total: 41,
+    total: 45,
     boost: 'Isobar Lasso+',
-    hits: [strike({ frames: [14, 17], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 50, hitstun: 34, blockstun: 12, push: 0, pull: 0.8 })],
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 40, hitstun: 28, blockstun: 12, push: 0, pull: 0.8 })],
   }),
   move('Isobar Lasso+', {
     name: 'Isobar Lasso (boosted)',
     kind: 'special',
-    total: 41,
-    hits: [strike({ frames: [14, 17], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 70, hitstun: 34, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+    total: 45,
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 55, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+  }),
+  // A rising, invulnerable reversal: wins against pressure, loses badly if blocked.
+  move('Heat Lightning', {
+    name: 'Heat Lightning',
+    kind: 'special',
+    total: 40,
+    invuln: [1, 7],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.8, 2.2], damage: 75, hitstun: 0, blockstun: 14, launch: 0.2 })],
   }),
   throwMove(100),
+  interactMove(),
   technicalDifficulties(1.6),
 );
 
@@ -89,7 +98,7 @@ function hail(x: number, damage: number) {
 export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
-  health: 1000,
+  health: 860,
   walkFwd: fx(0.04),
   walkBack: fx(0.035),
   jumpVy: fx(0.2),
@@ -107,9 +116,10 @@ export const DALE: FighterData = {
     f: { BP: 'f.BP' },
     b: {},
   },
-  specials: { f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
+  specials: { n: 'Heat Lightning', f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
   throwMove: 'throw',
   superMove: 'td',
+  interactMove: 'interact',
   moves,
   strings: [
     { name: 'Five-Day Outlook', path: ['s.FP', 'FP'], safe: true },

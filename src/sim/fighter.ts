@@ -31,8 +31,9 @@ import {
 import type { SimEvent } from './events';
 import { fighterData, moveData } from './fighters';
 import { approach, clamp, fx, type Fx } from './fixed';
-import { ATTACK_BITS, BLOCK, DOWN, METER, SPECIAL, THROW, UP, backBit, bufferedAttack, consume, doubleTapped, forwardBit, pressed } from './input';
-import { stageData } from './stages';
+import { ATTACK_BITS, BLOCK, DOWN, INTERACT, METER, SPECIAL, THROW, UP, backBit, bufferedAttack, consume, doubleTapped, forwardBit, pressed } from './input';
+import { kickProp, propInReach } from './stage';
+import { segmentData, stageData } from './stages';
 import type { FighterState, MatchState } from './state';
 import type { MoveData } from './types';
 
@@ -219,6 +220,10 @@ export function control(m: MatchState, i: number, ev: SimEvent[]): void {
   }
 }
 
+function scaled(v: Fx, pct: number): Fx {
+  return pct === 100 ? v : Math.floor((v * pct) / 100);
+}
+
 function canTD(f: FighterState): boolean {
   return !f.tdUsed && f.health > 0 && f.health * 100 < f.maxHealth * TD_HEALTH_PCT;
 }
@@ -239,6 +244,8 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   const fwd = forwardBit(f.facing);
   const back = backBit(f.facing);
   const held = inp.held;
+  // Segment rules (knee-deep water) slow walking and dashing for both.
+  const pct = segmentData(m.stage, m.segment).walkPct ?? 100;
 
   if (held & BLOCK) {
     if (pressed(inp, SPECIAL) && canTD(f)) {
@@ -251,6 +258,11 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     f.mode = 'guard';
     f.crouching = (held & DOWN) !== 0;
     f.vx = 0;
+    return;
+  }
+  if (pressed(inp, INTERACT) && propInReach(m, f) >= 0) {
+    consume(inp, INTERACT);
+    startMove(f, d.interactMove);
     return;
   }
   if (pressed(inp, THROW)) {
@@ -276,7 +288,7 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     consume(inp, fwd);
     f.mode = 'dash';
     f.timer = d.dash.frames - 1;
-    f.vx = f.facing * d.dash.speed;
+    f.vx = f.facing * scaled(d.dash.speed, pct);
     f.crouching = false;
     return;
   }
@@ -284,7 +296,7 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     consume(inp, back);
     f.mode = 'backdash';
     f.timer = d.backdash.frames - 1;
-    f.vx = -f.facing * d.backdash.speed;
+    f.vx = -f.facing * scaled(d.backdash.speed, pct);
     f.crouching = false;
     return;
   }
@@ -303,11 +315,11 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   } else if (held & fwd) {
     f.mode = 'walk';
     f.crouching = false;
-    f.vx = f.facing * d.walkFwd;
+    f.vx = f.facing * scaled(d.walkFwd, pct);
   } else if (held & back) {
     f.mode = 'walk';
     f.crouching = false;
-    f.vx = -f.facing * d.walkBack;
+    f.vx = -f.facing * scaled(d.walkBack, pct);
   } else {
     f.mode = 'idle';
     f.crouching = false;
@@ -413,6 +425,7 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
   if (f.mode === 'move') {
     const mv = moveOf(f);
     for (let k = 0; k < mv.spawns.length; k++) if (mv.spawns[k].frame === f.moveFrame) spawnProjectile(m, i, mv, k);
+    if (mv.interactFrame === f.moveFrame) kickProp(m, i, ev);
     if (mv.kind !== 'air') {
       f.vx = 0;
       for (const mo of mv.motion) if (inWindow(f.moveFrame, mo.frames)) f.vx = f.facing * mo.vx;
@@ -430,6 +443,8 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
   } else {
     f.x += f.vx;
   }
+  // The forecast's wind pushes everyone the same way.
+  if (m.wind !== 0 && f.mode !== 'thrown' && f.mode !== 'cinematic' && f.mode !== 'down' && f.mode !== 'ko') f.x += m.wind;
   const w = wallX(m, f);
   if (f.slide > 0) {
     const want = f.x + f.slideDir * f.slide;

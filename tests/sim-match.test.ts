@@ -120,7 +120,7 @@ describe('blocking', () => {
     place(m, -2, 0);
     const ev = run(m, 80, presses({ 0: RIGHT | SPECIAL }), BLOCK);
     expect(count(ev, 'block')).toBe(1);
-    expect(m.fighters[1].health).toBe(ROX.health - 10);
+    expect(m.fighters[1].health).toBe(ROX.health - DALE.moves['Cold Front'].spawns[0].projectile.effect.chip!);
 
     const n = ready();
     place(n, -0.3, 0.3);
@@ -158,7 +158,7 @@ describe('inputs', () => {
     };
     expect(special([RIGHT | SPECIAL])).toBe('Cold Front');
     expect(special([DOWN, DOWN | RIGHT, RIGHT, SPECIAL])).toBe('Cold Front');
-    expect(special([SPECIAL])).toBe('Cold Front');
+    expect(special([SPECIAL])).toBe('Heat Lightning');
     expect(special([DOWN | SPECIAL])).toBe('Pressure Drop');
     expect(special([LEFT | SPECIAL])).toBe('Isobar Lasso');
     expect(special([DOWN, DOWN | LEFT, LEFT, SPECIAL])).toBe('Isobar Lasso');
@@ -274,7 +274,7 @@ describe('Technical Difficulties', () => {
     const ev = run(m, 200, presses({ 0: SPECIAL }, BLOCK));
     expect(count(ev, 'superStart')).toBe(1);
     expect(count(ev, 'superHit')).toBe(1);
-    expect(m.fighters[1].health).toBe(DALE.health - 300);
+    expect(m.fighters[1].health).toBe(DALE.health - Math.floor((DALE.health * 30) / 100));
     expect(m.fighters[0].tdUsed).toBe(true);
 
     run(m, 120);
@@ -366,8 +366,9 @@ describe('rounds', () => {
     m.segment = 2;
     m.fighters[0].wins = 1;
     m.fighters[1].wins = 1;
-    m.fighters[0].health = 500;
-    m.fighters[1].health = 500;
+    // The same share of health each: a draw on time.
+    m.fighters[0].health = DALE.health / 2;
+    m.fighters[1].health = ROX.health / 2;
     m.timer = 1;
     run(m, 2);
     expect(m.roundWinner).toBe(-1);

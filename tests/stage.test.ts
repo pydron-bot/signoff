@@ -1,0 +1,140 @@
+// The living stage: the fairness rules from the design, and each segment's changes.
+import { describe, expect, it } from 'vitest';
+import { fx } from '../src/sim/fixed';
+import { setupRound } from '../src/sim/stage';
+import { DALE } from '../src/sim/fighters/dale';
+import { Input, STAGES, type MatchState, type SimEvent } from '../src/sim';
+import { count, place, presses, ready, run } from './sim-helpers';
+
+const { INTERACT, UP, RIGHT } = Input;
+
+function onSegment(seg: number, p1 = 'dale', p2 = 'rox'): MatchState {
+  const m = ready(p1, p2);
+  m.segment = seg;
+  setupRound(m);
+  return m;
+}
+
+/** Steps until an event of this type, returning it and the steps taken. */
+function until(m: MatchState, type: SimEvent['type'], max = 2000, in0 = 0, in1 = 0) {
+  const ev: SimEvent[] = [];
+  for (let t = 0; t < max; t++) {
+    const from = ev.length;
+    run(m, 1, in0, in1).forEach((e) => ev.push(e));
+    const hit = ev.slice(from).find((e) => e.type === type);
+    if (hit) return { e: hit, t, ev };
+  }
+  throw new Error(`no ${type} in ${max} steps`);
+}
+
+describe('fairness rules', () => {
+  for (const stage of Object.values(STAGES)) {
+    stage.segments.forEach((seg, i) => {
+      it(`${stage.name} segment ${i + 1}: hazards warn at least a second ahead and everything fits the arena`, () => {
+        for (const h of seg.hazards) {
+          expect(h.warn, h.id).toBeGreaterThanOrEqual(60);
+          expect(h.active).toBeGreaterThan(0);
+          expect(h.period).toBeGreaterThan(h.warn + h.active);
+          for (const x of h.spots) expect(Math.abs(x)).toBeLessThan(seg.halfWidth);
+        }
+        for (const p of seg.props) expect(Math.abs(p.x)).toBeLessThan(seg.halfWidth);
+      });
+    });
+  }
+
+  it('studio rules: one segment, hazards off, props stay', () => {
+    const m = ready('dale', 'rox', { studio: true });
+    m.segment = 1;
+    setupRound(m);
+    expect(m.hazards).toEqual([]);
+    expect(m.wind).not.toBe(0);
+  });
+});
+
+describe('The Studio (segment 1)', () => {
+  it('kicking the camera dolly sends it into the opponent, once', () => {
+    const m = onSegment(0);
+    place(m, -4.3, 0);
+    const ev = run(m, 90, presses({ 0: INTERACT, 40: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(1);
+    const hit = ev.find((e) => e.type === 'hit');
+    expect(hit).toMatchObject({ attacker: 0, defender: 1, move: 'dolly-left' });
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('Interact does nothing away from a prop', () => {
+    const m = onSegment(0);
+    place(m, -1, 1);
+    const ev = run(m, 30, presses({ 0: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(0);
+    expect(m.fighters[0].mode).toBe('idle');
+  });
+});
+
+describe('The Forecast Comes True (segment 2)', () => {
+  it('wind pushes both fighters the same way by the same amount', () => {
+    const m = onSegment(1);
+    place(m, -1, 1);
+    const [a0, b0] = m.fighters.map((f) => f.x);
+    run(m, 30);
+    expect(m.fighters[0].x - a0).toBe(30 * m.wind);
+    expect(m.fighters[1].x - b0).toBe(30 * m.wind);
+  });
+
+  it('lightning strikes the announced spot, exactly `warn` frames after the warning', () => {
+    const m = onSegment(1);
+    m.wind = 0;
+    const warn = until(m, 'hazardWarn');
+    expect(warn.e).toMatchObject({ hazard: 'lightning', caption: 'SEVERE STORM WARNING' });
+    const x = warn.e.type === 'hazardWarn' ? warn.e.x : 0;
+    // Player 1 stands on the spot; player 2 stays well clear.
+    m.fighters[0].x = x;
+    m.fighters[1].x = x > 0 ? x - fx(3) : x + fx(3);
+    const strike = until(m, 'hazardStrike');
+    expect(strike.t + 1).toBe(STAGES.weather.segments[1].hazards[0].warn);
+    const after = run(m, 20);
+    const hits = [...strike.ev, ...after].filter((e) => e.type === 'hazardHit');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ player: 0, damage: 80 });
+    expect(['launched', 'down']).toContain(m.fighters[0].mode);
+  });
+});
+
+describe('Flood Warning (segment 3)', () => {
+  it('walking is slower in the water', () => {
+    const m = onSegment(2);
+    const x0 = m.fighters[0].x;
+    run(m, 30, RIGHT);
+    expect(m.fighters[0].x - x0).toBe(30 * Math.floor((DALE.walkFwd * 65) / 100));
+  });
+
+  it('the puddles shock whoever stands in them, but not someone in the air', () => {
+    const m = onSegment(2);
+    place(m, -3, 3);
+    until(m, 'hazardWarn');
+    // Player 2 jumps so they're airborne when the shock comes.
+    const hz = STAGES.weather.segments[2].hazards[0];
+    run(m, hz.warn - 12);
+    const ev = run(m, hz.active + 10, 0, presses({ 0: UP }));
+    const hits = ev.filter((e) => e.type === 'hazardHit');
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ player: 0 });
+    expect(m.fighters[0].health).toBe(m.fighters[0].maxHealth - 50);
+  });
+});
+
+describe('rounds bring the next segment', () => {
+  it('the break swaps in the next segment’s hazards and props', () => {
+    const m = ready();
+    expect(m.props).toHaveLength(2);
+    m.fighters[1].health = 1;
+    place(m, -0.3, 0.3);
+    run(m, 20, presses({ 0: Input.FP }));
+    const ev: SimEvent[] = [];
+    while (m.phase !== 'fight') ev.push(...run(m, 1));
+    expect(m.segment).toBe(1);
+    expect(m.props).toHaveLength(0);
+    expect(m.hazards).toHaveLength(1);
+    expect(m.wind).not.toBe(0);
+  });
+});

@@ -9,8 +9,10 @@
 import { BAR, Input, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
+import { propInReach } from '../sim/stage';
+import { segmentData } from '../sim/stages';
 
-const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, METER } = Input;
+const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT, METER } = Input;
 
 export type CpuLevel = 'easy' | 'normal' | 'hard';
 
@@ -43,6 +45,10 @@ interface Seen {
   /** Visibly mid-attack within reach, or a projectile coming. */
   threat: boolean;
   low: boolean;
+  /** An opponent's projectile coming this way. */
+  projectile: boolean;
+  /** Visibly stuck in the recovery of a move. */
+  recovering: boolean;
 }
 
 /** A plan gives the input for each frame until it returns null. */
@@ -51,7 +57,7 @@ type Plan = (me: FighterState, t: number) => number | null;
 export class Cpu {
   private readonly rng: RngState;
   private readonly level: Level;
-  private readonly seen: Seen[] = Array.from({ length: HISTORY }, () => ({ x: 0, y: 0, mode: 'idle', move: '', threat: false, low: false }));
+  private readonly seen: Seen[] = Array.from({ length: HISTORY }, () => ({ x: 0, y: 0, mode: 'idle', move: '', threat: false, low: false, projectile: false, recovering: false }));
   private frames = 0;
   private plan: Plan | null = null;
   private planT = 0;
@@ -98,6 +104,22 @@ export class Cpu {
       this.plan = null;
     }
     if (!actionable(me)) return 0;
+    // A marked hazard is on screen for everyone: step out of it.
+    const away = this.hazardEscape(m, me);
+    if (away) {
+      this.start(hold(away, 18));
+      return this.next0(me);
+    }
+    if (s.threat && me.fighter === 'dale' && Math.abs(s.x - me.x) < fx(1.2) && this.roll(this.level.block / 4)) {
+      // Heat Lightning goes through the attack.
+      this.start(tap(SPECIAL));
+      return this.next0(me);
+    }
+    // Rushdown jumps over projectiles from range.
+    if (s.projectile && me.fighter === 'rox' && this.roll(this.level.antiAir)) {
+      this.start(hold(UP | (me.facing > 0 ? RIGHT : LEFT), 4));
+      return this.next0(me);
+    }
     if (s.threat && this.roll(this.level.block)) {
       this.start(hold(BLOCK | (s.low ? DOWN : 0), 12 + nextInt(this.rng, 10)));
       return this.next0(me);
@@ -106,7 +128,8 @@ export class Cpu {
       this.wait--;
       return 0;
     }
-    this.decide(me, s);
+    if (propInReach(m, me) >= 0 && this.roll(35)) this.start(tap(INTERACT));
+    else this.decide(me, s);
     this.wait = this.level.think + nextInt(this.rng, this.level.think);
     return this.next0(me);
   }
@@ -133,17 +156,39 @@ export class Cpu {
     const dist = Math.abs(them.x - me.x);
     let threat = false;
     let low = false;
+    s.recovering = false;
     if (them.mode === 'move') {
       const mv = moveData(them.fighter, them.move);
+      s.recovering = mv.lastActive > 0 && them.moveFrame > mv.lastActive && mv.total - them.moveFrame > 8;
       threat = mv.hits.length > 0 && dist < reach(mv) + fx(0.4);
       // A crouching attack is the tell for a low.
       low = mv.stance === 'crouch';
     }
+    let projectile = false;
     for (const p of m.projectiles) {
-      if (p.active && p.owner !== this.player && Math.abs(p.x - me.x) < fx(2.2) && Math.sign(me.x - p.x) === p.dir) threat = true;
+      if (!p.active || p.owner === this.player || Math.sign(me.x - p.x) !== p.dir) continue;
+      const near = Math.abs(p.x - me.x);
+      if (near < fx(2.2)) threat = true;
+      if (near > fx(1.4) && near < fx(3.2) && p.y < fx(1)) projectile = true;
     }
     s.threat = threat;
+    s.projectile = projectile;
     s.low = low;
+  }
+
+  /** A direction out of an announced hazard about to strike here, or 0. */
+  private hazardEscape(m: MatchState, me: FighterState): number {
+    const seg = segmentData(m.stage, m.segment);
+    for (let k = 0; k < m.hazards.length; k++) {
+      const hz = seg.hazards[k];
+      const t = (m.roundFrame - hz.first) % hz.period;
+      if (m.roundFrame < hz.first || t >= hz.warn) continue;
+      const spots = hz.all ? hz.spots : [hz.spots[m.hazards[k].spot]];
+      for (const x of spots) {
+        if (Math.abs(me.x - x) < hz.halfW + fx(0.5)) return me.x >= x ? RIGHT : LEFT;
+      }
+    }
+    return 0;
   }
 
   private decide(me: FighterState, s: Seen): void {
@@ -160,6 +205,15 @@ export class Cpu {
     }
     if (s.y > fx(0.3) && dist < fx(1.6) && this.roll(this.level.antiAir)) {
       this.start(tap(DOWN | BP));
+      return;
+    }
+    // Punish what it can see recovering.
+    if (s.recovering && dist < fx(1.3) && this.roll(this.level.antiAir)) {
+      this.start(r < 60 ? this.string(d, me) : tap(DOWN | BK));
+      return;
+    }
+    if (s.recovering && !zoner && dist < fx(2.4) && this.roll(this.level.antiAir)) {
+      this.start(this.special(me, back | SPECIAL));
       return;
     }
     if (dist < fx(1.05)) {
@@ -190,7 +244,8 @@ export class Cpu {
     if (r < 40) this.start(taps([fwd, 0, fwd]));
     else if (r < 60) this.start(hold(fwd, 24));
     else if (r < 72 && dist < fx(2.2)) this.start(this.special(me, back | SPECIAL));
-    else if (r < 82 && dist < fx(2.0)) this.start(this.special(me, fwd | SPECIAL));
+    else if (r < 78 && dist < fx(2.0)) this.start(this.special(me, fwd | SPECIAL));
+    else if (r < 86 && dist > fx(1.2) && dist < fx(2.6)) this.start(this.special(me, SPECIAL));
     else if (r < 92) this.start(hold(UP | fwd, 4));
     else this.start(hold(fwd, 12));
   }

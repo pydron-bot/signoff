@@ -24,6 +24,11 @@ export type SimEvent =
   | { type: 'knockdown'; player: number }
   | { type: 'ko'; player: number }
   | { type: 'roundOver'; winner: number; reason: 'ko' | 'time' }
+  | { type: 'hazardWarn'; hazard: string; caption: string; x: Fx; all: boolean }
+  | { type: 'hazardStrike'; hazard: string; x: Fx; all: boolean }
+  | { type: 'hazardHit'; player: number; hazard: string; damage: number }
+  | { type: 'propKick'; player: number; prop: string }
+  | { type: 'propStop'; prop: string; x: Fx }
   | { type: 'commercialBreak'; nextSegment: number }
   | { type: 'segmentChange'; segment: number }
   /** "Stay tuned": the winner's finisher window opens. */

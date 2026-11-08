@@ -98,6 +98,7 @@ export interface MoveSpec {
   cancel?: Window;
   boost?: string;
   throwData?: MoveData['throwData'];
+  interactFrame?: number;
 }
 
 export function move(id: string, s: MoveSpec): MoveData {
@@ -126,6 +127,7 @@ export function move(id: string, s: MoveSpec): MoveData {
     cancel: s.cancel,
     boost: s.boost,
     throwData: s.throwData,
+    interactFrame: s.interactFrame,
     startup: starts.length ? Math.min(...starts) : 0,
     lastActive: ends.length ? Math.max(...ends) : 0,
   };
@@ -179,6 +181,11 @@ export function throwMove(damage: number): MoveData {
     total: 28,
     throwData: { frames: [5, 6], range: THROW_RANGE, damage },
   });
+}
+
+/** Using a stage object (kicking the camera dolly): Interact near it. */
+export function interactMove(): MoveData {
+  return move('interact', { name: 'Interact', kind: 'interact', total: 22, interactFrame: 8 });
 }
 
 /** The comeback super. On a hit it starts the cinematic, which deals the damage; on block it chips. */

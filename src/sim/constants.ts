@@ -28,6 +28,7 @@ export const START_X = fx(1.5);
 export const HITSTOP = 8;
 export const BLOCKSTOP = 6;
 export const COUNTER_HITSTUN = 4;
+export const COUNTER_HITSTOP = 4;
 /** Each further hit in a combo does 10% less, down to 30%. */
 export const SCALE_STEP = 10;
 export const SCALE_MIN = 30;

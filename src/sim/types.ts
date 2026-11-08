@@ -11,7 +11,7 @@ export const ATTACKS: readonly Attack[] = ['FP', 'BP', 'FK', 'BK'];
 /** The direction held with Special (or the motion that stands for it). */
 export type SpecialDir = 'n' | 'f' | 'b' | 'd';
 export type Stance = 'stand' | 'crouch' | 'air';
-export type MoveKind = 'normal' | 'air' | 'special' | 'throw' | 'super';
+export type MoveKind = 'normal' | 'air' | 'special' | 'throw' | 'super' | 'interact';
 export type Window = readonly [number, number];
 
 /** A box in fighter space: +x is the way the fighter faces, y = 0 is their feet. */
@@ -95,6 +95,8 @@ export interface MoveData {
   /** The boosted version (Special again, 1 bar). */
   readonly boost?: string;
   readonly throwData?: ThrowData;
+  /** Interact: the frame the stage object is used. */
+  readonly interactFrame?: number;
   /** First and last frames that can hit (0 when the move never hits). */
   readonly startup: number;
   readonly lastActive: number;
@@ -135,6 +137,7 @@ export interface FighterData {
   readonly specials: Readonly<Partial<Record<SpecialDir, string>>> & { readonly f: string };
   readonly throwMove: string;
   readonly superMove: string;
+  readonly interactMove: string;
   readonly moves: Readonly<Record<string, MoveData>>;
   readonly strings: readonly StringData[];
 }
