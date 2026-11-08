@@ -1,0 +1,31 @@
+/**
+ * What the simulation tells the presentation. step() appends these to the
+ * array it's given; the renderer, camera, audio, HUD and VHS effects read
+ * them and never write back. Players are 0 and 1; -1 means nobody (a draw).
+ */
+import type { Fx } from './fixed';
+import type { Height } from './types';
+
+export type SimEvent =
+  | { type: 'roundStart'; round: number; segment: number }
+  | { type: 'fight'; round: number }
+  | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; x: Fx; y: Fx }
+  | { type: 'block'; attacker: number; defender: number; move: string; chip: number; x: Fx; y: Fx }
+  | { type: 'armor'; player: number; move: string }
+  | { type: 'special'; player: number; move: string }
+  | { type: 'boost'; player: number; move: string }
+  | { type: 'projectileClash'; x: Fx; y: Fx }
+  | { type: 'throw'; thrower: number }
+  | { type: 'throwTech'; player: number }
+  | { type: 'tapeSkip'; player: number }
+  | { type: 'cutAway'; player: number }
+  | { type: 'superStart'; player: number }
+  | { type: 'superHit'; player: number }
+  | { type: 'knockdown'; player: number }
+  | { type: 'ko'; player: number }
+  | { type: 'roundOver'; winner: number; reason: 'ko' | 'time' }
+  | { type: 'commercialBreak'; nextSegment: number }
+  | { type: 'segmentChange'; segment: number }
+  /** "Stay tuned": the winner's finisher window opens. */
+  | { type: 'stayTuned'; winner: number }
+  | { type: 'matchOver'; winner: number };

@@ -1,0 +1,202 @@
+/**
+ * Helpers for writing fighter data in readable units (metres, frames). They
+ * run once when the data loads, converting to fixed point, so the numbers in
+ * the data files stay easy to tune.
+ */
+import { THROW_RANGE } from '../constants';
+import { fx } from '../fixed';
+import type { Attack, Box, Height, HitData, HitEffect, MoveData, MoveKind, ProjectileData, Stance, Window } from '../types';
+
+/** Chains and special cancels open after the last active frame (so the hit is checked first) and stay open this long. */
+const CANCEL_LATE = 7;
+const DEFAULT_PUSH = 0.035;
+
+/** A box from x0 to x1 (forward of the fighter's centre) and y0 to y1 (above their feet). */
+export function box(x0: number, x1: number, y0: number, y1: number): Box {
+  return { x: fx(x0), y: fx(y0), w: fx(x1 - x0), h: fx(y1 - y0) };
+}
+
+export interface EffectSpec {
+  damage: number;
+  height?: Height;
+  hitstun: number;
+  blockstun: number;
+  push?: number;
+  chip?: number;
+  knockdown?: boolean;
+  launch?: number;
+  pull?: number;
+  pullOnBlock?: boolean;
+  hitstop?: number;
+}
+
+export interface StrikeSpec extends EffectSpec {
+  frames: Window;
+  reach: readonly [number, number];
+  at: readonly [number, number];
+}
+
+export function effect(s: EffectSpec): HitEffect {
+  return {
+    damage: s.damage,
+    height: s.height ?? 'mid',
+    hitstun: s.hitstun,
+    blockstun: s.blockstun,
+    push: fx(s.push ?? DEFAULT_PUSH),
+    chip: s.chip,
+    knockdown: s.knockdown,
+    launch: s.launch === undefined ? undefined : fx(s.launch),
+    pull: s.pull === undefined ? undefined : fx(s.pull),
+    pullOnBlock: s.pullOnBlock,
+    hitstop: s.hitstop,
+  };
+}
+
+export function strike(s: StrikeSpec): HitData {
+  return { ...effect(s), frames: s.frames, box: box(s.reach[0], s.reach[1], s.at[0], s.at[1]) };
+}
+
+export interface ProjectileSpec {
+  at: readonly [number, number];
+  speed: readonly [number, number];
+  size: readonly [number, number, number, number];
+  life: number;
+  hits?: number;
+  rehit?: number;
+  groundEnds?: boolean;
+  effect: EffectSpec;
+}
+
+export function projectile(s: ProjectileSpec): ProjectileData {
+  return {
+    x: fx(s.at[0]),
+    y: fx(s.at[1]),
+    vx: fx(s.speed[0]),
+    vy: fx(s.speed[1]),
+    box: box(...s.size),
+    life: s.life,
+    hits: s.hits ?? 1,
+    rehit: s.rehit ?? 0,
+    groundEnds: s.groundEnds,
+    effect: effect(s.effect),
+  };
+}
+
+export interface MoveSpec {
+  name: string;
+  kind: MoveKind;
+  total: number;
+  stance?: Stance;
+  hits?: readonly HitData[];
+  spawns?: readonly { frame: number; projectile: ProjectileData }[];
+  hurt?: readonly { frames: Window; box: Box }[];
+  motion?: readonly { frames: Window; vx: number }[];
+  passThrough?: Window;
+  invuln?: Window;
+  armor?: Window;
+  chain?: Partial<Record<Attack, string>>;
+  cancel?: Window;
+  boost?: string;
+  throwData?: MoveData['throwData'];
+}
+
+export function move(id: string, s: MoveSpec): MoveData {
+  const hits = s.hits ?? [];
+  const spawns = s.spawns ?? [];
+  const starts = [...hits.map((h) => h.frames[0]), ...spawns.map((p) => p.frame)];
+  const ends = [...hits.map((h) => h.frames[1]), ...spawns.map((p) => p.frame)];
+  if (s.throwData) {
+    starts.push(s.throwData.frames[0]);
+    ends.push(s.throwData.frames[1]);
+  }
+  return {
+    id,
+    name: s.name,
+    kind: s.kind,
+    stance: s.stance ?? (s.kind === 'air' ? 'air' : 'stand'),
+    total: s.total,
+    hits,
+    spawns,
+    hurt: s.hurt ?? [],
+    motion: (s.motion ?? []).map((m) => ({ frames: m.frames, vx: fx(m.vx) })),
+    passThrough: s.passThrough,
+    invuln: s.invuln,
+    armor: s.armor,
+    chain: s.chain ?? {},
+    cancel: s.cancel,
+    boost: s.boost,
+    throwData: s.throwData,
+    startup: starts.length ? Math.min(...starts) : 0,
+    lastActive: ends.length ? Math.max(...ends) : 0,
+  };
+}
+
+export interface NormalSpec extends Omit<StrikeSpec, 'frames'> {
+  name: string;
+  startup: number;
+  active: number;
+  recovery: number;
+  kind?: MoveKind;
+  stance?: Stance;
+  chain?: Partial<Record<Attack, string>>;
+  boost?: string;
+  armor?: Window;
+  invuln?: Window;
+}
+
+/**
+ * One hit: startup is the first active frame, so total = startup - 1 +
+ * active + recovery. Ground normals get a limb hurtbox through the active
+ * frames and half the recovery, and a cancel window for strings and specials.
+ */
+export function normal(id: string, s: NormalSpec): MoveData {
+  const kind = s.kind ?? 'normal';
+  const last = s.startup + s.active - 1;
+  const ground = kind !== 'air';
+  const limbEnd = s.reach[1] - 0.1;
+  return move(id, {
+    name: s.name,
+    kind,
+    stance: s.stance,
+    total: last + s.recovery,
+    hits: [strike({ ...s, frames: [s.startup, last] })],
+    hurt:
+      ground && limbEnd > Math.max(0, s.reach[0])
+        ? [{ frames: [s.startup, last + Math.ceil(s.recovery / 2)], box: box(Math.max(0, s.reach[0]), limbEnd, s.at[0], s.at[1]) }]
+        : [],
+    chain: s.chain,
+    cancel: kind === 'normal' ? [last + 1, last + CANCEL_LATE] : undefined,
+    boost: s.boost,
+    armor: s.armor,
+    invuln: s.invuln,
+  });
+}
+
+export function throwMove(damage: number): MoveData {
+  return move('throw', {
+    name: 'Throw',
+    kind: 'throw',
+    total: 28,
+    throwData: { frames: [5, 6], range: THROW_RANGE, damage },
+  });
+}
+
+/** The comeback super. On a hit it starts the cinematic, which deals the damage; on block it chips. */
+export function technicalDifficulties(reach: number): MoveData {
+  return move('td', {
+    name: 'Technical Difficulties',
+    kind: 'super',
+    total: 45,
+    invuln: [1, 15],
+    hits: [strike({ frames: [12, 15], reach: [0.1, reach], at: [0.3, 1.6], damage: 0, hitstun: 0, blockstun: 20, chip: 30 })],
+  });
+}
+
+export function table(...moves: MoveData[]): Record<string, MoveData> {
+  const t: Record<string, MoveData> = {};
+  for (const m of moves) {
+    if (t[m.id]) throw new Error(`duplicate move id ${m.id}`);
+    t[m.id] = m;
+  }
+  return t;
+}

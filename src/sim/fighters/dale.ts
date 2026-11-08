@@ -1,0 +1,124 @@
+/**
+ * Dale Storm, Channel 0's weatherman. Zoner: long, slow normals, a slow
+ * projectile, a hail drop from above and a lasso that pulls opponents in.
+ */
+import { fx } from '../fixed';
+import type { FighterData } from '../types';
+import { box, move, normal, projectile, strike, table, technicalDifficulties, throwMove } from './build';
+
+const moves = table(
+  // Standing
+  normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP' } }),
+  normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [1.1, 1.45], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
+  normal('s.FK', { name: 'Front Kick', startup: 9, active: 3, recovery: 15, reach: [0.2, 1.2], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
+  normal('s.BK', { name: 'Isotherm Kick', startup: 13, active: 3, recovery: 20, reach: [0.2, 1.3], at: [0.9, 1.3], damage: 80, hitstun: 22, blockstun: 16, push: 0.07 }),
+  // Crouching
+  normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.7, 0.95], damage: 25, hitstun: 15, blockstun: 11, chain: { FK: 'c.FP FK' } }),
+  normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [1.0, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
+  normal('c.FK', { name: 'Shin Poke', stance: 'crouch', startup: 8, active: 2, recovery: 14, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 10 }),
+  normal('c.BK', { name: 'Ground Fog', stance: 'crouch', startup: 12, active: 3, recovery: 24, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
+  // Command normal
+  normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [1.0, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
+  // Jumping (all overheads)
+  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12 }),
+  normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
+  normal('j.BK', { name: 'Jumping Boot', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
+  // String steps
+  normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], damage: 35, hitstun: 18, blockstun: 14, chain: { BK: 'FP FP BK' } }),
+  normal('FP FP BK', { name: 'Front Moves In', startup: 12, active: 3, recovery: 20, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 0, blockstun: 18, push: 0.07, knockdown: true }),
+  normal('FP BP', { name: 'Cloud Cover', startup: 9, active: 3, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.4], damage: 50, hitstun: 20, blockstun: 13 }),
+  normal('BP FK', { name: 'High Pressure', startup: 10, active: 3, recovery: 18, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 55, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK FK' } }),
+  normal('BP FK FK', { name: 'Scattered Showers', startup: 11, active: 2, recovery: 16, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 45, hitstun: 18, blockstun: 13 }),
+  normal('FK BP', { name: 'Doppler', startup: 16, active: 2, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 14 }),
+  normal('c.FP FK', { name: 'Ground Frost', stance: 'crouch', startup: 9, active: 2, recovery: 20, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 10 }),
+  normal('f.BP BP', { name: 'Thunderhead', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.9, 1.4], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
+  // Specials
+  move('Cold Front', {
+    name: 'Cold Front',
+    kind: 'special',
+    total: 40,
+    boost: 'Cold Front+',
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 60, hitstun: 20, blockstun: 16, push: 0.05, chip: 10 } }) }],
+  }),
+  move('Cold Front+', {
+    name: 'Cold Front (boosted)',
+    kind: 'special',
+    total: 40,
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.04, chip: 8 } }) }],
+  }),
+  move('Pressure Drop', {
+    name: 'Pressure Drop',
+    kind: 'special',
+    total: 44,
+    boost: 'Pressure Drop+',
+    spawns: [{ frame: 18, projectile: hail(2.2, 70) }],
+  }),
+  move('Pressure Drop+', {
+    name: 'Pressure Drop (boosted)',
+    kind: 'special',
+    total: 44,
+    spawns: [
+      { frame: 18, projectile: hail(1.6, 50) },
+      { frame: 22, projectile: hail(2.4, 50) },
+      { frame: 26, projectile: hail(3.2, 50) },
+    ],
+  }),
+  move('Isobar Lasso', {
+    name: 'Isobar Lasso',
+    kind: 'special',
+    total: 41,
+    boost: 'Isobar Lasso+',
+    hits: [strike({ frames: [14, 17], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 50, hitstun: 34, blockstun: 12, push: 0, pull: 0.8 })],
+  }),
+  move('Isobar Lasso+', {
+    name: 'Isobar Lasso (boosted)',
+    kind: 'special',
+    total: 41,
+    hits: [strike({ frames: [14, 17], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 70, hitstun: 34, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+  }),
+  throwMove(100),
+  technicalDifficulties(1.6),
+);
+
+/** A hailstone that falls from above at distance x: an overhead. */
+function hail(x: number, damage: number) {
+  return projectile({ at: [x, 3.0], speed: [0, -0.1], size: [-0.3, 0.3, 0, 0.5], life: 60, groundEnds: true, effect: { damage, height: 'overhead', hitstun: 22, blockstun: 14, push: 0.03, chip: 10 } });
+}
+
+export const DALE: FighterData = {
+  id: 'dale',
+  name: 'Dale Storm',
+  health: 1000,
+  walkFwd: fx(0.04),
+  walkBack: fx(0.035),
+  jumpVy: fx(0.2),
+  jumpVx: fx(0.055),
+  dash: { frames: 16, speed: fx(0.08) },
+  backdash: { frames: 20, speed: fx(0.075) },
+  hurt: { stand: box(-0.3, 0.3, 0, 1.8), crouch: box(-0.3, 0.35, 0, 1.1), air: box(-0.3, 0.3, 0.2, 1.6) },
+  pushW: fx(0.3),
+  pushH: fx(1.6),
+  pushHCrouch: fx(1.0),
+  normals: {
+    s: { FP: 's.FP', BP: 's.BP', FK: 's.FK', BK: 's.BK' },
+    c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
+    j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
+    f: { BP: 'f.BP' },
+    b: {},
+  },
+  specials: { f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
+  throwMove: 'throw',
+  superMove: 'td',
+  moves,
+  strings: [
+    { name: 'Five-Day Outlook', path: ['s.FP', 'FP'], safe: true },
+    { name: 'Front Moves In', path: ['s.FP', 'FP', 'BK'], safe: true },
+    { name: 'Cloud Cover', path: ['s.FP', 'BP'], safe: true },
+    { name: 'High Pressure', path: ['s.BP', 'FK'], safe: false },
+    { name: 'Scattered Showers', path: ['s.BP', 'FK', 'FK'], safe: true },
+    { name: 'Doppler', path: ['s.FK', 'BP'], safe: true },
+    { name: 'Ground Frost', path: ['c.FP', 'FK'], safe: false },
+    { name: 'Thunderhead', path: ['f.BP', 'BP'], safe: true },
+  ],
+};
