@@ -35,6 +35,7 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 | Format | glTF binary (`.glb`), one file per fighter, one for the stage |
 | Units / axes | Metres. Blender defaults (Z up); export with glTF's +Y up. The character faces Blender −Y (front view); the game turns it to face its opponent |
 | Origin | Between the feet, on the floor (z = 0) |
+| Height | The fighting stance (`idle`) stands as tall as the standing hurtbox, so the straight-legged rest pose is a few per cent taller |
 | Budget per fighter | About 20,000 triangles, 2 materials (body, and accessories/props) |
 | Textures | Up to 2048² per material; we'll convert to KTX2 on our side. Keep texture count low |
 | Skeleton | **One shared humanoid skeleton for all human fighters** (bone names identical) so clips can be retargeted. Mister Mumbles and Test Pattern may need their own later |
@@ -79,8 +80,10 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   and target nudged, the pose evaluated) until the tip lands in the hitbox.
   Throws, prop kicks, projectile spawns, teleports (`hidden` frames), hops,
   spins and Knock-Knock's wind-up have their own shapes.
-- `lib/fighter.py`: builds a fighter end to end. The crouch depth is
-  solved so the head tops out at the crouching hurtbox.
+- `lib/fighter.py`: builds a fighter end to end. The rig's height is
+  solved so the head in `idle` tops out at the standing hurtbox, and the
+  crouch depth so it tops out at the crouching one; both are checked on
+  every frame of the standing and crouching clips.
 - `lib/glb.py`: compacts each export without changing it: channels that
   never leave the rest pose are dropped, rotations are stored as normalised
   16-bit integers, all animation data shares one bufferView. About 0.7 MB
@@ -202,16 +205,16 @@ one per round (DESIGN.md has the details):
 Do these first: they're quick, and the detail pass builds on them. Found by playing every clip in the viewer and measuring it; details under
 *Review, Nov 8* in Feedback. In priority order:
 
-- [ ] **`ko` ends standing up.** All four fighters fall (0.5 m tall at frame 60) but frames 89–90 are back at idle height (Dale 1.72 m). The game holds the last frame of `ko` for the rest of the round, so it must end lying down, like `down`.
-- [ ] **`getup` ends lying down.** Frame 20 is still 0.45–0.60 m tall; the game goes straight to `idle` after it, so it pops. It should rise and finish in the idle pose (frame 20 = `idle` frame 1).
-- [ ] **Stand as tall as the hurtbox.** `idle` frame 1 is 3–13 cm under the standing hurtbox (Dale 1.72/1.80, Rox 1.62/1.75, Hollis 1.78/1.90, Mumbles 1.24/1.30), so hits that connect look like they pass over the head. Aim for the head top within 3 cm of the box top in `idle`, `walk_*` and `block_stand` (scale the rest pose up or bend the knees less). Mumbles' `crouch_idle` is 6 cm over its box (0.86/0.80). Add this to the build's checks, like the hitbox check.
-- [ ] **Overheads must read as overheads.** Blocking high or low is the core guessing game, so an overhead needs a clear high-to-low arc: hand or foot raised above the head during startup, chopping down into the hitbox on the active frames. Today `f.BP` (Dale) keeps the fist at chest height through all 39 frames, and Rox's `f.FK` is a front kick. The overheads: Dale `f.BP`, `FK BP`; Rox `f.FK`, `FK FK BP`, `Star Jump`; Hollis `f.BP`, `FK FK BP`; Mumbles `b.BP`, `BP FK BP`. Lows should likewise drop and sweep (they mostly do).
-- [ ] **Moves that travel need feet that travel.** `Grapevine` covers 2.6 m in 20 frames with the feet planted (frames 3–22 are the same pose). The same applies to `Leg Warmer Lariat`, `Night Shift`, `Star Jump`, `dash`, `backdash` and Tape Skip's dash. Step at the move's speed (the `motion` windows and speeds are in `blender/data/fighters.json`), as the walks already do. A grapevine is the aerobics side-step: step out, cross behind, step out.
-- [ ] **Knock-Knock's wind-up must be impossible to miss.** It's unblockable; the only defence is to see it and jump. Frames 1–29 barely change today. Make it big: a lean back, an arm raised to knock on an invisible door, two knocks on frames 4 and 16 (the game plays the knock sounds then), then the swing low on 30. The game also tints him purple during the wind-up.
-- [ ] **Heat Lightning should rise.** It's an invulnerable uppercut reversal with a hitbox from 0.8 to 2.2 m, but frames 3–14 hold the guard pose. Rising uppercut: crouch on 1–5, fist driving up through the box on 6–9 with the body lifting onto the toes (a little `root` lift is fine), arm high through recovery.
-- [ ] **Clocking In should reach.** It's a command grab with a range of 1.1 m on frames 10–12: both hands reaching forward at chest height, then (on a whiff, 13–50) an over-reach and a slow recovery so the miss is punishable and looks it. Today the hand rises to the head.
-- [ ] **Bigger hit reactions.** `hit_high` moves the head a few degrees; `hit_low` similarly. Snap the head and torso back 15–25° in the first 3 frames and ease back, so a hit reads at phone size. The game holds the clip for as long as the stun lasts.
-- [ ] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
+- [x] **`ko` ends standing up.** *It didn't, in Blender or the GLB: the viewer's height readout lagged a frame behind (the skin wasn't updated before measuring), so stepping showed the previous frame. Fixed in the viewer.* All four fighters fall (0.5 m tall at frame 60) but frames 89–90 are back at idle height (Dale 1.72 m). The game holds the last frame of `ko` for the rest of the round, so it must end lying down, like `down`.
+- [x] **`getup` ends lying down.** *Same readout lag; frame 20 now also equals `idle` frame 1 exactly (bob included).* Frame 20 is still 0.45–0.60 m tall; the game goes straight to `idle` after it, so it pops. It should rise and finish in the idle pose (frame 20 = `idle` frame 1).
+- [x] **Stand as tall as the hurtbox.** *The build scales each rig until `idle` tops out at the hurtbox (the straight-legged rest pose is 4–7% taller), solves the crouch against the mesh, not the head bone, and fails if any frame of `idle`, the walks, `block_stand` or `crouch_idle` is more than 3 cm under or 1 cm over its box.* `idle` frame 1 is 3–13 cm under the standing hurtbox (Dale 1.72/1.80, Rox 1.62/1.75, Hollis 1.78/1.90, Mumbles 1.24/1.30), so hits that connect look like they pass over the head. Aim for the head top within 3 cm of the box top in `idle`, `walk_*` and `block_stand` (scale the rest pose up or bend the knees less). Mumbles' `crouch_idle` is 6 cm over its box (0.86/0.80). Add this to the build's checks, like the hitbox check.
+- [x] **Overheads must read as overheads.** *Every ground overhead raises the hand above the head (Rox's `f.FK` is an axe kick, the foot raised high), holds it high and forward 2 frames before, then chops down: the tip is at the top of the box on the first active frame and lower on the last. `Star Jump` claps the hands over the head in the air first.* Blocking high or low is the core guessing game, so an overhead needs a clear high-to-low arc: hand or foot raised above the head during startup, chopping down into the hitbox on the active frames. Today `f.BP` (Dale) keeps the fist at chest height through all 39 frames, and Rox's `f.FK` is a front kick. The overheads: Dale `f.BP`, `FK BP`; Rox `f.FK`, `FK FK BP`, `Star Jump`; Hollis `f.BP`, `FK FK BP`; Mumbles `b.BP`, `BP FK BP`. Lows should likewise drop and sweep (they mostly do).
+- [x] **Moves that travel need feet that travel.** *Every frame of a `motion` window (and `dash`, `backdash`, and a new `tape_skip` clip) is keyed with the feet stepping at the move's speed: planted feet slide back at that speed so they stay put on the floor. Kicking feet and feet off the floor are left alone. The Grapevine steps out and crosses behind.* `Grapevine` covers 2.6 m in 20 frames with the feet planted (frames 3–22 are the same pose). The same applies to `Leg Warmer Lariat`, `Night Shift`, `Star Jump`, `dash`, `backdash` and Tape Skip's dash. Step at the move's speed (the `motion` windows and speeds are in `blender/data/fighters.json`), as the walks already do. A grapevine is the aerobics side-step: step out, cross behind, step out.
+- [x] **Knock-Knock's wind-up must be impossible to miss.** It's unblockable; the only defence is to see it and jump. Frames 1–29 barely change today. Make it big: a lean back, an arm raised to knock on an invisible door, two knocks on frames 4 and 16 (the game plays the knock sounds then), then the swing low on 30. The game also tints him purple during the wind-up.
+- [x] **Heat Lightning should rise.** It's an invulnerable uppercut reversal with a hitbox from 0.8 to 2.2 m, but frames 3–14 hold the guard pose. Rising uppercut: crouch on 1–5, fist driving up through the box on 6–9 with the body lifting onto the toes (a little `root` lift is fine), arm high through recovery.
+- [x] **Clocking In should reach.** It's a command grab with a range of 1.1 m on frames 10–12: both hands reaching forward at chest height, then (on a whiff, 13–50) an over-reach and a slow recovery so the miss is punishable and looks it. Today the hand rises to the head.
+- [x] **Bigger hit reactions.** *Head 40°, chest 30° back (or doubled over for `hit_low`) by frame 3, easing to about half by 12.* `hit_high` moves the head a few degrees; `hit_low` similarly. Snap the head and torso back 15–25° in the first 3 frames and ease back, so a hit reads at phone size. The game holds the clip for as long as the stun lasts.
+- [x] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
 - [ ] **The hand puppet should look like a puppet.** `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
 
 ### 8. Detail pass (the style is approved; it wants more detail and textures)
@@ -298,6 +301,7 @@ Loop where noted; lengths are suggestions unless given.
 | `jump_up`, `jump_fall` | hold | Split at the apex; the jump lasts about 36 frames |
 | `land` | 2 | Exactly 2 frames (4 after an air attack: `land_attack`) |
 | `dash` | Dale 16, Rox 14 | Exactly these |
+| `tape_skip` | 10 | Exactly 10: the Tape Skip dash (0.11 m a frame), low and leaning |
 | `backdash` | Dale 20, Rox 18 | Exactly these |
 | `hit_high`, `hit_low` | 12 | Played and held for however long the stun lasts |
 | `launched` | hold | Airborne, spinning slightly |
@@ -487,5 +491,7 @@ worked into the move data, and the table above updates itself.
   | `ko` frame 60 → 90 | 0.51 → 1.72 | 0.49 → 1.62 | 0.55 → 1.77 | 0.35 → 1.24 |
   | `getup` frame 20 (should be idle height) | 0.60 | 0.55 | 0.53 | 0.45 |
 
+- **Clip ends (game side, Nov 8):** play one-shot clips with `LoopOnce` and `clampWhenFinished`, and update the skeleton (`skeleton.update()`) before measuring a skinned mesh, or the measurement shows the last rendered frame. `ko` and `getup` were right in the GLB; the viewer's readout lagged.
+- **`tape_skip` (game side):** a new 10-frame state clip for the Tape Skip dash; play it (with `fx_tape_skip`, when it exists) instead of `dash`.
 - **Answers to the notes above (game side):** mirroring to face left, the shorter walk loops, the root motion in `down`, `getup`, `thrown`, `ko`, `launched`, the teleports and `Star Jump`, and effect-only hits are all fine; the game will follow them when it loads the GLBs (next on the game side, with the clips played by simulation frame). Rox having one material is fine (the contract is body plus *at most* props).
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.

@@ -31,6 +31,7 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   land_attack: { frames: 4 },
   dash: {},
   backdash: {},
+  tape_skip: { frames: 10 },
   hit_high: { frames: 12 },
   hit_low: { frames: 12 },
   launched: {},
@@ -89,7 +90,10 @@ for (const f of Object.values(FIGHTERS)) {
       for (const n of meshes.filter((m) => m.skin === undefined)) expect(n.name).toMatch(/^fx_/);
     });
 
-    it('stands as tall as its hurtbox, feet on the floor, at rest', () => {
+    // The build scales each rig so the fighting stance (idle) stands as tall
+    // as the hurtbox, and checks every frame of idle, the walks and blocks;
+    // the straight-legged rest pose is up to 8% taller.
+    it('stands about as tall as its hurtbox, feet on the floor, at rest', () => {
       const hurt = f.hurt.stand;
       const tall = toFloat(hurt.y + hurt.h);
       let lo = Infinity;
@@ -103,7 +107,7 @@ for (const f of Object.values(FIGHTERS)) {
       }
       expect(lo).toBeCloseTo(0, 2);
       expect(hi).toBeGreaterThan(tall - 0.03);
-      expect(hi).toBeLessThan(tall + 0.01);
+      expect(hi).toBeLessThan(tall * 1.08);
     });
 
     it('has an idle, and every clip is a known name with its exact length', () => {

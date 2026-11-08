@@ -58,7 +58,7 @@ class STANCE(Stance):
 OVERRIDES = {
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
     "Isobar Lasso": {"limb": "hand.L", "prop": True},
-    "Heat Lightning": {"limb": "hand.L"},
+    "Heat Lightning": {"limb": "hand.L", "style": "rising"},
     "td": {"limb": "hand.R"},
 }
 

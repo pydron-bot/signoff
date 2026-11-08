@@ -26,8 +26,18 @@
    "fwd": 2.4,
    "back": 2.1
   },
-  "dash": 16,
-  "backdash": 20,
+  "dash": {
+   "frames": 16,
+   "speed": 0.08
+  },
+  "backdash": {
+   "frames": 20,
+   "speed": 0.075
+  },
+  "tapeSkip": {
+   "frames": 10,
+   "speed": 0.11
+  },
   "moves": {
    "s.FP": {
     "kind": "normal",
@@ -780,8 +790,18 @@
    "fwd": 3.6,
    "back": 2.4
   },
-  "dash": 14,
-  "backdash": 18,
+  "dash": {
+   "frames": 14,
+   "speed": 0.1
+  },
+  "backdash": {
+   "frames": 18,
+   "speed": 0.08
+  },
+  "tapeSkip": {
+   "frames": 10,
+   "speed": 0.11
+  },
   "moves": {
    "s.FP": {
     "kind": "normal",
@@ -1894,8 +1914,18 @@
    "fwd": 1.92,
    "back": 1.68
   },
-  "dash": 18,
-  "backdash": 22,
+  "dash": {
+   "frames": 18,
+   "speed": 0.07
+  },
+  "backdash": {
+   "frames": 22,
+   "speed": 0.065
+  },
+  "tapeSkip": {
+   "frames": 10,
+   "speed": 0.11
+  },
   "moves": {
    "s.FP": {
     "kind": "normal",
@@ -2701,8 +2731,18 @@
    "fwd": 3.3,
    "back": 3
   },
-  "dash": 12,
-  "backdash": 16,
+  "dash": {
+   "frames": 12,
+   "speed": 0.11
+  },
+  "backdash": {
+   "frames": 16,
+   "speed": 0.1
+  },
+  "tapeSkip": {
+   "frames": 10,
+   "speed": 0.11
+  },
   "moves": {
    "s.FP": {
     "kind": "normal",

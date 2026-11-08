@@ -141,6 +141,10 @@ function setView(v: string): void {
 
 function stats() {
   const body = model?.getObjectByName(`${fighterId}_body`);
+  // Pose the bones now: otherwise the skin still has the last rendered
+  // frame's pose, and the height lags behind setFrame.
+  model?.updateMatrixWorld(true);
+  model?.traverse((o) => (o as THREE.SkinnedMesh).isSkinnedMesh && (o as THREE.SkinnedMesh).skeleton.update());
   const box = body ? new THREE.Box3().setFromObject(body, true) : null;
   let tris = 0;
   const mats = new Set<string>();

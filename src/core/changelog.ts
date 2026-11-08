@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.4.3',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: ['The fighters\' animations read better: overheads come down from above the head, travelling moves take real steps, hits snap the head back, and Knock-Knock\'s wind-up is impossible to miss. The fights still use grey boxes for now.'],
+  },
+  {
     version: '0.4.2',
     date: '2026-11-08',
     title: 'Behind the scenes',
