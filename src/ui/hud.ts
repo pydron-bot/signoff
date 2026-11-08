@@ -10,12 +10,19 @@ import type { Advantage } from '../game/advantage';
 
 const SEGMENTS = 20;
 
-/** Fake ads for the commercial break, by the segment coming up. */
-const ADS = [
-  ['SLEEPWELL MATTRESS BARN', 'Lie down. Stay down. Open all night.'],
-  ['DIAL-A-FORECAST', 'Call 555-0333. Someone is always listening.'],
-  ['AQUA-PAL FLOOD SANDBAGS', "When it rains, it's already too late."],
-];
+/** Fake ads for the commercial break, by stage and the segment coming up. */
+const ADS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
+  weather: [
+    ['SLEEPWELL MATTRESS BARN', 'Lie down. Stay down. Open all night.'],
+    ['DIAL-A-FORECAST', 'Call 555-0333. Someone is always listening.'],
+    ['AQUA-PAL FLOOD SANDBAGS', "When it rains, it's already too late."],
+  ],
+  burn: [
+    ['VEGA-VISION WORKOUT TAPES', 'Twelve cassettes. No rewind button.'],
+    ['TURBO-TAPE VCR', 'Plays every tape faster. It only gets faster.'],
+    ['GLASSWORKS MIRROR & PANE', 'Seven years bad luck? Call us in eight.'],
+  ],
+};
 
 interface Side {
   root: HTMLElement;
@@ -154,7 +161,8 @@ export class Hud {
           break;
         case 'commercialBreak': {
           this.breakCard.classList.remove('hud-signoff');
-          const [title, line] = ADS[e.nextSegment] ?? ADS[0];
+          const ads = ADS[m.stage] ?? ADS.weather;
+          const [title, line] = ads[e.nextSegment] ?? ads[0];
           this.breakCard.innerHTML = `<div class="hud-break-top">WE'LL BE RIGHT BACK</div><div class="hud-break-ad">${title}</div><div class="hud-break-line">${line}</div>`;
           this.breakCard.hidden = false;
           this.captionLeft = 0;

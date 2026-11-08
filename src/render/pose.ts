@@ -8,6 +8,7 @@
 import { INTRO_FRAMES } from '../sim/constants';
 import type { SimEvent } from '../sim/events';
 import type { FighterState, MatchState } from '../sim/state';
+import { segmentData } from '../sim/stages';
 
 export interface Pose {
   clip: string;
@@ -23,8 +24,8 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
 export const STAND_INS: Readonly<Record<string, string>> = {
-  // None outstanding: every clip asked for is in the GLBs. Add new ones as
-  // `clip` or `fighter:clip` (a new move) until the art catches up.
+  // Picking up and throwing a prop (the boombox, step 14).
+  interact_throw: 'interact',
 };
 
 /** The clip to show for a fighter's clip that isn't in the GLB yet, if there is one. */
@@ -156,7 +157,8 @@ export class PoseTracker {
         out.frame = Math.min(INTRO_FRAMES, Math.max(1, INTRO_FRAMES - m.phaseTimer + 1));
         return out;
       case 'move':
-        out.clip = f.move;
+        // Interact throws a prop where the segment's prop is thrown, and kicks it otherwise.
+        out.clip = f.move === 'interact' && segmentData(m.stage, m.segment).props.some((p) => p.thrown) ? 'interact_throw' : f.move;
         out.frame = f.moveFrame;
         return out;
       case 'throwing':

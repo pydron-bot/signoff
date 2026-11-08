@@ -1,6 +1,6 @@
 /**
- * The fight view: the Weather at Eleven set (its GLB, src/render/stageView.ts,
- * or flat stand-in panels until it loads) and the fighters'
+ * The fight view: the match's stage (its GLB, src/render/stageView.ts, or
+ * flat stand-in panels until it loads) and the fighters'
  * 3D models posed by sim frame (src/render/pose.ts), or grey boxes the size
  * of their hurtboxes with attacks as limb boxes (lit red while they can
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
 import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
+import { segmentData } from '../sim/stages';
 import type { Box } from '../sim/types';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
@@ -138,7 +139,6 @@ export class Arena {
   private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
   /** The hurtbox of a body nothing can hit right now. */
   private readonly hurtOffMat = new THREE.LineBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.35 });
-  private readonly wallMat = new THREE.MeshBasicMaterial({ color: 0x0d1a4a });
   private readonly stage: StageView;
   private readonly sparks: Sparks;
   private frame = 0;
@@ -155,7 +155,9 @@ export class Arena {
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(-3, 6, 8);
     this.scene.add(key);
-    this.stage = new StageView(this.scene, this.buildSet(), this.wallMat, { ambient, key });
+    const rim = new THREE.DirectionalLight(0xffffff, 0);
+    this.scene.add(rim);
+    this.stage = new StageView(this.scene, { ambient, key, rim });
     this.sparks = new Sparks(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
@@ -180,34 +182,6 @@ export class Arena {
     }
   }
 
-  /** Weather at Eleven's stand-in until its GLB loads: studio floor, the weather map wall and a green screen. */
-  private buildSet(): THREE.Group {
-    const set = new THREE.Group();
-    this.scene.add(set);
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 24), new THREE.MeshLambertMaterial({ color: 0x24242c }));
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.z = 8;
-    set.add(floor);
-    const wall = new THREE.Mesh(new THREE.PlaneGeometry(40, 10), this.wallMat);
-    wall.position.set(0, 4, -4);
-    set.add(wall);
-    // The map: a few coastline-ish slabs on the wall, one mesh per colour.
-    const land = new THREE.Mesh(new THREE.BoxGeometry(5, 2.4, 0.05), new THREE.MeshBasicMaterial({ color: 0x2f6b3a }));
-    land.position.set(-2.5, 2.8, -3.95);
-    set.add(land);
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ color: 0x1fa64a }));
-    screen.position.set(4.2, 2.3, -3.9);
-    set.add(screen);
-    // The arena walls at ±6: studio flats.
-    const flatMat = new THREE.MeshLambertMaterial({ color: 0x3a3440 });
-    for (const x of [-6.4, 6.4]) {
-      const flat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5, 4), flatMat);
-      flat.position.set(x, 2.5, -1);
-      set.add(flat);
-    }
-    return set;
-  }
-
   private fighterView(): FighterView {
     const group = new THREE.Group();
     const bodyMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -229,7 +203,7 @@ export class Arena {
    */
   setFighters(m: MatchState): Promise<void> {
     this.poses.reset();
-    const loads: Promise<void>[] = [this.stage.load()];
+    const loads: Promise<void>[] = [this.stage.setStage(m.stage)];
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
       v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
@@ -272,6 +246,7 @@ export class Arena {
       } else if (e.type === 'block') this.fighters[e.defender].flash = 3;
       else if (e.type === 'superHit') this.shake = 0.25;
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.shake = Math.max(this.shake, 0.15);
+      else if (e.type === 'hazardStrike' && e.hazard === 'shards') this.shake = Math.max(this.shake, 0.08);
     }
   }
 
@@ -315,7 +290,9 @@ export class Arena {
     const high = close ? Math.max(toFloat(a.y), toFloat(b.y)) : 0;
     const wantZ = close ? Math.max(7, ((gap + 2.5) * 2.2) / aspect + 3.5 + high * 2) : Math.min(16, Math.max(10.5, ((gap + 4) * 2.2) / aspect + 6));
     this.camY += ((close ? 1.6 + high * 0.6 : 2.1) - this.camY) * 0.08;
-    this.camX += (Math.max(-3.5, Math.min(3.5, mid)) - this.camX) * 0.15;
+    // The camera keeps the walls about in shot: it follows the fighters to 2.5 m short of them.
+    const reach = toFloat(segmentData(m.stage, m.segment).halfWidth) - 2.5;
+    this.camX += (Math.max(-reach, Math.min(reach, mid)) - this.camX) * 0.15;
     this.camZ += (wantZ - this.camZ) * 0.1;
     let sx = 0;
     let sy = 0;

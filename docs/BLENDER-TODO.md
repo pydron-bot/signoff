@@ -422,8 +422,8 @@ writing `art/stage-burn.blend`, `art/textures/stage-burn_*.png` and
 z toward the camera, origin at the arena's centre on the floor; fighters on
 z = 0), the same materials (`set` 2048², `props` 512²; no `water` needed) and
 a `lights` node with one rig per segment, named exactly as below. The game
-side is in `src/sim/stages.ts` (`burn`); until the GLB exists it plays on
-flat stand-ins.
+side is in (0.13.0: `src/sim/stages.ts`, `src/render/burnSet.ts`); until
+the GLB exists it plays on flat stand-ins in these colours and places.
 
 | Segment | The game | The set |
 | --- | --- | --- |
@@ -460,7 +460,8 @@ The light rig per segment (suggested; tune by eye):
 - [ ] `set`, `seg_warmup`, `seg_double`, `seg_burnout` and the light rigs
 - [ ] `prop_boombox` at the size above
 - [ ] `fx_shard`, `fx_shatter`, `fx_mark`
-- [ ] Add the stage to `tests/assets.test.ts` like `weather.glb` (objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place)
+- [ ] `interact_throw` (22 frames) for every fighter, in the state clips table below: picking up the boombox and hurling it
+- [ ] Pass `tests/assets.test.ts`'s `burn.glb` checks (already written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place, the shard's length)
 
 ### State clips (every fighter)
 
@@ -489,6 +490,7 @@ Loop where noted; lengths are suggestions unless given.
 | `win` | 120 | Victory pose |
 | `intro` | 90 | Round intro |
 | `win_2`, `intro_2` | 120, 90 | Second versions. Dale: "…and that's the forecast", clicking the map / straightens the tie and the quiff. Rox: hands on hips, high knees / an overhead side stretch. Hollis: checks his watch and yawns / touches his cap, cracks his knuckles. Mumbles: laughs, jaw clacking / slumped until the strings snap him up |
+| `interact_throw` | 22 | Picking up the stage's prop and hurling it forward (Feel the Burn's boombox, step 14): crouch and grab low on 1–5, lift it overhead by 6, release forward on frame 8 (when the game launches it), follow through. Until it exists the game plays `interact` (the kick) |
 | `td_cinematic` | 150 | Technical Difficulties: plays under a "PLEASE STAND BY" card, so only the first and last 20 frames are really seen |
 
 ### Move clips

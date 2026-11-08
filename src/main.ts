@@ -12,14 +12,14 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
-import { FIGHTERS, Input, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
+import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 import { ArcadeCard } from './ui/arcadeCard';
 import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
-import { afterMatch, createLadder, levelFor, opponent, type Ladder } from './game/arcade';
+import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
@@ -124,7 +124,7 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // The chosen fighters and CPU level, remembered between visits.
-const setup = { p1: 0, p2: 1, level: 1, sound: 0, studio: 0, models: 0 };
+const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0 };
 try {
   Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) ?? '{}'));
 } catch {
@@ -169,8 +169,8 @@ function keepReplay(r: Replay | null): void {
 const ev: SimEvent[] = [];
 const clock = new FixedStep();
 
-function newSession(mode: Mode, p1: string, p2: string, level: CpuLevel = LEVELS[setup.level]): Session {
-  const s = new Session({ mode, p1, p2, level, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
+function newSession(mode: Mode, p1: string, p2: string, stage: string, level: CpuLevel = LEVELS[setup.level]): Session {
+  const s = new Session({ mode, p1, p2, stage, level, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
   return begin(s);
 }
 
@@ -188,7 +188,7 @@ function startDemo(): void {
   // A different pairing behind the title each time.
   const a = Math.floor(Math.random() * FIGHTER_IDS.length);
   const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
-  session = newSession('demo', FIGHTER_IDS[a], FIGHTER_IDS[b]);
+  session = newSession('demo', FIGHTER_IDS[a], FIGHTER_IDS[b], STAGE_IDS[Math.floor(Math.random() * STAGE_IDS.length)]);
   hud.hide();
   touch.show(false);
   pauseBtn.hidden = true;
@@ -208,15 +208,15 @@ let ladder: Ladder | null = null;
 
 function play(mode: Mode): void {
   ladder = null;
-  start(mode, FIGHTER_IDS[setup.p2]);
+  start(mode, FIGHTER_IDS[setup.p2], STAGE_IDS[setup.stage] ?? STAGE_IDS[0]);
 }
 
-function start(mode: Mode, p2: string, level?: CpuLevel): void {
+function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
   demo = false;
   over = false;
   paused = false;
   arcadeCard.hide();
-  session = newSession(mode, FIGHTER_IDS[setup.p1], p2, level);
+  session = newSession(mode, FIGHTER_IDS[setup.p1], p2, stage, level);
   title.hidden = true;
   titleMenu.hide();
   hud.start(session.match, session.training);
@@ -236,7 +236,7 @@ function startArcade(): void {
 
 /** The next fight on the arcade ladder. */
 function nextShow(): void {
-  if (ladder) start('cpu', opponent(ladder), levelFor(ladder));
+  if (ladder) start('cpu', opponent(ladder), stageFor(ladder), levelFor(ladder));
 }
 
 /** After an arcade match: on to the next show, the continue screen, or the ending. */
@@ -260,7 +260,7 @@ function watch(r: Replay): void {
   replayPaused = false;
   replaySpeed = 0;
   const o = r.options;
-  session = begin(new Session({ mode: 'replay', p1: o.p1, p2: o.p2, level: 'normal', seed: o.seed, studio: o.studio, replay: r }));
+  session = begin(new Session({ mode: 'replay', p1: o.p1, p2: o.p2, stage: o.stage, level: 'normal', seed: o.seed, studio: o.studio, replay: r }));
   title.hidden = true;
   titleMenu.hide();
   pauseMenu.hide();
@@ -330,6 +330,7 @@ function showTitle(): void {
     { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
     { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
+    { label: 'STAGE', options: STAGE_IDS.map((id) => STAGES[id].name.toUpperCase()), value: setup.stage, onChange: (v) => ((setup.stage = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
     { label: 'RULES', options: ['LIVE BROADCAST', 'STUDIO'], value: setup.studio, onChange: (v) => ((setup.studio = v), saveSetup()) },
   ]);
@@ -363,7 +364,7 @@ function pause(on: boolean): void {
   if (s.training) {
     rows.push(
       { label: 'RESET POSITIONS (R)', run: () => (s.reset(), pause(false)) },
-      { label: 'SEGMENT', options: ['1 THE STUDIO', '2 THE FORECAST', '3 FLOOD WARNING'], value: s.match.segment, onChange: (v) => s.setSegment(v) },
+      { label: 'SEGMENT', options: STAGES[s.match.stage].segments.map((g, k) => `${k + 1} ${g.name.toUpperCase()}`), value: s.match.segment, onChange: (v) => s.setSegment(v) },
       { label: 'DUMMY', options: ['STAND', 'BLOCK ALL', 'CROUCH BLOCK', 'CPU'], value: DUMMIES.indexOf(s.dummy), onChange: (v) => (s.dummy = DUMMIES[v]) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );

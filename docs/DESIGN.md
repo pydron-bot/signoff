@@ -181,7 +181,9 @@ cartoon mascot that's been off air since 1979, and the continuity announcer.
 ## Stages
 
 Version 1 ships 6 stages, each a show in Channel 0's schedule with three
-segments; the first playable has one, *Weather at Eleven*.
+segments. Two are in: *Weather at Eleven* and *Feel the Burn at Dawn*
+(Warm-Up, Double Time, Burnout). Pick one on the title screen; in Arcade each
+fight is on the opponent's own show where it has a stage.
 
 | Show | Segment 1 | Segment 2 | Segment 3 |
 | --- | --- | --- | --- |

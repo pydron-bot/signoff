@@ -20,7 +20,7 @@ import { afterStayTuned, beginStayTuned, earnedCancellation, startFinisher, stay
 import { readInput } from './input';
 import { createRng } from './rng';
 import { setupRound, updateStage } from './stage';
-import { stageData } from './stages';
+import { extraStepEvery, segmentData, stageData } from './stages';
 import { PROJECTILE_SLOTS, createFighter, createProjectile, type MatchState, type Phase } from './state';
 
 export interface MatchOptions {
@@ -63,8 +63,20 @@ export function createMatch(o: MatchOptions): MatchState {
 
 const frozen = [false, false];
 
-/** Advances the match one step (1/60 s). Appends anything that happened to `ev`. */
+/**
+ * Advances the match one step (1/60 s). Appends anything that happened to `ev`.
+ * A segment with a fast tape (tempoPct) fits an extra step in every so often
+ * while the fight is on, with the same inputs: the whole game runs faster.
+ */
 export function step(m: MatchState, in0: number, in1: number, ev: SimEvent[]): void {
+  advance(m, in0, in1, ev);
+  if (m.phase !== 'fight') return;
+  const every = extraStepEvery(segmentData(m.stage, m.segment));
+  // Every `every` calls take every + 1 steps of round time.
+  if (every && m.roundFrame % (every + 1) === every) advance(m, in0, in1, ev);
+}
+
+function advance(m: MatchState, in0: number, in1: number, ev: SimEvent[]): void {
   m.frame++;
   const fs = m.fighters;
   const live = m.phase === 'fight';

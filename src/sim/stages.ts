@@ -2,7 +2,7 @@
  * Stages are TV shows with one segment per round, and the set changes
  * between rounds. A segment can change the space (width), add hazards on a
  * fixed, announced rhythm, offer props either fighter can use with
- * Interact, and set a rule (wind, slower walking). Every change applies to
+ * Interact, and set a rule (wind, slower walking, a faster tape). Every change applies to
  * both fighters equally; every hazard is announced at least 60 frames
  * before it hits (tests check both).
  */
@@ -41,6 +41,8 @@ export interface PropData {
   readonly reach: Fx;
   readonly box: Box;
   readonly speed: Fx;
+  /** Picked up and thrown at head height (the boombox), rather than kicked along the floor. */
+  readonly thrown?: boolean;
   readonly effect: HitEffect;
 }
 
@@ -52,6 +54,8 @@ export interface SegmentData {
   readonly wind?: Fx;
   /** Walking and dashing speed, percent. */
   readonly walkPct?: number;
+  /** The whole game's speed, percent: above 100, an extra step every so often (the tape runs fast). */
+  readonly tempoPct?: number;
   readonly hazards: readonly HazardData[];
   readonly props: readonly PropData[];
 }
@@ -79,6 +83,20 @@ function dolly(id: string, x: number): PropData {
     box: box(-0.45, 0.45, 0, 1.0),
     speed: fx(0.14),
     effect: effect({ damage: 70, hitstun: 0, blockstun: 18, chip: 12, push: 0.06, knockdown: true }),
+  };
+}
+
+function boombox(): PropData {
+  return {
+    id: 'boombox',
+    name: 'Boombox',
+    x: 0,
+    reach: fx(1.0),
+    // Thrown at chest height: a crouching Mumbles is under it, everyone else isn't.
+    box: box(-0.3, 0.3, 0.85, 1.25),
+    speed: fx(0.2),
+    thrown: true,
+    effect: effect({ damage: 60, hitstun: 0, blockstun: 16, chip: 10, push: 0.05, knockdown: true }),
   };
 }
 
@@ -137,7 +155,60 @@ export const STAGES: Readonly<Record<string, StageData>> = {
       },
     ],
   },
+  burn: {
+    id: 'burn',
+    name: 'Feel the Burn at Dawn',
+    segments: [
+      {
+        name: 'Warm-Up',
+        halfWidth: fx(6),
+        hazards: [],
+        props: [boombox()],
+      },
+      {
+        name: 'Double Time',
+        halfWidth: fx(6),
+        tempoPct: 110,
+        hazards: [],
+        props: [],
+      },
+      {
+        name: 'Burnout',
+        halfWidth: fx(8),
+        hazards: [
+          // On the beat: the music runs at 120 bpm (a beat every 30 steps) from the start of the round's intro.
+          hazard({
+            id: 'shards',
+            caption: 'MIND THE GLASS',
+            spots: [-6, -4, -2, 0, 2, 4, 6],
+            first: 180,
+            period: 240,
+            warn: 90,
+            active: 10,
+            halfW: 0.6,
+            height: 6,
+            effect: { damage: 60, hitstun: 30, blockstun: 1, push: 0.03 },
+          }),
+        ],
+        props: [],
+      },
+    ],
+  },
 };
+
+/** The stages in menu order. */
+export const STAGE_IDS: readonly string[] = Object.keys(STAGES);
+
+/** A fighter's home stage: the one named after their show, if it has been built. */
+export function homeStage(show: string): string | undefined {
+  return STAGE_IDS.find((id) => STAGES[id].name === show);
+}
+
+/** Extra steps for a segment's tempo: one every this many steps, or 0 for none. */
+export function extraStepEvery(seg: SegmentData): number {
+  const t = seg.tempoPct ?? 100;
+  return t > 100 ? Math.round(100 / (t - 100)) : 0;
+}
 
 export function stageData(id: string): StageData {
   const s = STAGES[id];

@@ -5,8 +5,8 @@ import { Session } from '../src/game/session';
 import { saveMatch, type MatchState, type SimEvent } from '../src/sim';
 
 /** A whole CPU match, with player 1's inputs from a second CPU standing in for a person. */
-function record(p1: string, p2: string, seed: number, studio = false): { replay: Replay; match: MatchState; ev: SimEvent[] } {
-  const s = new Session({ mode: 'cpu', p1, p2, level: 'hard', seed, studio, version: 'test' });
+function record(p1: string, p2: string, seed: number, studio = false, stage = 'weather'): { replay: Replay; match: MatchState; ev: SimEvent[] } {
+  const s = new Session({ mode: 'cpu', p1, p2, stage, level: 'hard', seed, studio, version: 'test' });
   const player = new Cpu(0, 'normal', seed * 3 + 1);
   const ev: SimEvent[] = [];
   for (let t = 0; t < 40000 && s.match.phase !== 'over'; t++) s.tick(player.next(s.match), 0, ev);
@@ -23,8 +23,9 @@ function playAll(r: Replay): { match: MatchState; ev: SimEvent[] } {
 
 describe('replays', () => {
   it('play a recorded match back exactly: the same state and the same events', () => {
-    for (const [a, b, seed, studio] of [['dale', 'rox', 7, false], ['hollis', 'mumbles', 11, false], ['mumbles', 'dale', 3, true]] as const) {
-      const rec = record(a, b, seed, studio);
+    for (const [a, b, seed, studio, stage] of [['dale', 'rox', 7, false, 'weather'], ['hollis', 'mumbles', 11, false, 'burn'], ['mumbles', 'dale', 3, true, 'burn']] as const) {
+      const rec = record(a, b, seed, studio, stage);
+      expect(rec.replay.options.stage).toBe(stage);
       const back = playAll(rec.replay);
       expect(back.match).toEqual(rec.match);
       expect(back.ev).toEqual(rec.ev);
@@ -83,6 +84,9 @@ describe('replays', () => {
   it('read back from storage, and refuse what isn\'t one', () => {
     const { replay } = record('rox', 'dale', 2);
     expect(parseReplay(JSON.parse(JSON.stringify(replay)))).toEqual(replay);
+    // Recordings from before stages could be picked were all on Weather at Eleven.
+    const { stage: _, ...old } = replay.options;
+    expect(parseReplay({ ...replay, options: old })?.options.stage).toBe('weather');
     expect(parseReplay(null)).toBeNull();
     expect(parseReplay({})).toBeNull();
     expect(parseReplay({ ...replay, frames: replay.frames + 1 })).toBeNull();

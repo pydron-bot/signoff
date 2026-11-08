@@ -3,7 +3,8 @@
  * steps of MIDI notes (0 for a rest). Played by src/audio/music.ts with Web
  * Audio, so there are no audio files. Weather at Eleven: a bright synth news
  * theme in the studio, a driving minor arpeggio in the storm, a slow,
- * detuned dirge for the flood.
+ * detuned dirge for the flood. Feel the Burn at Dawn: aerobics pop, the same
+ * tape run fast, then the tune in the dark.
  */
 
 export interface Part {
@@ -76,8 +77,42 @@ const FLOOD: Cue = {
   ],
 };
 
+/** A cue's notes moved by some semitones (rests stay rests). */
+function transpose(c: Cue, by: number, name: string, bpm: number): Cue {
+  return { ...c, name, bpm, parts: c.parts.map((p) => ({ ...p, notes: p.notes.map((n) => (n ? n + by : 0)) })) };
+}
+
+// Feel the Burn at Dawn. Warm-Up: E major aerobics pop, I-V-vi-IV, four on
+// the floor at 120 bpm (a beat every 30 steps: Burnout's shards fall on it).
+const WARMUP: Cue = {
+  name: 'Warm-Up',
+  bpm: 120,
+  drums: 'k.hhs.hhk.hhs.hk'.repeat(3) + 'k.hhs.hhk.hss.sS',
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(eighths(28, 40, 28, 40, 28, 40, 28, 40), eighths(35, 47, 35, 47, 35, 47, 35, 47), eighths(37, 49, 37, 49, 37, 49, 37, 49), eighths(33, 45, 33, 45, 33, 45, 35, 47)) },
+    { voice: 'pluck', gain: 0.12, notes: bars(eighths(0, 64, 68, 71, 0, 64, 68, 71), eighths(0, 63, 66, 71, 0, 63, 66, 71), eighths(0, 61, 64, 68, 0, 61, 64, 68), eighths(0, 61, 64, 69, 0, 61, 64, 69)) },
+    { voice: 'lead', gain: 0.15, hold: 3, notes: bars([76, 0, 0, 76, 0, 0, 78, 0, 80, 0, 0, 0, 78, 0, 76, 0], [75, 0, 0, 0, 78, 0, 0, 0, 83, 0, 0, 0, 0, 0, 0, 0], [73, 0, 0, 73, 0, 0, 76, 0, 80, 0, 0, 0, 78, 0, 76, 0], [73, 0, 0, 0, 76, 0, 78, 0, 81, 0, 0, 0, 80, 0, 0, 0]) },
+  ],
+};
+
+// Double Time: the same tape run fast, so faster and higher (10% is about two semitones).
+const DOUBLE: Cue = transpose(WARMUP, 2, 'Double Time', 132);
+
+// Burnout: the tune in the dark, E minor, i-VI-III-VII, pads out of tune, the beat still 120.
+const BURNOUT: Cue = {
+  name: 'Burnout',
+  bpm: 120,
+  drums: 'k...s...k...s...k...s...k.k.s.ss',
+  parts: [
+    { voice: 'bass', gain: 0.55, hold: 4, notes: bars(beats(28, 28, 28, 28), beats(24, 24, 24, 24), beats(31, 31, 31, 31), beats(26, 26, 26, 38)) },
+    { voice: 'pad', gain: 0.15, hold: 16, notes: bars([64, ...Array(15).fill(0)], [60, ...Array(15).fill(0)], [62, ...Array(15).fill(0)], [62, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.12, hold: 16, notes: bars([67, ...Array(15).fill(0)], [64, ...Array(15).fill(0)], [67, ...Array(15).fill(0)], [66, ...Array(15).fill(0)]) },
+    { voice: 'lead', gain: 0.12, hold: 6, notes: bars(beats(76, 0, 0, 74), beats(72, 0, 0, 0), beats(74, 0, 71, 0), beats(69, 0, 0, 0)) },
+  ],
+};
+
 /** Music by stage, one cue per segment. */
-export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD] };
+export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD], burn: [WARMUP, DOUBLE, BURNOUT] };
 
 /** Steps in a cue's loop. */
 export function loopSteps(c: Cue): number {

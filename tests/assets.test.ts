@@ -46,6 +46,8 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   win_2: { frames: 120 },
   intro_2: { frames: 90 },
   td_cinematic: { frames: 150 },
+  // Asked for in docs/BLENDER-TODO.md (step 14); the game stands in `interact` until it exists.
+  interact_throw: { frames: 22 },
 };
 const MAX_TRIANGLES = 20000;
 /** One atlas per material, at most this size (docs/BLENDER-TODO.md, step 8). */
@@ -226,5 +228,65 @@ describe.skipIf(!existsSync(stagePath))('weather.glb', () => {
     const [plo, phi] = bounds('fx_puddle');
     expect(phi[0] - plo[0]).toBeCloseTo(1.6, 1);
     expect(bounds('fx_water')[0][1]).toBeCloseTo(0.22, 2);
+  });
+});
+
+/** What the game reads from Feel the Burn at Dawn's GLB (src/render/burnSet.ts; docs/BLENDER-TODO.md, step 14). */
+const BURN_OBJECTS = ['set', 'seg_warmup', 'seg_double', 'seg_burnout', 'prop_boombox', 'fx_shard', 'fx_shatter', 'fx_mark'];
+const burnPath = 'public/assets/stages/burn.glb';
+describe.skipIf(!existsSync(burnPath))('burn.glb', () => {
+  const g = existsSync(burnPath) ? readGlb(burnPath) : ({} as ReturnType<typeof readGlb>);
+  const node = (name: string) => g.nodes.find((n) => n.name === name);
+  const bounds = (name: string): [number[], number[]] => {
+    const lo = [Infinity, Infinity, Infinity];
+    const hi = [-Infinity, -Infinity, -Infinity];
+    for (const p of g.meshes[node(name)!.mesh!].primitives) {
+      const a = g.accessors[p.attributes.POSITION];
+      for (let k = 0; k < 3; k++) {
+        lo[k] = Math.min(lo[k], a.min![k]);
+        hi[k] = Math.max(hi[k], a.max![k]);
+      }
+    }
+    return [lo, hi];
+  };
+
+  it('has every object the game shows, as plain meshes', () => {
+    for (const name of BURN_OBJECTS) expect(node(name)?.mesh, name).toBeDefined();
+    expect(g.skins ?? []).toEqual([]);
+  });
+
+  it('keeps to set and props, atlases within size, under 20k triangles', () => {
+    let tris = 0;
+    for (const m of g.meshes) for (const p of m.primitives) tris += g.accessors[p.indices ?? p.attributes.POSITION].count / 3;
+    expect(tris).toBeLessThanOrEqual(20000);
+    for (const m of g.materials ?? []) {
+      expect(['set', 'props']).toContain(m.name);
+      const tex = m.pbrMetallicRoughness?.baseColorTexture;
+      const img = g.images![g.textures![tex!.index].source];
+      const view = g.bufferViews[img.bufferView];
+      const [w, h] = pngSize(g.bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+      expect(Math.max(w, h), `${m.name} atlas size`).toBeLessThanOrEqual(STAGE_TEXTURE[m.name]);
+    }
+  });
+
+  it('has a light rig for each segment', () => {
+    const lights = JSON.parse(String(node('lights')?.extras?.segments)) as { segment: string }[];
+    expect(lights.map((l) => l.segment)).toEqual(STAGES.burn.segments.map((s) => s.name));
+  });
+
+  it('puts the boombox where the sim does, at its size, standing on the floor', () => {
+    const prop = STAGES.burn.segments[0].props[0];
+    expect(node('prop_boombox')!.translation?.[0] ?? 0).toBeCloseTo(toFloat(prop.x), 3);
+    const [lo, hi] = bounds('prop_boombox');
+    expect(lo[1]).toBeCloseTo(0, 2);
+    expect(hi[0] - lo[0]).toBeLessThanOrEqual(0.6 + 0.02);
+    expect(hi[1] - lo[1]).toBeLessThanOrEqual(0.4 + 0.02);
+  });
+
+  it('sizes the shard: about 1.2 m long, its point at the origin', () => {
+    const [lo, hi] = bounds('fx_shard');
+    expect(lo[1]).toBeCloseTo(0, 1);
+    expect(hi[1]).toBeGreaterThan(0.9);
+    expect(hi[1]).toBeLessThan(1.5);
   });
 });

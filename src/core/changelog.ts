@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.14.0',
+    date: '2026-11-08',
+    title: 'Feel the Burn at Dawn',
+    notes: [
+      "A second stage: Rox's aerobics show. Warm-Up has a boombox to pick up and throw; in Double Time the tape runs fast and the whole fight with it, 10% quicker; in Burnout the mirrors shatter, the studio opens out into the dark and glass falls on the beat.",
+      'Pick the stage on the title screen. In ARCADE each fight is on the opponent\'s own show where it has a stage.',
+      'Aerobics music for every segment, and new commercial breaks.',
+      'Replays remember the stage.',
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-11-08',
     title: 'Props department',

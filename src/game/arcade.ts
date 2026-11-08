@@ -5,7 +5,7 @@
  * you won. Plain data and pure functions; main.ts drives it. No DOM here.
  */
 import type { CpuLevel } from '../ai/cpu';
-import { FIGHTERS, fighterData } from '../sim';
+import { FIGHTERS, STAGE_IDS, fighterData, homeStage } from '../sim';
 
 export const CONTINUES = 3;
 
@@ -36,6 +36,11 @@ export function levelFor(l: Ladder): CpuLevel {
 
 export function opponent(l: Ladder): string {
   return l.opponents[l.at];
+}
+
+/** Where the fight is: the opponent's own show if it has a stage, else the built stages in turn. */
+export function stageFor(l: Ladder): string {
+  return homeStage(fighterData(opponent(l)).show) ?? STAGE_IDS[l.at % STAGE_IDS.length];
 }
 
 /** After a match: a win moves on (or wins the ladder); a loss spends a continue (or ends it). */
