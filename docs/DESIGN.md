@@ -50,6 +50,10 @@ watching can be pulled through the screen.
 - **The twist for later chapters.** The Programme Director was once a
   contestant who won. Winning means becoming the next one.
 
+**Arcade** (in now): your fighter against everyone else in turn, listed as
+the night's schedule, easy to hard, with three continues; winning plays the
+ending, the opening titles of the show you won.
+
 Story mode is told as a night of TV: each chapter is a programme in the
 schedule, with short cut-scenes made in the engine as "broadcast segments",
 and a fight at the end of each. A run takes about 90 minutes and plays from

@@ -548,6 +548,11 @@ body[data-scene='title'] #app {
   animation: snow 0.12s steps(3) infinite;
 }
 
+/* Late night: thin enough to make out shapes behind it. */
+.censor.thin {
+  opacity: 0.88;
+}
+
 .censor[data-kind='bars'] {
   background: repeating-linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%, #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%, #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%, #0000c0 85.71% 100%);
 }
@@ -773,4 +778,110 @@ body[data-scene='title'] #app {
   opacity: 0.7;
   white-space: pre-line;
   font-size: 0.9em;
+}
+
+/* ---- Arcade: listings, continue, ending ---- */
+.arcade-card {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 16px);
+  background: #05060a;
+  z-index: 22;
+  pointer-events: auto;
+  overflow-y: auto;
+}
+
+.arcade-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: min(44rem, 100%);
+  text-align: center;
+}
+
+.arcade-top {
+  letter-spacing: 0.3em;
+  color: #7fd7ff;
+}
+
+.arcade-sub {
+  opacity: 0.7;
+  letter-spacing: 0.15em;
+  font-size: 0.85em;
+  margin-bottom: 0.4rem;
+}
+
+.arcade-slot {
+  white-space: pre;
+  text-align: left;
+  padding: 0.2rem 0.6rem;
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  letter-spacing: 0.08em;
+}
+
+.arcade-slot.next {
+  background: #1b2fa8;
+}
+
+.arcade-slot.done {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.arcade-title {
+  font-size: clamp(1.4rem, 5vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0.3rem 0 0.6rem;
+}
+
+.arcade-line {
+  font-size: clamp(0.75rem, 2vw, 1rem);
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+/* ---- Settings that are only CSS ---- */
+body[data-vhs='0'] .vhs {
+  display: none;
+}
+
+body[data-vhs='1'] .vhs {
+  opacity: 0.5;
+}
+
+.touch-pad {
+  transform: scale(var(--touch-scale, 1));
+  transform-origin: bottom right;
+}
+
+/* Buttons on the left, the stick on the right. */
+.touch[data-side='1'] .touch-stick-zone {
+  left: auto;
+  right: 0;
+}
+
+.touch[data-side='1'] .touch-pad {
+  right: auto;
+  left: calc(env(safe-area-inset-left) + 16px);
+  transform-origin: bottom left;
+}
+
+/* A phone on its side: the title menu in two columns so it fits. */
+@media (max-height: 500px) {
+  .menu-title-screen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-width: min(40rem, 92vw);
+    gap: 0.3rem 0.5rem;
+  }
+
+  .menu-title-screen .menu-row {
+    padding: 0.35rem 0.6rem;
+  }
 }

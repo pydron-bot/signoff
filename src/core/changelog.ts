@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.12.0',
+    date: '2026-11-08',
+    title: 'Prime time',
+    notes: [
+      'Music: Weather at Eleven has a theme for every segment: a bright synth news bed in the studio, a driving storm, and a slow, out-of-tune flood.',
+      'ARCADE: take your fighter through the night\'s schedule against everyone else, the CPU getting harder each show, with three continues. Win it and see the opening titles of the show you won.',
+      'SETTINGS: Broadcast Standards (strict: finishers are heard, not seen; late night: a glimpse through the static), VHS look, motion, music volume, and the touch buttons\' size and side (left-handed play). Sound and the grey-box option moved here too.',
+      'The title menu fits a phone held sideways.',
+    ],
+  },
+  {
     version: '0.11.0',
     date: '2026-11-08',
     title: 'Fight club',

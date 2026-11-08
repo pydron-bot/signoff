@@ -7,6 +7,8 @@
  */
 import type { MatchState, SimEvent } from '../sim';
 import { fighterData } from '../sim';
+import { Music } from './music';
+import { SCORES } from './score';
 
 export type SoundMode = 'on' | 'novoice' | 'off';
 
@@ -15,6 +17,11 @@ export class Sound {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private noiseBuf: AudioBuffer | null = null;
+  private music: Music | null = null;
+  /** The cue for the round on air, to pick up again after a pause. */
+  private cue: { stage: string; segment: number } | null = null;
+  /** 0 to 1 (Settings). */
+  musicVolume = 1;
 
   /** Audio can only start from a user gesture (iOS): call from the first tap or key. */
   unlock(): void {
@@ -32,6 +39,33 @@ export class Sound {
     this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    this.music = new Music(this.ctx, this.master, this.noiseBuf);
+    this.music.setVolume(this.musicVolume);
+  }
+
+  setMusicVolume(v: number): void {
+    this.musicVolume = v;
+    this.music?.setVolume(v);
+  }
+
+  /** The show's music for a segment, after the round call. */
+  private playMusic(stage: string, segment: number, delay: number): void {
+    this.cue = { stage, segment };
+    const c = SCORES[stage]?.[segment];
+    if (c && this.music && this.mode !== 'off' && this.musicVolume > 0) this.music.play(c, delay);
+  }
+
+  /** Off the air: leaving a match, or the sound turned off. */
+  stopMusic(fade = 0.3): void {
+    this.cue = null;
+    this.music?.stop(fade);
+  }
+
+  /** Paused, the music stops; resumed, the segment's loop starts again. */
+  pauseMusic(on: boolean): void {
+    if (!this.music) return;
+    if (on) this.music.stop(0.15);
+    else if (this.cue && this.live) this.playMusic(this.cue.stage, this.cue.segment, 0.1);
   }
 
   private get live(): boolean {
@@ -111,6 +145,7 @@ export class Sound {
     for (const e of ev) {
       switch (e.type) {
         case 'roundStart':
+          this.playMusic(m.stage, e.segment, 1.3);
           this.ident();
           this.say(`Round ${e.round}`);
           break;
@@ -190,6 +225,7 @@ export class Sound {
           this.say('Knock out');
           break;
         case 'roundOver':
+          this.music?.stop(1.5);
           if (e.reason === 'time') this.say('Time');
           this.applause(0.5);
           break;
@@ -211,6 +247,7 @@ export class Sound {
           this.noise(0.6, 250, 0.08, 'lowpass');
           break;
         case 'commercialBreak':
+          this.music?.stop(0.2);
           [784, 659, 523, 659, 784].forEach((f, k) => this.tone(f, 0.18, 0.08, 'square', undefined, 0.3 + k * 0.16));
           break;
         case 'stayTuned':
@@ -218,6 +255,7 @@ export class Sound {
           this.laugh(1.2);
           break;
         case 'finisher':
+          this.music?.stop(0.4);
           // The crowd goes quiet; a low drone under the beating.
           if (e.kind === 'signoff') this.tone(55, 3, 0.12, 'sawtooth', 45);
           break;

@@ -17,6 +17,9 @@ import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
+import { ArcadeCard } from './ui/arcadeCard';
+import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
+import { afterMatch, createLadder, levelFor, opponent, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
@@ -35,10 +38,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 app.appendChild(renderer.domElement);
 
 const arena = new Arena();
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-arena.reduceMotion = reduceMotion;
+const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const settings = loadSettings();
 const sound = new Sound();
-const glitch = new Glitch(document.body, reduceMotion);
+const glitch = new Glitch(document.body, reducedMotion(settings, systemReduceMotion));
 const hud = new Hud(document.body);
 const touch = new TouchControls(document.body);
 touch.bindHold(hud.p1Meter, Input.METER);
@@ -52,7 +55,63 @@ pauseBtn.hidden = true;
 document.body.append(pauseBtn);
 const replayBar = new ReplayBar(document.body);
 const moveListPanel = new MoveListPanel(document.body);
+const arcadeCard = new ArcadeCard(document.body);
 initKeyboard();
+
+/** Puts the settings into effect everywhere they matter. */
+function applySettings(): void {
+  const rm = reducedMotion(settings, systemReduceMotion);
+  arena.reduceMotion = rm;
+  glitch.reduceMotion = rm;
+  glitch.censorLevel = settings.censor;
+  glitch.vhs = settings.vhs;
+  document.body.dataset.vhs = String(settings.vhs);
+  sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
+  touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
+  touch.root.dataset.side = String(settings.touchSide);
+}
+applySettings();
+
+/** The settings screen; `back` reopens whatever menu it came from. */
+function showSettings(back: () => void): void {
+  titleMenu.hide();
+  const rows: Parameters<Menu['show']>[1] = (Object.keys(LABELS) as (keyof Settings)[]).map((k) => ({
+    label: LABELS[k],
+    options: OPTIONS[k],
+    value: settings[k],
+    onChange: (v: number) => {
+      settings[k] = v;
+      saveSettings(settings);
+      applySettings();
+    },
+  }));
+  rows.push(
+    {
+      label: 'FIGHTERS',
+      options: ['3D MODELS', 'GREY BOXES'],
+      value: setup.models,
+      onChange: (v) => {
+        setup.models = v;
+        arena.models = v === 0;
+        saveSetup();
+      },
+    },
+    {
+      label: 'SOUND',
+      options: ['ON', 'NO ANNOUNCER', 'OFF'],
+      value: setup.sound,
+      onChange: (v) => {
+        setup.sound = v;
+        sound.mode = SOUND_MODES[v];
+        if (sound.mode === 'off') sound.stopMusic(0);
+        saveSetup();
+      },
+    },
+  );
+  rows.push({ label: 'BACK', id: 'settings-back', run: () => (pauseMenu.hide(), back()) });
+  pauseMenu.show('SETTINGS', rows);
+}
+
 // Audio may only start from a gesture (iOS Safari).
 for (const t of ['pointerdown', 'keydown'] as const) window.addEventListener(t, () => sound.unlock());
 
@@ -110,8 +169,8 @@ function keepReplay(r: Replay | null): void {
 const ev: SimEvent[] = [];
 const clock = new FixedStep();
 
-function newSession(mode: Mode, p1: string, p2: string): Session {
-  const s = new Session({ mode, p1, p2, level: LEVELS[setup.level], seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
+function newSession(mode: Mode, p1: string, p2: string, level: CpuLevel = LEVELS[setup.level]): Session {
+  const s = new Session({ mode, p1, p2, level, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
   return begin(s);
 }
 
@@ -134,18 +193,30 @@ function startDemo(): void {
   touch.show(false);
   pauseBtn.hidden = true;
   pauseMenu.hide();
+  arcadeCard.hide();
+  ladder = null;
   replayBar.show(false);
+  sound.stopMusic();
   title.hidden = false;
   glitch.clear();
   document.body.dataset.scene = 'title';
   showTitle();
 }
 
+/** The arcade run in progress, or null. */
+let ladder: Ladder | null = null;
+
 function play(mode: Mode): void {
+  ladder = null;
+  start(mode, FIGHTER_IDS[setup.p2]);
+}
+
+function start(mode: Mode, p2: string, level?: CpuLevel): void {
   demo = false;
   over = false;
   paused = false;
-  session = newSession(mode, FIGHTER_IDS[setup.p1], FIGHTER_IDS[setup.p2]);
+  arcadeCard.hide();
+  session = newSession(mode, FIGHTER_IDS[setup.p1], p2, level);
   title.hidden = true;
   titleMenu.hide();
   hud.start(session.match, session.training);
@@ -155,7 +226,34 @@ function play(mode: Mode): void {
   document.body.dataset.scene = 'fight';
 }
 
+function startArcade(): void {
+  ladder = createLadder(FIGHTER_IDS[setup.p1]);
+  title.hidden = true;
+  titleMenu.hide();
+  sound.stopMusic();
+  arcadeCard.listings(ladder, "TONIGHT ON CHANNEL 0", [{ label: 'ON AIR', id: 'arcade-next', run: nextShow }, { label: 'TITLE', run: startDemo }]);
+}
+
+/** The next fight on the arcade ladder. */
+function nextShow(): void {
+  if (ladder) start('cpu', opponent(ladder), levelFor(ladder));
+}
+
+/** After an arcade match: on to the next show, the continue screen, or the ending. */
+function arcadeResult(winner: number): void {
+  const l = afterMatch(ladder!, winner === 0);
+  ladder = l;
+  pauseMenu.hide();
+  touch.show(false);
+  hud.hide();
+  if (l.state === 'won') arcadeCard.ending(l.fighter, [{ label: 'THE END', id: 'arcade-end', run: startDemo }]);
+  else if (l.state === 'over') arcadeCard.listings(l, 'OFF THE AIR · GAME OVER', [{ label: 'TITLE', id: 'arcade-end', run: startDemo }]);
+  else if (winner === 0) arcadeCard.listings(l, 'UP NEXT ON CHANNEL 0', [{ label: 'ON AIR', id: 'arcade-next', run: nextShow }, { label: 'TITLE', run: startDemo }]);
+  else arcadeCard.listings(l, 'CONTINUE?', [{ label: `CONTINUE (${l.continues} LEFT)`, id: 'arcade-next', run: nextShow }, { label: 'TITLE', run: startDemo }]);
+}
+
 function watch(r: Replay): void {
+  ladder = null;
   demo = false;
   over = false;
   paused = false;
@@ -182,6 +280,7 @@ function seekReplay(frame: number): void {
     pauseMenu.hide();
   }
   s.seek(frame);
+  sound.stopMusic(0.1);
   arena.resync();
   hud.start(s.match, false);
   glitch.clear();
@@ -222,35 +321,17 @@ const names = FIGHTER_IDS.map((id) => `${fighterData(id).name} · ${fighterData(
 
 function showTitle(): void {
   titleMenu.show('', [
+    { label: 'ARCADE', id: 'play-arcade', run: startArcade },
     { label: 'VS CPU', id: 'play-cpu', run: () => play('cpu') },
     { label: 'TRAINING', id: 'play-training', run: () => play('training') },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
     { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle) },
+    { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
     { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
     { label: 'RULES', options: ['LIVE BROADCAST', 'STUDIO'], value: setup.studio, onChange: (v) => ((setup.studio = v), saveSetup()) },
-    {
-      label: 'FIGHTERS',
-      options: ['3D MODELS', 'GREY BOXES'],
-      value: setup.models,
-      onChange: (v) => {
-        setup.models = v;
-        arena.models = v === 0;
-        saveSetup();
-      },
-    },
-    {
-      label: 'SOUND',
-      options: ['ON', 'NO ANNOUNCER', 'OFF'],
-      value: setup.sound,
-      onChange: (v) => {
-        setup.sound = v;
-        sound.mode = SOUND_MODES[v];
-        saveSetup();
-      },
-    },
   ]);
 }
 
@@ -265,6 +346,7 @@ function showMoves(first: string, frames: boolean, back: () => void): void {
 function pause(on: boolean): void {
   if (!session || demo || over) return;
   paused = on;
+  sound.pauseMusic(on);
   touch.clear();
   clock.reset();
   if (!on) {
@@ -276,7 +358,7 @@ function pause(on: boolean): void {
     { label: 'RESUME', run: () => pause(false) },
     s.options.mode === 'replay'
       ? { label: 'FROM THE START', run: () => (seekReplay(0), pause(false)) }
-      : { label: 'RESTART', run: () => play(s.options.mode) },
+      : { label: 'RESTART', run: () => (ladder ? nextShow() : play(s.options.mode)) },
   ];
   if (s.training) {
     rows.push(
@@ -287,6 +369,7 @@ function pause(on: boolean): void {
     );
   }
   rows.splice(1, 0, { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(s.match.fighters[0].fighter, s.training, () => pause(true)) });
+  rows.push({ label: 'SETTINGS', run: () => showSettings(() => pause(true)) });
   rows.push({ label: 'QUIT TO TITLE', run: startDemo });
   pauseMenu.show('PAUSED', rows);
 }
@@ -301,6 +384,10 @@ function results(winner: number): void {
       { label: 'WATCH AGAIN', id: 'watch-again', run: () => (pauseMenu.hide(), seekReplay(0)) },
       { label: 'TITLE', run: startDemo },
     ]);
+    return;
+  }
+  if (ladder) {
+    arcadeResult(winner);
     return;
   }
   const r = lastReplay;
@@ -365,7 +452,8 @@ renderer.compile(arena.scene, arena.camera);
 
 renderer.setAnimationLoop((now) => {
   for (const k of menuPresses()) {
-    if (moveListPanel.open) moveListPanel.key(k);
+    if (arcadeCard.open) arcadeCard.key(k);
+    else if (moveListPanel.open) moveListPanel.key(k);
     else if (pauseMenu.open) {
       if (k === 'pause' && !over) pause(false);
       else pauseMenu.key(k);

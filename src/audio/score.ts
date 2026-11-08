@@ -1,0 +1,89 @@
+/**
+ * The music as data: one loop per segment of a show, written as 16th-note
+ * steps of MIDI notes (0 for a rest). Played by src/audio/music.ts with Web
+ * Audio, so there are no audio files. Weather at Eleven: a bright synth news
+ * theme in the studio, a driving minor arpeggio in the storm, a slow,
+ * detuned dirge for the flood.
+ */
+
+export interface Part {
+  /** One entry per 16th step (a rest is 0); the loop's length is the longest part's. */
+  notes: readonly number[];
+  voice: 'bass' | 'pad' | 'lead' | 'arp' | 'pluck';
+  gain: number;
+  /** Steps each note lasts (pads and the lead hold; the rest are short). */
+  hold?: number;
+}
+
+export interface Cue {
+  name: string;
+  bpm: number;
+  parts: readonly Part[];
+  /** Drum pattern per step: k kick, s snare, h hat, '.' nothing. */
+  drums: string;
+}
+
+/** A bar of 16 steps from a note per beat, each held for the beat (rests between). */
+function beats(...n: number[]): number[] {
+  return n.flatMap((x) => [x, 0, 0, 0]);
+}
+
+/** The same notes every 8th. */
+function eighths(...n: number[]): number[] {
+  return n.flatMap((x) => [x, 0]);
+}
+
+function bars(...b: number[][]): number[] {
+  return b.flat();
+}
+
+// Studio: C major, I-vi-IV-V, a brisk 1987 news bed.
+const STUDIO: Cue = {
+  name: 'Weather at Eleven',
+  bpm: 116,
+  drums: 'k.h.s.h.k.hkS.h.'.repeat(4),
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(eighths(36, 48, 36, 43, 36, 48, 43, 48), eighths(33, 45, 33, 40, 33, 45, 40, 45), eighths(29, 41, 29, 36, 29, 41, 36, 41), eighths(31, 43, 31, 38, 31, 43, 38, 43)) },
+    { voice: 'pad', gain: 0.18, hold: 16, notes: bars([60, ...Array(15).fill(0)], [57, ...Array(15).fill(0)], [53, ...Array(15).fill(0)], [55, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.14, hold: 16, notes: bars([64, ...Array(15).fill(0)], [60, ...Array(15).fill(0)], [57, ...Array(15).fill(0)], [59, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.12, hold: 16, notes: bars([67, ...Array(15).fill(0)], [64, ...Array(15).fill(0)], [60, ...Array(15).fill(0)], [62, ...Array(15).fill(0)]) },
+    { voice: 'lead', gain: 0.16, hold: 2, notes: bars([72, 0, 0, 74, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 0, 0], [69, 0, 0, 72, 76, 0, 0, 0, 74, 0, 72, 0, 69, 0, 0, 0], [65, 0, 69, 0, 72, 0, 77, 0, 76, 0, 74, 0, 72, 0, 69, 0], [71, 0, 0, 0, 74, 0, 0, 0, 79, 0, 0, 0, 77, 0, 74, 0]) },
+  ],
+};
+
+// The storm: A minor, i-VI-III-V, 16th arpeggios over a pulsing bass.
+const STORM: Cue = {
+  name: 'The Forecast Comes True',
+  bpm: 132,
+  drums: 'k.hhs.hhk.hhs.hh'.repeat(3) + 'k.hhs.hhkkhhsSss',
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(eighths(33, 33, 33, 33, 33, 33, 33, 33), eighths(29, 29, 29, 29, 29, 29, 29, 29), eighths(36, 36, 36, 36, 36, 36, 36, 36), eighths(28, 28, 28, 28, 28, 28, 40, 40)) },
+    { voice: 'arp', gain: 0.12, notes: bars([69, 72, 76, 81].flatMap((x) => [x]).concat([69, 72, 76, 81, 69, 72, 76, 81, 69, 72, 76, 81]), [65, 69, 72, 77, 65, 69, 72, 77, 65, 69, 72, 77, 65, 69, 72, 77], [67, 72, 76, 79, 67, 72, 76, 79, 67, 72, 76, 79, 67, 72, 76, 79], [64, 68, 71, 76, 64, 68, 71, 76, 64, 68, 71, 76, 64, 68, 71, 76]) },
+    { voice: 'lead', gain: 0.14, hold: 6, notes: bars(beats(81, 0, 79, 76), beats(77, 0, 0, 72), beats(79, 0, 76, 72), beats(76, 0, 80, 0)) },
+  ],
+};
+
+// The flood: D minor, slow, the pads a little out of tune, drips on top.
+const FLOOD: Cue = {
+  name: 'Flood Warning',
+  bpm: 84,
+  drums: 'k.......s.......k.....k.s.......'.repeat(2),
+  parts: [
+    { voice: 'bass', gain: 0.55, hold: 8, notes: bars(beats(38, 0, 38, 0), beats(34, 0, 34, 0), beats(31, 0, 31, 0), beats(33, 0, 33, 0)) },
+    { voice: 'pad', gain: 0.16, hold: 16, notes: bars([62, ...Array(15).fill(0)], [58, ...Array(15).fill(0)], [55, ...Array(15).fill(0)], [57, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.12, hold: 16, notes: bars([65, ...Array(15).fill(0)], [62, ...Array(15).fill(0)], [58, ...Array(15).fill(0)], [61, ...Array(15).fill(0)]) },
+    { voice: 'pluck', gain: 0.1, notes: bars([0, 0, 0, 86, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 82, 0, 0, 0, 0, 0, 0, 77, 0, 0, 0], [0, 0, 86, 0, 0, 0, 0, 0, 0, 79, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 85, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0]) },
+  ],
+};
+
+/** Music by stage, one cue per segment. */
+export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD] };
+
+/** Steps in a cue's loop. */
+export function loopSteps(c: Cue): number {
+  return Math.max(c.drums.length, ...c.parts.map((p) => p.notes.length));
+}
+
+export function noteHz(n: number): number {
+  return 440 * Math.pow(2, (n - 69) / 12);
+}
