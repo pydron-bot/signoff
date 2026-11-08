@@ -205,6 +205,11 @@ export class Arena {
     return Promise.all(loads).then(() => undefined);
   }
 
+  /** After a jump in time (a replay seek): poses start afresh from the new step. */
+  resync(): void {
+    this.poses.reset();
+  }
+
   /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
   step(m: MatchState, ev: readonly SimEvent[]): void {
     this.poses.step(m, ev);

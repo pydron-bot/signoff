@@ -562,3 +562,69 @@ body[data-scene='title'] #app {
     animation: none;
   }
 }
+
+/* ---- Replay controls ---- */
+.replay-bar {
+  position: fixed;
+  left: calc(env(safe-area-inset-left) + 12px);
+  right: calc(env(safe-area-inset-right) + 12px);
+  bottom: calc(env(safe-area-inset-bottom) + 34px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(10, 12, 26, 0.72);
+  border: 1px solid rgba(241, 237, 224, 0.2);
+  z-index: 10;
+}
+
+.replay-tag {
+  color: #ff4a3a;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding-right: 4px;
+  white-space: nowrap;
+  animation: replay-blink 1.2s steps(2) infinite;
+}
+
+@keyframes replay-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .replay-tag {
+    animation: none;
+  }
+}
+
+.replay-btn {
+  min-width: 44px;
+  height: 44px;
+  font: inherit;
+  font-weight: 800;
+  color: #f1ede0;
+  background: rgba(20, 22, 40, 0.8);
+  border: 1px solid rgba(241, 237, 224, 0.3);
+}
+
+.replay-scrub {
+  flex: 1;
+  min-width: 60px;
+  height: 44px;
+  accent-color: #e8e04a;
+}
+
+.replay-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .replay-tag,
+  .replay-time {
+    display: none;
+  }
+}

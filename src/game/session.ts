@@ -7,9 +7,10 @@ import { Cpu, type CpuLevel } from '../ai/cpu';
 import { Input, METER_MAX, ROUND_FRAMES, createMatch, moveData, saveMatch, step, type MatchState, type SimEvent } from '../sim';
 import { setupRound } from '../sim/stage';
 import { AdvantageTracker } from './advantage';
+import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
 
-/** demo: CPU against CPU, behind the title screen. */
-export type Mode = 'cpu' | 'training' | 'versus' | 'demo';
+/** demo: CPU against CPU, behind the title screen. replay: a recorded match played back. */
+export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay';
 export type Dummy = 'stand' | 'block' | 'crouch' | 'cpu';
 export const DUMMIES: readonly Dummy[] = ['stand', 'block', 'crouch', 'cpu'];
 
@@ -21,6 +22,10 @@ export interface SessionOptions {
   seed: number;
   /** Studio rules: one segment, hazards off. */
   studio?: boolean;
+  /** The game version, stamped on recordings. */
+  version?: string;
+  /** For mode 'replay': what to play. */
+  replay?: Replay;
 }
 
 /** Frames both fighters must be at rest before training refills health. */
@@ -34,10 +39,17 @@ export class Session {
   private readonly cpu1: Cpu | null;
   private start: MatchState | null = null;
   private rest = 0;
+  /** CPU and versus matches are recorded for replays. */
+  private readonly recorder: ReplayRecorder | null;
+  private readonly player: ReplayPlayer | null;
 
   constructor(readonly options: SessionOptions) {
-    this.match = createMatch({ p1: options.p1, p2: options.p2, seed: options.seed, studio: options.studio });
-    this.cpu = options.mode === 'versus' ? null : new Cpu(1, options.level, options.seed);
+    const o = options;
+    this.player = o.mode === 'replay' && o.replay ? new ReplayPlayer(o.replay) : null;
+    this.match = this.player?.match ?? createMatch({ p1: o.p1, p2: o.p2, seed: o.seed, studio: o.studio });
+    const studio = o.studio === true;
+    this.recorder = o.mode === 'cpu' || o.mode === 'versus' ? new ReplayRecorder(o.version ?? '', { p1: o.p1, p2: o.p2, seed: o.seed, studio }) : null;
+    this.cpu = options.mode === 'versus' || this.player ? null : new Cpu(1, options.level, options.seed);
     this.cpu1 = options.mode === 'demo' ? new Cpu(0, options.level, options.seed * 7 + 1) : null;
     if (options.mode === 'training') {
       // Straight to the fight, and remember it for resets.
@@ -51,13 +63,40 @@ export class Session {
     return this.options.mode === 'training';
   }
 
+  /** The recording so far (CPU and versus matches), or null. */
+  recording(): Replay | null {
+    return this.recorder?.finish() ?? null;
+  }
+
+  /** Replays: the step reached and the steps in all. */
+  get replayFrame(): number {
+    return this.player?.frame ?? 0;
+  }
+
+  get replayFrames(): number {
+    return this.player?.replay.frames ?? 0;
+  }
+
+  /** Replays: jump to a step (the presentation should resync after). */
+  seek(frame: number): void {
+    this.player?.seek(frame);
+    this.adv.last = null;
+  }
+
   tick(p1: number, p2: number, ev: SimEvent[]): void {
     const m = this.match;
     const o = this.options;
+    if (this.player) {
+      const from = ev.length;
+      this.player.step(ev);
+      this.adv.update(m, from ? ev.slice(from) : ev);
+      return;
+    }
     const in1 = this.cpu1 ? this.cpu1.next(m) : p1;
     const in2 = o.mode === 'versus' ? p2 : o.mode !== 'training' || this.dummy === 'cpu' ? this.cpu!.next(m) : this.dummyInput();
     const from = ev.length;
     step(m, in1, in2, ev);
+    this.recorder?.push(in1, in2);
     if (this.training) this.trainingAfter(ev, from);
     this.adv.update(m, from ? ev.slice(from) : ev);
   }

@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.6.0',
+    date: '2026-11-08',
+    title: 'Instant replay',
+    notes: [
+      'Watch your last match again: WATCH REPLAY after the result, or WATCH LAST MATCH on the title screen.',
+      'Pause, skip back or forward 5 seconds, scrub to any moment, and watch at half or double speed (Space, arrow keys, S on a keyboard).',
+      'Replays are tiny (a few kilobytes) and kept on your device until the next match ends or the game updates.',
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-11-08',
     title: 'Now in 3D',
