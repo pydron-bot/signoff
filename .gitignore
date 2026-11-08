@@ -1,0 +1,9 @@
+node_modules
+dist/
+dev-dist/
+*.log
+.DS_Store
+*.blend1
+*.blend2
+__pycache__/
+smoke-out/
