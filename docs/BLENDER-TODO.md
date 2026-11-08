@@ -8,10 +8,9 @@ models, rig and animation clips it needs, and the rules they must follow to
 drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 `CLAUDE.md` has the codebase rules; nothing here asks you to touch game code.
 
-> **Open decision:** the design doc hasn't settled the art style (hand-made
-> Blender models as for Curbside, or a simpler stylised look to start).
-> The generated stylised low-poly look (0.4.2) is the working style until
-> Derek decides; fix readability (step 7) before adding detail.
+> **Style: decided (Nov 8).** Derek likes the stylised low-poly look of
+> 0.4.2 (flat colours, faceted, blended joints) and wants **more detail** in
+> it: see step 8. Keep the look; add shape, not realism.
 
 ## How the game uses the art
 
@@ -159,7 +158,7 @@ are authored facing right with the left foot and left hand leading.
 - [x] Shared humanoid skeleton (`art/rig.blend`), with IK for feet and hands; bone names under *The rig* below
 - [x] Dale Storm blockout at the sizes above, skinned to the rig (1,040 triangles, rigid parts in flat colours)
 - [x] Test export of Dale as `public/assets/fighters/dale.glb` with the `idle` clip, plus `s.FP` to prove the hitbox check; checked in three.js at the right size and facing (`tools/viewer/`, below)
-- [ ] Agree the style with Derek before detailing
+- [x] Agree the style with Derek before detailing: the stylised low-poly look, with more detail (step 8)
 
 ### 2. Dale Storm
 
@@ -199,7 +198,7 @@ one per round (DESIGN.md has the details):
 
 ### 7. Fixes from the first review (Nov 8, game side)
 
-Found by playing every clip in the viewer and measuring it; details under
+Do these first: they're quick, and the detail pass builds on them. Found by playing every clip in the viewer and measuring it; details under
 *Review, Nov 8* in Feedback. In priority order:
 
 - [ ] **`ko` ends standing up.** All four fighters fall (0.5 m tall at frame 60) but frames 89–90 are back at idle height (Dale 1.72 m). The game holds the last frame of `ko` for the rest of the round, so it must end lying down, like `down`.
@@ -214,7 +213,50 @@ Found by playing every clip in the viewer and measuring it; details under
 - [ ] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
 - [ ] **The hand puppet should look like a puppet.** `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
 
-### 8. Effects (for the moves whose effect is the hit)
+### 8. Detail pass (the style is approved; it wants more detail)
+
+The fighters use about 1,500 of their 20,000 triangles. Spend up to about
+6,000 each on **shape detail in the same faceted, flat-colour style**: more
+pieces and silhouettes, not smoothing or realism. Detail must read at game
+distance (a fighter is about a fifth of the screen height on a phone), so
+favour big, high-contrast shapes over small ones. Faces matter most: they're
+what the camera sees at round start, in `win` and in `intro`.
+
+Budget and rules for the pass:
+
+- Up to about 6,000 triangles a fighter; still at most two materials (`body`, `props`).
+- Colour stays in vertex colours or flat material colours. If a face or logo can't be made from shapes, one small texture atlas (512² at most) on `body` is allowed: say so here.
+- Keep the joints' blended skinning; new pieces are rigid on one bone unless they must bend (sleeves, trousers).
+- The asset test's height and hitbox checks still apply; update `docs/BLENDER-TODO.md` with each fighter's new triangle count.
+
+**Everyone**
+
+- [ ] Faces: brow ridge, nose, eye sockets with eyes (whites and pupils as separate flat-coloured pieces), mouth shape; enough to read an expression. Each fighter gets a signature expression (below), and the `hit_*`, `ko` and `win` clips swap it (shape keys or swapped rigid pieces)
+- [ ] Hands: mitts with a separate thumb, and a fist shape for strikes (swap or shape key), so punches read as punches
+- [ ] Shoes with soles and a toe cap; trouser and sleeve cuffs as separate rims
+- [ ] Hair as chunky faceted clumps with a parting, not one block
+
+**Dale Storm**: the smiling weatherman, smile fixed through every forecast
+- [ ] A huge, too-white smile and permanent raised eyebrows; side-parted hair with a quiff
+- [ ] Suit: lapels, a wide 1987 tie with a stripe, pocket square, two buttons; sleeves with cuffs
+- [ ] A clicker in the lead hand (`props`), and a little "CH 0" lapel pin
+
+**Rox Vega**: aerobics host who hasn't stopped since 1983
+- [ ] Big permed hair with a headband (two colours), sweatbands on both wrists
+- [ ] Leotard with a high-cut leg and a contrasting stripe or lightning flash; belt, tights, slouchy ribbed leg warmers (rings), high-tops with laces
+- [ ] A determined grin; a sweat drop on the brow (`props`) for `win`
+
+**Hollis Bey**: night security guard, broad and tired
+- [ ] Peaked cap with a badge and a visor; a heavy moustache; a stubbled jaw (darker flat colour); tired, heavy-lidded eyes
+- [ ] Uniform: shoulder epaulettes, chest badge, two shirt pockets, a tie, a duty belt with pouches, the flashlight and the key ring (already props)
+- [ ] Heavy boots; a slight gut; bigger hands than the others
+
+**Mister Mumbles**: a ventriloquist's dummy with nobody's hand in him
+- [ ] The dummy face: painted round eyes, rosy cheek circles, a black painted hairline, and the hinged jaw with its two slot lines down the chin (the jaw drops in `idle` as if talking, and on the knocks in `Knock-Knock`)
+- [ ] Little suit with a bow tie and big buttons; wooden hands with visible finger lines; visible wooden joints (balls) at elbows and knees
+- [ ] The strings: a wooden control bar at the top of the frame they hang from (`mumbles_strings`)
+
+### 9. Effects (for the moves whose effect is the hit)
 
 Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now; the game places and animates copies.
 
@@ -225,9 +267,9 @@ Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now;
 - [ ] `fx_tape_skip`: a VHS-smear afterimage (one shared mesh, used for every fighter's Tape Skip dash; put it in `dale.glb` for now)
 - [ ] `fx_cold_front` reads as stacked ice; fine for a cold front, but give it a swirl so it reads as wind moving forward
 
-### 9. Next
+### 10. Next
 
-- [ ] Weather at Eleven (step 6 above) is next after the fixes: it's the only stage, and every match is played on it.
+- [ ] Weather at Eleven (step 6 above) after the fixes and the detail pass: it's the only stage, and every match is played on it.
 - [ ] Clip variety (later): a second `win` and `intro` per fighter.
 
 ### State clips (every fighter)
