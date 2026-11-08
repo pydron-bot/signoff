@@ -49,6 +49,8 @@ Size each fighter to their hurtboxes, the grey boxes you see in the game
 | --- | --- | --- | --- |
 | Dale Storm (`dale`) | 1.80 m | 1.10 m | Channel 0's weatherman, 1987: suit, wide tie, big smile, clicker or pointer |
 | Rox Vega (`rox`) | 1.75 m | 1.05 m | Aerobics host, 1983 forever: leotard, leg warmers, headband, sweatband |
+| Hollis Bey (`hollis`) | 1.90 m | 1.20 m | Night security guard of the transmitter building: broad, heavy, uniform, cap, flashlight and key ring on the belt. Hurtbox 0.7 m wide |
+| Mister Mumbles (`mumbles`) | 1.30 m | 0.80 m | A ventriloquist's dummy with no ventriloquist: painted wooden head with a hinged jaw, little suit, visible puppet strings that go up out of frame. Hurtbox 0.5 m wide |
 
 The broadcast look censors gore with static and stand-by cards, so no gore
 assets are needed.
@@ -136,7 +138,19 @@ are authored facing right with the left foot and left hand leading.
 - [ ] State clips
 - [ ] Move clips
 
-### 4. Weather at Eleven (stage)
+### 4. Hollis Bey
+
+- [ ] Model and textures; the flashlight and key ring as props in the `props` material
+- [ ] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
+- [ ] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
+
+### 5. Mister Mumbles
+
+- [ ] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part
+- [ ] State clips, and move clips. `Strings Attached` and `Exit Stage Left` are teleports: he is off screen for the listed frames (yanked up on his strings, then lowered back in); `Knock-Knock` is a slow, obvious wind-up (it can't be blocked, so it must read clearly)
+- [ ] `fx_hand_puppet`: the decoy, a hand puppet on a little stand, about 0.5 × 1.2 m
+
+### 6. Weather at Eleven (stage)
 
 The arena runs from −6 m to +6 m; fighters start at ±1.5 m. Three segments,
 one per round (DESIGN.md has the details):
@@ -147,7 +161,7 @@ one per round (DESIGN.md has the details):
 - [ ] Segment 3, Flood Warning: knee-deep water plane (`fx_water`) at about 0.22 m, and two live puddles (1.6 m wide) at x = ±3 m with sparking cables
 - [ ] Studio lighting suggestion per segment (the game uses a fixed light setup per segment; note the colours and angles you used)
 
-### State clips (both fighters)
+### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
 Loop where noted; lengths are suggestions unless given.

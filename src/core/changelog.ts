@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.4.0',
+    date: '2026-11-08',
+    title: 'Two more channels',
+    notes: [
+      'Hollis Bey joins: a grappler with a command grab that blocking can\'t stop and Throw can\'t break, a Flashlight that cuts through armour, and an armoured Night Shift charge.',
+      'Mister Mumbles joins: a trickster who vanishes on his strings and reappears behind you, leaves a hand puppet as a decoy, and tells a knock-knock joke you can\'t block. Jump it.',
+      'The CPU plays all four styles, jumps unblockables, and can be fooled by a decoy (often on easy, rarely on hard).',
+      'Rebalanced the four: closer to even in CPU-vs-CPU play. Dale has a little less health and a weaker Cold Front.',
+    ],
+  },
+  {
     version: '0.3.1',
     date: '2026-11-08',
     title: 'Behind the scenes',
