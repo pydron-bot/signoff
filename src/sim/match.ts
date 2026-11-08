@@ -45,6 +45,7 @@ export function createMatch(o: MatchOptions): MatchState {
     segment: 0,
     timer: ROUND_FRAMES,
     roundFrame: 0,
+    firstHit: false,
     wind: 0,
     hazards: [],
     props: [],

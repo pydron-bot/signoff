@@ -12,12 +12,16 @@ import {
   CUT_AWAY_FRAMES,
   CUT_AWAY_HEALTH_PCT,
   DOWN_FRAMES,
+  FIRST_HIT_METER,
   GETUP_FRAMES,
   GRAVITY,
+  GROUND_BOUNCE_VY,
+  JUGGLE_GRAVITY,
   JUMP_LAND_FRAMES,
   KNOCK_VX,
   LAUNCH_VX,
   KNOCK_VY,
+  METER_MAX,
   PREJUMP_FRAMES,
   SLIDE_FRICTION,
   TAPE_SKIP_FRAMES,
@@ -28,6 +32,8 @@ import {
   TECH_PUSH,
   THROW_HOLD,
   THROW_TECH,
+  WALL_BOUNCE_BACK_VX,
+  WALL_REBOUND_VY,
 } from './constants';
 import type { SimEvent } from './events';
 import { fighterData, moveData } from './fighters';
@@ -62,8 +68,26 @@ export function toIdle(f: FighterState): void {
   f.vx = 0;
   f.move = '';
   f.crouching = false;
+  endCombo(f);
+}
+
+/** The combo on this fighter is over: scaling, juggles, relaunches and bounces start fresh. */
+export function endCombo(f: FighterState): void {
   f.combo = 0;
   f.juggle = 0;
+  f.relaunches = 0;
+  f.groundBounced = false;
+  f.wallBounced = false;
+  f.bounce = 'none';
+}
+
+/** The round's first hit (strike, throw or super) is worth a bar to whoever lands it. */
+export function firstHit(m: MatchState, ai: number, ev: SimEvent[]): void {
+  if (m.firstHit) return;
+  m.firstHit = true;
+  const a = m.fighters[ai];
+  a.meter = Math.min(METER_MAX, a.meter + FIRST_HIT_METER);
+  ev.push({ type: 'firstHit', player: ai });
 }
 
 export function startMove(f: FighterState, id: string): void {
@@ -177,6 +201,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
   const ko = takeDamage(f, dmg);
   if (ko) f.koMove = grabMove;
   launch(f, dir, KNOCK_VY, false);
+  firstHit(m, 1 - i, ev);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
 }
@@ -189,6 +214,7 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   const ko = takeDamage(f, dmg);
   if (ko) f.koMove = 'td';
   launch(f, f.x >= a.x ? 1 : -1, KNOCK_VY, false);
+  firstHit(m, 1 - i, ev);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
 }
@@ -376,8 +402,8 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
     return;
   }
   if (inWindow(f.moveFrame, mv.cancel)) {
-    // Specials cancel only out of a hit: confirm it first. Strings go on regardless.
-    if (f.contact === 'hit' && pressed(inp, SPECIAL, since)) {
+    // Specials cancel only out of a hit (and never out of another special): confirm it first. Strings go on regardless.
+    if (f.contact === 'hit' && mv.kind !== 'special' && pressed(inp, SPECIAL, since)) {
       consume(inp, SPECIAL);
       startSpecial(f, i, ev);
       return;
@@ -387,12 +413,18 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
     if (atk && next) {
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, next);
-    } else if (atk && f.contact === 'hit' && mv.hits[mv.hits.length - 1]?.launch !== undefined) {
-      // A launcher that connects cancels into any normal, to follow them up into the air.
+    } else if (atk && f.contact === 'hit' && opensJuggle(mv)) {
+      // A launcher (or a bounce) that connects cancels into any normal, to follow them up into the air.
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, normalFor(f, atk));
     }
   }
+}
+
+/** Its last hit launches or bounces them: it can be followed up. */
+function opensJuggle(mv: MoveData): boolean {
+  const h = mv.hits[mv.hits.length - 1];
+  return h !== undefined && (h.launch !== undefined || h.groundBounce === true || h.wallBounce === true);
 }
 
 function airControl(f: FighterState): void {
@@ -408,7 +440,7 @@ function airControl(f: FighterState): void {
 function cutAway(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
   if (f.ko || f.cutAwayUsed || f.meter < CUT_AWAY_BARS * BAR) return;
-  if (f.mode === 'launched' && !f.juggleable) return;
+  if (f.mode === 'launched' && !f.juggleable && f.bounce === 'none') return;
   if (!pressed(f.input, METER)) return;
   const cost = Math.floor((f.maxHealth * CUT_AWAY_HEALTH_PCT) / 100);
   if (f.health <= cost) return;
@@ -421,8 +453,7 @@ function cutAway(m: MatchState, i: number, ev: SimEvent[]): void {
   f.vx = 0;
   f.vy = 0;
   f.slide = 0;
-  f.combo = 0;
-  f.juggle = 0;
+  endCombo(f);
   const o = m.fighters[1 - i];
   o.hitstop = 0;
   launch(o, o.x >= f.x ? 1 : -1, KNOCK_VY, false);
@@ -461,9 +492,11 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     }
   }
   if (airborne(f)) {
-    f.vy -= GRAVITY;
+    // A juggled body falls faster with every juggle hit.
+    f.vy -= f.mode === 'launched' && f.juggleable ? Math.floor((GRAVITY * (100 + JUGGLE_GRAVITY * f.juggle)) / 100) : GRAVITY;
     f.y += f.vy;
     f.x += f.vx;
+    if (f.bounce === 'wall' && Math.abs(f.x) >= wallX(m, f)) wallBounce(m, i, ev);
     if (f.y <= 0) {
       f.y = 0;
       f.vy = 0;
@@ -511,6 +544,19 @@ function teleport(m: MatchState, i: number, to: 'behind' | 'away', ev: SimEvent[
   ev.push({ type: 'teleport', player: i, x: f.x });
 }
 
+/** Off the wall: back towards the middle, up into a juggle. */
+function wallBounce(m: MatchState, i: number, ev: SimEvent[]): void {
+  const f = m.fighters[i];
+  const side = f.x > 0 ? 1 : -1;
+  f.x = side * wallX(m, f);
+  f.bounce = 'none';
+  f.wallBounced = true;
+  f.vx = -side * WALL_BOUNCE_BACK_VX;
+  f.vy = WALL_REBOUND_VY;
+  f.juggleable = true;
+  ev.push({ type: 'relaunch', player: i, how: 'wall', x: f.x, y: f.y });
+}
+
 function land(f: FighterState, i: number, ev: SimEvent[]): void {
   switch (f.mode) {
     case 'air':
@@ -525,9 +571,17 @@ function land(f: FighterState, i: number, ev: SimEvent[]): void {
       f.vx = 0;
       return;
     case 'launched':
+      if (f.bounce === 'ground' && !f.ko) {
+        // Off the floor and back up into a juggle.
+        f.bounce = 'none';
+        f.groundBounced = true;
+        f.vy = GROUND_BOUNCE_VY;
+        f.juggleable = true;
+        ev.push({ type: 'relaunch', player: i, how: 'ground', x: f.x, y: 0 });
+        return;
+      }
       f.vx = 0;
-      f.combo = 0;
-      f.juggle = 0;
+      endCombo(f);
       if (f.ko) f.mode = 'ko';
       else {
         f.mode = 'down';

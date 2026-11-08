@@ -123,10 +123,28 @@ meter. Every number below is a starting value to tune.
   punished. A string carries on whether it hits, is blocked or whiffs, and
   every string is a true combo on hit.
 - Cancels: a normal or string step that **hits** can be cancelled into any
-  special (not on block or whiff: confirm it first). A **launcher** that hits
-  can be cancelled into any normal, to follow them into the air (up to 4
-  juggle hits). Tape Skip (1 bar) cancels anything into a dash, which is how
-  strings join up.
+  special (not on block or whiff: confirm it first; never special into
+  special). A **launcher** or a **bounce** that hits can be cancelled into any
+  normal, to follow them into the air. Tape Skip (1 bar) cancels anything into
+  a dash, which is how strings join up.
+- Combos aim at the length of a modern Mortal Kombat combo, 10 or more hits
+  and about 30% without meter, 35 to 40% with a bar, without assists:
+  - **Juggles wind down on their own.** No hard limit: each juggle hit pops
+    the body 7% lower and it falls 6% faster, so a juggle ends by itself
+    (a cap of 16 is only a safety net). Strings and specials work on a
+    falling body.
+  - **Relaunch (1 bar).** A boosted special whose first hit lands on a
+    juggled opponent pops them straight back up just in front of the
+    attacker, for 70 extra damage (not scaled), and the special stops there
+    so the attacker can follow up. Twice a combo.
+  - **Bounces.** A ground bounce slams them into the floor; a wall bounce,
+    only within 1.6 m of the wall, throws them into it. Either way they come
+    back up into a juggle, each once a combo; otherwise the move knocks
+    down. Each fighter gets a bounce or two as signature combo tools.
+  - **Damage scaling** stays at 10% less per hit, down to 30%, so the
+    extra hits are worth having without letting combos run away.
+  - **First hit.** The first hit of each round (strike, throw or super) is
+    worth a bar of Signal.
 - Each fighter's normals do their own job: Dale has the longest pokes and a
   step-back kick; Rox is short-ranged but plus on block, with a lunge and
   double kicks; Hollis has an armoured kick, the only link in the game
@@ -140,11 +158,12 @@ meter. Every number below is a starting value to tune.
 
 ### Signal meter
 
-3 bars, fills from dealing and taking damage.
+3 bars, fills from dealing and taking damage; the first hit of a round is
+worth a bar.
 
 | Spend | Cost | Effect |
 | --- | --- | --- |
-| Boosted special | 1 bar | A stronger version of a special: more hits, armour or a new follow-up |
+| Boosted special | 1 bar | A stronger version of a special: more hits, armour or a new follow-up; on a juggled opponent, a relaunch |
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
 | Cut Away | 2 bars + 5% health | Combo breaker: knocks the opponent away mid-combo; once per round |
 

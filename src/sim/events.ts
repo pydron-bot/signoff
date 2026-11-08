@@ -11,6 +11,10 @@ export type SimEvent =
   | { type: 'fight'; round: number }
   | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; x: Fx; y: Fx }
   | { type: 'block'; attacker: number; defender: number; move: string; chip: number; x: Fx; y: Fx }
+  /** The round's first hit: the attacker gets a bar. */
+  | { type: 'firstHit'; player: number }
+  /** A juggled body popped back up: a boosted special (relaunch), the floor or the wall. */
+  | { type: 'relaunch'; player: number; how: 'special' | 'ground' | 'wall'; x: Fx; y: Fx }
   | { type: 'armor'; player: number; move: string }
   /** A counter read the opponent's strike (`move`) and answers it. */
   | { type: 'counter'; player: number; move: string }

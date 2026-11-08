@@ -220,6 +220,19 @@ export class Sound {
           this.noise(2.4, 5000, 0.18, 'highpass', 0.5);
           this.tone(1000, 2.4, 0.06, 'sine');
           break;
+        case 'relaunch':
+          // A thud off the floor or wall; a relaunch rings like the boost.
+          if (e.how === 'special') this.tone(440, 0.15, 0.1, 'square', 1320);
+          else {
+            this.tone(80, 0.2, 0.4, 'sine', 50);
+            this.noise(0.15, 400, 0.25, 'lowpass');
+          }
+          break;
+        case 'firstHit':
+          // The station's ident chime: the first hit is worth a bar.
+          this.tone(880, 0.12, 0.08, 'sine');
+          this.tone(1320, 0.2, 0.08, 'sine', undefined, 0.08);
+          break;
         case 'knockdown':
           this.tone(70, 0.3, 0.4, 'sine', 40);
           this.noise(0.2, 300, 0.25, 'lowpass');

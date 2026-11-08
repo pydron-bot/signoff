@@ -38,6 +38,10 @@ export interface HitEffect {
   readonly knockdown?: boolean;
   /** Pops the opponent up at this vertical speed, open to juggles. */
   readonly launch?: Fx;
+  /** Slams them to the floor and they bounce back up into a juggle (once a combo). Set knockdown too: it's what happens after. */
+  readonly groundBounce?: boolean;
+  /** Near the wall, sends them into it and they bounce back off into a juggle (once a combo). Set knockdown too: it's what happens elsewhere. */
+  readonly wallBounce?: boolean;
   /** Pulls the opponent to this distance in front of the attacker. */
   readonly pull?: Fx;
   readonly pullOnBlock?: boolean;
@@ -107,6 +111,8 @@ export interface MoveData {
   readonly cancel?: Window;
   /** The boosted version (Special again, 1 bar). */
   readonly boost?: string;
+  /** Set on boosted versions: hitting a juggled body relaunches it. */
+  readonly boosted?: boolean;
   readonly throwData?: ThrowData;
   /** On this frame the fighter reappears behind the opponent, or well back from them. */
   readonly teleport?: { readonly frame: number; readonly to: 'behind' | 'away' };

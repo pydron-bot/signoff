@@ -49,6 +49,8 @@ function traits(m: MoveData): string {
   if (m.throwData) t.push(m.throwData.untechable ? 'grab, unbreakable' : 'grab');
   const last = m.hits.at(-1);
   if (last?.launch !== undefined) t.push('launches');
+  else if (last?.groundBounce) t.push('ground bounce');
+  else if (last?.wallBounce) t.push('wall bounce near the wall');
   else if (last?.knockdown) t.push('knocks down');
   if (m.armor) t.push('armour');
   if (m.invuln) t.push('invincible start');
@@ -113,7 +115,7 @@ export function moveList(fighter: string): MoveSection[] {
 
   const system: MoveRow[] = [
     { name: 'Throw', input: 'THROW (← THROW: throw backward)', notes: 'break it with THROW', frames: '' },
-    { name: 'Boost', input: 'SP again', notes: `within ${BOOST_WINDOW} frames of a special: 1 bar`, frames: '' },
+    { name: 'Boost', input: 'SP again', notes: `within ${BOOST_WINDOW} frames of a special: 1 bar; on a juggled opponent it relaunches them (twice a combo)`, frames: '' },
     { name: 'Tape Skip', input: 'METER during any move', notes: 'cancels it into a dash: 1 bar', frames: '' },
     { name: 'Cut Away', input: 'METER while being hit', notes: `breaks the combo: ${CUT_AWAY_BARS} bars and a little health, once a round`, frames: '' },
     { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },

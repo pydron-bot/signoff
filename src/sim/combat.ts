@@ -9,9 +9,19 @@ import {
   COUNTER_READ_STOP,
   COUNTER_HITSTUN,
   HITSTOP,
+  JUGGLE_DECAY,
   JUGGLE_POP,
+  JUGGLE_POP_MIN,
   KNOCK_VY,
   MAX_JUGGLE,
+  MAX_RELAUNCH,
+  RELAUNCH_DAMAGE,
+  RELAUNCH_PULL,
+  RELAUNCH_VY,
+  SLAM_VY,
+  WALL_BOUNCE_RANGE,
+  WALL_BOUNCE_VX,
+  WALL_BOUNCE_VY,
   METER_MAX,
   SCALE_MIN,
   SCALE_STEP,
@@ -20,7 +30,7 @@ import {
   THROW_HOLD,
 } from './constants';
 import type { SimEvent } from './events';
-import { airborne, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, wallX } from './fighter';
+import { airborne, firstHit, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
 import { BLOCK, DOWN } from './input';
@@ -211,12 +221,15 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
       continue;
     }
     a.contact = pendingBlocked[i] ? 'block' : 'hit';
-    applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev);
+    // Only a boosted special's first hit relaunches, so a multi-hit one can't spend them all.
+    const relaunch = mv.boosted === true && (a.hitMask & (a.hitMask - 1)) === 0;
+    applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev, relaunch);
   }
   for (let n = 0; n < projHits.length; n++) {
     const P = ps[projHits[n]];
     const pd = projData(m, projHits[n]);
-    applyHit(m, P.owner, pd.effect, P.move, 'special', P.dir, P.y + (pd.box.h >> 1), true, projBlocked[n], false, ev);
+    const relaunch = moveData(fs[P.owner].fighter, P.move).boosted === true && P.hitsLeft === pd.hits;
+    applyHit(m, P.owner, pd.effect, P.move, 'special', P.dir, P.y + (pd.box.h >> 1), true, projBlocked[n], false, ev, relaunch);
     P.rehit = pd.rehit;
     if (--P.hitsLeft <= 0) P.active = false;
   }
@@ -302,6 +315,8 @@ export function applyHit(
   blocked: boolean,
   counter: boolean,
   ev: SimEvent[],
+  /** A boosted special's first hit: relaunches a juggled body (1 bar). */
+  relaunch = false,
 ): void {
   const a = m.fighters[ai];
   const di = 1 - ai;
@@ -363,18 +378,42 @@ export function applyHit(
   // Counter hits freeze a little longer, so they read.
   const hitStop = stop + (counter ? COUNTER_HITSTOP : 0);
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
-  const dmg = Math.max(1, Math.floor((e.damage * scale) / 100));
-  d.combo++;
   const wasAir = airborne(d);
+  const relaunching = relaunch && wasAir && d.relaunches < MAX_RELAUNCH;
+  const dmg = Math.max(1, Math.floor((e.damage * scale) / 100)) + (relaunching ? RELAUNCH_DAMAGE : 0);
+  d.combo++;
+  const juggle = wasAir ? d.juggle + 1 : 0;
   const ko = takeDamage(d, dmg);
   d.move = '';
   if (ko) {
     d.koMove = moveId;
     launch(d, dir, KNOCK_VY, false);
-  }
-  else if (wasAir || e.launch !== undefined || e.knockdown) {
-    const juggle = wasAir ? d.juggle + 1 : 0;
-    launch(d, dir, e.launch ?? (e.knockdown ? KNOCK_VY : JUGGLE_POP), !e.knockdown);
+  } else if (relaunching) {
+    // A boosted special (1 bar) pops a juggled body back up to full height.
+    d.relaunches++;
+    launch(d, dir, RELAUNCH_VY, true);
+    d.vx = 0;
+    if (!projectile) pull(m, a, d, RELAUNCH_PULL);
+    d.juggle = juggle;
+    // The special stops there, so the attacker is free to follow them up.
+    if (!projectile) toIdle(a);
+    ev.push({ type: 'relaunch', player: di, how: 'special', x: d.x, y: d.y });
+  } else if (e.groundBounce && !d.groundBounced) {
+    // Slammed down: not hittable until they come back up off the floor.
+    launch(d, dir, SLAM_VY, false);
+    d.vx = 0;
+    d.bounce = 'ground';
+    d.juggle = juggle;
+  } else if (e.wallBounce && !d.wallBounced && wallX(m, d) - dir * d.x <= WALL_BOUNCE_RANGE) {
+    launch(d, dir, WALL_BOUNCE_VY, false);
+    d.vx = dir * WALL_BOUNCE_VX;
+    d.bounce = 'wall';
+    d.juggle = juggle;
+  } else if (wasAir || e.launch !== undefined || e.knockdown) {
+    let pop = e.launch ?? (e.knockdown ? KNOCK_VY : JUGGLE_POP);
+    // Each juggle hit pops them lower: juggles wind down on their own.
+    if (wasAir && !e.knockdown) pop = Math.floor((pop * Math.max(JUGGLE_POP_MIN, 100 - JUGGLE_DECAY * juggle)) / 100);
+    launch(d, dir, pop, !e.knockdown);
     d.juggle = juggle;
   } else {
     d.mode = 'hitstun';
@@ -387,6 +426,7 @@ export function applyHit(
   if (!projectile) a.hitstop = hitStop;
   gainMeter(a, dmg + (dmg >> 1));
   gainMeter(d, dmg);
+  firstHit(m, ai, ev);
   ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, x: d.x, y });
   if (ko) ev.push({ type: 'ko', player: di });
 }

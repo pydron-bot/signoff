@@ -48,6 +48,8 @@ export class Hud {
   private counterLeft = 0;
   private captionLeft = 0;
   private comboLeft = [0, 0];
+  /** Damage in each side's current combo, for the % beside the hits. */
+  private comboDamage = [0, 0];
   private lastHealth = [-1, -1];
   private lastMeter = [-1, -1];
   private lastWins = [-1, -1];
@@ -182,6 +184,12 @@ export class Hud {
         case 'superHit':
           this.say('TECHNICAL DIFFICULTIES', 'PLEASE STAND BY', 150);
           break;
+        case 'firstHit': {
+          const c = this.sides[e.player].combo;
+          c.textContent = 'FIRST HIT';
+          this.comboLeft[e.player] = 70;
+          break;
+        }
         case 'cutAway':
           this.say('CUT AWAY', '', 40);
           break;
@@ -201,9 +209,11 @@ export class Hud {
             this.counter.style.right = e.attacker === 1 ? '20px' : '';
             this.counterLeft = 45;
           }
+          this.comboDamage[e.attacker] = e.combo === 1 ? e.damage : this.comboDamage[e.attacker] + e.damage;
           if (e.combo >= 2) {
             const c = this.sides[e.attacker].combo;
-            c.textContent = `${e.combo} HITS`;
+            const pct = Math.round((this.comboDamage[e.attacker] * 100) / m.fighters[e.defender].maxHealth);
+            c.textContent = `${e.combo} HITS ${pct}%`;
             this.comboLeft[e.attacker] = 70;
           }
           break;

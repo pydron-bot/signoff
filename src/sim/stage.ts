@@ -14,6 +14,7 @@ import type { FighterState, MatchState } from './state';
 export function setupRound(m: MatchState): void {
   const seg = segmentData(m.stage, m.segment);
   m.roundFrame = 0;
+  m.firstHit = false;
   // Wind blows the same on both; which way is picked from the match's own random numbers.
   m.wind = seg.wind ? (nextInt(m.rng, 2) ? seg.wind : -seg.wind) : 0;
   m.hazards = m.studio ? [] : seg.hazards.map(() => ({ spot: -1, hitMask: 0 }));

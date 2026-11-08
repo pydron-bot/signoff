@@ -29,6 +29,8 @@ export interface EffectSpec {
   pullOnBlock?: boolean;
   hitstop?: number;
   armorBreak?: boolean;
+  groundBounce?: boolean;
+  wallBounce?: boolean;
 }
 
 export interface StrikeSpec extends EffectSpec {
@@ -51,6 +53,8 @@ export function effect(s: EffectSpec): HitEffect {
     pullOnBlock: s.pullOnBlock,
     hitstop: s.hitstop,
     armorBreak: s.armorBreak,
+    groundBounce: s.groundBounce,
+    wallBounce: s.wallBounce,
   };
 }
 
@@ -222,6 +226,8 @@ export function table(...moves: MoveData[]): Record<string, MoveData> {
     if (t[m.id]) throw new Error(`duplicate move id ${m.id}`);
     t[m.id] = m;
   }
+  // A boost target is a boosted special: it relaunches a juggled body.
+  for (const m of moves) if (m.boost && t[m.boost]) t[m.boost] = { ...t[m.boost], boosted: true };
   return t;
 }
 

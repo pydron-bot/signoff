@@ -14,6 +14,19 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.16.0',
+    date: '2026-11-08',
+    title: 'Extended coverage',
+    notes: [
+      'Longer combos: the four-hit juggle limit is gone. Each juggle hit pops them a little lower and they fall a little faster, so juggles wind down on their own, and strings and specials keep working on a falling opponent.',
+      'Relaunch: a boosted special (1 bar) that hits a juggled opponent pops them straight back up in front of you, with extra damage, and ends the special so you can follow up. Twice a combo.',
+      "Bounces: some moves slam the opponent into the floor or (near it) the wall, and they come back up into a juggle, once each a combo. Rox's Leg Warmer Lariat ground-bounces and Feel the Burn wall-bounces.",
+      'First hit: the first hit of each round is worth a bar of Signal.',
+      'The combo counter shows the damage too (8 HITS 29%).',
+      'Specials no longer cancel into other specials.',
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-11-08',
     title: 'Good evening',
