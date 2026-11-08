@@ -61,7 +61,8 @@ describe('determinism and save/restore', () => {
       expect(m.phase, `seed ${seed}`).toBe('over');
       expect(count(ev, 'matchOver')).toBe(1);
     }
-  });
+    // Six whole matches checked every step: a few seconds here, longer on CI's runners.
+  }, 30000);
 });
 
 describe('movement', () => {
