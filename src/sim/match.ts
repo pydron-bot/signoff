@@ -16,11 +16,12 @@ import { resolveHits } from './combat';
 import type { SimEvent } from './events';
 import { control, physics, resolvePush, tick, updateProjectiles } from './fighter';
 import { fighterData } from './fighters';
+import { afterStayTuned, beginStayTuned, earnedCancellation, startFinisher, stayTunedControl, stepFinisher } from './finisher';
 import { readInput } from './input';
 import { createRng } from './rng';
 import { setupRound, updateStage } from './stage';
 import { stageData } from './stages';
-import { PROJECTILE_SLOTS, createFighter, createProjectile, type MatchState } from './state';
+import { PROJECTILE_SLOTS, createFighter, createProjectile, type MatchState, type Phase } from './state';
 
 export interface MatchOptions {
   p1: string;
@@ -52,6 +53,7 @@ export function createMatch(o: MatchOptions): MatchState {
     roundWinner: -1,
     matchWinner: -1,
     rng: createRng(o.seed ?? 1),
+    finish: { player: -1, id: '', frame: 0 },
     fighters: [createFighter(o.p1, 0), createFighter(o.p2, 1)],
     projectiles: Array.from({ length: PROJECTILE_SLOTS }, createProjectile),
   };
@@ -66,12 +68,14 @@ export function step(m: MatchState, in0: number, in1: number, ev: SimEvent[]): v
   m.frame++;
   const fs = m.fighters;
   const live = m.phase === 'fight';
+  // "Stay tuned": the winner's input still counts (to enter a finisher).
+  const tuned = m.phase === 'stayTuned';
   for (let i = 0; i < 2; i++) {
     frozen[i] = fs[i].hitstop > 0;
     if (frozen[i]) fs[i].hitstop--;
   }
-  readInput(fs[0].input, live ? in0 : 0, fs[0].facing, frozen[0]);
-  readInput(fs[1].input, live ? in1 : 0, fs[1].facing, frozen[1]);
+  readInput(fs[0].input, live || (tuned && m.matchWinner === 0) ? in0 : 0, fs[0].facing, frozen[0]);
+  readInput(fs[1].input, live || (tuned && m.matchWinner === 1) ? in1 : 0, fs[1].facing, frozen[1]);
 
   switch (m.phase) {
     case 'intro':
@@ -97,19 +101,31 @@ export function step(m: MatchState, in0: number, in1: number, ev: SimEvent[]): v
       return;
     case 'stayTuned':
       simulate(m, ev, false);
-      if (--m.phaseTimer <= 0) {
-        m.phase = 'over';
-        ev.push({ type: 'matchOver', winner: m.matchWinner });
-      }
+      // A finisher started this step.
+      if ((m.phase as Phase) === 'finisher') return;
+      afterStayTuned(m);
+      if (--m.phaseTimer <= 0) end(m, ev);
+      return;
+    case 'finisher':
+      simulate(m, ev, false);
+      if (stepFinisher(m, ev)) end(m, ev);
       return;
     case 'over':
       return;
   }
 }
 
+function end(m: MatchState, ev: SimEvent[]): void {
+  m.phase = 'over';
+  ev.push({ type: 'matchOver', winner: m.matchWinner });
+}
+
 function simulate(m: MatchState, ev: SimEvent[], hits: boolean): void {
   for (let i = 0; i < 2; i++) if (!frozen[i]) tick(m, i, ev);
-  for (let i = 0; i < 2; i++) if (!frozen[i]) control(m, i, ev);
+  // After the deciding round only the winner has a say, and only to finish it; in a finisher, nobody.
+  if (m.phase === 'stayTuned') {
+    for (let i = 0; i < 2; i++) if (!frozen[i] && m.phase === 'stayTuned') stayTunedControl(m, i, ev);
+  } else if (m.phase !== 'finisher') for (let i = 0; i < 2; i++) if (!frozen[i]) control(m, i, ev);
   for (let i = 0; i < 2; i++) if (!frozen[i]) physics(m, i, ev);
   resolvePush(m);
   updateProjectiles(m);
@@ -148,8 +164,14 @@ function afterRound(m: MatchState, ev: SimEvent[]): void {
   const champ = a.wins >= WINS_NEEDED ? 0 : b.wins >= WINS_NEEDED ? 1 : -1;
   if (champ >= 0) {
     m.matchWinner = champ;
+    const cancel = earnedCancellation(m, champ);
+    if (cancel) {
+      startFinisher(m, champ, cancel.id, ev);
+      return;
+    }
     m.phase = 'stayTuned';
     m.phaseTimer = STAY_TUNED_FRAMES;
+    beginStayTuned(m);
     ev.push({ type: 'stayTuned', winner: champ });
   } else if (m.round >= MAX_ROUNDS) {
     m.matchWinner = 2;

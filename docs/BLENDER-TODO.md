@@ -342,6 +342,16 @@ Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now;
 - [x] Weather at Eleven (step 6 above) after the fixes and the detail pass: it's the only stage, and every match is played on it.
 - [x] Clip variety: a second `win` and `intro` per fighter. *Done (Nov 8): `win_2` and `intro_2` (rows below); the game alternates them by round.*
 
+### 11. Finishers (game side is in, Nov 8)
+
+Finishers play on the clips you've already made: a Sign-Off is a script of
+the winner's own moves and the loser's hit reactions (data in each fighter's
+file under `finishers`), then the picture cuts to static, colour bars or the
+stand-by card. Two things would make them land harder:
+
+- [ ] **`dazed`** (60, loop) for every fighter: the loser on their feet after the deciding round, swaying, guard down, head lolling, waiting to be finished. Until it exists the game holds `hit_high`.
+- [ ] Later: a bespoke clip for each Sign-Off's last blow (the one the picture cuts away on), and a `rerun_wake` for the Rerun card (the loser waking on a sofa). Not needed yet.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -365,6 +375,7 @@ Loop where noted; lengths are suggestions unless given.
 | `getup` | 20 | Exactly 20 |
 | `thrown` | 24 | Being thrown (pairs with the thrower's `throw` hold) |
 | `ko` | 90 | Falling and staying down |
+| `dazed` | 60, loop | Out on their feet after the deciding round, before a finisher (step 11) |
 | `win` | 120 | Victory pose |
 | `intro` | 90 | Round intro |
 | `win_2`, `intro_2` | 120, 90 | Second versions. Dale: "…and that's the forecast", clicking the map / straightens the tie and the quiff. Rox: hands on hips, high knees / an overhead side stretch. Hollis: checks his watch and yawns / touches his cap, cracks his knuckles. Mumbles: laughs, jaw clacking / slumped until the strings snap him up |

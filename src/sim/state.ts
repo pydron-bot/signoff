@@ -29,7 +29,9 @@ export type FighterMode =
   | 'thrown'
   | 'recover'
   | 'cinematic'
-  | 'ko';
+  | 'ko'
+  /** On their feet but out: the loser while the winner decides how to finish. */
+  | 'dazed';
 
 export interface FighterState {
   fighter: string;
@@ -69,6 +71,8 @@ export interface FighterState {
   juggleable: boolean;
   ko: boolean;
   cutAwayUsed: boolean;
+  /** The move that took the last of this fighter's health ('' if none), for cancellations. */
+  koMove: string;
   tdUsed: boolean;
   wins: number;
   input: InputState;
@@ -101,7 +105,14 @@ export interface PropState {
   owner: number;
 }
 
-export type Phase = 'intro' | 'fight' | 'ko' | 'break' | 'stayTuned' | 'over';
+export type Phase = 'intro' | 'fight' | 'ko' | 'break' | 'stayTuned' | 'finisher' | 'over';
+
+/** The finisher playing: whose, which, and the step it's on (from 1). */
+export interface FinishState {
+  player: number;
+  id: string;
+  frame: number;
+}
 
 export interface MatchState {
   frame: number;
@@ -125,6 +136,8 @@ export interface MatchState {
   /** -1 until decided; 2 for a drawn match. */
   matchWinner: number;
   rng: RngState;
+  /** player -1 when no finisher is playing. */
+  finish: FinishState;
   fighters: FighterState[];
   projectiles: ProjectileState[];
 }
@@ -165,6 +178,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     juggleable: false,
     ko: false,
     cutAwayUsed: false,
+    koMove: '',
     tdUsed: false,
     wins: 0,
     input: createInput(),

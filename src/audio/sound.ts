@@ -217,6 +217,28 @@ export class Sound {
           this.say('Stay tuned');
           this.laugh(1.2);
           break;
+        case 'finisher':
+          // The crowd goes quiet; a low drone under the beating.
+          if (e.kind === 'signoff') this.tone(55, 3, 0.12, 'sawtooth', 45);
+          break;
+        case 'finisherCut':
+          if (e.censor === 'off') {
+            // The set clicking off, and the whine of the tube dying.
+            this.tone(80, 0.08, 0.3, 'square');
+            this.tone(15000, 1.2, 0.03, 'sine', 3000, 0.05);
+          } else {
+            // Off air, but the sound carries on underneath.
+            this.noise(e.frames / 60, 5000, 0.16, 'highpass', 0.5);
+            this.tone(1000, e.frames / 60, 0.05, 'sine');
+          }
+          break;
+        case 'finisherCard': {
+          // The station ident, then the announcer reads the card.
+          [523, 659, 784, 1046].forEach((f, k) => this.tone(f, 0.3, 0.07, 'triangle', undefined, k * 0.12));
+          this.say(e.kind === 'rerun' ? 'Rerun' : e.kind === 'cancellation' ? 'Cancelled' : 'Sign off');
+          if (e.kind !== 'rerun') this.applause(1.0);
+          break;
+        }
         case 'matchOver':
           // The sign-off tone.
           this.tone(1000, 1.6, 0.08, 'sine');

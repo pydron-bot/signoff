@@ -6,7 +6,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, strike, table, technicalDifficulties, throwMove } from './build';
+import { box, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const moves = table(
   // Standing
@@ -101,6 +101,41 @@ const moves = table(
   technicalDifficulties(1.6),
 );
 
+// Finishers. The blows are scripted (nothing here can miss); the picture cuts away at the worst of it.
+const finishers = [
+  // Close: clocked in, beaten down with the nightstick, a light in the eyes, then the boot.
+  new Script(moves)
+    .strike('Clocking In', { react: 'grab', damage: 120, pull: 0.7 }, 30)
+    .strike('s.BP', { react: 'high', damage: 75 })
+    .strike('BP FP', { react: 'high', damage: 45 })
+    .strike('s.BP', { react: 'high', damage: 75 })
+    .strike('FP FP BP', { react: 'knockdown', damage: 90, pop: 0.1, carry: 0.02 }, 30)
+    .play('Flashlight', 34)
+    .strike('c.FK', { react: 'none', damage: 140 }, 0)
+    .cut('standby')
+    .blow(12, { react: 'none', damage: 100 })
+    .blow(24, { react: 'none', damage: 100 })
+    .blow(36, { react: 'none', damage: 100 })
+    .blow(50, { react: 'none', damage: 150 })
+    .done({ id: 'Lights Out', name: 'Lights Out', kind: 'signoff', range: 'close', input: ['b', 'd'], button: 'BP' }, 110),
+  // Mid: the keys, the walk through, and the keys again until it's quiet.
+  new Script(moves)
+    .blow(11, { react: 'low', damage: 55, pull: 1.6 })
+    .blow(19, { react: 'launch', damage: 60, pop: 0.15 })
+    .play('Key Ring+', 26)
+    .strike('Night Shift', { react: 'knockdown', damage: 80, pop: 0.1, carry: 0.02 }, 28)
+    .strike('Key Ring', { react: 'none', damage: 65 }, 14)
+    .strike('Key Ring', { react: 'none', damage: 65 }, 14)
+    .strike('c.BK', { react: 'none', damage: 130 }, 0)
+    .cut('bars')
+    .blow(14, { react: 'none', damage: 95 })
+    .blow(30, { react: 'none', damage: 95 })
+    .blow(46, { react: 'none', damage: 140 })
+    .done({ id: 'End of Shift', name: 'End of Shift', kind: 'signoff', range: 'mid', input: ['f', 'd'], button: 'BK' }, 100),
+  new Script(moves).wait(20).cut('off').done({ id: 'Clocked Out', name: 'Clocked Out', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Clocking In' }, 40),
+  rerun(moves),
+];
+
 export const HOLLIS: FighterData = {
   id: 'hollis',
   name: 'Hollis Bey',
@@ -128,6 +163,8 @@ export const HOLLIS: FighterData = {
   superMove: 'td',
   interactMove: 'interact',
   moves,
+  show: 'The Night Watch',
+  finishers,
   strings: [
     { name: 'Pat Down', path: ['s.FP', 'FP'], safe: true },
     { name: 'Lights Out', path: ['s.FP', 'FP', 'BP'], safe: false },

@@ -2,10 +2,12 @@
  * The VHS layer reacting to the fight: a tracking wobble and colour split
  * on big hits, a burst of static on a KO, and the PLEASE STAND BY card over
  * the Technical Difficulties cinematic (the broadcast censoring the worst
- * of it). Reduce Motion keeps the card and drops the wobble and static.
+ * of it), and a finisher's cut away: snow, colour bars, the stand-by card
+ * or the set switching off. Reduce Motion keeps the cards and drops the
+ * wobble and static (a cut to snow shows the bars instead).
  * Timed in simulation steps.
  */
-import { TD_CINEMATIC_FRAMES, type SimEvent } from '../sim';
+import { TD_CINEMATIC_FRAMES, type Censor, type SimEvent } from '../sim';
 
 export class Glitch {
   private readonly app: HTMLElement;
@@ -14,6 +16,9 @@ export class Glitch {
   private wobble = 0;
   private staticLeft = 0;
   private standbyLeft = 0;
+  /** A finisher's cut away: opaque, until its closing card. */
+  private readonly censor: HTMLElement;
+  private censorLeft = 0;
 
   constructor(
     parent: HTMLElement,
@@ -23,12 +28,17 @@ export class Glitch {
     this.staticLayer = document.createElement('div');
     this.staticLayer.className = 'vhs-static';
     this.staticLayer.hidden = true;
-    this.staticLayer.style.backgroundImage = `url(${noiseUrl()})`;
+    const snow = `url(${noiseUrl()})`;
+    this.staticLayer.style.backgroundImage = snow;
     this.standby = document.createElement('div');
     this.standby.className = 'standby';
     this.standby.innerHTML = '<div class="standby-card">PLEASE STAND BY</div><div class="standby-sub">CHANNEL 0 IS EXPERIENCING TECHNICAL DIFFICULTIES</div>';
     this.standby.hidden = true;
-    parent.append(this.staticLayer, this.standby);
+    this.censor = document.createElement('div');
+    this.censor.className = 'censor';
+    this.censor.hidden = true;
+    this.censor.style.setProperty('--snow', snow);
+    parent.append(this.staticLayer, this.standby, this.censor);
   }
 
   onEvents(ev: readonly SimEvent[]): void {
@@ -37,7 +47,19 @@ export class Glitch {
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
       else if (e.type === 'ko') this.staticLeft = 24;
       else if (e.type === 'superHit') this.standbyLeft = TD_CINEMATIC_FRAMES;
+      else if (e.type === 'finisherCut') this.cut(e.censor, e.frames);
+      else if (e.type === 'finisherCard') this.censorLeft = this.standbyLeft = 0;
     }
+  }
+
+  private cut(kind: Censor, frames: number): void {
+    this.wobble = 0;
+    if (kind === 'standby') {
+      this.standbyLeft = frames;
+      return;
+    }
+    this.censor.dataset.kind = kind === 'static' && this.reduceMotion ? 'bars' : kind;
+    this.censorLeft = frames;
   }
 
   step(): void {
@@ -48,10 +70,12 @@ export class Glitch {
     if (this.staticLeft > 0) this.staticLeft--;
     this.standby.hidden = this.standbyLeft <= 0;
     if (this.standbyLeft > 0) this.standbyLeft--;
+    this.censor.hidden = this.censorLeft <= 0;
+    if (this.censorLeft > 0) this.censorLeft--;
   }
 
   clear(): void {
-    this.wobble = this.staticLeft = this.standbyLeft = 0;
+    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = 0;
     this.step();
   }
 }

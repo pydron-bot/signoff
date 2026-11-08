@@ -296,6 +296,7 @@ export function applyHit(
   if (d.mode === 'move' && !d.armorUsed && !e.armorBreak && inWindow(d.moveFrame, moveOf(d).armor)) {
     d.armorUsed = true;
     const ko = takeDamage(d, e.damage);
+    if (ko) d.koMove = moveId;
     d.hitstop = stop;
     if (!projectile) a.hitstop = stop;
     gainMeter(a, e.damage);
@@ -331,7 +332,10 @@ export function applyHit(
   const wasAir = airborne(d);
   const ko = takeDamage(d, dmg);
   d.move = '';
-  if (ko) launch(d, dir, KNOCK_VY, false);
+  if (ko) {
+    d.koMove = moveId;
+    launch(d, dir, KNOCK_VY, false);
+  }
   else if (wasAir || e.launch !== undefined || e.knockdown) {
     const juggle = wasAir ? d.juggle + 1 : 0;
     launch(d, dir, e.launch ?? (e.knockdown ? KNOCK_VY : JUGGLE_POP), !e.knockdown);

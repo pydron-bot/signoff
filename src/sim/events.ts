@@ -4,7 +4,7 @@
  * them and never write back. Players are 0 and 1; -1 means nobody (a draw).
  */
 import type { Fx } from './fixed';
-import type { Height } from './types';
+import type { Censor, FinisherKind, Height } from './types';
 
 export type SimEvent =
   | { type: 'roundStart'; round: number; segment: number }
@@ -35,4 +35,10 @@ export type SimEvent =
   | { type: 'segmentChange'; segment: number }
   /** "Stay tuned": the winner's finisher window opens. */
   | { type: 'stayTuned'; winner: number }
+  /** A finisher starts (kind tells which); its blows arrive as ordinary hit events. */
+  | { type: 'finisher'; player: number; id: string; kind: FinisherKind }
+  /** The broadcast cuts away from the worst of it for `frames` steps; the sound carries on. */
+  | { type: 'finisherCut'; player: number; censor: Censor; frames: number }
+  /** The closing card: the loser's show goes off the air (or, for a Rerun, they wake up at home). */
+  | { type: 'finisherCard'; player: number; id: string; kind: FinisherKind }
   | { type: 'matchOver'; winner: number };

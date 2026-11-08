@@ -4,7 +4,7 @@
  * card, and training mode's readout. DOM only; it reads the match and the
  * step's events.
  */
-import { BAR, STEPS_PER_SECOND, fighterData, stageData, type MatchState, type SimEvent } from '../sim';
+import { BAR, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
 
@@ -112,6 +112,7 @@ export class Hud {
     this.training.hidden = !training;
     this.clock.classList.toggle('off', training);
     this.breakCard.hidden = true;
+    this.breakCard.classList.remove('hud-signoff');
     this.captionLeft = 0;
     this.warningLeft = 0;
     this.counterLeft = 0;
@@ -152,6 +153,7 @@ export class Hud {
           else if (e.winner < 0) this.say('DOUBLE K.O.', '', 150);
           break;
         case 'commercialBreak': {
+          this.breakCard.classList.remove('hud-signoff');
           const [title, line] = ADS[e.nextSegment] ?? ADS[0];
           this.breakCard.innerHTML = `<div class="hud-break-top">WE'LL BE RIGHT BACK</div><div class="hud-break-ad">${title}</div><div class="hud-break-line">${line}</div>`;
           this.breakCard.hidden = false;
@@ -160,6 +162,12 @@ export class Hud {
           this.captionSub.textContent = '';
           break;
         }
+        case 'finisher':
+          this.captionLeft = 1;
+          break;
+        case 'finisherCard':
+          this.closingCard(m, e.player, e.id, e.kind);
+          break;
         case 'stayTuned':
           this.say('STAY TUNED', `${fighterData(m.fighters[e.winner].fighter).name.toUpperCase()} WINS`, 240);
           break;
@@ -190,6 +198,22 @@ export class Hud {
           break;
       }
     }
+  }
+
+  /** The end of a finisher: the loser's show goes off the air, or (a Rerun) they wake up at home. */
+  private closingCard(m: MatchState, winner: number, id: string, kind: FinisherKind): void {
+    const loser = fighterData(m.fighters[1 - winner].fighter);
+    const show = loser.show.toUpperCase();
+    const c = this.breakCard;
+    c.classList.add('hud-signoff');
+    if (kind === 'rerun') {
+      c.innerHTML = `<div class="hud-signoff-show">3:34 A.M.</div><div class="hud-signoff-line">${loser.name.toUpperCase()} WAKES UP ON THE SOFA.<br>THE TV IS SHOWING STATIC.</div><div class="hud-signoff-stamp">RERUN</div>`;
+    } else {
+      const stamp = kind === 'cancellation' ? 'CANCELLED' : 'SIGNED OFF';
+      c.innerHTML = `<div class="hud-break-top">CHANNEL 0</div><div class="hud-signoff-show">${show}</div><div class="hud-signoff-stamp">${stamp}</div><div class="hud-signoff-line">${id.toUpperCase()} · THANK YOU FOR WATCHING</div>`;
+    }
+    c.hidden = false;
+    this.captionLeft = 1;
   }
 
   /** Once per simulation step: captions and callouts keep sim time. */

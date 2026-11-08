@@ -18,6 +18,11 @@ export interface Pose {
 
 /** State clips that loop. */
 export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch_idle']);
+/**
+ * Clips asked of the art that may not be in a GLB yet, and what stands in
+ * for them meanwhile (docs/BLENDER-TODO.md).
+ */
+export const STAND_INS: Readonly<Record<string, string>> = { dazed: 'hit_high' };
 /** Frames of the `crouch` clip before `crouch_idle` takes over. */
 export const CROUCH_IN = 6;
 
@@ -46,7 +51,9 @@ const NEUTRAL: ReadonlySet<string> = new Set(['idle', 'walk', 'crouch']);
 function stateOf(m: MatchState, i: number): string {
   const f = m.fighters[i];
   if (m.phase === 'intro') return 'intro';
-  if ((m.phase === 'ko' || m.phase === 'stayTuned' || m.phase === 'over') && m.roundWinner === i && NEUTRAL.has(f.mode)) return 'win';
+  // The winner's pose, except while walking into range for a finisher or playing one.
+  const posing = m.phase === 'ko' || m.phase === 'over' || (m.phase === 'stayTuned' && f.mode === 'idle');
+  if (posing && m.roundWinner === i && NEUTRAL.has(f.mode)) return 'win';
   switch (f.mode) {
     case 'move':
       return 'move';
@@ -69,7 +76,7 @@ function stateOf(m: MatchState, i: number): string {
     case 'cinematic':
       return f.victim ? 'hitstun' : 'td_cinematic';
     default:
-      // prejump, dash, backdash, launched, down, getup, throwing, thrown, ko: the clip is the mode.
+      // prejump, dash, backdash, launched, down, getup, throwing, thrown, ko, dazed: the clip is the mode.
       return f.mode;
   }
 }

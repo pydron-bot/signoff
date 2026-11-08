@@ -7,7 +7,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, strike, table, technicalDifficulties, throwMove } from './build';
+import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const decoy = (hits: number, life: number) =>
   projectile({ at: [0.9, 0], speed: [0, 0], size: [-0.25, 0.25, 0, 1.2], life, hits, decoy: true, effect: { damage: 0, hitstun: 1, blockstun: 1 } });
@@ -87,6 +87,44 @@ const moves = table(
   technicalDifficulties(1.3),
 );
 
+// Finishers. The blows are scripted (nothing here can miss); the picture cuts away at the worst of it.
+const finishers = [
+  // Close: a laugh, a vanishing act, a knock at the door, and peekaboo.
+  new Script(moves)
+    .strike('s.FP', { react: 'high', damage: 39, pull: 0.8 }, 4)
+    .strike('FP FP', { react: 'high', damage: 39 }, 4)
+    .strike('FP FP FP', { react: 'high', damage: 48 }, 4)
+    .play('Strings Attached', 30)
+    .strike('s.BP', { react: 'high', damage: 78 }, 4)
+    .strike('BP FK', { react: 'low', damage: 58 }, 4)
+    .strike('BP FK BP', { react: 'high', damage: 87 }, 4)
+    .strike('Knock-Knock', { react: 'knockdown', damage: 118, pop: 0.12, carry: 0.03 }, 24)
+    .strike('b.BP', { react: 'none', damage: 140 }, 0)
+    .cut('static')
+    .blow(12, { react: 'none', damage: 90 })
+    .blow(22, { react: 'none', damage: 90 })
+    .blow(32, { react: 'none', damage: 90 })
+    .blow(46, { react: 'none', damage: 140 })
+    .done({ id: 'Peekaboo', name: 'Peekaboo', kind: 'signoff', range: 'close', input: ['b', 'u'], button: 'FP' }, 110),
+  // Far: a puppet to watch, while he comes down behind them on his strings.
+  new Script(moves)
+    .play('Hand Puppet', 30)
+    .blow(23, { react: 'high', damage: 94 })
+    .play('Strings Attached+', 36)
+    .strike('s.FP', { react: 'high', damage: 39 }, 4)
+    .strike('FK FK', { react: 'low', damage: 48 }, 4)
+    .strike('FK FK FK', { react: 'launch', damage: 69, pop: 0.17 }, 2)
+    .strike('s.BK', { react: 'launch', damage: 98, pop: 0.12 }, 34)
+    .strike('Knock-Knock+', { react: 'none', damage: 152 }, 0)
+    .cut('standby')
+    .blow(12, { react: 'none', damage: 95 })
+    .blow(26, { react: 'none', damage: 95 })
+    .blow(40, { react: 'none', damage: 150 })
+    .done({ id: 'Exit Stage Left', name: 'Exit Stage Left', kind: 'signoff', range: 'far', input: ['b', 'f'], button: 'BK' }, 100),
+  new Script(moves).wait(20).cut('off').done({ id: 'No Laughing Matter', name: 'No Laughing Matter', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Knock-Knock' }, 40),
+  rerun(moves),
+];
+
 export const MUMBLES: FighterData = {
   id: 'mumbles',
   name: 'Mister Mumbles',
@@ -114,6 +152,8 @@ export const MUMBLES: FighterData = {
   superMove: 'td',
   interactMove: 'interact',
   moves,
+  show: "Mumbles' Toybox",
+  finishers,
   strings: [
     { name: 'Ha-Ha', path: ['s.FP', 'FP'], safe: true },
     { name: 'Ha-Ha-Ha', path: ['s.FP', 'FP', 'FP'], safe: true },

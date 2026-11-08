@@ -23,11 +23,14 @@ desktop.
 - **Built for a phone.** Short matches (about 3 minutes), touch controls
   designed in from day one, steady 60 frames a second on an iPhone 15 Pro.
 
-**Tone and rating.** Violence is heavy but the gore is broadcast-censored: at
-the worst moment the picture breaks into static, colour bars or a "PLEASE
-STAND BY" card, and the sound carries the rest. That keeps the look
-distinctive, avoids realistic gore art, and keeps the rating flexible. A
-Settings toggle can make the censoring lighter or heavier.
+**Tone and rating.** Brutal. Violence is heavy and the build-up is long: a
+finisher is a real beating, many blows landing on screen with the camera in
+close, before the broadcast cuts away. The gore itself is still
+broadcast-censored: at the worst moment the picture breaks into static,
+colour bars or a "PLEASE STAND BY" card, and the sound carries the rest
+(the blows go on under the static). That keeps the look distinctive, avoids
+realistic gore art, and keeps the rating flexible. A Settings toggle can
+make the censoring lighter or heavier.
 
 ## Setting and story
 
@@ -175,21 +178,35 @@ segments; the first playable has one, *Weather at Eleven*.
 
 ## Sign-Offs and presentation
 
-After the final round the announcer says "Stay tuned" and the winner has 4
-seconds to enter a finisher. Every finisher is a short scripted scene, and
-every one cuts to static, colour bars or a stand-by card at the moment of
-the worst damage.
+After the deciding round the announcer says "Stay tuned": the loser gets up
+and stands dazed, and for 4 seconds the winner can walk or dash (no jumping
+or attacking) into range and enter a finisher. Every finisher is a scripted
+scene, and every one cuts to static, colour bars, a stand-by card or the set
+switching off at the moment of the worst damage. The scene ends on a closing
+card: the loser's own show going off the air.
 
-- **Sign-Off** (the full finisher): 2 per fighter, each entered as a short
-  sequence at a set distance (close, mid or far). About 8 seconds, with its
-  own camera, and it ends on the loser's show going off air: a closing card,
-  a station ident, a test tone.
-- **Cancellation** (the quick finish): triggered by ending the last round
-  with a specific special. The loser is "cancelled" in about 2 seconds,
-  without the long scene.
-- **Rerun** (the merciful finish): the winner lets the loser go; the loser
-  is shown back on their sofa at home, waking up at 3:34 a.m. Unlocked per
-  fighter.
+- **Sign-Off** (the full finisher): 2 per fighter, each at a set range
+  (close up to 1.3 m between the fighters, far from 2.4 m, mid between),
+  entered as two taps then a button: e.g. back, forward, Back Punch. About
+  6 to 9 seconds: 8 or more blows, 5 or more of them on screen, with the
+  camera in close, then the cut, more blows heard over it, and the card.
+- **Cancellation** (the quick finish): ending the deciding round with the
+  winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
+  Hollis: Clocking In; Mumbles: Knock-Knock). Straight after the K.O., the
+  set switches off and the card reads CANCELLED, about 3 seconds in all.
+- **Rerun** (the merciful finish): up, down, Block at any range. The winner
+  lets them go; the set switches off and the loser is shown waking on their
+  sofa at 3:34 a.m. (Unlocking it per fighter can come later.)
+
+The CPU finishes too: mostly a Sign-Off, now and then a Rerun, and on easy it
+often lets the moment pass. Finisher inputs:
+
+| Fighter (show) | Sign-Off 1 | Sign-Off 2 |
+| --- | --- | --- |
+| Dale Storm (*Weather at Eleven*) | Extended Forecast: close, back, forward, BP | Severe Weather Warning: far, down, back, BK |
+| Rox Vega (*Feel the Burn at Dawn*) | Cool-Down: close, forward, back, FK | Feel the Burn: mid, down, forward, BK |
+| Hollis Bey (*The Night Watch*) | Lights Out: close, back, down, BP | End of Shift: mid, forward, down, BK |
+| Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
 
 ### The broadcast look
 
@@ -295,14 +312,15 @@ playable is the first build worth adding to the deeek.org hub.
 
 ## Open questions
 
-- [ ] How heavy should violence be under the static: implied only, or brief
-      glimpses before the cut?
-- [ ] Is the iPhone the main target again, or desktop first?
-- [ ] Is online play wanted for version 1, or is local two-player and CPU
-      enough until later?
-- [ ] Are the first two fighters right (Dale Storm and Rox Vega), and the
-      first stage (Weather at Eleven)?
-- [ ] Who makes the character art: Blender by hand as for Curbside, or a
-      simpler stylised look to start?
-- [ ] Should SIGN-OFF reference Curbside's city (a news story, a cameo on a
-      TV in the background), or stay separate?
+- [x] How heavy should violence be under the static? **Brutal: more hits and
+      a longer lead-up before the cut** (Tone and rating, Sign-Offs).
+- [x] Is the iPhone the main target again, or desktop first? **Both, equally.**
+- [x] Is online play wanted for version 1? **Not yet:** local two-player and
+      CPU. The deterministic sim keeps rollback possible later.
+- [x] Are the first two fighters right, and the first stage? **Settled in
+      practice:** four fighters and Weather at Eleven are in.
+- [x] Who makes the character art? **Blender**, scripted headless
+      (docs/BLENDER-TODO.md), in a stylised low-poly look.
+- [ ] Should SIGN-OFF reference Curbside's city? **Leaning towards a universe
+      crossover**; what form it takes (a news story, a TV cameo, a guest
+      fighter or stage) is still open.

@@ -6,7 +6,7 @@
  * It has its own seeded random numbers, so a match against it replays
  * exactly from the same seed.
  */
-import { BAR, Input, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type MatchState, type MoveData } from '../sim';
+import { BAR, Input, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
 import { propInReach } from '../sim/stage';
@@ -37,6 +37,10 @@ const LEVELS: Readonly<Record<CpuLevel, Level>> = {
 };
 
 const HISTORY = 32;
+/** Steps of nothing before entering a finisher. */
+const SETTLE = 14;
+/** Where it stands for each finisher range (centre distance). */
+const FINISH_BAND = { close: [0, fx(1.0)], mid: [fx(1.65), fx(2.05)], far: [fx(2.8), fx(99)] } as const;
 
 /** What the CPU saw of its opponent on one frame. */
 interface Seen {
@@ -74,6 +78,8 @@ export class Cpu {
   private decoyWas = false;
   /** It has a decoy of its own out. */
   private ownDecoy = false;
+  /** After winning: the finisher it chose (null: it lets the moment pass) and the step of entering it. */
+  private finishing: { fin: FinisherData | null; t: number } | null = null;
 
   constructor(
     private readonly player: 0 | 1,
@@ -82,6 +88,40 @@ export class Cpu {
   ) {
     this.level = LEVELS[level];
     this.rng = createRng(seed);
+  }
+
+  /** "Stay tuned" after it won: pick a finisher, walk into its range, enter it like a player would. */
+  private finish(me: FighterState, them: FighterState): number {
+    if (!this.finishing) {
+      const all = fighterData(me.fighter).finishers;
+      const signOffs = all.filter((f) => f.kind === 'signoff');
+      const pass = this.level === LEVELS.easy ? 50 : 10;
+      // Mostly a Sign-Off; now and then it shows mercy.
+      const fin = this.roll(pass) ? null : this.roll(10) ? (all.find((f) => f.kind === 'rerun') ?? null) : signOffs[nextInt(this.rng, signOffs.length)];
+      this.finishing = { fin, t: 0 };
+    }
+    const f = this.finishing.fin;
+    if (!f || them.mode !== 'dazed') return 0;
+    const fwd = me.facing > 0 ? RIGHT : LEFT;
+    const back = me.facing > 0 ? LEFT : RIGHT;
+    if (this.finishing.t === 0 && f.range !== 'any') {
+      // Well inside the range, so the taps' few steps of walking don't carry it out.
+      const dist = Math.abs(them.x - me.x);
+      const [lo, hi] = FINISH_BAND[f.range];
+      if (dist < lo) return back;
+      if (dist > hi) return fwd;
+    }
+    // A pause (so a tap doesn't read as a dash after walking), each tap held two steps with a gap, then the button.
+    const t = this.finishing.t++;
+    if (t < SETTLE) return 0;
+    const k = t - SETTLE;
+    const tap = Math.floor(k / 4);
+    if (tap < f.input.length) {
+      if (k % 4 >= 2) return 0;
+      const d = f.input[tap];
+      return d === 'f' ? fwd : d === 'b' ? back : d === 'd' ? DOWN : UP;
+    }
+    return tap === f.input.length && k % 4 === 0 ? (f.button === 'block' ? BLOCK : Input.ATTACK_BITS[f.button]) : 0;
   }
 
   private roll(pct: number): boolean {
@@ -93,8 +133,10 @@ export class Cpu {
     const me = m.fighters[this.player];
     const them = m.fighters[1 - this.player];
     this.observe(m, me, them);
+    if (m.phase === 'stayTuned' && m.matchWinner === this.player) return this.finish(me, them);
     if (m.phase !== 'fight') {
       this.plan = null;
+      if (m.phase === 'intro') this.finishing = null;
       return 0;
     }
     const s = this.seen[(this.frames - 1 - Math.min(this.level.delay, this.frames - 1) + HISTORY * 4) % HISTORY];

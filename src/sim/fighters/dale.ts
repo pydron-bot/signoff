@@ -4,7 +4,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, strike, table, technicalDifficulties, throwMove } from './build';
+import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const moves = table(
   // Standing
@@ -90,6 +90,47 @@ const moves = table(
   technicalDifficulties(1.6),
 );
 
+// Finishers. The blows are scripted (nothing here can miss); the picture cuts away at the worst of it.
+const finishers = [
+  // Close: the full five-day forecast, then the barometer comes down.
+  new Script(moves)
+    .strike('s.FP', { react: 'high', damage: 30, pull: 0.85 })
+    .strike('FP FP', { react: 'high', damage: 35 })
+    .strike('s.BP', { react: 'high', damage: 60 })
+    .strike('FK BP', { react: 'high', damage: 60 })
+    .strike('BP FK FK', { react: 'low', damage: 45 })
+    .strike('c.BP', { react: 'launch', damage: 70, pop: 0.17 }, 4)
+    .strike('Heat Lightning', { react: 'launch', damage: 75, pop: 0.2 }, 44)
+    .strike('f.BP', { react: 'none', damage: 120 }, 0)
+    .cut('static')
+    .blow(14, { react: 'none', damage: 90 })
+    .blow(28, { react: 'none', damage: 90 })
+    .blow(40, { react: 'none', damage: 110 })
+    .blow(52, { react: 'none', damage: 140 })
+    .done({ id: 'Extended Forecast', name: 'Extended Forecast', kind: 'signoff', range: 'close', input: ['b', 'f'], button: 'BP' }, 110),
+  // Far: a cold front, three rounds of hail, then reeled in for the lightning.
+  new Script(moves)
+    .blow(0, { react: 'none', damage: 0, pull: 2.4 })
+    .blow(31, { react: 'high', damage: 40 })
+    .play('Cold Front', 44)
+    .blow(33, { react: 'high', damage: 50 })
+    .play('Pressure Drop+', 46)
+    .blow(33, { react: 'low', damage: 55 })
+    .play('Pressure Drop+', 46)
+    .blow(33, { react: 'high', damage: 60 })
+    .play('Pressure Drop+', 44)
+    .strike('Isobar Lasso', { react: 'launch', damage: 40, pull: 0.9, pop: 0.15 }, 2)
+    .strike('Heat Lightning', { react: 'launch', damage: 75, pop: 0.22 }, 44)
+    .strike('f.BP', { react: 'none', damage: 130 }, 0)
+    .cut('bars')
+    .blow(12, { react: 'none', damage: 90 })
+    .blow(24, { react: 'none', damage: 90 })
+    .blow(36, { react: 'none', damage: 130 })
+    .done({ id: 'Severe Weather Warning', name: 'Severe Weather Warning', kind: 'signoff', range: 'far', input: ['d', 'b'], button: 'BK' }, 100),
+  new Script(moves).wait(20).cut('off').done({ id: 'Struck by Lightning', name: 'Struck by Lightning', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Heat Lightning' }, 40),
+  rerun(moves),
+];
+
 /** A hailstone that falls from above at distance x: an overhead. */
 function hail(x: number, damage: number) {
   return projectile({ at: [x, 3.0], speed: [0, -0.1], size: [-0.3, 0.3, 0, 0.5], life: 60, groundEnds: true, effect: { damage, height: 'overhead', hitstun: 22, blockstun: 14, push: 0.03, chip: 10 } });
@@ -122,6 +163,8 @@ export const DALE: FighterData = {
   superMove: 'td',
   interactMove: 'interact',
   moves,
+  show: 'Weather at Eleven',
+  finishers,
   strings: [
     { name: 'Five-Day Outlook', path: ['s.FP', 'FP'], safe: true },
     { name: 'Front Moves In', path: ['s.FP', 'FP', 'BK'], safe: true },

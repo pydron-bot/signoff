@@ -5,7 +5,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData, HitData } from '../types';
-import { box, interactMove, move, normal, strike, table, technicalDifficulties, throwMove } from './build';
+import { box, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove, type BlowSpec } from './build';
 
 /** Eight kicks three frames apart; the last one knocks down (or launches, boosted). */
 function countOfEight(damage: number, boosted: boolean): HitData[] {
@@ -120,6 +120,60 @@ const moves = table(
   technicalDifficulties(1.4),
 );
 
+const countBlows = (s: Script, kicks: number, last: BlowSpec): Script => {
+  for (let k = 0; k < 8; k++) s.blow(8 + 3 * k, k < 7 ? { react: 'high', damage: kicks } : last);
+  return s;
+};
+
+// Finishers. The blows are scripted (nothing here can miss); the picture cuts away at the worst of it.
+const finishers = [
+  // Close: the whole routine, every string, then the count, then she lands on them.
+  countBlows(
+    new Script(moves)
+      .strike('s.FP', { react: 'high', damage: 36, pull: 0.8 }, 4)
+      .strike('FP FP', { react: 'high', damage: 36 }, 4)
+      .strike('FP FP FK', { react: 'high', damage: 55 }, 4)
+      .strike('s.BP', { react: 'high', damage: 63 }, 4)
+      .strike('BP BP', { react: 'high', damage: 63 }, 4)
+      .strike('BP BP FK', { react: 'low', damage: 55 }, 4)
+      .strike('s.FK', { react: 'high', damage: 55 }, 4)
+      .strike('FK FK', { react: 'high', damage: 48 }, 4)
+      .strike('FK FK BP', { react: 'high', damage: 71 }, 4),
+    19,
+    { react: 'knockdown', damage: 48, pop: 0.12, carry: 0.03 },
+  )
+    .play('Count of Eight', 60)
+    .strike('Star Jump', { react: 'none', damage: 112 }, 0)
+    .cut('standby')
+    .blow(12, { react: 'none', damage: 87 })
+    .blow(26, { react: 'none', damage: 87 })
+    .blow(40, { react: 'none', damage: 120 })
+    .done({ id: 'Cool-Down', name: 'Cool-Down', kind: 'signoff', range: 'close', input: ['f', 'b'], button: 'FK' }, 100),
+  // Mid: lariat in, count them up, and a star jump to keep them there.
+  countBlows(
+    new Script(moves)
+      .blow(9, { react: 'high', damage: 39, pull: 0.9 })
+      .blow(13, { react: 'high', damage: 39, pull: 0.9 })
+      .blow(17, { react: 'high', damage: 39, pull: 0.9 })
+      .blow(21, { react: 'high', damage: 39, pull: 0.9 })
+      .blow(25, { react: 'high', damage: 71, pull: 0.9 })
+      .play('Leg Warmer Lariat+', 48),
+    25,
+    { react: 'launch', damage: 48, pop: 0.17 },
+  )
+    .play('Count of Eight+', 34)
+    .strike('Star Jump', { react: 'launch', damage: 87, pop: 0.12 }, 30)
+    .strike('FP FP FK BK', { react: 'none', damage: 120 }, 0)
+    .cut('static')
+    .blow(10, { react: 'none', damage: 87 })
+    .blow(22, { react: 'none', damage: 87 })
+    .blow(34, { react: 'none', damage: 87 })
+    .blow(44, { react: 'none', damage: 120 })
+    .done({ id: 'Feel the Burn', name: 'Feel the Burn', kind: 'signoff', range: 'mid', input: ['d', 'f'], button: 'BK' }, 100),
+  new Script(moves).wait(20).cut('off').done({ id: 'Final Count', name: 'Final Count', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Count of Eight' }, 40),
+  rerun(moves),
+];
+
 export const ROX: FighterData = {
   id: 'rox',
   name: 'Rox Vega',
@@ -147,6 +201,8 @@ export const ROX: FighterData = {
   superMove: 'td',
   interactMove: 'interact',
   moves,
+  show: 'Feel the Burn at Dawn',
+  finishers,
   strings: [
     { name: 'Warm-Up', path: ['s.FP', 'FP'], safe: true },
     { name: 'Reps', path: ['s.FP', 'FP', 'FK'], safe: true },

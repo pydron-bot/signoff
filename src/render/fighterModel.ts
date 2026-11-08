@@ -9,7 +9,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { STEPS_PER_SECOND } from '../sim/constants';
-import { LOOPS } from './pose';
+import { LOOPS, STAND_INS } from './pose';
 
 const loader = new GLTFLoader();
 const files = new Map<string, Promise<FighterArt>>();
@@ -149,7 +149,7 @@ export class FighterModel {
   /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */
   pose(clip: string, frame: number, loop: boolean): void {
     if (clip === this.clip && frame === this.frame) return;
-    const a = this.actions.get(clip) ?? this.actions.get('idle');
+    const a = this.actions.get(clip) ?? this.actions.get(STAND_INS[clip] ?? 'idle') ?? this.actions.get('idle');
     if (!a) return;
     if (a.action !== this.current) {
       this.current?.stop();

@@ -121,6 +121,56 @@ export interface StringData {
   readonly safe: boolean;
 }
 
+/** Sign-Off: the full finisher. Rerun: the merciful one. Cancellation: the quick one, earned by ending the match with a set special. */
+export type FinisherKind = 'signoff' | 'rerun' | 'cancellation';
+/** Centre-to-centre distance to the loser: close up to 1.3 m, far from 2.4 m, mid between. */
+export type FinishRange = 'close' | 'mid' | 'far' | 'any';
+/** A tap in a finisher's input: forward, back (both relative to facing), down, up. */
+export type FinishDir = 'f' | 'b' | 'd' | 'u';
+/** What the broadcast cuts to at the worst moment: snow, colour bars, the stand-by card, or the set switching off. */
+export type Censor = 'static' | 'bars' | 'standby' | 'off';
+
+/** What a beat does to the loser. */
+export interface FinishBlow {
+  /** high/low: staggered and held there; launch: popped up; knockdown: thrown down; grab: held; none: a blow with no new reaction (on the floor, or off screen). */
+  readonly react: 'high' | 'low' | 'launch' | 'knockdown' | 'grab' | 'none';
+  /** For the hit event (sparks, sound, shake, the hits counter); the loser is already out. */
+  readonly damage: number;
+  /** Upward speed for launch and knockdown. */
+  readonly pop?: Fx;
+  /** Sideways speed away from the winner while in the air (0: straight up). */
+  readonly carry?: Fx;
+  /** Moves the loser to this distance in front of the winner first. */
+  readonly pull?: Fx;
+}
+
+/** One step of a finisher's script: the winner starts a move (its clip, motion and projectiles, but it can't hit), and/or a blow lands. */
+export interface FinishBeat {
+  readonly at: number;
+  readonly move?: string;
+  readonly blow?: FinishBlow;
+}
+
+/** A scripted finisher. Steps count from 1 when it starts. */
+export interface FinisherData {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: FinisherKind;
+  readonly range: FinishRange;
+  /** Taps in order, then the button (all within FINISH_INPUT_WINDOW). Empty for a cancellation. */
+  readonly input: readonly FinishDir[];
+  readonly button: Attack | 'block';
+  /** A cancellation: the special (or its boost) that must land the final K.O. */
+  readonly trigger?: string;
+  readonly beats: readonly FinishBeat[];
+  /** The step the picture cuts away, and to what. */
+  readonly cut: number;
+  readonly censor: Censor;
+  /** The step the closing card comes up; the finisher ends at `total`. */
+  readonly card: number;
+  readonly total: number;
+}
+
 /** How the fighter plays; the CPU plays to it. */
 export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster';
 
@@ -155,4 +205,8 @@ export interface FighterData {
   readonly interactMove: string;
   readonly moves: Readonly<Record<string, MoveData>>;
   readonly strings: readonly StringData[];
+  /** The fighter's own show: what goes off the air when they lose to a Sign-Off. */
+  readonly show: string;
+  /** Two Sign-Offs, a Rerun and a Cancellation. */
+  readonly finishers: readonly FinisherData[];
 }

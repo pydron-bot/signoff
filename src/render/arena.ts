@@ -130,6 +130,7 @@ export class Arena {
   private shake = 0;
   private camX = 0;
   private camZ = 12;
+  private camY = 2.1;
   reduceMotion = false;
   showBoxes = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
@@ -306,7 +307,11 @@ export class Arena {
     const mid = (toFloat(a.x) + toFloat(b.x)) / 2;
     const gap = Math.abs(toFloat(a.x) - toFloat(b.x));
     const aspect = Math.max(this.camera.aspect, 1);
-    const wantZ = Math.min(16, Math.max(10.5, ((gap + 4) * 2.2) / aspect + 6));
+    // A finisher comes in close and low, rising and pulling back to keep anyone thrown up in shot.
+    const close = m.phase === 'finisher';
+    const high = close ? Math.max(toFloat(a.y), toFloat(b.y)) : 0;
+    const wantZ = close ? Math.max(7, ((gap + 2.5) * 2.2) / aspect + 3.5 + high * 2) : Math.min(16, Math.max(10.5, ((gap + 4) * 2.2) / aspect + 6));
+    this.camY += ((close ? 1.6 + high * 0.6 : 2.1) - this.camY) * 0.08;
     this.camX += (Math.max(-3.5, Math.min(3.5, mid)) - this.camX) * 0.15;
     this.camZ += (wantZ - this.camZ) * 0.1;
     let sx = 0;
@@ -316,8 +321,8 @@ export class Arena {
       sy = (Math.random() - 0.5) * this.shake;
     }
     this.shake *= 0.85;
-    this.camera.position.set(this.camX + sx, 2.1 + sy, this.camZ);
-    this.camera.lookAt(this.camX + sx * 0.5, 1.35, 0);
+    this.camera.position.set(this.camX + sx, this.camY + sy, this.camZ);
+    this.camera.lookAt(this.camX + sx * 0.5, this.camY - 0.75, 0);
   }
 
   /** Shows the fx mesh for a fighter's move in `slot`, if it has one and the art is loaded. */

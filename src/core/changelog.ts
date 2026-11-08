@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.9.0',
+    date: '2026-11-08',
+    title: 'Stay tuned',
+    notes: [
+      'Finishers. After the deciding round the loser stands dazed and you have 4 seconds: walk into range and enter a Sign-Off, and the broadcast cuts away at the worst of it.',
+      'Two Sign-Offs each: Dale\'s Extended Forecast and Severe Weather Warning, Rox\'s Cool-Down and Feel the Burn, Hollis\'s Lights Out and End of Shift, Mumbles\' Peekaboo and Exit Stage Left.',
+      'Cancellations: win the match with Heat Lightning, Count of Eight, Clocking In or Knock-Knock and the loser\'s show is cancelled on the spot.',
+      'Rerun (up, down, Block): let them go home.',
+      'The CPU finishes you too.',
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-11-08',
     title: 'Behind the scenes',

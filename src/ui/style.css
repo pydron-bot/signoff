@@ -533,6 +533,76 @@ body[data-scene='title'] #app {
   letter-spacing: 0.2em;
 }
 
+/* A finisher's cut away: the broadcast won't show the worst of it. */
+.censor {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: #000;
+}
+
+.censor[data-kind='static'] {
+  background: var(--snow) 0 0 / 256px 256px, #000;
+  image-rendering: pixelated;
+  animation: snow 0.12s steps(3) infinite;
+}
+
+.censor[data-kind='bars'] {
+  background: repeating-linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%, #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%, #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%, #0000c0 85.71% 100%);
+}
+
+/* The set switching off: the picture squeezes to a line, then a dot, then black. */
+.censor[data-kind='off']::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  animation: tv-off 0.6s ease-in forwards;
+}
+
+@keyframes tv-off {
+  0% { width: 100vw; height: 100vh; opacity: 0.9; }
+  40% { width: 100vw; height: 3px; opacity: 1; }
+  75% { width: 6px; height: 3px; opacity: 1; }
+  100% { width: 0; height: 0; opacity: 0; }
+}
+
+/* A finisher's closing card: the loser's show goes off the air. */
+.hud-break.hud-signoff {
+  background: #05060a;
+}
+
+.hud-signoff-show {
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.hud-signoff-stamp {
+  padding: 0.2rem 1rem;
+  border: 3px solid #e0201c;
+  color: #e0201c;
+  font-size: clamp(1.2rem, 4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  transform: rotate(-6deg);
+  text-shadow: none;
+}
+
+.hud-signoff-line {
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  letter-spacing: 0.2em;
+  opacity: 0.85;
+  text-align: center;
+  max-width: 80vw;
+}
+
 /* Hazard warnings: an emergency crawl across the top. */
 .hud-warning {
   position: absolute;

@@ -3,9 +3,9 @@
  * run once when the data loads, converting to fixed point, so the numbers in
  * the data files stay easy to tune.
  */
-import { THROW_RANGE } from '../constants';
+import { FINISH_CARD_FRAMES, THROW_RANGE } from '../constants';
 import { fx } from '../fixed';
-import type { Attack, Box, Height, HitData, HitEffect, MoveData, MoveKind, ProjectileData, Stance, Window } from '../types';
+import type { Attack, Box, Censor, FinishBeat, FinishBlow, FinishDir, FinishRange, FinisherData, FinisherKind, Height, HitData, HitEffect, MoveData, MoveKind, ProjectileData, Stance, Window } from '../types';
 
 /** Chains and special cancels open after the last active frame (so the hit is checked first) and stay open this long. */
 const CANCEL_LATE = 7;
@@ -214,4 +214,91 @@ export function table(...moves: MoveData[]): Record<string, MoveData> {
     t[m.id] = m;
   }
   return t;
+}
+
+/** A blow in a finisher script, in readable units. */
+export interface BlowSpec {
+  react: FinishBlow['react'];
+  damage: number;
+  pop?: number;
+  carry?: number;
+  pull?: number;
+}
+
+function toBlow(b: BlowSpec): FinishBlow {
+  return {
+    react: b.react,
+    damage: b.damage,
+    pop: b.pop === undefined ? undefined : fx(b.pop),
+    carry: b.carry === undefined ? undefined : fx(b.carry),
+    pull: b.pull === undefined ? undefined : fx(b.pull),
+  };
+}
+
+/**
+ * Writes a finisher as a sequence: strike() plays one of the fighter's moves
+ * and lands its blow on the move's first active frame, so the clip and the
+ * reaction line up; play() and blow() place them by hand (projectiles,
+ * multi-hit moves). The cursor moves on as it goes.
+ */
+export class Script {
+  private readonly beats: FinishBeat[] = [];
+  private t = 1;
+  private cutAt = 0;
+  private censor: Censor = 'static';
+
+  constructor(private readonly moves: Readonly<Record<string, MoveData>>) {}
+
+  /** The move, and its blow on its first active frame; the next starts `gap` frames after. */
+  strike(id: string, b: BlowSpec, gap = 6): this {
+    const mv = this.moves[id];
+    if (!mv) throw new Error(`finisher script: unknown move ${id}`);
+    if (!mv.startup) throw new Error(`finisher script: ${id} never hits`);
+    this.beats.push({ at: this.t, move: id });
+    const hit = this.t + mv.startup - 1;
+    this.beats.push({ at: hit, blow: toBlow(b) });
+    this.t = hit + gap;
+    return this;
+  }
+
+  /** The move alone; the cursor moves on `frames`. */
+  play(id: string, frames: number): this {
+    if (!this.moves[id]) throw new Error(`finisher script: unknown move ${id}`);
+    this.beats.push({ at: this.t, move: id });
+    this.t += frames;
+    return this;
+  }
+
+  /** A blow `after` frames from the cursor (which doesn't move). */
+  blow(after: number, b: BlowSpec): this {
+    this.beats.push({ at: this.t + after, blow: toBlow(b) });
+    return this;
+  }
+
+  wait(frames: number): this {
+    this.t += frames;
+    return this;
+  }
+
+  /** Cut away here (to `censor`); blows written after it are heard, not seen. */
+  cut(censor: Censor): this {
+    this.cutAt = this.t;
+    this.censor = censor;
+    return this;
+  }
+
+  /** The finished data; the closing card comes `card` frames after the cut. */
+  done(head: { id: string; name: string; kind: FinisherKind; range: FinishRange; input: FinishDir[]; button: Attack | 'block'; trigger?: string }, card: number): FinisherData {
+    if (!this.cutAt) throw new Error(`finisher ${head.id} never cuts away`);
+    const cardAt = this.cutAt + card;
+    return { ...head, beats: [...this.beats].sort((a, b) => a.at - b.at), cut: this.cutAt, censor: this.censor, card: cardAt, total: cardAt + FINISH_CARD_FRAMES };
+  }
+}
+
+/**
+ * The Rerun, the same for everyone: the winner lets them go. Up, down and
+ * Block, at any range; the set switches off and the loser wakes up at home.
+ */
+export function rerun(moves: Readonly<Record<string, MoveData>>): FinisherData {
+  return new Script(moves).wait(40).cut('off').done({ id: 'Rerun', name: 'Rerun', kind: 'rerun', range: 'any', input: ['u', 'd'], button: 'block' }, 45);
 }

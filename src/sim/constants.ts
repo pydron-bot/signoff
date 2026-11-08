@@ -72,6 +72,14 @@ export const KO_FRAMES = 150;
 export const BREAK_FRAMES = 4 * STEPS_PER_SECOND;
 /** "Stay tuned": the winner's window to enter a finisher. */
 export const STAY_TUNED_FRAMES = 4 * STEPS_PER_SECOND;
+/** Finisher ranges (centre to centre): close up to here... */
+export const FINISH_CLOSE = fx(1.3);
+/** ...far from here. */
+export const FINISH_FAR = fx(2.4);
+/** A finisher's taps and button must all come within this many frames. */
+export const FINISH_INPUT_WINDOW = 40;
+/** How long the closing card stays up. */
+export const FINISH_CARD_FRAMES = 150;
 export const WINS_NEEDED = 2;
 /** Draws can't go on forever: after this many rounds the match is a draw. */
 export const MAX_ROUNDS = 5;

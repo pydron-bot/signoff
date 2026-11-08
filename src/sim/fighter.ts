@@ -173,6 +173,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
     dir = -t.facing;
   }
   const ko = takeDamage(f, dmg);
+  if (ko) f.koMove = grabMove;
   launch(f, dir, KNOCK_VY, false);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
@@ -184,6 +185,7 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   const dmg = Math.floor((f.maxHealth * TD_DAMAGE_PCT) / 100);
   f.victim = false;
   const ko = takeDamage(f, dmg);
+  if (ko) f.koMove = 'td';
   launch(f, f.x >= a.x ? 1 : -1, KNOCK_VY, false);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
@@ -247,8 +249,6 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   const fwd = forwardBit(f.facing);
   const back = backBit(f.facing);
   const held = inp.held;
-  // Segment rules (knee-deep water) slow walking and dashing for both.
-  const pct = segmentData(m.stage, m.segment).walkPct ?? 100;
 
   if (held & BLOCK) {
     if (pressed(inp, SPECIAL) && canTD(f)) {
@@ -287,6 +287,19 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     startMove(f, id);
     return;
   }
+  footwork(m, i, true);
+}
+
+/** Dashes, jumps, crouching and walking: what's left of control once nothing else was pressed. */
+export function footwork(m: MatchState, i: number, canJump: boolean): void {
+  const f = m.fighters[i];
+  const d = fighterData(f.fighter);
+  const inp = f.input;
+  const fwd = forwardBit(f.facing);
+  const back = backBit(f.facing);
+  const held = inp.held;
+  // Segment rules (knee-deep water) slow walking and dashing for both.
+  const pct = segmentData(m.stage, m.segment).walkPct ?? 100;
   if (doubleTapped(inp, fwd)) {
     consume(inp, fwd);
     f.mode = 'dash';
@@ -303,7 +316,7 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     f.crouching = false;
     return;
   }
-  if (held & UP) {
+  if (canJump && held & UP) {
     f.mode = 'prejump';
     f.timer = PREJUMP_FRAMES - 1;
     f.jumpDir = held & fwd ? 1 : held & back ? -1 : 0;
@@ -448,7 +461,7 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     f.x += f.vx;
   }
   // The forecast's wind pushes everyone the same way.
-  if (m.wind !== 0 && f.mode !== 'thrown' && f.mode !== 'cinematic' && f.mode !== 'down' && f.mode !== 'ko') f.x += m.wind;
+  if (m.wind !== 0 && m.phase === 'fight' && f.mode !== 'thrown' && f.mode !== 'cinematic' && f.mode !== 'down' && f.mode !== 'ko') f.x += m.wind;
   const w = wallX(m, f);
   if (f.slide > 0) {
     const want = f.x + f.slideDir * f.slide;
