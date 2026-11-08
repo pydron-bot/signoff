@@ -17,8 +17,9 @@ export const RIG_BONES = [
 /** State clips: exact frame counts where the table gives them; loops last exactly their frames. */
 const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   idle: { frames: 60, loop: true },
-  walk_fwd: { frames: 40, loop: true },
-  walk_back: { frames: 40, loop: true },
+  // Walk loops are as long as the stride needs at the walk speed (12 to 40 frames).
+  walk_fwd: { loop: true },
+  walk_back: { loop: true },
   crouch: { frames: 6 },
   crouch_idle: { frames: 40, loop: true },
   block_stand: {},
@@ -45,7 +46,7 @@ const MAX_TRIANGLES = 20000;
 const FPS = 60;
 
 interface Gltf {
-  nodes: { name: string }[];
+  nodes: { name: string; mesh?: number; skin?: number }[];
   skins?: { joints: number[] }[];
   materials?: { name: string }[];
   meshes: { primitives: { attributes: Record<string, number>; indices?: number }[] }[];
@@ -77,13 +78,19 @@ for (const f of Object.values(FIGHTERS)) {
       expect(tris).toBeLessThanOrEqual(MAX_TRIANGLES);
     });
 
+    it('has its body skinned, and effect meshes (fx_*) as plain props', () => {
+      const meshes = g.nodes.filter((n) => n.mesh !== undefined);
+      expect(meshes.filter((n) => n.skin !== undefined).map((n) => n.name)).toEqual([`${f.id}_body`]);
+      for (const n of meshes.filter((m) => m.skin === undefined)) expect(n.name).toMatch(/^fx_/);
+    });
+
     it('stands as tall as its hurtbox, feet on the floor, at rest', () => {
       const hurt = f.hurt.stand;
       const tall = toFloat(hurt.y + hurt.h);
       let lo = Infinity;
       let hi = -Infinity;
-      for (const m of g.meshes) {
-        for (const p of m.primitives) {
+      for (const n of g.nodes.filter((m) => m.skin !== undefined)) {
+        for (const p of g.meshes[n.mesh!].primitives) {
           const a = g.accessors[p.attributes.POSITION];
           lo = Math.min(lo, a.min![1]);
           hi = Math.max(hi, a.max![1]);
@@ -104,6 +111,7 @@ for (const f of Object.values(FIGHTERS)) {
         expect(move || state, `unknown clip ${a.name}`).toBeTruthy();
         // Move frame n is sampled at (n - 1) / 60: a clip of N frames spans N - 1 steps; a loop of N spans N.
         const frames = move ? move.total : state.frames;
+        if (state?.loop && frames === undefined) expect(Math.round(seconds * FPS), `${a.name} length`).toBeGreaterThanOrEqual(12);
         if (frames !== undefined) {
           const span = move || !state.loop ? frames - 1 : frames;
           expect(seconds * FPS, `${a.name} length`).toBeCloseTo(span, 3);

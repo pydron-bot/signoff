@@ -129,8 +129,9 @@ class Parts:
         pts = [(cx + i * sx, cf + j * sf, cu + k * su) for i in (-1, 1) for j in (-1, 1) for k in (-1, 1)]
         return self.hull(name, pts, colour, bone, mat)
 
-    def join(self, name, rig):
-        """One mesh, skinned to `rig` through its vertex groups."""
+    def join(self, name, rig=None):
+        """One mesh, skinned to `rig` through its vertex groups (or, with no
+        rig, a plain mesh: the effect meshes)."""
         bpy.ops.object.select_all(action="DESELECT")
         for o in self.objects:
             o.select_set(True)
@@ -139,6 +140,10 @@ class Parts:
         body = bpy.context.view_layer.objects.active
         body.name = name
         body.data.name = name
+        self.objects = []
+        if rig is None:
+            body.vertex_groups.clear()
+            return body
         body.parent = rig
         mod = body.modifiers.new("rig", "ARMATURE")
         mod.object = rig
@@ -168,9 +173,13 @@ def export_glb(path, objects):
         export_animation_mode="ACTIONS",
         export_force_sampling=True,
         export_frame_step=1,
+        export_optimize_animation_size=True,
         export_anim_slide_to_zero=True,
         export_def_bones=True,
         export_materials="EXPORT",
         export_extras=True,
     )
-    print(f"exported {path} ({path.stat().st_size} bytes)")
+    from .glb import compact
+
+    before = path.stat().st_size
+    print(f"exported {path} ({before} bytes, {compact(path)} compacted)")

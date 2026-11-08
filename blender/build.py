@@ -14,7 +14,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-TARGETS = ["rig", "dale"]
+TARGETS = ["rig", "dale", "rox", "hollis", "mumbles"]
 
 
 def build_rig_file(out_dir, art_dir):
@@ -46,7 +46,9 @@ def main():
             if name == "rig":
                 build_rig_file(out, art)
             else:
-                importlib.import_module(f"fighters.{name}").build(out, art)
+                from lib.fighter import build
+
+                build(importlib.import_module(f"fighters.{name}"), out, art)
             print(f"[{name}] ok in {time.time() - t:.1f}s")
         except Exception:
             import traceback

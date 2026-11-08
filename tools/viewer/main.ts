@@ -74,6 +74,13 @@ async function load(id: string): Promise<void> {
   model = gltf.scene;
   // The model faces glTF +Z: a quarter turn faces it along +x, and the holder's mirror flips it.
   model.rotation.y = Math.PI / 2;
+  // Effect meshes (fx_*) ride along in the file; the game places them itself.
+  // Here they're lined up behind and to the right, 1 m apart.
+  let n = 0;
+  for (const o of [...model.children]) {
+    if (!o.name.startsWith('fx_')) continue;
+    o.position.set(2 + n++, 0, -2.5);
+  }
   holder.add(model);
   mixer = new THREE.AnimationMixer(model);
   clips = gltf.animations;
@@ -132,11 +139,14 @@ function setView(v: string): void {
 }
 
 function stats() {
-  const box = model ? new THREE.Box3().setFromObject(model) : null;
+  const body = model?.getObjectByName(`${fighterId}_body`);
+  const box = body ? new THREE.Box3().setFromObject(body, true) : null;
   let tris = 0;
   const mats = new Set<string>();
+  const fx: string[] = [];
   model?.traverse((o) => {
     const m = o as THREE.Mesh;
+    if (o.name.startsWith('fx_')) fx.push(o.name);
     if (!m.isMesh) return;
     const g = m.geometry;
     tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
@@ -152,6 +162,7 @@ function stats() {
     triangles: tris,
     materials: [...mats],
     drawCalls: renderer.info.render.calls,
+    fx,
     clips: clips.map((c) => ({ name: c.name, frames: clipFrames(c), seconds: c.duration })),
   };
 }

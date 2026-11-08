@@ -169,12 +169,17 @@ def _aim(direction, hint=(0, 0, 1)):
 class Pose:
     """One key pose in fighter space. Unset parts stay at rest.
 
+    root: offset (side, fwd, up) and turn (pitch, yaw, roll) of the whole
+      body, for knockdowns, throws and teleports only; everything below is
+      given in the body's own frame and moves with it.
     hips: offset (side, fwd, up) from rest, plus turn (pitch, yaw, roll).
-    spine / chest / neck / head / shoulder.* / toe.*: turn, as world
-      orientations (a level head stays level whatever the chest does).
-    foot.L / foot.R: ankle position, and turn (yaw mostly).
-    hand.L / hand.R: wrist position, and aim (the direction the hand points).
-    knee.* / elbow.*: optional pole positions (which way the joint bends).
+    spine / chest / neck / head / shoulder_L / shoulder_R / toe_L / toe_R:
+      turn, as orientations in the body frame (a level head stays level
+      whatever the chest does).
+    foot_L / foot_R: ankle position, and turn (yaw mostly) or aim (where the
+      foot points, for kicks).
+    hand_L / hand_R: wrist position, and aim (the direction the hand points).
+    knee_L / elbow_L (and _R): optional pole positions (which way the joint bends).
     """
 
     def __init__(self, **parts):
@@ -182,6 +187,10 @@ class Pose:
 
     def get(self, key, default=None):
         return self.parts.get(key.replace(".", "_"), default)
+
+    def but(self, **over):
+        """A copy with some parts replaced."""
+        return Pose(**{**self.parts, **over})
 
 
 ORDER = ["hips", "spine", "chest", "neck", "head", "shoulder.L", "shoulder.R", "toe.L", "toe.R"]
@@ -195,11 +204,20 @@ def apply_pose(rig, pose, height):
         pb.rotation_quaternion = (1, 0, 0, 0)
     bpy.context.view_layer.update()
 
+    root = pose.get("root", {})
+    # The body frame: everything is placed in it, then carried by the root.
+    R = _turn(*root.get("turn", (0, 0, 0))).to_4x4()
+    R.translation = fighter(*root.get("offset", (0, 0, 0)))
+    R3 = R.to_3x3()
+    rest_root = rig.pose.bones["root"].bone.matrix_local
+    m = R @ rest_root
+    rig.pose.bones["root"].matrix = m
+
     def place(name, rot3, head=None):
         pb = rig.pose.bones[name]
         bpy.context.view_layer.update()
-        m = rot3.to_4x4()
-        m.translation = head if head is not None else pb.head
+        m = (R3 @ rot3).to_4x4()
+        m.translation = R @ head if head is not None else pb.head
         pb.matrix = m
 
     for name in ORDER:
@@ -213,7 +231,8 @@ def apply_pose(rig, pose, height):
         foot = pose.get(f"foot.{s}", {})
         ankle = foot.get("pos", j[f"foot.{s}"][0])
         rest = rig.pose.bones[f"ik_foot.{s}"].bone.matrix_local
-        place(f"ik_foot.{s}", _turn(*foot.get("turn", (0, 0, 0))) @ rest.to_3x3(), fighter(*ankle))
+        frot = _aim(foot["aim"], foot.get("hint", (0, 0, 1))) if "aim" in foot else _turn(*foot.get("turn", (0, 0, 0))) @ rest.to_3x3()
+        place(f"ik_foot.{s}", frot, fighter(*ankle))
         hand = pose.get(f"hand.{s}", {})
         rest = rig.pose.bones[f"ik_hand.{s}"].bone.matrix_local
         rot = _aim(hand["aim"], hand.get("hint", (0, 0, 1))) if "aim" in hand else rest.to_3x3()
