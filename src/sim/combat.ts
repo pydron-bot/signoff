@@ -32,6 +32,8 @@ const pendingMove = ['', ''];
 const pendingBlocked = [false, false];
 const pendingCounter = [false, false];
 const pendingThrow = [false, false];
+/** The decoy a strike hit instead of the fighter, or -1. */
+const pendingDecoy = [-1, -1];
 const projHits: number[] = [];
 const projBlocked: boolean[] = [];
 
@@ -95,7 +97,7 @@ function throwable(f: FighterState): boolean {
 
 /** Standing blocks mids and overheads; crouching blocks mids and lows. Only on the ground, holding Block. */
 export function blocks(f: FighterState, height: HitEffect['height']): boolean {
-  if (f.y > 0 || (f.input.held & BLOCK) === 0) return false;
+  if (height === 'unblockable' || f.y > 0 || (f.input.held & BLOCK) === 0) return false;
   if (f.mode !== 'idle' && f.mode !== 'walk' && f.mode !== 'crouch' && f.mode !== 'guard' && f.mode !== 'blockstun') return false;
   const crouch = (f.input.held & DOWN) !== 0;
   return height === 'mid' || (height === 'low' ? crouch : !crouch);
@@ -114,6 +116,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
   for (let i = 0; i < 2; i++) {
     pendingHit[i] = -1;
     pendingThrow[i] = false;
+    pendingDecoy[i] = -1;
     const a = fs[i];
     const d = fs[1 - i];
     if (frozen[i] || a.mode !== 'move') continue;
@@ -122,11 +125,16 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
       if (inWindow(a.moveFrame, mv.throwData.frames) && throwable(d) && Math.abs(d.x - a.x) <= mv.throwData.range) pendingThrow[i] = true;
       continue;
     }
-    if (!hittable(d)) continue;
     for (let k = 0; k < mv.hits.length; k++) {
       const h = mv.hits[k];
       if (a.hitMask & (1 << k) || !inWindow(a.moveFrame, h.frames)) continue;
-      if (touchesFighter(a.x, a.y, a.facing, h.box, d)) {
+      // A decoy in the way takes the hit instead.
+      const dec = decoyHit(m, 1 - i, a.x, a.y, a.facing, h.box);
+      if (dec >= 0) {
+        pendingHit[i] = k;
+        pendingMove[i] = a.move;
+        pendingDecoy[i] = dec;
+      } else if (hittable(d) && touchesFighter(a.x, a.y, a.facing, h.box, d)) {
         pendingHit[i] = k;
         pendingMove[i] = a.move;
         pendingBlocked[i] = blocks(d, h.height);
@@ -161,6 +169,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     if (!P.active || P.rehit > 0) continue;
     const d = fs[1 - P.owner];
     const pd = projData(m, p);
+    if (pd.decoy) continue;
     if (hittable(d) && touchesFighter(P.x, P.y, P.dir, pd.box, d)) {
       projHits.push(p);
       projBlocked.push(blocks(d, pd.effect.height));
@@ -174,6 +183,12 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     const mv = moveData(a.fighter, pendingMove[i]);
     const h = mv.hits[k];
     a.hitMask |= 1 << k;
+    if (pendingDecoy[i] >= 0) {
+      popDecoy(m, pendingDecoy[i], ev);
+      a.contact = 'hit';
+      a.hitstop = BLOCKSTOP;
+      continue;
+    }
     a.contact = pendingBlocked[i] ? 'block' : 'hit';
     applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev);
   }
@@ -198,13 +213,35 @@ function projData(m: MatchState, p: number) {
   return moveData(m.fighters[P.owner].fighter, P.move).spawns[P.spawn].projectile;
 }
 
+/** The defender's decoy this box touches, or -1. */
+function decoyHit(m: MatchState, owner: number, x: Fx, y: Fx, dir: number, b: Box): number {
+  for (let p = 0; p < m.projectiles.length; p++) {
+    const P = m.projectiles[p];
+    if (!P.active || P.owner !== owner) continue;
+    const pd = projData(m, p);
+    if (pd.decoy && boxesTouch(x, y, dir, b, P.x, P.y, P.dir, pd.box)) return p;
+  }
+  return -1;
+}
+
+function popDecoy(m: MatchState, p: number, ev: SimEvent[]): void {
+  const P = m.projectiles[p];
+  if (--P.hitsLeft <= 0) P.active = false;
+  ev.push({ type: 'decoyPop', player: P.owner, x: P.x, y: P.y });
+}
+
+/** Throws and command grabs (specials with throw data). */
 function stillThrowing(f: FighterState): boolean {
-  return f.mode === 'move' && moveOf(f).kind === 'throw';
+  return f.mode === 'move' && moveOf(f).throwData !== undefined;
 }
 
 function grab(m: MatchState, i: number, ev: SimEvent[]): void {
   const a = m.fighters[i];
   const d = m.fighters[1 - i];
+  const td = moveOf(a).throwData!;
+  const id = a.move;
+  d.grabMove = id;
+  d.techable = !td.untechable;
   a.mode = 'throwing';
   a.timer = THROWER_FRAMES;
   a.vx = 0;
@@ -214,7 +251,7 @@ function grab(m: MatchState, i: number, ev: SimEvent[]): void {
   d.vx = 0;
   d.slide = 0;
   d.crouching = false;
-  ev.push({ type: 'throw', thrower: i });
+  ev.push({ type: 'throw', thrower: i, move: id });
 }
 
 export function applyHit(
@@ -256,7 +293,7 @@ export function applyHit(
   }
 
   // Armour soaks one hit: the damage lands but the move carries on.
-  if (d.mode === 'move' && !d.armorUsed && inWindow(d.moveFrame, moveOf(d).armor)) {
+  if (d.mode === 'move' && !d.armorUsed && !e.armorBreak && inWindow(d.moveFrame, moveOf(d).armor)) {
     d.armorUsed = true;
     const ko = takeDamage(d, e.damage);
     d.hitstop = stop;

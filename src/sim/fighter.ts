@@ -164,7 +164,8 @@ function endTimed(m: MatchState, i: number, ev: SimEvent[]): void {
 function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
   const t = m.fighters[1 - i];
-  const dmg = moveData(t.fighter, fighterData(t.fighter).throwMove).throwData!.damage;
+  const grabMove = f.grabMove || fighterData(t.fighter).throwMove;
+  const dmg = moveData(t.fighter, grabMove).throwData!.damage;
   let dir: number = t.facing;
   if (t.throwBack) {
     const w = wallX(m, f);
@@ -173,7 +174,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
   }
   const ko = takeDamage(f, dmg);
   launch(f, dir, KNOCK_VY, false);
-  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'throw', damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
+  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
 }
 
@@ -210,7 +211,7 @@ export function control(m: MatchState, i: number, ev: SimEvent[]): void {
       cutAway(m, i, ev);
       return;
     case 'thrown':
-      if (THROW_HOLD - f.timer <= THROW_TECH && pressed(f.input, THROW)) {
+      if (f.techable && THROW_HOLD - f.timer <= THROW_TECH && pressed(f.input, THROW)) {
         consume(f.input, THROW);
         tech(m, ev, i);
       }
@@ -231,6 +232,8 @@ function canTD(f: FighterState): boolean {
 function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
   const d = fighterData(f.fighter);
   const id = d.specials[f.input.specialDir] ?? d.specials.f;
+  // Only Throw (held back) throws backwards.
+  f.throwBack = false;
   startMove(f, id);
   ev.push({ type: 'special', player: i, move: id });
 }
@@ -426,6 +429,7 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     const mv = moveOf(f);
     for (let k = 0; k < mv.spawns.length; k++) if (mv.spawns[k].frame === f.moveFrame) spawnProjectile(m, i, mv, k);
     if (mv.interactFrame === f.moveFrame) kickProp(m, i, ev);
+    if (mv.teleport && mv.teleport.frame === f.moveFrame) teleport(m, i, mv.teleport.to, ev);
     if (mv.kind !== 'air') {
       f.vx = 0;
       for (const mo of mv.motion) if (inWindow(f.moveFrame, mo.frames)) f.vx = f.facing * mo.vx;
@@ -459,6 +463,27 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     }
   }
   f.x = clamp(f.x, -w, w);
+}
+
+const BEHIND = fx(0.8);
+const AWAY = fx(3);
+
+/** Reappear behind the opponent (in front if the wall's in the way), or well back from them; then face them. */
+function teleport(m: MatchState, i: number, to: 'behind' | 'away', ev: SimEvent[]): void {
+  const f = m.fighters[i];
+  const o = m.fighters[1 - i];
+  const w = wallX(m, f);
+  const dir = o.x >= f.x ? 1 : -1;
+  if (to === 'behind') {
+    const x = o.x + dir * BEHIND;
+    f.x = Math.abs(x) <= w ? x : o.x - dir * BEHIND;
+  } else f.x = clamp(f.x - dir * AWAY, -w, w);
+  f.x = clamp(f.x, -w, w);
+  f.y = 0;
+  f.vx = 0;
+  f.slide = 0;
+  if (o.x !== f.x) f.facing = o.x > f.x ? 1 : -1;
+  ev.push({ type: 'teleport', player: i, x: f.x });
 }
 
 function land(f: FighterState, i: number, ev: SimEvent[]): void {

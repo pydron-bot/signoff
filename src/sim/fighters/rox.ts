@@ -123,6 +123,7 @@ const moves = table(
 export const ROX: FighterData = {
   id: 'rox',
   name: 'Rox Vega',
+  style: 'rushdown',
   health: 1000,
   walkFwd: fx(0.06),
   walkBack: fx(0.04),

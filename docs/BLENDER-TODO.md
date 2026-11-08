@@ -248,14 +248,87 @@ plain one), `interact` is kicking a stage prop.
 | `Grapevine` | Grapevine | special | stand | 28 | no hit |
 | `Grapevine+` | Grapevine (boosted) | special | stand | 36 | 22–24: x -1.00…-0.10, y 0.50…1.30 (mid) |
 | `Leg Warmer Lariat` | Leg Warmer Lariat | special | stand | 46 | 10–11: x -0.60…1.00, y 0.80…1.40 (mid); 16–17: x -0.60…1.00, y 0.80…1.40 (mid); 22–23: x -0.60…1.00, y 0.80…1.40 (mid) |
-| `Leg Warmer Lariat+` | Leg Warmer Lariat (boosted) | special | stand | 46 | 10–11: x -0.60…1.00, y 0.80…1.40 (mid); 14–15: x -0.60…1.00, y 0.80…1.40 (mid); … 5 hits to 27 |
+| `Leg Warmer Lariat+` | Leg Warmer Lariat (boosted) | special | stand | 46 | 10–11: x -0.60…1.00, y 0.80…1.40 (mid); 14–15: x -0.60…1.00, y 0.80…1.40 (mid); … 6 hits to 27 |
 | `Count of Eight` | Count of Eight | special | stand | 47 | 9–10: x 0.20…1.10, y 0.40…0.90 (mid); 12–13: x 0.20…1.10, y 0.40…0.90 (mid); … 8 hits to 31 |
-| `Count of Eight+` | Count of Eight (boosted) | special | stand | 47 | 9–10: x 0.20…1.10, y 0.40…0.90 (mid); 12–13: x 0.20…1.10, y 0.40…0.90 (mid); … 8 hits to 31 |
+| `Count of Eight+` | Count of Eight (boosted) | special | stand | 47 | 9–10: x 0.20…1.10, y 0.40…0.90 (mid); 12–13: x 0.20…1.10, y 0.40…0.90 (mid); … 9 hits to 31 |
 | `Star Jump` | Star Jump | special | stand | 34 | 16–18: x 0.20…1.00, y 0.90…1.60 (overhead) |
-| `Star Jump+` | Star Jump (boosted) | special | stand | 34 | 16–18: x 0.20…1.00, y 0.90…1.60 (overhead) |
+| `Star Jump+` | Star Jump (boosted) | special | stand | 34 | 16–18: x 0.20…1.00, y 0.90…1.60 (overhead); 1–15: armour (glows) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.40, y 0.30…1.60 (mid) |
+
+#### Hollis Bey (`hollis`): 32 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Badge Flash | normal | stand | 20 | 8–9: x 0.20…1.00, y 1.20…1.55 (mid) |
+| `s.BP` | Nightstick | normal | stand | 32 | 12–14: x 0.20…1.15, y 1.10…1.50 (mid) |
+| `s.FK` | Boot | normal | stand | 28 | 10–12: x 0.20…1.20, y 0.50…0.90 (mid) |
+| `s.BK` | Door Kick | normal | stand | 39 | 15–17: x 0.20…1.35, y 0.80…1.30 (mid) |
+| `c.FP` | Low Jab | normal | crouch | 19 | 8–9: x 0.20…0.95, y 0.70…1.00 (mid) |
+| `c.BP` | Rising Clothesline | normal | crouch | 36 | 11–14: x 0.10…0.85, y 1.00…2.00 (mid) |
+| `c.FK` | Toe Stomp | normal | crouch | 26 | 9–10: x 0.20…1.25, y 0.00…0.30 (low) |
+| `c.BK` | Floor Sweep | normal | crouch | 42 | 14–16: x 0.20…1.40, y 0.00…0.30 (low) |
+| `f.BP` | Shoulder Check | normal | stand | 41 | 22–23: x 0.20…1.05, y 1.00…1.70 (overhead) |
+| `j.FP` | Jumping Chop | air | air | 17 | 6–11: x 0.10…0.80, y 0.60…1.10 (overhead) |
+| `j.BP` | Jumping Hammer | air | air | 18 | 8–12: x 0.10…0.90, y 0.80…1.30 (overhead) |
+| `j.FK` | Jumping Knee | air | air | 20 | 7–14: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Body Drop | air | air | 23 | 10–15: x -0.30…1.00, y 0.00…0.50 (overhead) |
+| `FP FP` | Pat Down | normal | stand | 23 | 9–10: x 0.20…1.10, y 1.10…1.50 (mid) |
+| `FP FP BP` | Lights Out | normal | stand | 38 | 14–16: x 0.20…1.30, y 0.90…1.40 (mid) |
+| `FP BK` | Rounds | normal | stand | 33 | 13–15: x 0.20…1.35, y 0.70…1.20 (mid) |
+| `BP FP` | Night Watch | normal | stand | 24 | 9–10: x 0.20…1.15, y 1.10…1.50 (mid) |
+| `BP FP BK` | Lockup | normal | stand | 40 | 16–18: x 0.20…1.40, y 0.00…0.35 (low) |
+| `FK FK` | Patrol | normal | stand | 29 | 11–13: x 0.20…1.30, y 0.50…0.90 (mid) |
+| `FK FK BP` | Clock Out | normal | stand | 37 | 20–21: x 0.20…1.20, y 1.00…1.70 (overhead) |
+| `c.FP FK` | Sweep the Floor | normal | crouch | 33 | 10–11: x 0.20…1.35, y 0.00…0.30 (low) |
+| `Clocking In` | Clocking In | special | stand | 50 | 10–12: grab (reach 1.30) |
+| `Clocking In+` | Clocking In (boosted) | special | stand | 50 | 10–12: grab (reach 1.50) |
+| `Flashlight` | Flashlight | special | stand | 37 | 14–17: x 0.40…2.20, y 1.20…1.70 (mid) |
+| `Flashlight+` | Flashlight (boosted) | special | stand | 37 | 14–17: x 0.40…2.60, y 0.90…1.80 (mid) |
+| `Key Ring` | Key Ring | special | stand | 32 | 12–14: x 0.40…1.90, y 0.00…0.40 (low) |
+| `Key Ring+` | Key Ring (boosted) | special | stand | 40 | 12–14: x 0.40…1.90, y 0.00…0.40 (low); 20–22: x 0.40…1.90, y 0.80…1.50 (mid) |
+| `Night Shift` | Night Shift | special | stand | 39 | 16–19: x 0.10…1.00, y 0.60…1.60 (mid); 1–18: armour (glows) |
+| `Night Shift+` | Night Shift (boosted) | special | stand | 39 | 16–19: x 0.10…1.10, y 0.60…1.60 (mid); 1–22: armour (glows) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
+
+#### Mister Mumbles (`mumbles`): 31 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Wooden Jab | normal | stand | 16 | 6–7: x 0.15…0.75, y 0.80…1.10 (mid) |
+| `s.BP` | Head Bonk | normal | stand | 24 | 9–10: x 0.15…0.80, y 0.90…1.35 (mid) |
+| `s.FK` | Shin Kick | normal | stand | 20 | 7–8: x 0.15…0.90, y 0.20…0.50 (mid) |
+| `s.BK` | Spin Kick | normal | stand | 29 | 11–13: x -0.50…1.00, y 0.40…0.90 (mid) |
+| `c.FP` | Knee Poke | normal | crouch | 16 | 6–7: x 0.15…0.70, y 0.40…0.65 (mid) |
+| `c.BP` | Pop Up | normal | crouch | 28 | 8–10: x 0.10…0.65, y 0.80…1.80 (mid) |
+| `c.FK` | Ankle Biter | normal | crouch | 20 | 7–8: x 0.15…1.00, y 0.00…0.25 (low) |
+| `c.BK` | Leg Sweep | normal | crouch | 32 | 10–12: x 0.15…1.10, y 0.00…0.25 (low) |
+| `b.BP` | Peekaboo | normal | stand | 33 | 18–19: x 0.15…0.85, y 0.70…1.40 (overhead) |
+| `j.FP` | Jumping Bonk | air | air | 14 | 4–9: x 0.10…0.70, y 0.30…0.80 (overhead) |
+| `j.BP` | Jumping Clap | air | air | 15 | 5–9: x 0.10…0.75, y 0.40…0.90 (overhead) |
+| `j.FK` | Jumping Kick | air | air | 16 | 4–11: x 0.10…0.80, y 0.00…0.50 (overhead) |
+| `j.BK` | Jumping Split | air | air | 18 | 6–11: x -0.50…0.85, y 0.00…0.45 (overhead) |
+| `FP FP` | Ha-Ha | normal | stand | 18 | 7–8: x 0.15…0.85, y 0.80…1.15 (mid) |
+| `FP FP FP` | Ha-Ha-Ha | normal | stand | 22 | 9–10: x 0.15…0.95, y 0.80…1.20 (mid) |
+| `FP FP FP BK` | Punchline | normal | stand | 36 | 12–14: x -0.50…1.10, y 0.40…1.00 (mid) |
+| `BP FK` | Clatter | normal | stand | 23 | 8–9: x 0.15…1.00, y 0.20…0.50 (mid) |
+| `BP FK BP` | Curtain Call | normal | stand | 33 | 16–17: x 0.15…0.95, y 0.70…1.40 (overhead) |
+| `FK FK` | Tap Dance | normal | stand | 21 | 8–9: x 0.15…1.00, y 0.00…0.30 (low) |
+| `FK FK FK` | Encore | normal | stand | 32 | 10–12: x 0.15…1.10, y 0.00…0.30 (low) |
+| `c.FK BK` | Under the Bed | normal | crouch | 27 | 9–11: x 0.15…1.15, y 0.00…0.30 (low) |
+| `Hand Puppet` | Hand Puppet | special | stand | 30 | 10: spawns projectile at x 0.90, y 0.00 |
+| `Hand Puppet+` | Hand Puppet (boosted) | special | stand | 30 | 10: spawns projectile at x 0.90, y 0.00 |
+| `Strings Attached` | Strings Attached | special | stand | 34 | 6–22: off screen; 14: reappears behind the opponent |
+| `Strings Attached+` | Strings Attached (boosted) | special | stand | 40 | 24–26: x 0.15…1.00, y 0.60…1.30 (mid); 6–22: off screen; 14: reappears behind the opponent |
+| `Exit Stage Left` | Exit Stage Left | special | stand | 30 | 6–20: off screen; 12: reappears far back |
+| `Knock-Knock` | Knock-Knock | special | stand | 55 | 30–33: x 0.15…1.20, y 0.00…0.90 (unblockable) |
+| `Knock-Knock+` | Knock-Knock (boosted) | special | stand | 50 | 24–27: x 0.15…1.40, y 0.00…0.90 (unblockable) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.30, y 0.30…1.60 (mid) |
 
 <!-- clips:end -->
 

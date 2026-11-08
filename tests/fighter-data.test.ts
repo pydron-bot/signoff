@@ -14,6 +14,7 @@ function startBits(f: FighterData, id: string): number {
   for (const [atk, mid] of Object.entries(n.s)) if (mid === id) return Input.ATTACK_BITS[atk as keyof typeof n.s];
   for (const [atk, mid] of Object.entries(n.c)) if (mid === id) return DOWN | Input.ATTACK_BITS[atk as keyof typeof n.c];
   for (const [atk, mid] of Object.entries(n.f)) if (mid === id) return RIGHT | Input.ATTACK_BITS[atk as keyof typeof n.f];
+  for (const [atk, mid] of Object.entries(n.b)) if (mid === id) return LEFT | Input.ATTACK_BITS[atk as keyof typeof n.b];
   const dirs = { f: RIGHT, b: LEFT, d: DOWN, n: 0 } as const;
   for (const [dir, mid] of Object.entries(f.specials)) if (mid === id) return dirs[dir as keyof typeof dirs] | SPECIAL;
   throw new Error(`no input for ${f.id}/${id}`);
@@ -99,7 +100,7 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
         if (!w) continue;
         expect(w[0] >= 1 && w[1] >= w[0] && w[1] <= mv.total, mv.id).toBe(true);
       }
-      expect(mv.hits.length + mv.spawns.length + (mv.throwData ? 1 : 0) + mv.motion.length + (mv.interactFrame ? 1 : 0), `${mv.id} does something`).toBeGreaterThan(0);
+      expect(mv.hits.length + mv.spawns.length + (mv.throwData ? 1 : 0) + mv.motion.length + (mv.interactFrame ? 1 : 0) + (mv.teleport ? 1 : 0), `${mv.id} does something`).toBeGreaterThan(0);
     }
   });
 
@@ -142,7 +143,8 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     expect(isSafe(r.advantage!), `${s.name} is ${r.advantage} on block`).toBe(s.safe);
   });
 
-  const single = moves.filter((mv) => (mv.kind === 'normal' || mv.kind === 'special') && mv.hits.length && !mv.spawns.length);
+  // Unblockables can't be measured on block (they're tested in tests/mechanics.test.ts).
+  const single = moves.filter((mv) => (mv.kind === 'normal' || mv.kind === 'special') && mv.hits.length && !mv.spawns.length && !mv.hits.some((h) => h.height === 'unblockable'));
   const startable = single.filter((mv) => {
     try {
       startBits(f, mv.id);

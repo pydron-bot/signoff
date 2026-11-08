@@ -1,8 +1,11 @@
 import type { FighterData, MoveData } from '../types';
 import { DALE } from './dale';
+import { HOLLIS } from './hollis';
+import { MUMBLES } from './mumbles';
 import { ROX } from './rox';
 
-export const FIGHTERS: Readonly<Record<string, FighterData>> = { dale: DALE, rox: ROX };
+/** The roster, in select-screen order. */
+export const FIGHTERS: Readonly<Record<string, FighterData>> = { dale: DALE, rox: ROX, hollis: HOLLIS, mumbles: MUMBLES };
 
 export function fighterData(id: string): FighterData {
   const f = FIGHTERS[id];

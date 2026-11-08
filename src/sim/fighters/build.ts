@@ -28,6 +28,7 @@ export interface EffectSpec {
   pull?: number;
   pullOnBlock?: boolean;
   hitstop?: number;
+  armorBreak?: boolean;
 }
 
 export interface StrikeSpec extends EffectSpec {
@@ -49,6 +50,7 @@ export function effect(s: EffectSpec): HitEffect {
     pull: s.pull === undefined ? undefined : fx(s.pull),
     pullOnBlock: s.pullOnBlock,
     hitstop: s.hitstop,
+    armorBreak: s.armorBreak,
   };
 }
 
@@ -64,6 +66,7 @@ export interface ProjectileSpec {
   hits?: number;
   rehit?: number;
   groundEnds?: boolean;
+  decoy?: boolean;
   effect: EffectSpec;
 }
 
@@ -78,6 +81,7 @@ export function projectile(s: ProjectileSpec): ProjectileData {
     hits: s.hits ?? 1,
     rehit: s.rehit ?? 0,
     groundEnds: s.groundEnds,
+    decoy: s.decoy,
     effect: effect(s.effect),
   };
 }
@@ -99,6 +103,8 @@ export interface MoveSpec {
   boost?: string;
   throwData?: MoveData['throwData'];
   interactFrame?: number;
+  teleport?: MoveData['teleport'];
+  hidden?: Window;
 }
 
 export function move(id: string, s: MoveSpec): MoveData {
@@ -128,6 +134,8 @@ export function move(id: string, s: MoveSpec): MoveData {
     boost: s.boost,
     throwData: s.throwData,
     interactFrame: s.interactFrame,
+    teleport: s.teleport,
+    hidden: s.hidden,
     startup: starts.length ? Math.min(...starts) : 0,
     lastActive: ends.length ? Math.max(...ends) : 0,
   };

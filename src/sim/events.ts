@@ -15,7 +15,9 @@ export type SimEvent =
   | { type: 'special'; player: number; move: string }
   | { type: 'boost'; player: number; move: string }
   | { type: 'projectileClash'; x: Fx; y: Fx }
-  | { type: 'throw'; thrower: number }
+  | { type: 'throw'; thrower: number; move: string }
+  | { type: 'teleport'; player: number; x: Fx }
+  | { type: 'decoyPop'; player: number; x: Fx; y: Fx }
   | { type: 'throwTech'; player: number }
   | { type: 'tapeSkip'; player: number }
   | { type: 'cutAway'; player: number }

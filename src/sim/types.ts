@@ -5,7 +5,8 @@
  */
 import type { Fx } from './fixed';
 
-export type Height = 'mid' | 'low' | 'overhead';
+/** Unblockable hits can only be avoided (jumped, dodged), never blocked. */
+export type Height = 'mid' | 'low' | 'overhead' | 'unblockable';
 export type Attack = 'FP' | 'BP' | 'FK' | 'BK';
 export const ATTACKS: readonly Attack[] = ['FP', 'BP', 'FK', 'BK'];
 /** The direction held with Special (or the motion that stands for it). */
@@ -41,6 +42,8 @@ export interface HitEffect {
   readonly pull?: Fx;
   readonly pullOnBlock?: boolean;
   readonly hitstop?: number;
+  /** Goes through armour instead of being soaked by it. */
+  readonly armorBreak?: boolean;
 }
 
 export interface HitData extends HitEffect {
@@ -61,6 +64,8 @@ export interface ProjectileData {
   readonly rehit: number;
   /** Disappears when it reaches the floor (falling hail). */
   readonly groundEnds?: boolean;
+  /** A decoy: hits nobody, but soaks one attack or projectile meant for its owner. */
+  readonly decoy?: boolean;
   readonly effect: HitEffect;
 }
 
@@ -69,6 +74,8 @@ export interface ThrowData {
   /** Furthest distance between the two fighters' centres. */
   readonly range: Fx;
   readonly damage: number;
+  /** A command grab: Throw doesn't break it. */
+  readonly untechable?: boolean;
 }
 
 export interface MoveData {
@@ -95,6 +102,10 @@ export interface MoveData {
   /** The boosted version (Special again, 1 bar). */
   readonly boost?: string;
   readonly throwData?: ThrowData;
+  /** On this frame the fighter reappears behind the opponent, or well back from them. */
+  readonly teleport?: { readonly frame: number; readonly to: 'behind' | 'away' };
+  /** Frames the fighter is off screen (teleporting). */
+  readonly hidden?: Window;
   /** Interact: the frame the stage object is used. */
   readonly interactFrame?: number;
   /** First and last frames that can hit (0 when the move never hits). */
@@ -110,9 +121,13 @@ export interface StringData {
   readonly safe: boolean;
 }
 
+/** How the fighter plays; the CPU plays to it. */
+export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster';
+
 export interface FighterData {
   readonly id: string;
   readonly name: string;
+  readonly style: Style;
   readonly health: number;
   readonly walkFwd: Fx;
   readonly walkBack: Fx;

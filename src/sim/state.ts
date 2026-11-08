@@ -54,6 +54,9 @@ export interface FighterState {
   contact: 'none' | 'hit' | 'block';
   armorUsed: boolean;
   throwBack: boolean;
+  /** The grab that has this fighter (its damage), and whether Throw can break it. */
+  grabMove: string;
+  techable: boolean;
   /** In a Technical Difficulties cinematic as the one being hit. */
   victim: boolean;
   health: number;
@@ -150,6 +153,8 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     contact: 'none',
     armorUsed: false,
     throwBack: false,
+    grabMove: '',
+    techable: true,
     victim: false,
     health: d.health,
     maxHealth: d.health,

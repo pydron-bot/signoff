@@ -98,6 +98,7 @@ function hail(x: number, damage: number) {
 export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
+  style: 'zoner',
   health: 860,
   walkFwd: fx(0.04),
   walkBack: fx(0.035),

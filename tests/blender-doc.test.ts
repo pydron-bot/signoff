@@ -17,6 +17,9 @@ function hits(mv: MoveData): string {
   for (const s of mv.spawns) parts.push(`${s.frame}: spawns projectile at x ${m(s.projectile.x)}, y ${m(s.projectile.y)}`);
   if (mv.throwData) parts.push(`${mv.throwData.frames[0]}–${mv.throwData.frames[1]}: grab (reach ${m(mv.throwData.range)})`);
   if (mv.interactFrame) parts.push(`${mv.interactFrame}: kicks the prop`);
+  if (mv.hidden) parts.push(`${mv.hidden[0]}–${mv.hidden[1]}: off screen`);
+  if (mv.teleport) parts.push(`${mv.teleport.frame}: reappears ${mv.teleport.to === 'behind' ? 'behind the opponent' : 'far back'}`);
+  if (mv.armor) parts.push(`${mv.armor[0]}–${mv.armor[1]}: armour (glows)`);
   if (parts.length > 3) return `${parts.slice(0, 2).join('; ')}; … ${parts.length} hits to ${mv.lastActive}`;
   return parts.join('; ') || 'no hit';
 }
