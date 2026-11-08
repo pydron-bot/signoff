@@ -1,0 +1,154 @@
+/**
+ * The fighters' GLBs (docs/BLENDER-TODO.md): loaded once each, cloned per
+ * fighter on screen, posed by clip and sim frame. Facing left mirrors the
+ * model rather than turning it, so the open stance stays toward the camera.
+ * Effect meshes (fx_*) are detached; the arena places copies of them.
+ */
+import * as THREE from 'three';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { publicUrl } from '../core/paths';
+import { STEPS_PER_SECOND } from '../sim/constants';
+import { LOOPS } from './pose';
+
+const loader = new GLTFLoader();
+const files = new Map<string, Promise<FighterArt>>();
+
+/** One fighter's loaded art, shared by every copy on screen. */
+export interface FighterArt {
+  id: string;
+  scene: THREE.Group;
+  clips: Map<string, THREE.AnimationClip>;
+  /** Effect meshes by name, at the origin: the bottom centre, facing glTF +z. */
+  fx: Map<string, THREE.Object3D>;
+}
+
+/** Loads (once) a fighter's GLB. Rejects if there isn't one. */
+export function loadFighterArt(id: string): Promise<FighterArt> {
+  let p = files.get(id);
+  if (!p) {
+    p = loader.loadAsync(publicUrl(`assets/fighters/${id}.glb`)).then((g) => prepare(id, g));
+    // A failed load can be tried again later.
+    p.catch(() => files.delete(id));
+    files.set(id, p);
+  }
+  return p;
+}
+
+function prepare(id: string, g: GLTF): FighterArt {
+  const fx = new Map<string, THREE.Object3D>();
+  for (const o of [...g.scene.children]) {
+    if (!o.name.startsWith('fx_')) continue;
+    g.scene.remove(o);
+    o.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (m.isMesh) m.material = lambert(m.material as THREE.MeshStandardMaterial);
+    });
+    fx.set(o.name, o);
+  }
+  return { id, scene: g.scene, clips: new Map(g.animations.map((c) => [c.name, c])), fx };
+}
+
+/**
+ * Lambert, not the file's PBR material: the flat-coloured, faceted style
+ * doesn't need it, it lights the same as the set, and it's cheaper on a phone.
+ */
+function lambert(src: THREE.MeshStandardMaterial): THREE.MeshLambertMaterial {
+  const m = new THREE.MeshLambertMaterial({
+    color: src.color,
+    map: src.map,
+    vertexColors: src.vertexColors,
+    transparent: src.transparent,
+    opacity: src.opacity,
+    alphaTest: src.alphaTest,
+    side: src.side,
+  });
+  m.name = src.name;
+  return m;
+}
+
+/** Frames in a clip: a move of N frames lasts (N - 1)/60 s; a loop of N, N/60 s. */
+export function clipFrames(c: THREE.AnimationClip): number {
+  const n = Math.round(c.duration * STEPS_PER_SECOND);
+  return LOOPS.has(c.name) ? Math.max(1, n) : n + 1;
+}
+
+/** One fighter on screen. */
+export class FighterModel {
+  /** Placed at the fighter's feet; scale.x is the facing. */
+  readonly root = new THREE.Group();
+  readonly art: FighterArt;
+  private readonly mixer: THREE.AnimationMixer;
+  private readonly actions = new Map<string, { action: THREE.AnimationAction; frames: number }>();
+  private readonly materials: THREE.MeshLambertMaterial[] = [];
+  private current: THREE.AnimationAction | null = null;
+  private clip = '';
+  private frame = -1;
+  private tint = -1;
+
+  constructor(art: FighterArt) {
+    this.art = art;
+    const model = SkeletonUtils.clone(art.scene);
+    // The model faces glTF +z: a quarter turn faces it along +x.
+    model.rotation.y = Math.PI / 2;
+    // Each copy gets its own materials, so a hit flash lights only the one hit.
+    const swapped = new Map<THREE.Material, THREE.MeshLambertMaterial>();
+    model.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      // Skinned meshes move far from their bind-pose bounds (knockdowns, teleports).
+      m.frustumCulled = false;
+      const src = m.material as THREE.MeshStandardMaterial;
+      let mat = swapped.get(src);
+      if (!mat) {
+        mat = lambert(src);
+        swapped.set(src, mat);
+        this.materials.push(mat);
+      }
+      m.material = mat;
+    });
+    this.root.add(model);
+    this.mixer = new THREE.AnimationMixer(model);
+    for (const [name, c] of art.clips) {
+      const action = this.mixer.clipAction(c);
+      action.paused = true;
+      this.actions.set(name, { action, frames: clipFrames(c) });
+    }
+  }
+
+  has(clip: string): boolean {
+    return this.actions.has(clip);
+  }
+
+  /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */
+  pose(clip: string, frame: number, loop: boolean): void {
+    if (clip === this.clip && frame === this.frame) return;
+    const a = this.actions.get(clip) ?? this.actions.get('idle');
+    if (!a) return;
+    if (a.action !== this.current) {
+      this.current?.stop();
+      a.action.play();
+      a.action.paused = true;
+      this.current = a.action;
+    }
+    const n = a.frames;
+    const f = loop ? (frame - 1) % n : Math.min(Math.max(frame, 1), n) - 1;
+    a.action.time = f / STEPS_PER_SECOND;
+    this.mixer.update(0);
+    this.clip = clip;
+    this.frame = frame;
+  }
+
+  /** An emissive tint over the whole fighter (hit flash, armour, guard): 0 for none. */
+  setTint(hex: number): void {
+    if (hex === this.tint) return;
+    this.tint = hex;
+    for (const m of this.materials) m.emissive.setHex(hex);
+  }
+
+  dispose(): void {
+    this.mixer.stopAllAction();
+    for (const m of this.materials) m.dispose();
+    this.root.removeFromParent();
+  }
+}
