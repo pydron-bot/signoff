@@ -10,7 +10,8 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 
 > **Style: decided (Nov 8).** Derek likes the stylised low-poly look of
 > 0.4.2 (flat colours, faceted, blended joints) and wants **more detail** in
-> it: see step 8. Keep the look; add shape, not realism.
+> it, **including textures**: see step 8. Keep the look; add shape and
+> painted surface detail, not realism.
 
 ## How the game uses the art
 
@@ -213,11 +214,13 @@ Do these first: they're quick, and the detail pass builds on them. Found by play
 - [ ] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
 - [ ] **The hand puppet should look like a puppet.** `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
 
-### 8. Detail pass (the style is approved; it wants more detail)
+### 8. Detail pass (the style is approved; it wants more detail and textures)
 
-The fighters use about 1,500 of their 20,000 triangles. Spend up to about
-6,000 each on **shape detail in the same faceted, flat-colour style**: more
-pieces and silhouettes, not smoothing or realism. Detail must read at game
+Two halves: **shape** and **texture**. The fighters use about 1,500 of their
+20,000 triangles: spend up to about 6,000 each on shape detail in the same
+faceted style (more pieces and silhouettes, not smoothing or realism), and
+give each fighter **painted textures** for surface detail that shapes can't
+carry: fabric, faces, logos, wear. Detail must read at game
 distance (a fighter is about a fifth of the screen height on a phone), so
 favour big, high-contrast shapes over small ones. Faces matter most: they're
 what the camera sees at round start, in `win` and in `intro`.
@@ -225,7 +228,10 @@ what the camera sees at round start, in `win` and in `intro`.
 Budget and rules for the pass:
 
 - Up to about 6,000 triangles a fighter; still at most two materials (`body`, `props`).
-- Colour stays in vertex colours or flat material colours. If a face or logo can't be made from shapes, one small texture atlas (512² at most) on `body` is allowed: say so here.
+- **Textures:** one atlas per material: `body` up to 1024², `props` up to 512² (the technical rules allow 2048², but four fighters' worth must load on a phone). PNG in the GLB; the game side converts to KTX2. Base colour only for now: the game uses a fixed, simple light setup, so no normal or roughness maps yet.
+- **Texture style:** painted and flat, matching the faceted shapes: big readable areas of colour with drawn detail on top (seams, stitching, a pinstripe, weave, wood grain, printed logos, lettering), slightly desaturated and warm like 1987 video. No photographic textures, no fine noise (it shimmers at phone size). Faces are painted (eyes, brows, mouth, blush, stubble) over the face shapes, so expressions can swap by texture region or by swapping the face piece.
+- **Headless:** the build is scripted, so textures are too: paint them in Python (Blender's `numpy` into an image, or procedural shader nodes baked to the atlas), seeded so a rebuild gives the same pixels. Commit the generated PNGs next to the `.blend` files in `art/textures/` so they can be reviewed.
+- UVs: unwrap each piece into its own island; keep texel density about even across the body, with the face and chest getting about twice the density (they're seen most).
 - Keep the joints' blended skinning; new pieces are rigid on one bone unless they must bend (sleeves, trousers).
 - The asset test's height and hitbox checks still apply; update `docs/BLENDER-TODO.md` with each fighter's new triangle count.
 
@@ -234,27 +240,32 @@ Budget and rules for the pass:
 - [ ] Faces: brow ridge, nose, eye sockets with eyes (whites and pupils as separate flat-coloured pieces), mouth shape; enough to read an expression. Each fighter gets a signature expression (below), and the `hit_*`, `ko` and `win` clips swap it (shape keys or swapped rigid pieces)
 - [ ] Hands: mitts with a separate thumb, and a fist shape for strikes (swap or shape key), so punches read as punches
 - [ ] Shoes with soles and a toe cap; trouser and sleeve cuffs as separate rims
-- [ ] Hair as chunky faceted clumps with a parting, not one block
+- [ ] Hair as chunky faceted clumps with a parting, not one block, painted with a few strand lines and a highlight
+- [ ] UVs and the `body` / `props` atlases for every fighter; the asset test checks that textures stay within 1024² and 512²
 
 **Dale Storm**: the smiling weatherman, smile fixed through every forecast
 - [ ] A huge, too-white smile and permanent raised eyebrows; side-parted hair with a quiff
 - [ ] Suit: lapels, a wide 1987 tie with a stripe, pocket square, two buttons; sleeves with cuffs
 - [ ] A clicker in the lead hand (`props`), and a little "CH 0" lapel pin
+- [ ] Textures: a faint 1980s check or pinstripe on the suit, a tie pattern (diagonal stripes), the station logo on the pin, a painted tan and too-white teeth
 
 **Rox Vega**: aerobics host who hasn't stopped since 1983
 - [ ] Big permed hair with a headband (two colours), sweatbands on both wrists
 - [ ] Leotard with a high-cut leg and a contrasting stripe or lightning flash; belt, tights, slouchy ribbed leg warmers (rings), high-tops with laces
 - [ ] A determined grin; a sweat drop on the brow (`props`) for `win`
+- [ ] Textures: neon gradient or zigzag on the leotard, "FEEL THE BURN" lettering on the headband, ribbing on the leg warmers, a shine on the tights, bright eye shadow
 
 **Hollis Bey**: night security guard, broad and tired
 - [ ] Peaked cap with a badge and a visor; a heavy moustache; a stubbled jaw (darker flat colour); tired, heavy-lidded eyes
 - [ ] Uniform: shoulder epaulettes, chest badge, two shirt pockets, a tie, a duty belt with pouches, the flashlight and the key ring (already props)
 - [ ] Heavy boots; a slight gut; bigger hands than the others
+- [ ] Textures: a "SECURITY" patch on the shoulder, "TRANSMITTER SITE" on the badge, a name tag ("BEY"), creased and slightly faded uniform fabric, a coffee stain, stubble
 
 **Mister Mumbles**: a ventriloquist's dummy with nobody's hand in him
 - [ ] The dummy face: painted round eyes, rosy cheek circles, a black painted hairline, and the hinged jaw with its two slot lines down the chin (the jaw drops in `idle` as if talking, and on the knocks in `Knock-Knock`)
 - [ ] Little suit with a bow tie and big buttons; wooden hands with visible finger lines; visible wooden joints (balls) at elbows and knees
 - [ ] The strings: a wooden control bar at the top of the frame they hang from (`mumbles_strings`)
+- [ ] Textures: wood grain on the hands and visible joints, chipped paint and a few cracks on the face (it's old), glossy painted eyes and cheeks, a tiny felt texture on the suit
 
 ### 9. Effects (for the moves whose effect is the hit)
 
