@@ -211,6 +211,17 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
+> **Start here (Nov 8, evening).** Steps 1–10 are done. Work the open steps
+> in this order; the game side is meanwhile building the second stage and the
+> next fighters, and will add their contracts here as their data lands.
+>
+> 1. **Step 12, `launched` lies in its box.** Juggles miss the body until it does.
+> 2. **Step 13, the combat pass's moves.** Four new clips are stand-ins in the game, and seven re-poses for changed hitboxes.
+> 3. **Step 11, `dazed`.** Every finisher starts from it.
+> 4. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is being built against this contract).
+>
+> Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, and will check `burn.glb` once it exists.
+
 ### 1. Rig and blockout (first)
 
 - [x] Shared humanoid skeleton (`art/rig.blend`), with IK for feet and hands; bone names under *The rig* below
@@ -391,6 +402,55 @@ shows a stand-in (in brackets).
 - [ ] **Mumbles `b.FP` String Pull** (new, 32 frames; stand-in `s.FP`): yanks a string from his control bar, reaching 0.6–2.0 m at 0.8–1.4 m on 14–16.
 - [ ] **Mumbles `s.FK` Shin Kick**: he now ducks as he kicks (crouching hurtbox), so lower the body.
 - [ ] **Mumbles `Hand Puppet`**: the puppet jabs out first (a hit on 8–10), then is set down as the decoy on 12.
+
+### 14. Feel the Burn at Dawn (stage, Nov 8, game side)
+
+Rox's show, the second stage: a 1987 aerobics studio at sunrise. Built like
+Weather at Eleven: `blender/stages/burn.py`, `npm run art -- --only burn`,
+writing `art/stage-burn.blend`, `art/textures/stage-burn_*.png` and
+`public/assets/stages/burn.glb`. Same stage space (x along the stage, y up,
+z toward the camera, origin at the arena's centre on the floor; fighters on
+z = 0), the same materials (`set` 2048², `props` 512²; no `water` needed) and
+a `lights` node with one rig per segment, named exactly as below. The game
+side is in `src/sim/stages.ts` (`burn`); until the GLB exists it plays on
+flat stand-ins.
+
+| Segment | The game | The set |
+| --- | --- | --- |
+| 1. Warm-Up | Arena ±6 m. One boombox at x = 0 that either fighter can pick up and throw (Interact) | Sprung wooden floor with a row of blue exercise mats; a mirror wall behind (z = −3.9, about 16 × 3 m in panels with frames, a ballet barre in front at 1 m); a dawn sky in tall windows above it; a neon *FEEL THE BURN AT DAWN* sign; side walls at ±6.4 m with big speaker stacks |
+| 2. Double Time | The tape runs fast: the whole game is 10% quicker. No hazards | The same set, louder: the sun fully up, a strip of chase lights along the top of the mirrors, the sign switched to *DOUBLE TIME* |
+| 3. Burnout | The mirrors shatter and the arena opens to ±8 m into the dark; mirror shards fall on marked spots on the beat | Mirror frames empty and jagged, glass on the floor, the windows black; the side walls gone, the floor running on into darkness to black drapes at ±8.4 m |
+
+Mirrors are painted, not reflective (no render-to-texture on a phone): a
+pale blue-grey with a soft painted streak and a faint, dark suggestion of the
+room. Keep it a fifth of the triangles of a fighter or so per piece; the
+whole stage about as heavy as Weather (under 4,000 triangles, about 10 draw
+calls with everything showing).
+
+| Object | What | The game |
+| --- | --- | --- |
+| `set` | Everything that stays all three segments: the floor (running out to ±9 m), the mats, the window wall above the mirrors, the ceiling rig | Always shown |
+| `seg_warmup` | The intact mirrors and barre, the side walls with speakers at ±6.4, the neon sign (*FEEL THE BURN AT DAWN*), the dawn in the windows | Segments 1 and 2 |
+| `seg_double` | Over `seg_warmup`: the chase lights, the sign's *DOUBLE TIME* panel in front of the old lettering, the risen sun | Segment 2 |
+| `seg_burnout` | The broken mirror frames, glass across the floor, black windows, black drapes at ±8.4 m (3 m tall, z −4 … +1) | Segment 3 (`seg_warmup` is hidden) |
+| `prop_boombox` | A big 1980s twin-deck boombox, 0.6 × 0.35 × 0.2 m, handle on top, speakers to the camera; origin at the bottom centre, placed at x = 0, z = −0.3 | Moved to the prop's x and height; spun end over end while thrown |
+| `fx_shard` | A falling mirror shard, a long jagged triangle about 0.4 × 1.2 m, point down; origin at the point | Drops from 6 m to the floor at the struck spot during the strike |
+| `fx_shatter` | Broken glass on the floor, 1.2 m across, flat | Left on each struck spot for a second |
+| `fx_mark` | A strip of white gaffer tape in a cross, 1.0 m across, on the floor | On the spot a shard will hit, during the warning |
+| `lights` (no mesh) | `extras.segments`, as for Weather | Set on each segment change |
+
+The light rig per segment (suggested; tune by eye):
+
+| Segment | Background | Ambient | Key | Rim |
+| --- | --- | --- | --- | --- |
+| Warm-Up | `#1a0c14` | `#ffe6d8` × 1.3 | `#ffc890` × 2.0 from (−4, 5, 8), a low sun | `#ff7ab0` × 0.7 from (3, 4, −4) |
+| Double Time | `#140a10` | `#fff0e0` × 1.5 | `#ffffff` × 2.4 from (3, 7, 7) | `#40e0ff` × 0.9 from (−3, 5, −4); the game pulses it on the beat |
+| Burnout | `#020206` | `#6a5a9a` × 0.6 | `#c8b8ff` × 1.4 from (0, 8, 6), a single top light | `#ff4a8a` × 0.6 from (0, 3, −6) |
+
+- [ ] `set`, `seg_warmup`, `seg_double`, `seg_burnout` and the light rigs
+- [ ] `prop_boombox` at the size above
+- [ ] `fx_shard`, `fx_shatter`, `fx_mark`
+- [ ] Add the stage to `tests/assets.test.ts` like `weather.glb` (objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place)
 
 ### State clips (every fighter)
 
