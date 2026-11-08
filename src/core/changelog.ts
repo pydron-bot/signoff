@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.13.0',
+    date: '2026-11-08',
+    title: 'Props department',
+    notes: [
+      'The combat pass\'s new moves have their own animation: Dale\'s Step Back Kick, Rox\'s Lunge, Hollis\'s Cuff \'Em (with handcuffs) and Mumbles\' String Pull, which whips a string off his control bar.',
+      'Dale jabs with his umbrella in Umbrella Jab, his Forecast Cross angles up, and Rox\'s Roundhouse Rep kicks off both legs.',
+      'Hollis digs in behind his forearms while Door Kick\'s armour is up, and Mumbles\' Hand Puppet jabs with a little puppet of himself before setting it down as the decoy.',
+      'A launched fighter lies flat on their back where they can be hit, so juggles look like they connect; a K.O. falls through the same pose.',
+      'After the deciding round the loser sways on their feet, dazed, waiting for the finisher. Mumbles\' strings stay hanging from above when he\'s knocked down.',
+    ],
+  },
+  {
     version: '0.12.0',
     date: '2026-11-08',
     title: 'Prime time',

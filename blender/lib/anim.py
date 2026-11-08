@@ -15,6 +15,8 @@ from pathlib import Path
 
 import bpy
 
+from mathutils import Vector
+
 from .rig import Clip, Pose, apply_pose, point
 
 DATA = json.loads((Path(__file__).resolve().parents[1] / "data" / "fighters.json").read_text())
@@ -25,6 +27,33 @@ TOL = 0.04  # how far outside the hitbox a tip may be (m), as in rig.check_strik
 
 def lerp(a, b, t):
     return tuple(x + (y - x) * t for x, y in zip(a, b))
+
+
+def tip_point(rig, limb, extra=0.0):
+    """The striking tip as posed now: the limb's end, or `extra` metres past
+    the hand along it (a held prop's tip: an umbrella, a string)."""
+    if not extra:
+        return point(rig, TIP[limb])
+    head, tail = Vector(point(rig, limb, "head")), Vector(point(rig, limb))
+    return tuple(tail + (tail - head).normalized() * extra)
+
+
+def shifted(pose, d):
+    """The whole pose moved by d (side, fwd, up) in the body frame: the hips
+    and every placed hand, foot and pole, so the skeleton moves rigidly."""
+    def add(v):
+        return tuple(a + b for a, b in zip(v, d))
+
+    parts = {}
+    hips = pose.parts.get("hips", {})
+    parts["hips"] = {**hips, "offset": add(hips.get("offset", (0, 0, 0)))}
+    for key in ("foot_L", "foot_R", "hand_L", "hand_R"):
+        if "pos" in pose.parts.get(key, {}):
+            parts[key] = {**pose.parts[key], "pos": add(pose.parts[key]["pos"])}
+    for key in ("knee_L", "knee_R", "elbow_L", "elbow_R"):
+        if key in pose.parts:
+            parts[key] = add(pose.parts[key])
+    return pose.but(**parts)
 
 
 def lerp_pose(a, b, t):
@@ -235,6 +264,41 @@ class Stance:
             chest=(20, -70, 0), hips={"offset": (0, 0.2 * self.k, -(self.drop + 0.08) * self.k), "turn": (8, -45, 0)},
             hand_R={"pos": self.s((-0.05, 0.7, 1.3)), "aim": (0, 1, 0)})
 
+    def dazed(self, t):
+        """Out on their feet (t: 0…1 round the sway): guard down, swaying
+        side to side, the head lolling the other way."""
+        k, sw, up = self.k, math.sin(2 * math.pi * t), math.cos(2 * math.pi * t)
+        d = self.drop * 0.6
+        lean = (6, self.chest_yaw * 0.6, 8 * sw)
+        return self.base(drop=d).but(
+            hips={"offset": (0.04 * k * sw, -0.03 * k, -(d + 0.012 * (1 - up)) * k), "turn": (-4, self.hips_yaw + 5 * sw, -4 * sw)},
+            spine=(2, (self.hips_yaw + self.chest_yaw * 0.6) / 2, 5 * sw), chest=lean, shoulder_L=lean, shoulder_R=lean,
+            neck=(12, 0, -10 * sw), head=(18 + 6 * up, 10 * sw, -22 * sw),
+            hand_L={"pos": self.s((0.2, 0.12, 0.92 + 0.03 * sw)), "aim": (0.2, 0.3, -1)},
+            hand_R={"pos": self.s((-0.2, 0.06, 0.9 - 0.03 * sw)), "aim": (-0.2, 0.3, -1)},
+        ).shaped(hurt=0.6, ko=0.35, jaw=0.6, fist_L=0.1, fist_R=0.1)
+
+    # Lying back in the air (launched, and the start of ko): the body is
+    # posed as if standing, curled, then the root tips it onto its back
+    # (head behind) and juggle_shift (fit by fighter.fit_juggle to the
+    # juggle hurtbox) slides it into the box. tuck: how far the knees come up.
+    tuck = 0.8
+    juggle_shift = (0.0, 0.0)
+
+    def aloft(self, spin=0.0):
+        k, tk = self.k, self.tuck
+        pose = self.base(drop=0).but(
+            root={"offset": (0, 0, 0), "turn": (-90, spin, 0)},
+            hips={"offset": (0, 0, 0), "turn": (-10, 0, 0)}, spine=(8, 0, 0), chest=(16, 0, 0), neck=(14, 0, 0), head=(20, 0, 0),
+            shoulder_L=(16, 0, 0), shoulder_R=(16, 0, 0),
+            foot_L={"pos": self.s((0.12, 0.2 + 0.1 * tk, 0.1 + 0.6 * tk)), "turn": (-30, 0, 0)},
+            foot_R={"pos": self.s((-0.12, 0.12 + 0.1 * tk, 0.16 + 0.55 * tk)), "turn": (-20, 0, 0)},
+            knee_L=self.s((0.14, 0.9, 0.7)), knee_R=self.s((-0.14, 0.9, 0.7)),
+            hand_L={"pos": self.s((0.5, 0.18, 1.3)), "aim": (0.8, 0.4, 0.4)}, hand_R={"pos": self.s((-0.5, 0.25, 1.25)), "aim": (-0.8, 0.5, 0.3)},
+        ).shaped(hurt=1.0, fist_L=0.2, fist_R=0.2)
+        df, du = self.juggle_shift
+        return shifted(pose, (0, df, du))
+
     def block(self, crouching=False):
         """Forearms up in front of the face (or the body, crouching)."""
         base = self.crouch() if crouching else self.base()
@@ -355,11 +419,9 @@ def state_clips(rig, st, data):
         knee_L=st.s((0.16, 0.3, 1.0)), knee_R=st.s((-0.2, 0.4, 0.9)),
         hand_L={"pos": st.s((0.42, 0.05, 1.05)), "aim": (0.5, 0, -1)}, hand_R={"pos": st.s((-0.42, 0.05, 1.1)), "aim": (-0.5, 0, -1)},
     )
-    airborne = base.but(root={"offset": (0, -0.2 * k, 0.5 * k), "turn": (-35, 0, 0)}, chest=(-20, 0, 0), head=(-20, 0, 0),
-                        foot_L={"pos": st.s((0.1, 0.25, 0.15)), "turn": (30, 0, 0)}, foot_R={"pos": st.s((-0.12, 0.1, 0.25)), "turn": (30, 0, 0)},
-                        hand_L={"pos": st.s((0.4, -0.05, 1.5)), "aim": (0.5, -0.3, 1)}, hand_R={"pos": st.s((-0.4, 0.0, 1.55)), "aim": (-0.5, -0.3, 1)})
-    airborne = airborne.shaped(hurt=1.0, fist_L=0.2, fist_R=0.2)
-    clip("launched", 10, [(1, hit_high), (10, airborne)])
+    # Launched: tipped flat on the back by frame 6, inside the juggle
+    # hurtbox, then held there turning slowly (the game holds the last frame).
+    clip("launched", 40, [(1, hit_high), (6, st.aloft()), (40, st.aloft(14))])
     flat = flat.shaped(hurt=0.7, fist_L=0.2, fist_R=0.2)
     clip("down", 30, [(1, flat), (30, flat.but(head=(4, 6, 0)))])
     sit = base.but(root={"offset": (0, 0.1 * k, 0), "turn": (-25, 0, 0)}, hips={"offset": (0, 0, -0.5 * k), "turn": (0, 0, 0)},
@@ -372,12 +434,11 @@ def state_clips(rig, st, data):
     over = base.but(root={"offset": (0, 0.2 * k, 1.2 * k), "turn": (-150, 0, 0)}, chest=(-20, 0, 0))
     lifted, over = lifted.shaped(hurt=1.0), over.shaped(hurt=1.0)
     clip("thrown", 24, [(1, hit_high), (6, lifted), (12, over), (18, flat.but(root={"offset": (0, 0.7 * k, 0.4 * k), "turn": (-110, 0, 0)})), (24, flat)])
-    stagger = base.but(hips={"offset": (0, -0.15 * k, -0.12 * k), "turn": (-10, st.hips_yaw + 15, 0)}, chest=(-25, 10, 0), head=(-35, 20, 0),
-                       hand_L={"pos": st.s((0.35, 0.0, 1.0)), "aim": (0.4, 0, -1)}, hand_R={"pos": st.s((-0.35, -0.05, 1.0)), "aim": (-0.4, 0, -1)})
-    kneel = crouch.but(root={"offset": (0, -0.2 * k, 0), "turn": (-20, 0, 0)}, chest=(10, 0, 0), head=(-10, 0, 0))
     out_cold = flat.shaped(ko=1.0, hurt=0.0)
-    clip("ko", 90, [(1, hit_high), (14, stagger.shaped(hurt=1.0, fist_L=0, fist_R=0)), (30, kneel.shaped(hurt=0.6, ko=0.5)),
-                    (44, out_cold.but(root={"offset": (0, 0.85 * k, 0.2 * k), "turn": (-95, 0, 0)})), (50, out_cold), (90, out_cold)])
+    # A K.O. falls through the launched pose (the same space), lands and bounces.
+    clip("ko", 90, [(1, hit_high), (6, st.aloft()), (14, st.aloft(8).shaped(ko=0.4)), (24, out_cold),
+                    (29, out_cold.but(root={"offset": (0, 0.85 * k, 0.18 * k), "turn": (-94, 0, 0)})), (34, out_cold), (90, out_cold)])
+    clip("dazed", 60, [(1 + round(7.5 * i), st.dazed(i / 8)) for i in range(9)], loop=True)
     clip("win", 120, [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))])
     relaxed = base.but(hips={"offset": (0, 0, 0), "turn": (0, -10, 0)}, spine=(0, -10, 0), chest=(0, -10, 0), neck=(0, 0, 0), head=(0, 0, 0),
                        shoulder_L=(0, -10, 0), shoulder_R=(0, -10, 0),
@@ -413,7 +474,7 @@ class Fitter:
         self.rig, self.st = rig, st
         self.problems = []
 
-    def strike(self, base, limb, target, lunge, overhead=False, chop=False):
+    def strike(self, base, limb, target, lunge, overhead=False, chop=False, extra=0.0):
         st, k = self.st, self.st.k
         hand = limb.startswith("hand")
         lead = limb.endswith(".L")
@@ -436,7 +497,7 @@ class Fitter:
                 d = (side * 0.3 - shoulder[0], tx - shoulder[1], ty - shoulder[2])
                 n = math.sqrt(sum(c * c for c in d)) or 1
                 aim = tuple(c / n for c in d)
-            reach = 0.167 * k * 0.85
+            reach = 0.167 * k * 0.85 + extra
             wrist = (side * 0.3 - aim[0] * reach, tx - aim[1] * reach, ty - aim[2] * reach)
             parts[f"hand_{limb[-1]}"] = {"pos": wrist, "aim": aim, "hint": (0, 0, 1) if abs(aim[2]) < 0.8 else (0, 1, 0)}
             parts["shapes"] = {**base.parts.get("shapes", {}), f"fist_{limb[-1]}": 1.0}
@@ -460,23 +521,23 @@ class Fitter:
             parts[f"toe_{limb[-1]}"] = (0, 0, 0)
         return base.but(**parts)
 
-    def fit(self, base, limb, box, overhead=False, label="", report=True, ty=None, chop=False):
-        """The strike pose whose limb tip lands inside box (x0, x1, y0, y1),
-        aiming at height ty if given (else the middle of the box)."""
+    def fit(self, base, limb, box, overhead=False, label="", report=True, ty=None, chop=False, extra=0.0, tx=None):
+        """The strike pose whose limb tip (or held prop's tip, `extra` past
+        the hand) lands inside box (x0, x1, y0, y1), aiming at tx, ty if
+        given (else 62% of the way out, and the middle of the box)."""
         x0, x1, y0, y1 = box
         k = self.st.k
         far = x1 if x1 > 0 or x0 >= 0 else x0
         near = x0 if far == x1 else x1
-        tx = near + (far - near) * 0.62
+        tx = near + (far - near) * 0.62 if tx is None else tx
         ty = min(max((y0 + y1) / 2, y0 + 0.08), y1 - 0.08) if ty is None else ty
         lunge = 0.0
         sign = 1 if far > 0 else -1
-        tip = TIP[limb]
         best = None
         for _ in range(12):
-            pose = self.strike(base, limb, (tx, ty), lunge, overhead, chop)
+            pose = self.strike(base, limb, (tx, ty), lunge, overhead, chop, extra)
             apply_pose(self.rig, pose, self.st.height)
-            _, fx, fy = point(self.rig, tip)
+            _, fx, fy = tip_point(self.rig, limb, extra)
             inside = x0 - TOL + 0.01 <= fx <= x1 + TOL - 0.01 and y0 - TOL + 0.01 <= fy <= y1 + TOL - 0.01
             if inside:
                 return pose
@@ -534,7 +595,9 @@ def move_clips(rig, st, data, overrides):
     """One clip per move in the data. overrides[move id] tunes a move: limb,
     alt (limbs taking turns on multi-hit moves), prop (a weapon or effect
     makes the hit, so the limb only points at it), style (hop, spin,
-    teleport, knock, grapevine, rising)."""
+    teleport, knock, grapevine, rising, braced), tx / ty (where to aim the
+    strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
+    over frames show, whose tip, `reach` metres past the hand, makes the hit)."""
     fitter = Fitter(rig, st)
     strikes = {}
     out = []
@@ -612,6 +675,13 @@ def move_clips(rig, st, data, overrides):
         for sp in mv["spawns"]:
             f = sp["frame"]
             x, y = sp["at"]
+            if mv.get("decoy"):
+                # Set down on the floor in front: bent low, both hands down.
+                pose = base.but(hips={"offset": (0, 0.12 * k, -(st.drop + 0.12) * k), "turn": (24, st.hips_yaw + 10, 0)}, spine=(30, -10, 0), chest=(42, -10, 0),
+                                hand_L={"pos": (0.12 * k, 0.55 * k, 0.5 * k), "aim": (0, 0.5, -1)}, hand_R={"pos": (-0.06 * k, 0.6 * k, 0.45 * k), "aim": (0, 0.5, -1)})
+                at(f, pose)
+                at(min(total - 1, f + 5), pose)
+                continue
             if y > 1.5:  # calling something down from above
                 pose = base.but(hand_L={"pos": st.s((0.15, 0.15, 1.95)), "aim": (0.1, 0.2, 1)}, hand_R={"pos": st.s((-0.12, 0.05, 1.9)), "aim": (-0.1, 0.2, 1)}, chest=(-8, st.chest_yaw, 0), head=(-25, 0, 0))
             else:  # pushing it out in front
@@ -661,6 +731,25 @@ def move_clips(rig, st, data, overrides):
                               hand_R={"pos": st.s((-0.25, -0.3, 1.9)), "aim": (-0.2, -0.5, 0.8), "hint": (0, 1, 0)})
             at(max(20, h0 - 7), windup)
             at(h0 - 2, windup.but(chest=(-24, 46, 0)))
+        if style == "braced":
+            # Armoured: squared up and dug in behind the forearms through the
+            # armour, then the heavy kick chambers on its last frames.
+            a1 = mv["armor"][1]
+            brace = st.base(drop=st.drop + 0.1).but(
+                hips={"offset": (0, -0.04 * k, -(st.drop + 0.1) * k), "turn": (8, st.hips_yaw + 12, 0)}, spine=(12, -12, 0), chest=(20, -10, 0),
+                shoulder_L=(20, -10, 0), shoulder_R=(20, -10, 0), head=(10, -4, 0),
+                hand_L={"pos": st.s((0.06, 0.3, 1.36)), "aim": (-0.4, 0.2, 1), "hint": (0, 1, 0)},
+                hand_R={"pos": st.s((-0.04, 0.26, 1.42)), "aim": (0.4, 0.2, 1), "hint": (0, 1, 0)}).shaped(fist_L=1.0, fist_R=1.0)
+            at(4, brace)
+            at(a1 - 4, brace.but(chest=(24, -14, 0), hips={"offset": (0, -0.06 * k, -(st.drop + 0.12) * k), "turn": (10, st.hips_yaw + 16, 0)}))
+        if style == "yank":
+            # Reaches up the strings for the control bar, grabs one and yanks
+            # it down to the shoulder; the strike then whips it out.
+            reach = base.but(hand_L={"pos": st.s((0.08, 0.06, 1.95)), "aim": (0, 0.1, 1), "hint": (0, 1, 0)}, chest=(-10, st.chest_yaw, 0), head=(-24, -4, 0))
+            at(4, reach.shaped(fist_L=0.2))
+            at(7, reach.shaped(fist_L=1.0))
+            at(10, base.but(hips={"offset": (0, -0.05 * k, -(st.drop + 0.06) * k), "turn": (4, st.hips_yaw + 10, 0)},
+                            hand_L={"pos": st.s((0.06, -0.1, 1.42)), "aim": (0, -0.3, 1), "hint": (0, 1, 0)}).shaped(fist_L=1.0))
         if style == "rising":
             # A rising uppercut: coil low, then drive up through the box onto
             # the toes; the arm stays high through the recovery.
@@ -669,6 +758,7 @@ def move_clips(rig, st, data, overrides):
 
         # The hits.
         alt = spec.get("alt")
+        held = spec.get("held")
         prev_end = None
         for i, hit in enumerate(hits):
             f0, f1 = hit["frames"]
@@ -680,28 +770,32 @@ def move_clips(rig, st, data, overrides):
             x0, x1, y0, y1 = hit["box"]
             label = f"{mid} hit {i + 1}"
             report = not spec.get("prop")
+            extra = held["reach"] if held and held["limb"] == lb else 0.0
+            aim = {"extra": extra, "tx": spec.get("tx")}
             if style == "spin":
                 pose = end = spin_pose(st, base, i)
-                checks.append(((f0, f1), ["hand.L", "hand.R"], hit["box"]))
+                checks.append(((f0, f1), ["hand.L", "hand.R"], hit["box"], 0.0))
             elif style == "rising":
                 tiptoe = {"foot_L": {"pos": st.s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
                           "foot_R": {"pos": st.s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
-                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0))
-                end = fitter.fit(base.but(root={"offset": (0, 0, 0.06 * k)}, **tiptoe), lb, hit["box"], over, label, report, ty=y1 - 0.12)
-                checks.append(((f0, f1), [lb], hit["box"]))
+                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0), **aim)
+                end = fitter.fit(base.but(root={"offset": (0, 0, 0.06 * k)}, **tiptoe), lb, hit["box"], over, label, report, ty=y1 - 0.12, **aim)
+                checks.append(((f0, f1), [lb], hit["box"], extra))
             elif chop:
-                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y1 - 0.08, chop=lb.startswith("hand"))
-                end = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0), chop=lb.startswith("hand"))
+                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y1 - 0.08, chop=lb.startswith("hand"), **aim)
+                end = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0), chop=lb.startswith("hand"), **aim)
                 if report:
-                    checks.append(((f0, f1), [lb], hit["box"]))
+                    checks.append(((f0, f1), [lb], hit["box"], extra))
             else:
-                pose = end = fitter.fit(base, lb, hit["box"], over, label, report)
+                pose = end = fitter.fit(base, lb, hit["box"], over, label, report, ty=spec.get("ty"), **aim)
                 if report:
-                    checks.append(((f0, f1), [lb], hit["box"]))
+                    checks.append(((f0, f1), [lb], hit["box"], extra))
             if prev_end is None and style == "hop":
                 pass  # the hop is its own wind-up
             elif prev_end is None:
                 ch = max(2, round(f0 * (0.42 if chop else 0.55)))
+                if style in ("braced", "yank"):
+                    ch = f0 - 3
                 if moving_until and moving_until < f0 and lb.startswith("foot"):
                     ch = max(ch, min(f0 - 1, moving_until + 1))  # step first, then chamber the kick
                 if ch < f0 and ch not in keys:
@@ -722,6 +816,15 @@ def move_clips(rig, st, data, overrides):
             elif rec > 3 and prev_end + max(1, round(rec * 0.35)) not in keys:
                 at(prev_end + max(1, round(rec * 0.35)), lerp_pose(keys[prev_end], base, 0.55))
         keys[total] = base
+
+        if held:
+            # The prop pops out (and away) over one frame.
+            a, b = held["show"]
+            for f in (a - 1, a, b, b + 1):
+                if 1 <= f <= total and f not in keys:
+                    keys[f] = pose_at(keys, f)
+            for f in keys:
+                keys[f] = keys[f].shaped(**{held["key"]: 1.0 if a <= f <= b else 0.0})
 
         # Moves that travel step at their speed (the game moves the fighter).
         if motion:
@@ -771,10 +874,10 @@ def check(rig, actions, strikes):
     for name, checks in strikes.items():
         a = by_name[name]
         rig.animation_data.action = a
-        for (f0, f1), limbs, (x0, x1, y0, y1) in checks:
+        for (f0, f1), limbs, (x0, x1, y0, y1), extra in checks:
             for f in range(f0, f1 + 1):
                 bpy.context.scene.frame_set(f)
-                tips = [point(rig, TIP[lb]) for lb in limbs]
+                tips = [tip_point(rig, lb, extra) for lb in limbs]
                 if not any(x0 - TOL <= t[1] <= x1 + TOL and y0 - TOL <= t[2] <= y1 + TOL for t in tips):
                     t = tips[0]
                     problems.append(f"{name} frame {f}: {limbs[0]} tip at x {t[1]:.2f}, y {t[2]:.2f}, outside x {x0}…{x1}, y {y0}…{y1}")

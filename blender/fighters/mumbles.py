@@ -8,7 +8,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import about, arms, face_paint, head, head_frame, legs, lerp, lit, mouth, torso
+from lib.body import about, arms, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "mumbles"
 # A first guess: the build sizes him so his big head tops out at the hurtbox.
@@ -31,6 +31,8 @@ BLACK = (10, 10, 12)
 STRING = (210, 210, 200)
 SOCK = (236, 232, 222)
 POLE = (120, 90, 60)
+# How far past the fingertips String Pull's string reaches.
+STRING_PULL = 1.1
 
 
 def wood(t):
@@ -141,6 +143,34 @@ def costume(p, b):
         p.seg(f"sock.{sd}", lerp(knee, ankle, 0.72), lerp(knee, ankle, 1.0), b.r(0.056), b.r(0.052), SOCK, f"shin.{sd}", verts=10, paint=lit)
     legs(p, b, {**c, "bottom": TROUSERS}, shin=WOOD, paint=wood)
 
+    # String Pull: a string out of his lead fist, snapped forward like a whip.
+    wr, a, w, L, held_at = grip(b, "L")
+    p.seg("pulled_string", tuple(wr + a * 0.5 * L), tuple(wr + a * (L + STRING_PULL)), 0.006, 0.004, STRING, "hand.L", verts=4, mat=1)
+    p.held("string", held_at, "pulled_string")
+
+    # Hand Puppet: a little glove puppet of himself sitting up on the rear
+    # fist (along the thumb, which is up as he jabs), face to the opponent,
+    # before it's set down as the decoy.
+    wr, a, w, L, held_at = grip(b, "R")
+    n = np.cross(w, a)
+    c0 = wr + a * 0.55 * L
+    hc = c0 + w * 0.19
+
+    def pt(v):
+        return tuple(float(x) for x in v)
+
+    p.seg("glove", pt(c0 - w * 0.03), pt(c0 + w * 0.11), 0.058, 0.05, SUIT, "hand.R", verts=8, mat=1, paint=felt)
+    p.blob("glove_collar", pt(c0 + w * 0.12), (0.04, 0.04, 0.03), SHIRT, "hand.R", mat=1, paint=lit)
+    p.blob("glove_head", pt(hc), (0.066, 0.066, 0.066), WOOD, "hand.R", mat=1, paint=lit)
+    p.blob("glove_hair", pt(hc - a * 0.026 + w * 0.024), (0.058, 0.058, 0.058), HAIR, "hand.R", mat=1, paint=lit)
+    p.blob("glove_nose", pt(hc + a * 0.066 - w * 0.008), (0.012, 0.012, 0.012), RED, "hand.R", mat=1, paint=lit)
+    for i, sd in enumerate((1, -1)):
+        p.blob(f"glove_eye{i}", pt(hc + a * 0.056 + n * sd * 0.026 + w * 0.014), (0.012, 0.012, 0.012), BLACK, "hand.R", mat=1, paint=glossy)
+        p.blob(f"glove_cheek{i}", pt(hc + a * 0.05 + n * sd * 0.04 - w * 0.02), (0.012, 0.012, 0.012), CHEEK, "hand.R", mat=1, paint=lit)
+        p.blob(f"glove_hand{i}", pt(c0 + w * 0.07 + n * sd * 0.065 + a * 0.02), (0.02, 0.02, 0.02), WOOD, "hand.R", mat=1, paint=wood)
+    p.held("puppet", held_at, "glove", "glove_collar", "glove_head", "glove_hair", "glove_nose", "glove_eye0", "glove_eye1",
+           "glove_cheek0", "glove_cheek1", "glove_hand0", "glove_hand1")
+
 
 EXTRAS = "strings"
 
@@ -212,6 +242,10 @@ OVERRIDES = {
     "Exit Stage Left": {"style": "teleport"},
     "Knock-Knock": {"style": "knock", "limb": "hand.R"},
     "td": {"limb": "hand.R"},
+    # Reaches up for a string from the bar, yanks it down, whips it out.
+    "b.FP": {"style": "yank", "tx": 1.45, "held": {"key": "string", "limb": "hand.L", "reach": STRING_PULL, "show": (4, 19)}},
+    # The puppet jabs out head first, then is set down (the decoy appears on 12).
+    "Hand Puppet": {"held": {"key": "puppet", "limb": "hand.R", "reach": 0.0, "show": (2, 11)}},
 }
 
 

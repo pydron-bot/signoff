@@ -123,8 +123,11 @@ function drawBoxes(): void {
   boxes.clear();
   if (!showBoxes || !action) return;
   const f = FIGHTERS[fighterId];
-  const mv = moveFor(action.getClip().name);
-  const stance = mv?.stance === 'crouch' ? 'crouch' : 'stand';
+  const name = action.getClip().name;
+  const mv = moveFor(name);
+  // A body knocked up or down is hurt through its juggle box (src/sim/combat.ts).
+  const lying = name === 'launched' || name === 'down' || name === 'ko' || name === 'getup';
+  const stance = lying ? 'juggle' : mv?.stance === 'crouch' ? 'crouch' : 'stand';
   const h = f?.hurt[stance];
   if (h) addBox(toFloat(h.x), toFloat(h.x + h.w), toFloat(h.y), toFloat(h.y + h.h), hurtMat);
   for (const hit of mv?.hits ?? []) {

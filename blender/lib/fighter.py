@@ -26,6 +26,10 @@ DENSE = ("head", "face", "torso", "shirt", "tie", "lapel", "brow", "eye", "pupil
 # over by up to 1 cm.
 UNDER, OVER = 0.03, 0.01
 
+# launched from frame 6 on: the body within the juggle hurtbox (this much
+# slack each side) and at least this long against the box's width.
+JUGGLE_SLACK, JUGGLE_FILL, JUGGLE_FROM = 0.05, 0.8, 6
+
 
 def mesh_top(body):
     """The skinned body's highest point as posed now (metres)."""
@@ -35,6 +39,50 @@ def mesh_top(body):
     m.vertices.foreach_get("co", co)
     ev.to_mesh_clear()
     return float(co[2::3].max()) + body.matrix_world.translation.z
+
+
+def mesh_bounds(body):
+    """The skinned body's extent along the stage and up, as posed now:
+    (x0, x1, y0, y1) in fighter space (fwd, up)."""
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    m = ev.to_mesh()
+    co = np.empty(len(m.vertices) * 3)
+    m.vertices.foreach_get("co", co)
+    ev.to_mesh_clear()
+    t = body.matrix_world.translation
+    fwd, up = -(co[1::3] + t.y), co[2::3] + t.z
+    return float(fwd.min()), float(fwd.max()), float(up.min()), float(up.max())
+
+
+def fit_juggle(rig, body, st, box):
+    """Slide the aloft pose (Stance.aloft) so the body is centred in the
+    juggle hurtbox. On its back the body's up is the stage's −x and its
+    forward is up, so the shift is applied in the body frame."""
+    st.juggle_shift = (0.0, 0.0)
+    for _ in range(2):
+        apply_pose(rig, st.aloft(), st.height)
+        x0, x1, y0, y1 = mesh_bounds(body)
+        dx = (box[0] + box[1]) / 2 - (x0 + x1) / 2
+        dy = (box[2] + box[3]) / 2 - (y0 + y1) / 2
+        df, du = st.juggle_shift
+        st.juggle_shift = (df + dy, du - dx)
+
+
+def check_juggle(rig, body, actions, box):
+    """launched lies in the juggle hurtbox from frame 6 on, filling its length."""
+    a = next(a for a in actions if a.name == "launched")
+    rig.animation_data.action = a
+    bx0, bx1, by0, by1 = box
+    problems, seen = [], [9, -9, 9, -9]
+    for f in range(JUGGLE_FROM, int(a.frame_end) + 1):
+        bpy.context.scene.frame_set(f)
+        x0, x1, y0, y1 = mesh_bounds(body)
+        seen = [min(seen[0], x0), max(seen[1], x1), min(seen[2], y0), max(seen[3], y1)]
+        if x0 < bx0 - JUGGLE_SLACK or x1 > bx1 + JUGGLE_SLACK or y0 < by0 - JUGGLE_SLACK or y1 > by1 + JUGGLE_SLACK:
+            problems.append(f"launched frame {f}: body at x {x0:.2f}…{x1:.2f}, y {y0:.2f}…{y1:.2f}, outside the juggle box x {bx0}…{bx1}, y {by0}…{by1}")
+        if x1 - x0 < JUGGLE_FILL * (bx1 - bx0):
+            problems.append(f"launched frame {f}: body {x1 - x0:.2f} m long, under {JUGGLE_FILL:.0%} of the juggle box ({bx1 - bx0:.2f} m)")
+    return problems[:4], seen
 
 
 def top_in(rig, body, st, pose):
@@ -104,11 +152,14 @@ def build(mod, out_dir, art_dir):
     target = hurt["stand"][3] + 0.004
     for _ in range(6):
         rig, b, p, body = make_body(mod, height)
+        p.collapse(body)  # held props don't count toward the height
         st = mod.STANCE(height)
         top = top_in(rig, body, st, st.base(0))
         if abs(top - target) < 0.002:
             break
         height *= target / top
+    if p.hidden:
+        rig, b, p, body = make_body(mod, height)  # full size again, to paint
 
     skinned = [body]
     if hasattr(mod, "extras"):
@@ -133,14 +184,18 @@ def build(mod, out_dir, art_dir):
     for mi, size in ((0, 1024), (1, 512)):
         if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
             use_atlas(p.materials[mi], paint(objs, p.meta, mi, size, art_dir / "textures" / f"{mod.ID}_{p.materials[mi].name}.png"))
+    p.collapse(body)  # held props hide in the fist until their key
 
     Clip.shape_keys = body.data.shape_keys
     fit_crouch(rig, body, st, hurt["crouch"][3])
+    fit_juggle(rig, body, st, hurt["juggle"])
     actions = state_clips(rig, st, data)
     moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
     problems = unreachable + check(rig, moves, strikes)
     tall, heights = check_heights(rig, body, actions, hurt)
     problems += tall
+    flat, juggle = check_juggle(rig, body, actions, hurt["juggle"])
+    problems += flat
 
     rig.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -148,7 +203,8 @@ def build(mod, out_dir, art_dir):
     rig.data.pose_position = "POSE"
     print(f"[{mod.ID}] {sum(triangles(o) for o in skinned)} body triangles + {sum(triangles(o) for o in fx)} fx, rig {height:.3f} m, rest {rest:.3f} m; "
           + ", ".join(f"{n} {lo:.3f}…{hi:.3f}" for n, (lo, hi) in heights.items())
-          + f" (hurtboxes {hurt['stand'][3]}, {hurt['crouch'][3]}); {len(actions)} state + {len(moves)} move clips")
+          + f" (hurtboxes {hurt['stand'][3]}, {hurt['crouch'][3]}); launched x {juggle[0]:.2f}…{juggle[1]:.2f}, y {juggle[2]:.2f}…{juggle[3]:.2f}"
+          + f" (box {hurt['juggle']}); {len(actions)} state + {len(moves)} move clips")
     rig.animation_data.action = actions[0]
     bpy.context.scene.frame_set(1)
     if problems:

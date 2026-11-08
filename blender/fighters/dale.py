@@ -6,7 +6,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, head, legs, lerp, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, head, legs, lerp, lit, mouth, torso
 
 ID = "dale"
 HEIGHT = 1.80
@@ -33,6 +33,11 @@ ICE = (206, 232, 246)
 WIND = (170, 205, 225)
 ISOBAR = (236, 242, 255)
 HEAT = (255, 214, 90)
+CANOPY = (40, 50, 96)
+CANE = (120, 74, 40)
+STEEL = (196, 200, 206)
+# The umbrella's tip, this far past his rear hand's fingertips (Umbrella Jab).
+UMBRELLA = 0.66
 
 
 def suit(t):
@@ -117,6 +122,30 @@ def costume(p, b):
     p.seg("clicker", (a[0] - 0.01, a[1] + 0.05, a[2]), (e[0] - 0.01, e[1] + 0.07, e[2]), 0.016, 0.014, PLASTIC, "hand.L", verts=6, mat=1)
     p.blob("clicker_button", (e[0] - 0.01, e[1] + 0.08, e[2] + 0.01), (0.009, 0.009, 0.009), BUTTON, "hand.L", mat=1)
 
+    # The station umbrella, furled, in his rear hand for Umbrella Jab only:
+    # a cane crook behind the fist, the navy canopy with a yellow strap, a
+    # steel ferrule at the tip.
+    wr, a, w, L, held_at = grip(b, "R")
+
+    def at(t, side=0.0):
+        return tuple(wr + a * t + w * side)
+
+    def canopy(t):
+        t.c = P.put(t.c, P.lines(t.up + t.side * 3, 0.05, 0.004), (24, 30, 64), 0.6)
+        return P.light(t)
+
+    tip = L + UMBRELLA
+    p.seg("umbrella_cane", at(0.4 * L), at(-0.12), 0.015, 0.015, CANE, "hand.R", verts=6, mat=1, paint=lit)
+    p.seg("umbrella_crook", at(-0.12), at(-0.16, 0.05), 0.015, 0.015, CANE, "hand.R", verts=6, mat=1, paint=lit)
+    p.seg("umbrella_hook", at(-0.16, 0.05), at(-0.12, 0.09), 0.015, 0.014, CANE, "hand.R", verts=6, mat=1, paint=lit)
+    p.seg("umbrella_shaft", at(0.6 * L), at(L + 0.1), 0.008, 0.008, STEEL, "hand.R", verts=5, mat=1, paint=lit)
+    p.seg("umbrella_furl", at(L + 0.08), at(L + 0.26), 0.012, 0.042, CANOPY, "hand.R", verts=8, mat=1, paint=canopy)
+    p.seg("umbrella_canopy", at(L + 0.26), at(tip - 0.07), 0.042, 0.012, CANOPY, "hand.R", verts=8, mat=1, paint=canopy)
+    p.seg("umbrella_strap", at(L + 0.3), at(L + 0.34), 0.041, 0.039, TIE_STRIPE, "hand.R", verts=8, mat=1, paint=lit)
+    p.seg("umbrella_ferrule", at(tip - 0.07), at(tip), 0.01, 0.004, STEEL, "hand.R", verts=5, mat=1, paint=lit)
+    p.held("umbrella", held_at, "umbrella_cane", "umbrella_crook", "umbrella_hook", "umbrella_shaft", "umbrella_furl",
+           "umbrella_canopy", "umbrella_strap", "umbrella_ferrule")
+
 
 class STANCE(Stance):
     """Upright and smiling: a weatherman's half-turn to camera, hands up."""
@@ -149,6 +178,10 @@ OVERRIDES = {
     "Isobar Lasso": {"limb": "hand.L", "prop": True},
     "Heat Lightning": {"limb": "hand.L", "style": "rising"},
     "td": {"limb": "hand.R"},
+    # The longest poke in the game: the umbrella, held out at arm's length.
+    "s.BK": {"limb": "hand.R", "tx": 1.6, "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (5, 29)}},
+    # His anti-air: the cross angled up through the top of its box.
+    "s.BP": {"ty": 1.75},
 }
 
 

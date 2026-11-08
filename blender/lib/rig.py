@@ -202,8 +202,68 @@ class Pose:
 ORDER = ["hips", "spine", "chest", "neck", "head", "shoulder.L", "shoulder.R", "toe.L", "toe.R"]
 
 
+def _euler(m):
+    """(pitch, yaw, roll) in degrees for a rotation built as _turn builds it."""
+    e = m.to_euler("YXZ")
+    return (math.degrees(e.x), math.degrees(e.z), math.degrees(e.y))
+
+
+def upright_root(pose, height):
+    """The same pose with the root's pitch and roll moved into the body:
+    every turn, aim and placed point is tipped instead, so the body ends up
+    exactly where it was but `root` stays upright (only its offset and yaw
+    are kept). Mumbles' control bar hangs on root, so his strings still go
+    straight up when he's knocked flat."""
+    root = pose.get("root", {})
+    pitch, yaw, roll = root.get("turn", (0, 0, 0))
+    if not pitch and not roll:
+        return pose
+    j = joints(height)
+    B = Matrix.Rotation(math.radians(pitch), 3, "X") @ Matrix.Rotation(math.radians(roll), 3, "Y")
+
+    def at(v):
+        return from_blender(B @ fighter(*v))
+
+    def turned(t):
+        return _euler(B @ _turn(*t))
+
+    parts = dict(pose.parts)
+    parts["root"] = {"offset": root.get("offset", (0, 0, 0)), "turn": (0, yaw, 0)}
+    hips = pose.get("hips", {})
+    rest = fighter(*j["hips"][0])
+    off = from_blender(B @ (rest + fighter(*hips.get("offset", (0, 0, 0)))) - rest)
+    parts["hips"] = {"offset": off, "turn": turned(hips.get("turn", (0, 0, 0)))}
+    for name in ORDER[1:]:
+        parts[name.replace(".", "_")] = turned(pose.get(name, (0, 0, 0)))
+    for s in ("L", "R"):
+        sx = 1 if s == "L" else -1
+        foot = dict(pose.get(f"foot.{s}", {}))
+        ankle = foot.get("pos", j[f"foot.{s}"][0])
+        knee = pose.get(f"knee.{s}")
+        if knee is None:
+            # As apply_pose places it, before tipping.
+            fwd = from_blender(_turn(*foot.get("turn", (0, 0, 0))) @ Vector((0, -1, 0)))
+            knee = tuple(a + f * 0.6 + u for a, f, u in zip(ankle, fwd, (0, 0, 0.45)))
+        foot["pos"] = at(ankle)
+        if "aim" in foot:
+            foot["aim"], foot["hint"] = at(foot["aim"]), at(foot.get("hint", (0, 0, 1)))
+        else:
+            foot["turn"] = turned(foot.get("turn", (0, 0, 0)))
+        hand = dict(pose.get(f"hand.{s}", {}))
+        wrist = hand.get("pos", j[f"hand.{s}"][0])
+        elbow = pose.get(f"elbow.{s}") or (wrist[0] + 0.3 * sx, wrist[1] - 0.5, wrist[2] - 0.3)
+        if "aim" not in hand:
+            # The rest orientation: along the bone, its Z forward.
+            h, t = j[f"hand.{s}"]
+            hand["aim"], hand["hint"] = tuple(b - a for a, b in zip(h, t)), (0, 1, 0)
+        hand.update(pos=at(wrist), aim=at(hand["aim"]), hint=at(hand.get("hint", (0, 0, 1))))
+        parts.update({f"foot_{s}": foot, f"hand_{s}": hand, f"knee_{s}": at(knee), f"elbow_{s}": at(elbow)})
+    return Pose(**parts)
+
+
 def apply_pose(rig, pose, height):
     """Put the rig in `pose` (evaluated, not keyed)."""
+    pose = upright_root(pose, height)
     j = joints(height)
     for pb in rig.pose.bones:
         pb.location = (0, 0, 0)

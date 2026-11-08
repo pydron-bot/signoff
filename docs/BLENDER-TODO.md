@@ -97,6 +97,13 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   `fist_R`, `hurt`, `ko`, `win` (and `jaw` for Mumbles), keyed by every
   clip in the same action (strikes close the fist, hits swap to `hurt`, KO
   closes the eyes, `win` grins).
+- Held props (`Parts.held`): a prop taken out for one move (Dale's
+  umbrella, Hollis's handcuffs, Mumbles' string and glove puppet) is built
+  and painted full size along the hand, then collapsed into the fist in
+  every shape key but its own, so that key shows it. The move's `held`
+  override says which frames; a prop that makes the hit has its tip
+  (`reach` metres past the fingertips) checked against the hitbox instead
+  of the hand's.
 - `lib/stage.py` and `blender/stages/weather.py`: the stage, built the same
   way without a rig: plain meshes merged per object, painted atlases (`set`
   2048², `props` 512², written to `art/textures/stage-weather_*.png`), a
@@ -122,8 +129,10 @@ If the style moves to hand modelling, the `.blend` files become the source
 and the scripts stop writing them (say which in this file).
 
 The build fails if a strike misses: for every hit in the data, the striking
-limb's tip must be inside the hitbox (±4 cm) on every active frame (moves
-whose hit is an effect, marked `prop`, only point at it). The
+limb's tip (or a held prop's) must be inside the hitbox (±4 cm) on every active frame (moves
+whose hit is an effect, marked `prop`, only point at it). It also fails if
+`launched`, from frame 6 on, leaves the juggle hurtbox (±5 cm) or fills
+less than 80% of its length. The
 **art viewer** loads a GLB the way the game will, with the hurtbox and each
 move's hitboxes drawn on their active frames:
 http://hive1:5174/tools/viewer/?f=dale on the dev server (`npm run dev`),
@@ -134,8 +143,9 @@ face or `&view=fx` for the effect meshes.
 
 - `<id>_body`: the skinned body (materials `body`, and `props` for
   accessories), each material with its PNG atlas, and morph targets
-  `fist_L`, `fist_R`, `hurt`, `jaw` (Mumbles only), `ko`, `win`, whose
-  weights every clip animates.
+  `fist_L`, `fist_R`, `hurt`, `jaw` (Mumbles only), `ko`, `win`, and the
+  held props (`umbrella` for Dale, `cuffs` for Hollis, `string` and
+  `puppet` for Mumbles), whose weights every clip animates.
 - `<id>_<part>`: other skinned parts that shouldn't count toward the
   fighter's size (Mumbles' strings, `mumbles_strings`).
 - `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
@@ -220,7 +230,7 @@ are authored facing right with the left foot and left hand leading.
 
 ### 2. Dale Storm
 
-- [x] Model and textures (≤ 20k triangles, 2 materials). *Detail pass done (step 8): 2,398 body triangles, plus 1,932 in effects.*
+- [x] Model and textures (≤ 20k triangles, 2 materials). *Detail pass done (step 8): 2,398 body triangles, plus 1,932 in effects; 2,574 with the umbrella (step 13).*
 - [x] State clips (table below)
 - [x] Move clips (generated table below), each matched to its active frames and hitbox
 - [x] Projectile visuals as separate small meshes in the same file: `fx_cold_front` (a rolling wall of wind, about 0.7 × 1.4 m) and `fx_hail` (a hailstone, about 0.6 × 0.5 m)
@@ -233,13 +243,13 @@ are authored facing right with the left foot and left hand leading.
 
 ### 4. Hollis Bey
 
-- [x] Model and textures; the flashlight and key ring as props in the `props` material. *Detail pass done (step 8): 2,386 body triangles, plus 364 in effects.*
+- [x] Model and textures; the flashlight and key ring as props in the `props` material. *Detail pass done (step 8): 2,386 body triangles, plus 364 in effects; 2,666 with the handcuffs (step 13).*
 - [x] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
 - [x] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
 
 ### 5. Mister Mumbles
 
-- [x] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part. *Detail pass done (step 8): 2,042 body triangles; rig at 1.29 m with a head 1.43× larger; the jaw is a shape key (`jaw`); strings and control bar in `mumbles_strings`.*
+- [x] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part. *Detail pass done (step 8): 2,042 body triangles (2,282 with the strings, the pulled string and the glove puppet, step 13); rig at 1.29 m with a head 1.43× larger; the jaw is a shape key (`jaw`); strings and control bar in `mumbles_strings`.*
 - [x] State clips, and move clips. `Strings Attached` and `Exit Stage Left` are teleports: he is off screen for the listed frames (yanked up on his strings, then lowered back in); `Knock-Knock` is a slow, obvious wind-up (it can't be blocked, so it must read clearly)
 - [x] `fx_hand_puppet`: the decoy, a hand puppet on a little stand, about 0.5 × 1.2 m
 
@@ -349,7 +359,7 @@ the winner's own moves and the loser's hit reactions (data in each fighter's
 file under `finishers`), then the picture cuts to static, colour bars or the
 stand-by card. Two things would make them land harder:
 
-- [ ] **`dazed`** (60, loop) for every fighter: the loser on their feet after the deciding round, swaying, guard down, head lolling, waiting to be finished. Until it exists the game holds `hit_high`.
+- [x] **`dazed`** (60, loop) for every fighter: *Done: guard down, swaying side to side with the head lolling the other way, eyes half shut (Mumbles' jaw hangs open). The game loops it (`LOOPS` in `src/render/pose.ts`); the stand-in is gone.* the loser on their feet after the deciding round, swaying, guard down, head lolling, waiting to be finished. Until it exists the game holds `hit_high`.
 - [ ] Later: a bespoke clip for each Sign-Off's last blow (the one the picture cuts away on), and a `rerun_wake` for the Rerun card (the loser waking on a sofa). Not needed yet.
 
 ### 12. `launched` lies in its box (Nov 8, game side)
@@ -369,9 +379,9 @@ depend on this matching.
 | Hollis | −0.85 … 0.65, 0.20 … 1.00 |
 | Mumbles | −0.60 … 0.45, 0.15 … 0.70 |
 
-- [ ] Re-pose `launched` flat on the back, head behind (−x), body along the box, by about frame 6 (a quick tip-back from the hit pose), held from there with a slight spin; no `root` translation. Rotating `root` is fine as long as the mesh stays in the box.
-- [ ] Add it to the build's checks, like the hurtbox-height check: from frame 6 on, the mesh's extent along x and y must sit within the `juggle` box (a few cm of slack), and the box should be mostly filled (body length at least 80% of the box width).
-- [ ] The first frames of `ko` (the fall) should pass through the same flat pose, since a K.O.'d body falls through `launched` space.
+- [x] Re-pose `launched` flat on the back, head behind (−x), body along the box, by about frame 6 (a quick tip-back from the hit pose), held from there with a slight spin; no `root` translation. Rotating `root` is fine as long as the mesh stays in the box. *Done: 40 frames, curled on the back with the knees up (`Stance.aloft`), turning 14° toward the camera by frame 40, where the game holds it. The build slides each fighter's pose to the middle of its box (`fit_juggle`). From frame 6: Dale x −0.78…0.58, y 0.25…0.85; Rox −0.80…0.55, 0.24…0.81; Hollis −0.85…0.65, 0.26…0.94; Mumbles −0.57…0.42, 0.21…0.64.*
+- [x] Add it to the build's checks, like the hurtbox-height check: from frame 6 on, the mesh's extent along x and y must sit within the `juggle` box (a few cm of slack), and the box should be mostly filled (body length at least 80% of the box width).
+- [x] The first frames of `ko` (the fall) should pass through the same flat pose, since a K.O.'d body falls through `launched` space. *Done: `ko` is the `launched` pose on frames 6–14, on the floor by 24, a bounce on 29, out cold from 34.*
 
 ### 13. New and changed moves from the combat pass (Nov 8, game side)
 
@@ -380,17 +390,17 @@ existing moves didn't change, but some hitboxes did, and there are four new
 moves; the clip table below is regenerated. Until a new clip exists the game
 shows a stand-in (in brackets).
 
-- [ ] **Dale `b.FK` Step Back Kick** (new, 26 frames; stand-in `s.FK`): steps back 0.05 m a frame on 1–8 while kicking, foot out at mid height on 9–10.
-- [ ] **Dale `s.BK` Umbrella Jab** (was Isotherm Kick): the umbrella held out at arm's length, tip to 1.75 m at chest height on 14–16. The longest poke in the game.
-- [ ] **Dale `s.FK`**: now reaches 1.5 m (11–13), a long front kick.
-- [ ] **Dale `s.BP` Forecast Cross**: angled up, the fist from 1.0 to 2.0 m high on 10–12 (his anti-air).
-- [ ] **Rox `f.BP` Lunge** (new, 21 frames; stand-in `s.BP`): lunges forward 0.08 m a frame on 2–9, punch at head height on 9–10.
-- [ ] **Rox `s.BK` Roundhouse Rep**: now two kicks, one each leg: 11–12 and 15–16.
-- [ ] **Hollis `FP FP FK` Cuff 'Em** (new, 34 frames; stand-in `Clocking In`): both hands grab forward at chest height on 8–9 (a pair of handcuffs is a nice `props` touch); on a whiff, an over-reach and a slow recovery.
-- [ ] **Hollis `s.BK` Door Kick**: has armour on 1–14 (the game tints it orange); a braced, heavy wind-up.
-- [ ] **Mumbles `b.FP` String Pull** (new, 32 frames; stand-in `s.FP`): yanks a string from his control bar, reaching 0.6–2.0 m at 0.8–1.4 m on 14–16.
-- [ ] **Mumbles `s.FK` Shin Kick**: he now ducks as he kicks (crouching hurtbox), so lower the body.
-- [ ] **Mumbles `Hand Puppet`**: the puppet jabs out first (a hit on 8–10), then is set down as the decoy on 12.
+- [x] **Dale `b.FK` Step Back Kick** (new, 26 frames; stand-in `s.FK`): steps back 0.05 m a frame on 1–8 while kicking, foot out at mid height on 9–10. *Done: generated from the data: the feet step back at 0.05 m a frame on 1–8 and the lead foot chambers on 8.*
+- [x] **Dale `s.BK` Umbrella Jab** (was Isotherm Kick): the umbrella held out at arm's length, tip to 1.75 m at chest height on 14–16. The longest poke in the game. *Done: his furled navy umbrella (crook handle, yellow strap, steel tip) comes out of the rear fist on frame 5 and goes away on 30; its tip is checked in the box at 1.6 m.*
+- [x] **Dale `s.FK`**: now reaches 1.5 m (11–13), a long front kick. *Done: the strike fit lunges into the longer box.*
+- [x] **Dale `s.BP` Forecast Cross**: angled up, the fist from 1.0 to 2.0 m high on 10–12 (his anti-air). *Done: aimed at 1.75 m, the fist driving up through the top of the box.*
+- [x] **Rox `f.BP` Lunge** (new, 21 frames; stand-in `s.BP`): lunges forward 0.08 m a frame on 2–9, punch at head height on 9–10. *Done: generated: she steps in at the move's speed and punches at head height.*
+- [x] **Rox `s.BK` Roundhouse Rep**: now two kicks, one each leg: 11–12 and 15–16. *Done: the rear leg kicks on 11–12, the lead on 15–16 (`alt`).*
+- [x] **Hollis `FP FP FK` Cuff 'Em** (new, 34 frames; stand-in `Clocking In`): both hands grab forward at chest height on 8–9 (a pair of handcuffs is a nice `props` touch); on a whiff, an over-reach and a slow recovery. *Done: the command grab's reach, with a pair of handcuffs out of the lead hand from frame 3 to 28.*
+- [x] **Hollis `s.BK` Door Kick**: has armour on 1–14 (the game tints it orange); a braced, heavy wind-up. *Done: squared up and dug in behind both forearms through the armour (style `braced`), the kick chambering on 12.*
+- [x] **Mumbles `b.FP` String Pull** (new, 32 frames; stand-in `s.FP`): yanks a string from his control bar, reaching 0.6–2.0 m at 0.8–1.4 m on 14–16. *Done: he reaches up the strings on 4, grabs one on 7, yanks it down to his shoulder by 10, then whips it out: a 1.1 m string from the fist, its tip checked in the box (frames 4–19).*
+- [x] **Mumbles `s.FK` Shin Kick**: he now ducks as he kicks (crouching hurtbox), so lower the body. *Done: it plays from the crouch now that the data marks it crouching.*
+- [x] **Mumbles `Hand Puppet`**: the puppet jabs out first (a hit on 8–10), then is set down as the decoy on 12. *Done: a glove puppet of him sits up on his rear fist from frame 2 and jabs on 8–10; on 12 he bends to set it down and it vanishes as the decoy appears.*
 
 ### State clips (every fighter)
 
@@ -410,7 +420,7 @@ Loop where noted; lengths are suggestions unless given.
 | `tape_skip` | 10 | Exactly 10: the Tape Skip dash (0.11 m a frame), low and leaning |
 | `backdash` | Dale 20, Rox 18 | Exactly these |
 | `hit_high`, `hit_low` | 12 | Played and held for however long the stun lasts |
-| `launched` | hold | Airborne, spinning slightly |
+| `launched` | 40, hold | Flat on the back in the juggle box from frame 6, turning slightly (step 12) |
 | `down` | 30 | Lying on the floor; exactly 30 |
 | `getup` | 20 | Exactly 20 |
 | `thrown` | 24 | Being thrown (pairs with the thrower's `throw` hold) |
@@ -592,7 +602,7 @@ worked into the move data, and the table above updates itself.
 
 - **Mirroring (game side):** face left by mirroring the model, not turning it (see *Facing*).
 - **Walk loops are shorter than 40 frames** (forward: Dale 16, Rox 12, Hollis 22, Mumbles 12): at these walk speeds a 40-frame cycle would need a stride far wider than a fighting stance, so the loop length follows the stride (0.36 m per foot, scaled) and the feet don't skate. The asset test accepts any loop of 12 frames or more for walks.
-- **Root motion in a few clips (game side):** `down`, `getup`, `thrown`, `ko` and `launched` move and turn `root` (lying down, being thrown); Mumbles' teleports lift `root` 4 m up off screen over their hidden frames and lower him back in; Rox's `Star Jump` hops 0.35 m. Gameplay moves otherwise keep `root` still. The game should let these play as they are, not cancel `root`.
+- **Root motion in a few clips (game side):** `down`, `getup`, `thrown`, `ko` and `launched` move and turn `root` (lying down, being thrown; since Nov 8 only its offset and yaw, see *Combat-pass art*); Mumbles' teleports lift `root` 4 m up off screen over their hidden frames and lower him back in; Rox's `Star Jump` hops 0.35 m. Gameplay moves otherwise keep `root` still. The game should let these play as they are, not cancel `root`.
 - **Effect hits:** Isobar Lasso, Flashlight and Key Ring reach further than any limb (up to 2.6 m), so the effect is the hit and the hand only points the way; those moves skip the limb check.
 - **Review, Nov 8 (game side).** Checked all four GLBs in the viewer: every clip frame-exact, every strike inside its hitbox, 1,468 to 1,684 triangles, 3 to 7 draw calls a fighter, 0.73 MB each. The stylised low-poly look reads well at game distance and the four silhouettes are distinct (Hollis's bulk, Rox's hair and leg warmers, Mumbles' size and strings): a good base. What needs work is *readability in play*, listed as step 7 under TODO. Measured with the viewer's height readout:
 
@@ -618,3 +628,9 @@ worked into the move data, and the table above updates itself.
 - **Weather at Eleven (Nov 8, art and game side).** The stage is built like the fighters (`npm run art -- --only weather`) and checked by `tests/assets.test.ts` (objects, materials, atlas sizes, a light rig per segment, the dollies' places and size, the hazards' sizes). In the game (0.7.0) `src/render/stageView.ts` swaps the flat stand-in panels for it once loaded and sets the segment's lights; the stand-ins stay if the GLB can't load. Three passes for the whole set: `set`, `seg_storm`, `seg_flood`, plus the props and effects, about 10 draw calls with everything on show.
 - **Second win and intro (Nov 8, art and game side).** Each fighter's `STANCE` has `win_2` and `intro_2` (keys over the clip; a generic version in `lib/anim.py` for any fighter that doesn't override them); `intro_2` is in stance by frame 80, like `intro`. In the game (0.8.0) `src/render/pose.ts` picks them: the round winner plays `win` in odd rounds and `win_2` in even ones; in the intro, player 1 plays `intro` in odd rounds and `intro_2` in even ones, and player 2 the other, so the two never match.
 - **Vertex colours (game side, Nov 8).** The GLBs keep each part's flat colour as `COLOR_0`, and three.js multiplies a material's atlas by its vertex colours, so the fighters were drawn with their atlases tinted twice (skin about a quarter darker and oranger than painted). Fixed in 0.7.0: materials with an atlas ignore vertex colours, in the game and the viewer. The art is unchanged; it now shows as painted.
+- **Combat-pass art (Nov 8, art side).** Steps 11–13 done; all four GLBs rebuilt, every strike and the new juggle check passing. Notes for the game side:
+  - `dazed` is in every GLB (60, loop); `src/render/pose.ts` loops it and `STAND_INS` is empty now that every new move has its clip.
+  - `launched` is 40 frames and lies in `hurt.juggle` from frame 6; the build checks it (`check_juggle` in `blender/lib/fighter.py`). `ko` falls through the same pose.
+  - Held props are morph targets on `<id>_body` (`umbrella`, `cuffs`, `string`, `puppet`): the clips show and hide them, so there's nothing to place. They're collapsed inside the fist otherwise, so they don't change any bounds.
+  - `root` is never pitched or rolled now: a pose that tips it (lying down, thrown) has the tip baked into the other bones (`upright_root` in `blender/lib/rig.py`), so the body is where it was but `root` keeps only its offset and yaw. Mumbles' strings (on `root`) now hang straight up to him when he's knocked down, instead of swinging sideways across the stage.
+  - The art viewer draws the juggle hurtbox for `launched`, `down`, `ko` and `getup`, as `src/sim/combat.ts` uses it.

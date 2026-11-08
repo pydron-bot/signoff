@@ -311,6 +311,31 @@ def hand(p, b, s, colour, size=1.0, paint=None, thumb_colour=None):
           shapes={f"fist_{s}": thumb})
 
 
+def grip(b, s):
+    """A held prop's frame on hand `s` at rest: the wrist, `a` along the hand
+    to the fingertips, `w` toward the thumb (forward), the hand's length, and
+    the point inside the fist it collapses to (Parts.held). Props run out
+    along `a`, so a prop's tip `reach` metres past the fingertips is where
+    anim.tip_point puts it."""
+    wr, ht = (np.array(v) for v in b.j[f"hand.{s}"])
+    L = float(np.linalg.norm(ht - wr))
+    a = (ht - wr) / L
+    w = np.cross(a, (1.0, 0, 0))
+    w /= np.linalg.norm(w)
+    if w[1] < 0:
+        w = -w
+    return wr, a, w, L, tuple(wr + a * 0.35 * L)
+
+
+def ring(p, name, centre, u, v, radius, thick, colour, bone, mat=1, paint=None, n=12):
+    """A torus in the plane of u and v (a handcuff, a key ring)."""
+    import math
+
+    pts = [tuple(np.array(centre) + radius * (math.cos(t) * np.array(u) + math.sin(t) * np.array(v)))
+           for t in (2 * math.pi * i / n for i in range(n + 1))]
+    p.tube(name, [(q, thick, {bone: 1.0}, colour) for q in pts], verts=5, mat=mat, caps=False, paint=paint)
+
+
 def arms(p, b, c, sleeve=1.0, cuff=None, pads=False, paint=None, hand_paint=None, cuff_rim=None):
     """Arms, shoulder to wrist in one tube with weights graded across the
     elbow; `sleeve` is how far down the top's colour goes (0 bare, 0.45

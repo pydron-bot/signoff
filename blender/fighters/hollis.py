@@ -8,7 +8,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, head, legs, lerp, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, head, legs, lerp, lit, mouth, ring, torso
 
 ID = "hollis"
 HEIGHT = 1.90
@@ -116,6 +116,16 @@ def costume(p, b):
     mid = lerp(*sh, 0.35)
     p.box("patch", (mid[0] + b.r(0.054), mid[1], mid[2]), (0.008, 0.07 * k, 0.06 * k), PATCH, "upper_arm.L", paint=patch)
     legs(p, b, c, shin=BOOTS, shoe_h=0.13, paint=lit, shoe_paint=boots)
+
+    # Handcuffs, out of the lead hand for Cuff 'Em: one cuff round his
+    # fingers, a short chain, the open one swinging out in front.
+    wr, a, w, L, held_at = grip(b, "L")
+    c1, c2 = wr + a * (L + 0.02), wr + a * (L + 0.17)
+    ring(p, "cuff_near", tuple(c1), tuple(a), tuple(w), 0.042, 0.008, METAL, "hand.L", paint=lit)
+    ring(p, "cuff_far", tuple(c2), tuple(a), tuple(w), 0.042, 0.008, METAL, "hand.L", paint=lit)
+    for i, t in enumerate((0.072, 0.098)):
+        p.blob(f"cuff_link{i}", tuple(wr + a * (L + t)), (0.011, 0.011, 0.011), METAL, "hand.L", mat=1, paint=lit)
+    p.held("cuffs", held_at, "cuff_near", "cuff_far", "cuff_link0", "cuff_link1")
     for s in ("L", "R"):
         knee, ankle = b.j[f"shin.{s}"]
         # The boots' tops, a rim over the trousers.
@@ -177,6 +187,9 @@ OVERRIDES = {
     "Key Ring": {"limb": "hand.R", "prop": True},
     "Night Shift": {"limb": "hand.L"},
     "td": {"limb": "hand.R"},
+    "FP FP FK": {"held": {"key": "cuffs", "limb": "hand.L", "reach": 0.0, "show": (3, 28)}},
+    # Armoured through 1–14: dug in behind the forearms, then the heavy kick.
+    "s.BK": {"style": "braced"},
 }
 
 

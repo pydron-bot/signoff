@@ -17,18 +17,14 @@ export interface Pose {
 }
 
 /** State clips that loop. */
-export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch_idle']);
+export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch_idle', 'dazed']);
 /**
  * Clips asked of the art that may not be in a GLB yet, and what stands in
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
 export const STAND_INS: Readonly<Record<string, string>> = {
-  dazed: 'hit_high',
-  // New moves (step 13), as fighter:clip.
-  'dale:b.FK': 's.FK',
-  'rox:f.BP': 's.BP',
-  'hollis:FP FP FK': 'Clocking In',
-  'mumbles:b.FP': 's.FP',
+  // None outstanding: every clip asked for is in the GLBs. Add new ones as
+  // `clip` or `fighter:clip` (a new move) until the art catches up.
 };
 
 /** The clip to show for a fighter's clip that isn't in the GLB yet, if there is one. */

@@ -65,6 +65,39 @@ class Parts:
         self.materials = materials
         self.objects = []
         self.meta = []
+        self.hidden = []  # (shape key, grip, part names): held props, see held()
+
+    def held(self, key, grip, *names):
+        """Parts that only show while shape key `key` is up (a prop taken out
+        for one move): built and painted full size, then collapse() shrinks
+        them to `grip` (fighter space, inside the fist) in every other key."""
+        for m in self.meta:
+            if m["name"] in names:
+                m["shapes"] = {**m["shapes"], key: lambda q: q}
+        self.hidden.append((key, grip, set(names)))
+
+    def collapse(self, obj):
+        """After painting: the held parts' vertices go to their grip in the
+        basis and every key but their own, so only that key shows them."""
+        import numpy as np
+
+        if not self.hidden:
+            return
+        me = obj.data
+        part = np.empty(len(me.polygons), dtype=np.int32)
+        me.attributes["part"].data.foreach_get("value", part)
+        vpart = np.full(len(me.vertices), -1, dtype=np.int32)
+        for p in me.polygons:
+            vpart[list(p.vertices)] = part[p.index]
+        for key, grip, names in self.hidden:
+            me.shape_keys.key_blocks[key].value = 0.0  # new keys start at 1
+            ids = {i for i, m in enumerate(self.meta) if m["name"] in names}
+            g = fighter(*grip)
+            for vi in np.nonzero(np.isin(vpart, list(ids)))[0].tolist():
+                me.vertices[vi].co = g
+                for kb in me.shape_keys.key_blocks:
+                    if kb.name != key:
+                        kb.data[vi].co = g
 
     def _add(self, name, bm, colour, bone, mat=0, face_colours=None, weights=None, paint=None, shapes=None, recalc=True):
         """A part from a bmesh. One colour and one bone by default; or a

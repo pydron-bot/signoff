@@ -40,6 +40,7 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   getup: { frames: 20 },
   thrown: { frames: 24 },
   ko: { frames: 90 },
+  dazed: { frames: 60, loop: true },
   win: { frames: 120 },
   intro: { frames: 90 },
   win_2: { frames: 120 },

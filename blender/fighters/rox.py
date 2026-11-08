@@ -185,6 +185,8 @@ OVERRIDES = {
     "Star Jump": {"style": "hop", "limb": "hand.L"},
     "Grapevine": {"style": "grapevine", "limb": "foot.R"},
     "td": {"limb": "hand.R"},
+    # Two kicks, one off each leg.
+    "s.BK": {"alt": ["foot.R", "foot.L"]},
 }
 
 
