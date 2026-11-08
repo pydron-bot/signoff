@@ -43,10 +43,20 @@ function boxesTouch(ax: Fx, ay: Fx, adir: number, ab: Box, bx: Fx, by: Fx, bdir:
   return a0 < b0 + bb.w && b0 < a0 + ab.w && ay + ab.y < by + bb.y + bb.h && by + bb.y < ay + ab.y + ab.h;
 }
 
+/**
+ * The body's hurtbox for the state it's in. Thrown up or knocked down, the
+ * body is falling back, so the box is long and low (it lies behind them).
+ * On the floor it's the same box on the ground, though nothing can hit it.
+ */
+export function hurtBox(f: FighterState): Box {
+  const hurt = fighterData(f.fighter).hurt;
+  if (f.mode === 'launched' || f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup') return hurt.juggle;
+  return airborne(f) ? hurt.air : f.crouching ? hurt.crouch : hurt.stand;
+}
+
 /** Does a box at (x, y) facing dir touch any of this fighter's hurtboxes? */
 export function touchesFighter(x: Fx, y: Fx, dir: number, b: Box, d: FighterState): boolean {
-  const hurt = fighterData(d.fighter).hurt;
-  const base = airborne(d) ? hurt.air : d.crouching ? hurt.crouch : hurt.stand;
+  const base = hurtBox(d);
   if (boxesTouch(x, y, dir, b, d.x, d.y, d.facing, base)) return true;
   if (d.mode === 'move') {
     for (const h of moveOf(d).hurt) if (inWindow(d.moveFrame, h.frames) && boxesTouch(x, y, dir, b, d.x, d.y, d.facing, h.box)) return true;

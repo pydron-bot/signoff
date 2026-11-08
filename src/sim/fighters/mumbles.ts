@@ -136,7 +136,7 @@ export const MUMBLES: FighterData = {
   jumpVx: fx(0.07),
   dash: { frames: 12, speed: fx(0.11) },
   backdash: { frames: 16, speed: fx(0.1) },
-  hurt: { stand: box(-0.25, 0.25, 0, 1.3), crouch: box(-0.25, 0.3, 0, 0.8), air: box(-0.25, 0.25, 0.15, 1.15) },
+  hurt: { stand: box(-0.25, 0.25, 0, 1.3), crouch: box(-0.25, 0.3, 0, 0.8), air: box(-0.25, 0.25, 0.15, 1.15), juggle: box(-0.6, 0.45, 0.15, 0.7) },
   pushW: fx(0.25),
   pushH: fx(1.2),
   pushHCrouch: fx(0.8),

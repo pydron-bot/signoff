@@ -147,8 +147,16 @@ the simulation):
 - **No links.** The best a ground normal gives on hit is +5 (jabs), and the
   fastest normal starts on frame 6, so nothing links on the ground. Jump-ins
   are +7 to +9 on hit and link into a jab.
-- **Juggles.** Launchers (every `c.BP`, plus some string enders) open a
-  juggle: up to 4 hits, each popping them a little; a knockdown ends it.
+- **Juggles barely exist yet.** Launchers (every `c.BP`, plus some string
+  enders) open a juggle of up to 4 hits, each popping them a little; a
+  knockdown ends it. But measured after `c.BP`, no normal follows up for
+  anyone: the launcher's recovery outlasts the airtime. The only juggles
+  are specials cancelled straight out of the launcher (Dale: Heat Lightning,
+  Cold Front, Isobar Lasso; Rox: Star Jump, Leg Warmer Lariat; Hollis:
+  Night Shift, Flashlight), and Mumbles has none.
+- **The juggle hurtbox.** A launched or knocked-down body has a long, low
+  box lying behind them (`hurt.juggle`), not the upright air box, so hits
+  land where the falling body is.
 - **Scaling and counter hits.** Each further hit in a combo does 10% less,
   down to 30%. A counter hit adds 4 frames of hitstun and 4 of hitstop.
 
@@ -165,6 +173,9 @@ the simulation):
 4. **Hollis's grab:** a string ending in a grab, or a move that leaves a
    1–2 frame gap built for a grab after it.
 5. **Hollis's Clock Out gap:** intended or not?
-6. **A move list in the game.** Players can't see strings, specials, frame
+6. **Juggles:** shorten launcher recovery (or pop them higher) so at least
+   one normal juggles for each fighter, and decide whether juggle routes
+   should differ by style (Rox long ones, Hollis short heavy ones).
+7. **A move list in the game.** Players can't see strings, specials, frame
    data or finisher inputs anywhere in the game. Now that finishers exist,
    this matters most: a pause-menu page built from the fighter data.

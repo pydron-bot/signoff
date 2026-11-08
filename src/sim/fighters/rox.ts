@@ -185,7 +185,7 @@ export const ROX: FighterData = {
   jumpVx: fx(0.065),
   dash: { frames: 14, speed: fx(0.1) },
   backdash: { frames: 18, speed: fx(0.08) },
-  hurt: { stand: box(-0.3, 0.3, 0, 1.75), crouch: box(-0.3, 0.35, 0, 1.05), air: box(-0.3, 0.3, 0.2, 1.55) },
+  hurt: { stand: box(-0.3, 0.3, 0, 1.75), crouch: box(-0.3, 0.35, 0, 1.05), air: box(-0.3, 0.3, 0.2, 1.55), juggle: box(-0.8, 0.55, 0.2, 0.85) },
   pushW: fx(0.3),
   pushH: fx(1.6),
   pushHCrouch: fx(1.0),

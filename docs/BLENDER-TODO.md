@@ -352,6 +352,27 @@ stand-by card. Two things would make them land harder:
 - [ ] **`dazed`** (60, loop) for every fighter: the loser on their feet after the deciding round, swaying, guard down, head lolling, waiting to be finished. Until it exists the game holds `hit_high`.
 - [ ] Later: a bespoke clip for each Sign-Off's last blow (the one the picture cuts away on), and a `rerun_wake` for the Rerun card (the loser waking on a sofa). Not needed yet.
 
+### 12. `launched` lies in its box (Nov 8, game side)
+
+A body thrown up or knocked down now has its own hurtbox, `hurt.juggle` in
+`blender/data/fighters.json`: long and low, lying mostly behind the fighter
+(they fall backwards), raised a little off their feet. It's used through
+`launched` (and, flat on the floor, `down`, `ko` and `getup`, though nothing
+can hit those). Today `launched` stays fairly upright and its `root` drifts,
+so hits land on empty air above the body and miss the body itself. Juggles
+depend on this matching.
+
+| Fighter | `juggle` box: x (behind … in front), y (above the feet), metres |
+| --- | --- |
+| Dale | −0.80 … 0.60, 0.20 … 0.90 |
+| Rox | −0.80 … 0.55, 0.20 … 0.85 |
+| Hollis | −0.85 … 0.65, 0.20 … 1.00 |
+| Mumbles | −0.60 … 0.45, 0.15 … 0.70 |
+
+- [ ] Re-pose `launched` flat on the back, head behind (−x), body along the box, by about frame 6 (a quick tip-back from the hit pose), held from there with a slight spin; no `root` translation. Rotating `root` is fine as long as the mesh stays in the box.
+- [ ] Add it to the build's checks, like the hurtbox-height check: from frame 6 on, the mesh's extent along x and y must sit within the `juggle` box (a few cm of slack), and the box should be mostly filled (body length at least 80% of the box width).
+- [ ] The first frames of `ko` (the fall) should pass through the same flat pose, since a K.O.'d body falls through `launched` space.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.

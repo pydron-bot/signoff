@@ -147,7 +147,7 @@ export const DALE: FighterData = {
   jumpVx: fx(0.055),
   dash: { frames: 16, speed: fx(0.08) },
   backdash: { frames: 20, speed: fx(0.075) },
-  hurt: { stand: box(-0.3, 0.3, 0, 1.8), crouch: box(-0.3, 0.35, 0, 1.1), air: box(-0.3, 0.3, 0.2, 1.6) },
+  hurt: { stand: box(-0.3, 0.3, 0, 1.8), crouch: box(-0.3, 0.35, 0, 1.1), air: box(-0.3, 0.3, 0.2, 1.6), juggle: box(-0.8, 0.6, 0.2, 0.9) },
   pushW: fx(0.3),
   pushH: fx(1.6),
   pushHCrouch: fx(1.0),

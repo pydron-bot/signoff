@@ -40,7 +40,7 @@ export function blenderData(): string {
     out[f.id] = {
       name: f.name,
       style: f.style,
-      hurt: { stand: box(f.hurt.stand), crouch: box(f.hurt.crouch), air: box(f.hurt.air) },
+      hurt: { stand: box(f.hurt.stand), crouch: box(f.hurt.crouch), air: box(f.hurt.air), juggle: box(f.hurt.juggle) },
       // Metres per second, as the walk clips must match foot speed.
       walk: { fwd: Math.round(toFloat(f.walkFwd) * 60 * 100) / 100, back: Math.round(toFloat(f.walkBack) * 60 * 100) / 100 },
       // Dashes and Tape Skip: frames, and metres per frame, as their clips step at that speed.

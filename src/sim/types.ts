@@ -185,7 +185,8 @@ export interface FighterData {
   readonly jumpVx: Fx;
   readonly dash: { readonly frames: number; readonly speed: Fx };
   readonly backdash: { readonly frames: number; readonly speed: Fx };
-  readonly hurt: Readonly<Record<Stance, Box>>;
+  /** Hurtboxes standing, crouching and in the air; `juggle` is the long, low box for a body thrown up and falling back. */
+  readonly hurt: Readonly<Record<Stance, Box>> & { readonly juggle: Box };
   /** Pushbox half-width and heights standing and crouching. */
   readonly pushW: Fx;
   readonly pushH: Fx;

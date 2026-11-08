@@ -8,7 +8,8 @@
  * and never changes the match. About 16 draw calls, plus 3 to 7 a model.
  */
 import * as THREE from 'three';
-import { fighterData, moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
+import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
+import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
 import { FighterModel, loadFighterArt } from './fighterModel';
@@ -134,6 +135,9 @@ export class Arena {
   reduceMotion = false;
   showBoxes = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
+  private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
+  /** The hurtbox of a body nothing can hit right now. */
+  private readonly hurtOffMat = new THREE.LineBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.35 });
   private readonly wallMat = new THREE.MeshBasicMaterial({ color: 0x0d1a4a });
   private readonly stage: StageView;
   private readonly sparks: Sparks;
@@ -168,9 +172,8 @@ export class Arena {
       () => undefined,
     );
     const edges = new THREE.EdgesGeometry(this.unit);
-    const lm = new THREE.LineBasicMaterial({ color: 0x40ff80 });
     for (let i = 0; i < 2; i++) {
-      const l = new THREE.LineSegments(edges, lm);
+      const l = new THREE.LineSegments(edges, this.hurtMat);
       l.visible = false;
       this.hurtOverlays.push(l);
       this.scene.add(l);
@@ -367,7 +370,6 @@ export class Arena {
   private drawFighter(m: MatchState, i: number): void {
     const f = m.fighters[i];
     const v = this.fighters[i];
-    const d = fighterData(f.fighter);
     const x = toFloat(f.x);
     const y = toFloat(f.y);
     const model = this.models ? v.model : null;
@@ -378,9 +380,8 @@ export class Arena {
     v.group.visible = shown;
     v.body.visible = !model;
     if (v.model) v.model.root.visible = shown && model !== null;
-    const air = f.y > 0 || f.mode === 'air' || f.mode === 'launched';
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
-    const hurt = air ? d.hurt.air : f.crouching ? d.hurt.crouch : d.hurt.stand;
+    const hurt = hurtBox(f);
     if (model) {
       v.head.visible = false;
       model.root.position.set(x, y, 0);
@@ -401,7 +402,6 @@ export class Arena {
       v.head.scale.set(0.16, 0.12, 0.3);
       v.head.position.set(x + f.facing * (toFloat(hurt.x + hurt.w) + 0.06), y + top - 0.25, 0);
     }
-    v.body.rotation.z = f.mode === 'launched' ? f.facing * 0.5 : 0;
     // The limb: the current move's active hitbox, else its hurtbox reach.
     // With a model it's only drawn as part of the hitbox view.
     v.limb.visible = false;
@@ -432,9 +432,13 @@ export class Arena {
     else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') glow = 0x501070;
     v.bodyMat.emissive.setHex(glow);
     model?.setTint(v.flash > 0 ? FLASH : glow);
+    // The body's box always shows with the hit boxes; faded when nothing can hit it (on the floor, a knockdown, the juggle limit).
     const o = this.hurtOverlays[i];
-    o.visible = this.showBoxes && !lying && shown;
-    if (o.visible) placeBox(o, hurt, x, y, f.facing, 0.55);
+    o.visible = this.showBoxes && shown;
+    if (o.visible) {
+      o.material = hittable(f) ? this.hurtMat : this.hurtOffMat;
+      placeBox(o, hurt, x, y, f.facing, 0.55);
+    }
   }
 }
 
