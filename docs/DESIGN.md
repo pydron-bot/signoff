@@ -136,7 +136,8 @@ meter. Every number below is a starting value to tune.
   - **Relaunch (1 bar).** A boosted special whose first hit lands on a
     juggled opponent pops them straight back up just in front of the
     attacker, for 70 extra damage (not scaled), and the special stops there
-    so the attacker can follow up. Twice a combo.
+    so the attacker can follow up. As many times as there are bars to
+    spend: each relaunch falls faster than the last, so it still ends.
   - **Bounces.** A ground bounce slams them into the floor; a wall bounce,
     only within 1.6 m of the wall, throws them into it. Either way they come
     back up into a juggle, each once a combo; otherwise the move knocks
@@ -145,6 +146,9 @@ meter. Every number below is a starting value to tune.
     extra hits are worth having without letting combos run away.
   - **First hit.** The first hit of each round (strike, throw or super) is
     worth a bar of Signal.
+  - **Breaking out.** The defender's answer to a long combo is Cut Away,
+    which takes a full meter and spends all of it: the attacker has to
+    weigh spending bars to extend against the bars the defender is holding.
 - Each fighter's normals do their own job: Dale has the longest pokes and a
   step-back kick; Rox is short-ranged but plus on block, with a lunge and
   double kicks; Hollis has an armoured kick, the only link in the game
@@ -165,7 +169,7 @@ worth a bar.
 | --- | --- | --- |
 | Boosted special | 1 bar | A stronger version of a special: more hits, armour or a new follow-up; on a juggled opponent, a relaunch |
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
-| Cut Away | 2 bars + 5% health | Combo breaker: knocks the opponent away mid-combo; once per round |
+| Cut Away | All 3 bars (a full meter) | Combo breaker: knocks the opponent away mid-combo; once per round |
 
 **Technical Difficulties.** Once per match, below 30% health, a fighter can
 launch their comeback super. If it connects, the screen tears, the broadcast

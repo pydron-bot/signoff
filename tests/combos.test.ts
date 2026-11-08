@@ -166,6 +166,22 @@ describe('MK-style juggles', () => {
     expect(hits(ev).map((e) => `${e.move}#${e.combo}`)).toEqual(['c.BP#1', 's.FP#2', 'Count of Eight+#3', 'BP BP#4']);
   });
 
+  it('relaunches as often as there are bars: three in one combo', () => {
+    const m = ready('rox', 'rox');
+    place(m, -0.4, 0.4);
+    m.fighters[0].meter = 3 * BAR;
+    const ev = route(m, [
+      ['now', DOWN | BP], ['c.BP@11', FP], ['s.FP@8', FP], ['FP FP@9', FK], ['FP FP FK@11', DOWN | SPECIAL], ['Count of Eight@2', SPECIAL],
+      ['free', BP], ['s.BP@12', BP], ['BP BP@14', DOWN | SPECIAL], ['Count of Eight@2', SPECIAL],
+      ['free', BP], ['s.BP@12', DOWN | SPECIAL], ['Count of Eight@2', SPECIAL],
+      ['free', BP], ['s.BP@12', BP],
+    ]);
+    expect(ev.filter((e) => e.type === 'relaunch' && e.how === 'special')).toHaveLength(3);
+    const h = hits(ev);
+    h.forEach((e, k) => expect(e.combo, `${e.move} is hit ${k + 1}`).toBe(k + 1));
+    expect(h.length).toBeGreaterThanOrEqual(10);
+  });
+
   it('an unboosted special on a juggled body is just another juggle hit', () => {
     const m = ready('rox', 'dale');
     place(m, -0.4, 0.4);

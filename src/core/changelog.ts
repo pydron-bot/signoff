@@ -19,7 +19,8 @@ export const CHANGELOG: readonly Release[] = [
     title: 'Extended coverage',
     notes: [
       'Longer combos: the four-hit juggle limit is gone. Each juggle hit pops them a little lower and they fall a little faster, so juggles wind down on their own, and strings and specials keep working on a falling opponent.',
-      'Relaunch: a boosted special (1 bar) that hits a juggled opponent pops them straight back up in front of you, with extra damage, and ends the special so you can follow up. Twice a combo.',
+      'Relaunch: a boosted special (1 bar) that hits a juggled opponent pops them straight back up in front of you, with extra damage, and ends the special so you can follow up. Spend as many bars as you have: each relaunch falls a little faster, so even a three-bar combo ends.',
+      'Cut Away, the combo breaker, now takes a full meter and spends all of it (no longer 2 bars and 5% health). Still once a round. Holding three bars is the answer to a long combo.',
       "Bounces: some moves slam the opponent into the floor or (near it) the wall, and they come back up into a juggle, once each a combo. Rox's Leg Warmer Lariat ground-bounces and Feel the Burn wall-bounces.",
       'First hit: the first hit of each round is worth a bar of Signal.',
       'The combo counter shows the damage too (8 HITS 29%).',

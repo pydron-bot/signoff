@@ -14,7 +14,6 @@ import {
   JUGGLE_POP_MIN,
   KNOCK_VY,
   MAX_JUGGLE,
-  MAX_RELAUNCH,
   RELAUNCH_DAMAGE,
   RELAUNCH_PULL,
   RELAUNCH_VY,
@@ -379,7 +378,7 @@ export function applyHit(
   const hitStop = stop + (counter ? COUNTER_HITSTOP : 0);
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
-  const relaunching = relaunch && wasAir && d.relaunches < MAX_RELAUNCH;
+  const relaunching = relaunch && wasAir;
   const dmg = Math.max(1, Math.floor((e.damage * scale) / 100)) + (relaunching ? RELAUNCH_DAMAGE : 0);
   d.combo++;
   const juggle = wasAir ? d.juggle + 1 : 0;
@@ -390,7 +389,6 @@ export function applyHit(
     launch(d, dir, KNOCK_VY, false);
   } else if (relaunching) {
     // A boosted special (1 bar) pops a juggled body back up to full height.
-    d.relaunches++;
     launch(d, dir, RELAUNCH_VY, true);
     d.vx = 0;
     if (!projectile) pull(m, a, d, RELAUNCH_PULL);

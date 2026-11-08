@@ -69,8 +69,7 @@ export interface FighterState {
   combo: number;
   juggle: number;
   juggleable: boolean;
-  /** Spent this combo: relaunches, and the one ground and wall bounce. */
-  relaunches: number;
+  /** Spent this combo: the one ground and wall bounce. */
   groundBounced: boolean;
   wallBounced: boolean;
   /** A bounce on its way: off the floor when they land, off the wall when they reach it. */
@@ -184,7 +183,6 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     combo: 0,
     juggle: 0,
     juggleable: false,
-    relaunches: 0,
     groundBounced: false,
     wallBounced: false,
     bounce: 'none',

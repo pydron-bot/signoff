@@ -248,21 +248,30 @@ describe('signal meter', () => {
     expect(m.fighters[0].mode).toBe('dash');
   });
 
-  it('Cut Away breaks a combo for 2 bars and 5% health, once a round', () => {
+  it('Cut Away breaks a combo for a full meter (all of it), once a round', () => {
+    const breaker = (mm: MatchState) => (mm.fighters[1].mode === 'hitstun' ? METER : 0);
     const m = ready();
     place(m, -0.3, 0.3);
     const rox = m.fighters[1];
+    // Two bars aren't enough.
+    rox.meter = 2 * BAR;
+    expect(count(run(m, 30, presses({ 0: FP }), breaker), 'cutAway')).toBe(0);
+    run(m, 60);
+    place(m, -0.3, 0.3);
     rox.meter = 3 * BAR;
-    const ev = run(m, 30, presses({ 0: FP }), (mm) => (mm.fighters[1].mode === 'hitstun' ? METER : 0));
+    const hp = rox.health;
+    const ev = run(m, 30, presses({ 0: FP }), breaker);
     expect(count(ev, 'cutAway')).toBe(1);
-    expect(rox.meter).toBe(BAR);
+    expect(rox.meter).toBe(0);
     expect(rox.cutAwayUsed).toBe(true);
-    expect(rox.health).toBe(ROX.health - 30 - 50);
+    // No health cost: just the jab.
+    expect(rox.health).toBe(hp - 30);
     expect(['launched', 'down']).toContain(m.fighters[0].mode);
     // Once a round.
     run(m, 80);
     place(m, -0.3, 0.3);
-    const again = run(m, 30, presses({ 0: FP }), (mm) => (mm.fighters[1].mode === 'hitstun' ? METER : 0));
+    rox.meter = 3 * BAR;
+    const again = run(m, 30, presses({ 0: FP }), breaker);
     expect(count(again, 'cutAway')).toBe(0);
   });
 });

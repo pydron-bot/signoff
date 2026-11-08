@@ -8,9 +8,7 @@ import {
   AIR_ATTACK_LAND_FRAMES,
   BAR,
   BOOST_WINDOW,
-  CUT_AWAY_BARS,
   CUT_AWAY_FRAMES,
-  CUT_AWAY_HEALTH_PCT,
   DOWN_FRAMES,
   FIRST_HIT_METER,
   GETUP_FRAMES,
@@ -71,11 +69,10 @@ export function toIdle(f: FighterState): void {
   endCombo(f);
 }
 
-/** The combo on this fighter is over: scaling, juggles, relaunches and bounces start fresh. */
+/** The combo on this fighter is over: scaling, juggles and bounces start fresh. */
 export function endCombo(f: FighterState): void {
   f.combo = 0;
   f.juggle = 0;
-  f.relaunches = 0;
   f.groundBounced = false;
   f.wallBounced = false;
   f.bounce = 'none';
@@ -436,17 +433,14 @@ function airControl(f: FighterState): void {
   startMove(f, fighterData(f.fighter).normals.j[atk]);
 }
 
-/** Cut Away: 2 bars and 5% health to knock the attacker away mid-combo, once a round. */
+/** Cut Away, the combo breaker: a full meter, all of it, to knock the attacker away mid-combo, once a round. */
 function cutAway(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
-  if (f.ko || f.cutAwayUsed || f.meter < CUT_AWAY_BARS * BAR) return;
+  if (f.ko || f.cutAwayUsed || f.meter < METER_MAX) return;
   if (f.mode === 'launched' && !f.juggleable && f.bounce === 'none') return;
   if (!pressed(f.input, METER)) return;
-  const cost = Math.floor((f.maxHealth * CUT_AWAY_HEALTH_PCT) / 100);
-  if (f.health <= cost) return;
   consume(f.input, METER);
-  f.meter -= CUT_AWAY_BARS * BAR;
-  f.health -= cost;
+  f.meter = 0;
   f.cutAwayUsed = true;
   f.mode = 'recover';
   f.timer = CUT_AWAY_FRAMES - 1;

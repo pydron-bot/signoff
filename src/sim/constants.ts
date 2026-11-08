@@ -42,13 +42,12 @@ export const JUGGLE_DECAY = 7;
 export const JUGGLE_POP_MIN = 30;
 /** ...and it falls this % faster: juggles get lower and quicker until they drop. */
 export const JUGGLE_GRAVITY = 6;
-/** A boosted special that hits a juggled body pops it back up (no decay), this many times a combo. */
+/** A boosted special that hits a juggled body pops it back up (no decay), as often as there's meter for; the faster fall still ends it. */
 export const RELAUNCH_VY = fx(0.15);
 /** The bar is worth it: a relaunch adds this much damage, unscaled. */
 export const RELAUNCH_DAMAGE = 70;
 /** Relaunched, the body goes straight up this far in front of the attacker, so a follow-up reaches. */
 export const RELAUNCH_PULL = fx(0.7);
-export const MAX_RELAUNCH = 2;
 /** Ground bounce: slammed down, the body comes back up off the floor once a combo. */
 export const SLAM_VY = fx(-0.12);
 export const GROUND_BOUNCE_VY = fx(0.17);
@@ -83,8 +82,6 @@ export const METER_MAX = 3 * BAR;
 export const BOOST_WINDOW = 8;
 export const TAPE_SKIP_FRAMES = 10;
 export const TAPE_SKIP_SPEED = fx(0.11);
-export const CUT_AWAY_BARS = 2;
-export const CUT_AWAY_HEALTH_PCT = 5;
 export const CUT_AWAY_FRAMES = 20;
 
 // Technical Difficulties

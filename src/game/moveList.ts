@@ -4,7 +4,7 @@
  * normals, the system moves and the finishers. Directions are written for a
  * fighter facing right (→ is forward). No DOM here.
  */
-import { BOOST_WINDOW, CUT_AWAY_BARS, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
+import { BOOST_WINDOW, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
 export interface MoveRow {
@@ -115,9 +115,9 @@ export function moveList(fighter: string): MoveSection[] {
 
   const system: MoveRow[] = [
     { name: 'Throw', input: 'THROW (← THROW: throw backward)', notes: 'break it with THROW', frames: '' },
-    { name: 'Boost', input: 'SP again', notes: `within ${BOOST_WINDOW} frames of a special: 1 bar; on a juggled opponent it relaunches them (twice a combo)`, frames: '' },
+    { name: 'Boost', input: 'SP again', notes: `within ${BOOST_WINDOW} frames of a special: 1 bar; on a juggled opponent it relaunches them (as often as you have bars)`, frames: '' },
     { name: 'Tape Skip', input: 'METER during any move', notes: 'cancels it into a dash: 1 bar', frames: '' },
-    { name: 'Cut Away', input: 'METER while being hit', notes: `breaks the combo: ${CUT_AWAY_BARS} bars and a little health, once a round`, frames: '' },
+    { name: 'Cut Away', input: 'METER while being hit', notes: 'breaks the combo: needs a full meter and spends all of it, once a round', frames: '' },
     { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },
   ];
 
