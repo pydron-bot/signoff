@@ -138,6 +138,12 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     expect(r.moves).toEqual(seq);
     expect(r.hits).toBe(0);
     expect(r.blocks).toBe(seq.reduce((n, id) => n + f.moves[id].hits.length, 0));
+    // A string ending in a grab: blocked, the grab whiffs and is punished.
+    if (f.moves[seq[seq.length - 1]].throwData) {
+      expect(s.safe).toBe(false);
+      expect(isSafe(r.advantage!), `${s.name} is ${r.advantage} on block`).toBe(false);
+      return;
+    }
     const listed = frameData(f.moves[seq[seq.length - 1]]).onBlock!;
     expect(r.advantage).toBe(listed);
     expect(isSafe(r.advantage!), `${s.name} is ${r.advantage} on block`).toBe(s.safe);

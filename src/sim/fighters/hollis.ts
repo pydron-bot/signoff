@@ -11,9 +11,11 @@ import { box, interactMove, move, normal, rerun, Script, strike, table, technica
 const moves = table(
   // Standing
   normal('s.FP', { name: 'Badge Flash', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.0], at: [1.2, 1.55], damage: 40, hitstun: 17, blockstun: 13, chain: { FP: 'FP FP', BK: 'FP BK' } }),
-  normal('s.BP', { name: 'Nightstick', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 75, hitstun: 21, blockstun: 15, chain: { FP: 'BP FP' } }),
+  // Heavy enough to stagger: the one normal in the game that links (into the jab).
+  normal('s.BP', { name: 'Nightstick', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 75, hitstun: 28, blockstun: 15, push: 0.02, chain: { FP: 'BP FP' } }),
   normal('s.FK', { name: 'Boot', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.5, 0.9], damage: 60, hitstun: 19, blockstun: 14, chain: { FK: 'FK FK' } }),
-  normal('s.BK', { name: 'Door Kick', startup: 15, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0.8, 1.3], damage: 95, hitstun: 23, blockstun: 17, push: 0.08 }),
+  // Walks through a poke: one hit of armour on the way.
+  normal('s.BK', { name: 'Door Kick', startup: 15, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0.8, 1.3], damage: 95, hitstun: 23, blockstun: 17, push: 0.08, armor: [1, 14] }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 8, active: 2, recovery: 10, reach: [0.2, 0.95], at: [0.7, 1.0], damage: 35, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rising Clothesline', stance: 'crouch', startup: 11, active: 4, recovery: 22, reach: [0.1, 0.85], at: [1.0, 2.0], damage: 85, hitstun: 0, blockstun: 12, launch: 0.17 }),
@@ -27,13 +29,20 @@ const moves = table(
   normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 7, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Body Drop', kind: 'air', startup: 10, active: 6, recovery: 8, reach: [-0.3, 1.0], at: [0, 0.5], height: 'overhead', damage: 80, hitstun: 20, blockstun: 13 }),
   // String steps
-  normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP' } }),
+  normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP', FK: 'FP FP FK' } }),
+  // The string's grab: catches them still reeling from the pat down (never if they blocked it).
+  move('FP FP FK', {
+    name: "Cuff 'Em",
+    kind: 'normal',
+    total: 34,
+    throwData: { frames: [8, 9], range: fx(1.2), damage: 110, untechable: true, reeling: true },
+  }),
   normal('FP FP BP', { name: 'Lights Out', startup: 14, active: 3, recovery: 22, reach: [0.2, 1.3], at: [0.9, 1.4], damage: 90, hitstun: 0, blockstun: 18, push: 0.08, knockdown: true }),
   normal('FP BK', { name: 'Rounds', startup: 13, active: 3, recovery: 18, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 21, blockstun: 16 }),
   normal('BP FP', { name: 'Night Watch', startup: 9, active: 2, recovery: 14, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'BP FP BK' } }),
   normal('BP FP BK', { name: 'Lockup', startup: 16, active: 3, recovery: 22, reach: [0.2, 1.4], at: [0, 0.35], height: 'low', damage: 80, hitstun: 0, blockstun: 14, knockdown: true }),
   normal('FK FK', { name: 'Patrol', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 60, hitstun: 19, blockstun: 14, chain: { BP: 'FK FK BP' } }),
-  normal('FK FK BP', { name: 'Clock Out', startup: 20, active: 2, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.7], height: 'overhead', damage: 75, hitstun: 21, blockstun: 15 }),
+  normal('FK FK BP', { name: 'Clock Out', startup: 17, active: 2, recovery: 19, reach: [0.2, 1.2], at: [1.0, 1.7], height: 'overhead', damage: 75, hitstun: 21, blockstun: 15 }),
   normal('c.FP FK', { name: 'Sweep the Floor', stance: 'crouch', startup: 10, active: 2, recovery: 22, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 50, hitstun: 16, blockstun: 10 }),
   // Specials
   move('Clocking In', {
@@ -168,6 +177,7 @@ export const HOLLIS: FighterData = {
   strings: [
     { name: 'Pat Down', path: ['s.FP', 'FP'], safe: true },
     { name: 'Lights Out', path: ['s.FP', 'FP', 'BP'], safe: false },
+    { name: "Cuff 'Em", path: ['s.FP', 'FP', 'FK'], safe: false },
     { name: 'Rounds', path: ['s.FP', 'BK'], safe: true },
     { name: 'Night Watch', path: ['s.BP', 'FP'], safe: true },
     { name: 'Lockup', path: ['s.BP', 'FP', 'BK'], safe: false },

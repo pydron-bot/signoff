@@ -84,9 +84,11 @@ export function hittable(f: FighterState): boolean {
   }
 }
 
-function throwable(f: FighterState): boolean {
+function throwable(f: FighterState, reeling = false): boolean {
   if (f.ko || f.y > 0) return false;
   switch (f.mode) {
+    case 'hitstun':
+      return reeling;
     case 'idle':
     case 'walk':
     case 'crouch':
@@ -132,7 +134,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     if (frozen[i] || a.mode !== 'move') continue;
     const mv = moveOf(a);
     if (mv.throwData) {
-      if (inWindow(a.moveFrame, mv.throwData.frames) && throwable(d) && Math.abs(d.x - a.x) <= mv.throwData.range) pendingThrow[i] = true;
+      if (inWindow(a.moveFrame, mv.throwData.frames) && throwable(d, mv.throwData.reeling) && Math.abs(d.x - a.x) <= mv.throwData.range) pendingThrow[i] = true;
       continue;
     }
     for (let k = 0; k < mv.hits.length; k++) {
@@ -211,8 +213,8 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
   }
 
   // Throws lose to strikes: a thrower who was just hit is no longer throwing.
-  const t0 = pendingThrow[0] && stillThrowing(fs[0]) && throwable(fs[1]);
-  const t1 = pendingThrow[1] && stillThrowing(fs[1]) && throwable(fs[0]);
+  const t0 = pendingThrow[0] && stillThrowing(fs[0]) && throwable(fs[1], moveOf(fs[0]).throwData!.reeling);
+  const t1 = pendingThrow[1] && stillThrowing(fs[1]) && throwable(fs[0], moveOf(fs[1]).throwData!.reeling);
   if (t0 && t1) tech(m, ev, 0);
   else if (t0) grab(m, 0, ev);
   else if (t1) grab(m, 1, ev);

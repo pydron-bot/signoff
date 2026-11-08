@@ -76,6 +76,8 @@ export interface ThrowData {
   readonly damage: number;
   /** A command grab: Throw doesn't break it. */
   readonly untechable?: boolean;
+  /** A string's grab: it also catches an opponent still reeling from the hit before (never one who blocked). */
+  readonly reeling?: boolean;
 }
 
 export interface MoveData {

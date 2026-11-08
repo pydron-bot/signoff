@@ -16,6 +16,7 @@ import {
   GRAVITY,
   JUMP_LAND_FRAMES,
   KNOCK_VX,
+  LAUNCH_VX,
   KNOCK_VY,
   PREJUMP_FRAMES,
   SLIDE_FRICTION,
@@ -35,7 +36,7 @@ import { ATTACK_BITS, BLOCK, DOWN, INTERACT, METER, SPECIAL, THROW, UP, backBit,
 import { kickProp, propInReach } from './stage';
 import { segmentData, stageData } from './stages';
 import type { FighterState, MatchState } from './state';
-import type { MoveData } from './types';
+import type { Attack, MoveData } from './types';
 
 const BACK_THROW_OFFSET = fx(0.7);
 
@@ -82,7 +83,8 @@ export function launch(f: FighterState, dir: number, vy: Fx, juggleable: boolean
   f.mode = 'launched';
   f.move = '';
   f.vy = vy;
-  f.vx = dir * KNOCK_VX;
+  // A juggle keeps them close enough to follow up; a knockdown sends them away.
+  f.vx = dir * (juggleable ? LAUNCH_VX : KNOCK_VX);
   f.slide = 0;
   f.juggleable = juggleable;
   f.crouching = false;
@@ -246,7 +248,6 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   const d = fighterData(f.fighter);
   const inp = f.input;
   if (o.x !== f.x) f.facing = o.x > f.x ? 1 : -1;
-  const fwd = forwardBit(f.facing);
   const back = backBit(f.facing);
   const held = inp.held;
 
@@ -282,12 +283,18 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   const atk = bufferedAttack(inp);
   if (atk) {
     consume(inp, ATTACK_BITS[atk]);
-    const n = d.normals;
-    const id = held & DOWN ? n.c[atk] : ((held & fwd && n.f[atk]) || (held & back && n.b[atk]) || n.s[atk]);
-    startMove(f, id);
+    startMove(f, normalFor(f, atk));
     return;
   }
   footwork(m, i, true);
+}
+
+/** The normal an attack button starts, by the direction held. */
+function normalFor(f: FighterState, atk: Attack): string {
+  const n = fighterData(f.fighter).normals;
+  const held = f.input.held;
+  if (held & DOWN) return n.c[atk];
+  return (held & forwardBit(f.facing) && n.f[atk]) || (held & backBit(f.facing) && n.b[atk]) || n.s[atk];
 }
 
 /** Dashes, jumps, crouching and walking: what's left of control once nothing else was pressed. */
@@ -369,7 +376,8 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
     return;
   }
   if (inWindow(f.moveFrame, mv.cancel)) {
-    if (pressed(inp, SPECIAL, since)) {
+    // Specials cancel only out of a hit: confirm it first. Strings go on regardless.
+    if (f.contact === 'hit' && pressed(inp, SPECIAL, since)) {
       consume(inp, SPECIAL);
       startSpecial(f, i, ev);
       return;
@@ -379,6 +387,10 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
     if (atk && next) {
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, next);
+    } else if (atk && f.contact === 'hit' && mv.hits[mv.hits.length - 1]?.launch !== undefined) {
+      // A launcher that connects cancels into any normal, to follow them up into the air.
+      consume(inp, ATTACK_BITS[atk]);
+      startMove(f, normalFor(f, atk));
     }
   }
 }

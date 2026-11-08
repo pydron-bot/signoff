@@ -116,7 +116,19 @@ meter. Every number below is a starting value to tune.
   is faster, back is stronger.
 - Strings: fixed sequences (e.g. FP, FP, BK) with 8 to 12 per fighter. Each
   string has a defined height for every hit, so a blocked string can be
-  punished.
+  punished. A string carries on whether it hits, is blocked or whiffs, and
+  every string is a true combo on hit.
+- Cancels: a normal or string step that **hits** can be cancelled into any
+  special (not on block or whiff: confirm it first). A **launcher** that hits
+  can be cancelled into any normal, to follow them into the air (up to 4
+  juggle hits). Tape Skip (1 bar) cancels anything into a dash, which is how
+  strings join up.
+- Each fighter's normals do their own job: Dale has the longest pokes and a
+  step-back kick; Rox is short-ranged but plus on block, with a lunge and
+  double kicks; Hollis has an armoured kick, the only link in the game
+  (Nightstick into jab) and a string that ends in a grab (Cuff 'Em);
+  Mumbles ducks under high attacks, reels people in on a string, and ends
+  combos with his Hand Puppet.
 - Specials: 4 to 6 per fighter, entered as direction + Special (or classic
   motions on keyboard and gamepad, see Controls).
 

@@ -36,6 +36,8 @@ export const MAX_JUGGLE = 4;
 export const JUGGLE_POP = fx(0.1);
 export const KNOCK_VY = fx(0.12);
 export const KNOCK_VX = fx(0.04);
+/** Sideways drift of a juggled body: small, so a normal can reach it. */
+export const LAUNCH_VX = fx(0.012);
 export const DOWN_FRAMES = 30;
 export const GETUP_FRAMES = 20;
 

@@ -9,9 +9,11 @@ import { box, interactMove, move, normal, projectile, rerun, Script, strike, tab
 const moves = table(
   // Standing
   normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP' } }),
-  normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [1.1, 1.45], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
-  normal('s.FK', { name: 'Front Kick', startup: 9, active: 3, recovery: 15, reach: [0.2, 1.2], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
-  normal('s.BK', { name: 'Isotherm Kick', startup: 13, active: 3, recovery: 20, reach: [0.2, 1.3], at: [0.9, 1.3], damage: 80, hitstun: 22, blockstun: 16, push: 0.07 }),
+  // Angled up: his anti-air, and what follows a launch.
+  normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [1.0, 2.0], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
+  normal('s.FK', { name: 'Front Kick', startup: 11, active: 3, recovery: 13, reach: [0.2, 1.5], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
+  // The longest poke in the game: the umbrella, held out at arm's length.
+  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [1.0, 1.4], damage: 70, hitstun: 22, blockstun: 15, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.7, 0.95], damage: 25, hitstun: 15, blockstun: 11, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [1.0, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
@@ -19,6 +21,16 @@ const moves = table(
   normal('c.BK', { name: 'Ground Fog', stance: 'crouch', startup: 12, active: 3, recovery: 24, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normal
   normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [1.0, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
+  // Steps back as it kicks: makes room for the forecast.
+  move('b.FK', {
+    name: 'Step Back Kick',
+    kind: 'normal',
+    total: 26,
+    motion: [{ frames: [1, 8], vx: -0.05 }],
+    hits: [strike({ frames: [9, 10], reach: [0.2, 1.3], at: [0.5, 0.9], damage: 40, hitstun: 16, blockstun: 12 })],
+    hurt: [{ frames: [9, 18], box: box(0.2, 1.2, 0.5, 0.9) }],
+    cancel: [11, 17],
+  }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
   normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12 }),
@@ -156,7 +168,7 @@ export const DALE: FighterData = {
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
     f: { BP: 'f.BP' },
-    b: {},
+    b: { FK: 'b.FK' },
   },
   specials: { n: 'Heat Lightning', f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
   throwMove: 'throw',

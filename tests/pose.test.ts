@@ -4,7 +4,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Cpu } from '../src/ai/cpu';
-import { PoseTracker, STAND_INS, type Pose } from '../src/render/pose';
+import { PoseTracker, standIn, type Pose } from '../src/render/pose';
 import { FIGHTERS, INTRO_FRAMES, Input, createMatch, step, type MatchState, type SimEvent } from '../src/sim';
 import { place, ready } from './sim-helpers';
 
@@ -156,7 +156,7 @@ describe('poses', () => {
           expect(pose.frame).toBeGreaterThanOrEqual(1);
           used.add(pose.clip);
           const has = (c: string) => clips[i]!.has(c);
-          if (clips[i] && !has(pose.clip) && !(STAND_INS[pose.clip] && has(STAND_INS[pose.clip]))) missing.add(`${m.fighters[i].fighter}:${pose.clip}`);
+          if (clips[i] && !has(pose.clip) && !(standIn(m.fighters[i].fighter, pose.clip) && has(standIn(m.fighters[i].fighter, pose.clip)!))) missing.add(`${m.fighters[i].fighter}:${pose.clip}`);
         }
       }
       expect([...missing]).toEqual([]);

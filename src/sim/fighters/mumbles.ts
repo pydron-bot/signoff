@@ -16,8 +16,9 @@ const moves = table(
   // Standing
   normal('s.FP', { name: 'Wooden Jab', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.9], at: [0.8, 1.1], damage: 39, hitstun: 14, blockstun: 11, chain: { FP: 'FP FP' } }),
   normal('s.BP', { name: 'Head Bonk', startup: 9, active: 2, recovery: 14, reach: [0.15, 0.95], at: [0.9, 1.35], damage: 78, hitstun: 18, blockstun: 13, chain: { FK: 'BP FK' } }),
-  normal('s.FK', { name: 'Shin Kick', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.05], at: [0.2, 0.5], damage: 58, hitstun: 15, blockstun: 12, chain: { FK: 'FK FK' } }),
-  normal('s.BK', { name: 'Spin Kick', startup: 11, active: 3, recovery: 16, reach: [-0.5, 1.15], at: [0.4, 0.9], damage: 98, hitstun: 19, blockstun: 13 }),
+  // Ducks as he kicks: high attacks pass over.
+  normal('s.FK', { name: 'Shin Kick', stance: 'crouch', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.05], at: [0.2, 0.5], damage: 58, hitstun: 15, blockstun: 12, chain: { FK: 'FK FK' } }),
+  normal('s.BK', { name: 'Spin Kick', startup: 11, active: 3, recovery: 16, reach: [-0.5, 1.15], at: [0.4, 0.9], damage: 72, hitstun: 19, blockstun: 13 }),
   // Crouching
   normal('c.FP', { name: 'Knee Poke', stance: 'crouch', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.85], at: [0.4, 0.65], damage: 34, hitstun: 13, blockstun: 10 }),
   normal('c.BP', { name: 'Pop Up', stance: 'crouch', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.8, 1.8], damage: 78, hitstun: 0, blockstun: 10, launch: 0.18 }),
@@ -25,6 +26,15 @@ const moves = table(
   normal('c.BK', { name: 'Leg Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.25], height: 'low', damage: 87, hitstun: 0, blockstun: 10, knockdown: true }),
   // Command normal: back + BP hops into an overhead.
   normal('b.BP', { name: 'Peekaboo', startup: 18, active: 2, recovery: 14, reach: [0.15, 1.0], at: [0.7, 1.4], height: 'overhead', damage: 87, hitstun: 18, blockstun: 14 }),
+  // A string from his own control bar: long, weak, and it reels them in.
+  move('b.FP', {
+    name: 'String Pull',
+    kind: 'normal',
+    total: 32,
+    hits: [strike({ frames: [14, 16], reach: [0.6, 2.0], at: [0.8, 1.4], damage: 30, hitstun: 24, blockstun: 10, push: 0, pull: 0.8 })],
+    hurt: [{ frames: [14, 24], box: box(0.2, 0.9, 0.8, 1.2) }],
+    cancel: [17, 23],
+  }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Bonk', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.85], at: [0.3, 0.8], height: 'overhead', damage: 53, hitstun: 16, blockstun: 11 }),
   normal('j.BP', { name: 'Jumping Clap', kind: 'air', startup: 5, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.4, 0.9], height: 'overhead', damage: 73, hitstun: 17, blockstun: 11 }),
@@ -40,8 +50,22 @@ const moves = table(
   normal('FK FK FK', { name: 'Encore', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.3], height: 'low', damage: 69, hitstun: 0, blockstun: 10, launch: 0.17 }),
   normal('c.FK BK', { name: 'Under the Bed', stance: 'crouch', startup: 9, active: 3, recovery: 16, reach: [0.15, 1.3], at: [0, 0.3], height: 'low', damage: 69, hitstun: 16, blockstun: 12 }),
   // Specials
-  move('Hand Puppet', { name: 'Hand Puppet', kind: 'special', total: 30, boost: 'Hand Puppet+', spawns: [{ frame: 10, projectile: decoy(1, 300) }] }),
-  move('Hand Puppet+', { name: 'Hand Puppet (boosted)', kind: 'special', total: 30, spawns: [{ frame: 10, projectile: decoy(2, 420) }] }),
+  // "Say hello!": the puppet jabs out fast (his combo ender), then stays behind as a decoy.
+  move('Hand Puppet', {
+    name: 'Hand Puppet',
+    kind: 'special',
+    total: 30,
+    boost: 'Hand Puppet+',
+    hits: [strike({ frames: [8, 10], reach: [0.15, 1.1], at: [0.6, 1.3], damage: 60, hitstun: 0, blockstun: 12, knockdown: true })],
+    spawns: [{ frame: 12, projectile: decoy(1, 300) }],
+  }),
+  move('Hand Puppet+', {
+    name: 'Hand Puppet (boosted)',
+    kind: 'special',
+    total: 30,
+    hits: [strike({ frames: [8, 10], reach: [0.15, 1.2], at: [0.6, 1.3], damage: 75, hitstun: 0, blockstun: 14, launch: 0.15 })],
+    spawns: [{ frame: 12, projectile: decoy(2, 420) }],
+  }),
   move('Strings Attached', {
     name: 'Strings Attached',
     kind: 'special',
@@ -129,7 +153,7 @@ export const MUMBLES: FighterData = {
   id: 'mumbles',
   name: 'Mister Mumbles',
   style: 'trickster',
-  health: 1000,
+  health: 900,
   walkFwd: fx(0.055),
   walkBack: fx(0.05),
   jumpVy: fx(0.22),
@@ -145,7 +169,7 @@ export const MUMBLES: FighterData = {
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
     f: {},
-    b: { BP: 'b.BP' },
+    b: { BP: 'b.BP', FP: 'b.FP' },
   },
   specials: { n: 'Hand Puppet', f: 'Strings Attached', b: 'Exit Stage Left', d: 'Knock-Knock' },
   throwMove: 'throw',

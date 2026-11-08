@@ -22,7 +22,19 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
  * Clips asked of the art that may not be in a GLB yet, and what stands in
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
-export const STAND_INS: Readonly<Record<string, string>> = { dazed: 'hit_high' };
+export const STAND_INS: Readonly<Record<string, string>> = {
+  dazed: 'hit_high',
+  // New moves (step 13), as fighter:clip.
+  'dale:b.FK': 's.FK',
+  'rox:f.BP': 's.BP',
+  'hollis:FP FP FK': 'Clocking In',
+  'mumbles:b.FP': 's.FP',
+};
+
+/** The clip to show for a fighter's clip that isn't in the GLB yet, if there is one. */
+export function standIn(fighter: string, clip: string): string | undefined {
+  return STAND_INS[`${fighter}:${clip}`] ?? STAND_INS[clip];
+}
 /** Frames of the `crouch` clip before `crouch_idle` takes over. */
 export const CROUCH_IN = 6;
 

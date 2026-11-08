@@ -7,6 +7,18 @@ data. The combo results were measured in the simulation (each string and
 cancel played point blank against a standing opponent), not worked out on
 paper.
 
+## Done (0.11.0)
+
+Specials now cancel only out of a hit. Launchers that hit cancel into any
+normal, and juggled bodies drift less, so every fighter has a follow-up.
+Mumbles' Hand Puppet now hits first, as his combo ender. Hollis has Cuff 'Em
+(`FP FP FK`), a string grab that only catches a stunned opponent, and his
+Nightstick links into his jab. Clock Out is now a true combo. Dale got the
+long pokes and the step-back kick; Rox the plus frames, the lunge and the
+double kick; Mumbles the ducking kick, String Pull and less damage and
+health. Move lengths are unchanged, so the clips still fit; the new moves
+are BLENDER-TODO step 13. The rest below is the review as written.
+
 ## Verdict
 
 **Looks and specials: distinct.** Each fighter has their own silhouette,

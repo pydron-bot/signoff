@@ -14,6 +14,19 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.11.0',
+    date: '2026-11-08',
+    title: 'Fight club',
+    notes: [
+      'Specials now cancel only out of a hit: confirm it, then cancel.',
+      'Launchers that hit can be followed by any normal: everyone can juggle now.',
+      'Dale: the longest pokes in the game (Umbrella Jab, a longer Front Kick), an anti-air Forecast Cross, and a Step Back Kick (← FK).',
+      'Rox: plus on block with her jab, Leg Lift and Reps; a Lunge (→ BP); Roundhouse Rep is two kicks; her sweep hits a little softer.',
+      "Hollis: Cuff 'Em (FP · FP · FK) grabs them out of a string that hit; Door Kick walks through one hit; Nightstick links into his jab; Clock Out is a true combo.",
+      'Mumbles: Hand Puppet hits before it sits down as a decoy (his combo ender); String Pull (← FP) reels them in; Shin Kick ducks under high attacks; less damage and health for all that.',
+    ],
+  },
+  {
     version: '0.10.0',
     date: '2026-11-08',
     title: 'Move list',
