@@ -58,11 +58,31 @@ assets are needed.
 ## The pipeline
 
 The art is built by Python scripts run in headless Blender (5.2), like
-Curbside's: `blender/build.py` drives `blender/lib/` (helpers, the rig) and
-one module per fighter in `blender/fighters/`.
+Curbside's: `blender/build.py` drives `blender/lib/` and one module per
+fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
+
+- `lib/rig.py`: the shared skeleton and posing in fighter space.
+- `lib/body.py`: the shared blockout (torso, head, arms, legs) scaled to
+  each fighter's height and girth; fighters add their costume parts.
+- `lib/anim.py`: **every clip is generated.** State clips come from the
+  fighter's stance. Move clips come from the move data
+  (`blender/data/fighters.json`, written from `src/sim` by
+  `npm run docs:clips` and checked by a test): base pose, a chamber, the
+  strike held over the active frames, the recovery. The limb is the move's
+  last button (FP lead hand, BP rear hand, FK lead foot, BK rear foot) unless
+  the fighter's `OVERRIDES` say otherwise, and each strike is fitted (lunge
+  and target nudged, the pose evaluated) until the tip lands in the hitbox.
+  Throws, prop kicks, projectile spawns, teleports (`hidden` frames), hops,
+  spins and Knock-Knock's wind-up have their own shapes.
+- `lib/fighter.py`: builds a fighter end to end. The crouch depth is
+  solved so the head tops out at the crouching hurtbox.
+- `lib/glb.py`: compacts each export without changing it: channels that
+  never leave the rest pose are dropped, rotations are stored as normalised
+  16-bit integers, all animation data shares one bufferView. About 0.7 MB
+  per fighter with 55+ clips.
 
 ```sh
-npm run art                  # all: art/rig.blend, art/dale.blend, public/assets/fighters/dale.glb
+npm run art                  # all: art/*.blend, public/assets/fighters/*.glb
 npm run art -- --only dale   # one target
 npx -y -p playwright@1.63.0 node tools/art-check.mjs   # measures each GLB in three.js, screenshots to art-out/
 npm test                     # tests/assets.test.ts checks every GLB against this file
@@ -72,12 +92,23 @@ npm test                     # tests/assets.test.ts checks every GLB against thi
 If the style moves to hand modelling, the `.blend` files become the source
 and the scripts stop writing them (say which in this file).
 
-The build fails if a strike misses: for each move it animates, the striking
-limb's tip must be inside the hitbox (±4 cm) on every active frame. The
+The build fails if a strike misses: for every hit in the data, the striking
+limb's tip must be inside the hitbox (±4 cm) on every active frame (moves
+whose hit is an effect, marked `prop`, only point at it). The
 **art viewer** loads a GLB the way the game will, with the hurtbox and each
 move's hitboxes drawn on their active frames:
 http://hive1:5174/tools/viewer/?f=dale on the dev server (`npm run dev`),
 or `?clip=s.FP&frame=7` to open a frame.
+
+### What's in a fighter's GLB
+
+- `<id>_body`: the skinned body (materials `body`, and `props` for
+  accessories).
+- `<id>_<part>`: other skinned parts that shouldn't count toward the
+  fighter's size (Mumbles' strings, `mumbles_strings`).
+- `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
+  skinned, in the `props` material. **The game should detach and hide them**
+  and place copies itself; the viewer lines them up beside the fighter.
 
 ### The rig
 
@@ -127,28 +158,28 @@ are authored facing right with the left foot and left hand leading.
 
 ### 2. Dale Storm
 
-- [ ] Model and textures (≤ 20k triangles, 2 materials)
-- [ ] State clips (table below)
-- [ ] Move clips (generated table below), each matched to its active frames and hitbox
-- [ ] Projectile visuals as separate small meshes in the same file: `fx_cold_front` (a rolling wall of wind, about 0.7 × 1.4 m) and `fx_hail` (a hailstone, about 0.6 × 0.5 m)
+- [ ] Model and textures (≤ 20k triangles, 2 materials). *Blockout done (1,040 triangles); detail waits on the style.*
+- [x] State clips (table below)
+- [x] Move clips (generated table below), each matched to its active frames and hitbox
+- [x] Projectile visuals as separate small meshes in the same file: `fx_cold_front` (a rolling wall of wind, about 0.7 × 1.4 m) and `fx_hail` (a hailstone, about 0.6 × 0.5 m)
 
 ### 3. Rox Vega
 
-- [ ] Model and textures
-- [ ] State clips
-- [ ] Move clips
+- [ ] Model and textures. *Blockout done: leotard, tights, leg warmers, headband, big hair (1,036 triangles).*
+- [x] State clips
+- [x] Move clips
 
 ### 4. Hollis Bey
 
-- [ ] Model and textures; the flashlight and key ring as props in the `props` material
-- [ ] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
-- [ ] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
+- [ ] Model and textures; the flashlight and key ring as props in the `props` material. *Blockout done: uniform, cap, moustache, belt with flashlight and keys as props (1,160 triangles).*
+- [x] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
+- [x] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
 
 ### 5. Mister Mumbles
 
-- [ ] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part
-- [ ] State clips, and move clips. `Strings Attached` and `Exit Stage Left` are teleports: he is off screen for the listed frames (yanked up on his strings, then lowered back in); `Knock-Knock` is a slow, obvious wind-up (it can't be blocked, so it must read clearly)
-- [ ] `fx_hand_puppet`: the decoy, a hand puppet on a little stand, about 0.5 × 1.2 m
+- [ ] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part. *Blockout done: rig at 1.24 m with a head 1.43× larger (1.30 m overall); the jaw is a `props` part; strings in `mumbles_strings`.*
+- [x] State clips, and move clips. `Strings Attached` and `Exit Stage Left` are teleports: he is off screen for the listed frames (yanked up on his strings, then lowered back in); `Knock-Knock` is a slow, obvious wind-up (it can't be blocked, so it must read clearly)
+- [x] `fx_hand_puppet`: the decoy, a hand puppet on a little stand, about 0.5 × 1.2 m
 
 ### 6. Weather at Eleven (stage)
 
@@ -353,4 +384,7 @@ that would read better with a different hitbox, questions. They'll be
 worked into the move data, and the table above updates itself.
 
 - **Mirroring (game side):** face left by mirroring the model, not turning it (see *Facing*).
+- **Walk loops are shorter than 40 frames** (forward: Dale 16, Rox 12, Hollis 22, Mumbles 12): at these walk speeds a 40-frame cycle would need a stride far wider than a fighting stance, so the loop length follows the stride (0.36 m per foot, scaled) and the feet don't skate. The asset test accepts any loop of 12 frames or more for walks.
+- **Root motion in a few clips (game side):** `down`, `getup`, `thrown`, `ko` and `launched` move and turn `root` (lying down, being thrown); Mumbles' teleports lift `root` 4 m up off screen over their hidden frames and lower him back in; Rox's `Star Jump` hops 0.35 m. Gameplay moves otherwise keep `root` still. The game should let these play as they are, not cancel `root`.
+- **Effect hits:** Isobar Lasso, Flashlight and Key Ring reach further than any limb (up to 2.6 m), so the effect is the hit and the hand only points the way; those moves skip the limb check.
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.

@@ -336,7 +336,7 @@ class Fitter:
             parts[f"toe_{limb[-1]}"] = (0, 0, 0)
         return base.but(**parts)
 
-    def fit(self, base, limb, box, overhead=False, label=""):
+    def fit(self, base, limb, box, overhead=False, label="", report=True):
         """The strike pose whose limb tip lands inside box (x0, x1, y0, y1)."""
         x0, x1, y0, y1 = box
         k = self.st.k
@@ -368,7 +368,8 @@ class Fitter:
                 ty += (y0 - fy) + 0.03
             elif fy > y1:
                 ty -= (fy - y1) + 0.03
-        self.problems.append(f"{label}: {limb} can't reach x {x0}…{x1}, y {y0}…{y1}")
+        if report:
+            self.problems.append(f"{label}: {limb} can't reach x {x0}…{x1}, y {y0}…{y1}")
         return best
 
     def chamber(self, base, limb, overhead=False, low=False):
@@ -456,6 +457,17 @@ def move_clips(rig, st, data, overrides):
             at(3, st.base(drop=st.drop + 0.1))
             at(max(4, h0 - 6), star)
             at(max(5, h0 - 3), star.but(root={"offset": (0, 0, 0.25 * k)}))
+        if style == "grapevine":
+            # Side-steps that cross: the rear foot crosses in front, then behind,
+            # over the move's motion frames, low and quick.
+            m0, m1 = mv["motion"][0]["frames"]
+            low = st.base(drop=st.drop + 0.06)
+            n = 4
+            for i in range(n + 1):
+                f = m0 + round((m1 - m0) * i / n)
+                cross = (i % 2) * (1 if i % 4 == 1 else -1)
+                at(f, low.but(foot_R={"pos": (0.05 * cross * k, (st.rear_foot[1] + 0.18 * abs(cross)) * k, (0.09 + 0.06 * abs(cross)) * k), "turn": (0, -30, 0)},
+                              chest=(4, st.chest_yaw - 20 * cross, 0)))
         if style == "knock":
             # Knock-knock: two slow taps on the air at head height, then the big swing.
             tap = base.but(hand_R={"pos": st.s((-0.05, 0.42, 1.45)), "aim": (0, 0.5, 0.85), "hint": (0, 1, 0)})
@@ -477,7 +489,7 @@ def move_clips(rig, st, data, overrides):
                 pose = spin_pose(st, base, i)
                 checks.append(((f0, f1), ["hand.L", "hand.R"], hit["box"]))
             else:
-                pose = fitter.fit(base, lb, hit["box"], over, f"{mid} hit {i + 1}")
+                pose = fitter.fit(base, lb, hit["box"], over, f"{mid} hit {i + 1}", report=not spec.get("prop"))
                 if not spec.get("prop"):
                     checks.append(((f0, f1), [lb], hit["box"]))
             if prev_end is None:

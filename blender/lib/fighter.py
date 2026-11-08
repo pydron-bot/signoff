@@ -47,6 +47,12 @@ def build(mod, out_dir, art_dir):
     p = new_parts()
     mod.costume(p, b)
     body = p.join(f"{mod.ID}_body", rig)
+    skinned = [body]
+    if hasattr(mod, "extras"):
+        # Skinned parts that aren't the body (Mumbles' strings): their own
+        # mesh, so they don't count toward the fighter's height.
+        mod.extras(p, b)
+        skinned.append(p.join(f"{mod.ID}_{mod.EXTRAS}", rig))
 
     fx = []
     if hasattr(mod, "fx"):
@@ -71,7 +77,7 @@ def build(mod, out_dir, art_dir):
     rig.data.pose_position = "POSE"
     crouch_top = head_top(rig, st, st.crouch())
     hurt = data["hurt"]
-    print(f"[{mod.ID}] {triangles(body)} body triangles + {sum(triangles(o) for o in fx)} fx, rest height {top:.3f} m "
+    print(f"[{mod.ID}] {sum(triangles(o) for o in skinned)} body triangles + {sum(triangles(o) for o in fx)} fx, rest height {top:.3f} m "
           f"(hurtbox {hurt['stand'][3]}), head crouching {crouch_top:.2f} m (hurtbox {hurt['crouch'][3]}), "
           f"{len(actions)} state + {len(moves)} move clips")
     rig.animation_data.action = actions[0]
@@ -81,4 +87,4 @@ def build(mod, out_dir, art_dir):
 
     art_dir.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(art_dir / f"{mod.ID}.blend"), compress=True)
-    export_glb(out_dir / "fighters" / f"{mod.ID}.glb", [rig, body, *fx])
+    export_glb(out_dir / "fighters" / f"{mod.ID}.glb", [rig, *skinned, *fx])

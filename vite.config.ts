@@ -62,7 +62,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json}'],
-        globIgnores: ['**/node_modules/**/*', '**/icons/*512.png'],
+        // The fighter models aren't used by the game yet (the fights are grey
+        // boxes): left out so installs don't fetch ~2.7 MB for nothing. Take
+        // assets/fighters out of this list when the game loads them.
+        globIgnores: ['**/node_modules/**/*', '**/icons/*512.png', '**/assets/fighters/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         // The shell answers navigations to the game only, not files opened by URL.
         navigateFallbackDenylist: [/^[^?]*\.(?!html?\b)\w+(?:\?.*)?$/],

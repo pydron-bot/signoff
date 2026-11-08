@@ -71,8 +71,10 @@ for (const f of Object.values(FIGHTERS)) {
       expect(g.skins![0].joints.map((j) => g.nodes[j].name).sort()).toEqual([...RIG_BONES].sort());
     });
 
-    it('keeps to the budget: 2 materials, body and props, and at most 20k triangles', () => {
-      expect((g.materials ?? []).map((m) => m.name).sort()).toEqual(['body', 'props']);
+    it('keeps to the budget: body and at most props for materials, and at most 20k triangles', () => {
+      const mats = (g.materials ?? []).map((m) => m.name);
+      expect(mats).toContain('body');
+      for (const m of mats) expect(['body', 'props']).toContain(m);
       let tris = 0;
       for (const m of g.meshes) for (const p of m.primitives) tris += g.accessors[p.indices ?? p.attributes.POSITION].count / 3;
       expect(tris).toBeLessThanOrEqual(MAX_TRIANGLES);
@@ -80,7 +82,10 @@ for (const f of Object.values(FIGHTERS)) {
 
     it('has its body skinned, and effect meshes (fx_*) as plain props', () => {
       const meshes = g.nodes.filter((n) => n.mesh !== undefined);
-      expect(meshes.filter((n) => n.skin !== undefined).map((n) => n.name)).toEqual([`${f.id}_body`]);
+      const skinned = meshes.filter((n) => n.skin !== undefined).map((n) => n.name);
+      expect(skinned).toContain(`${f.id}_body`);
+      // Extra skinned parts that aren't the body (Mumbles' strings) are named <id>_<part>.
+      for (const name of skinned) expect(name.startsWith(`${f.id}_`)).toBe(true);
       for (const n of meshes.filter((m) => m.skin === undefined)) expect(n.name).toMatch(/^fx_/);
     });
 
@@ -89,7 +94,7 @@ for (const f of Object.values(FIGHTERS)) {
       const tall = toFloat(hurt.y + hurt.h);
       let lo = Infinity;
       let hi = -Infinity;
-      for (const n of g.nodes.filter((m) => m.skin !== undefined)) {
+      for (const n of g.nodes.filter((m) => m.name === `${f.id}_body`)) {
         for (const p of g.meshes[n.mesh!].primitives) {
           const a = g.accessors[p.attributes.POSITION];
           lo = Math.min(lo, a.min![1]);

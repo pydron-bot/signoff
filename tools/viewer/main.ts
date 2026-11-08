@@ -79,7 +79,8 @@ async function load(id: string): Promise<void> {
   let n = 0;
   for (const o of [...model.children]) {
     if (!o.name.startsWith('fx_')) continue;
-    o.position.set(2 + n++, 0, -2.5);
+    // (In the model's turned frame: local z is world x, local x is world -z.)
+    o.position.set(2.5, 0, 2 + n++);
   }
   holder.add(model);
   mixer = new THREE.AnimationMixer(model);

@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.4.1',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: ['All four fighters now have rough 3D models and a full set of animations, made to match their moves. The fights still use grey boxes for now.'],
+  },
+  {
     version: '0.4.0',
     date: '2026-11-08',
     title: 'Two more channels',

@@ -4,14 +4,14 @@
 // hitbox on its first active frame, boxes drawn.
 //   npx -y -p playwright@1.63.0 node tools/art-check.mjs [--out art-out]
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync, readdirSync } from 'node:fs';
 import { launch } from './pw.mjs';
 
 const PORT = 4198;
 const i = process.argv.indexOf('--out');
 const OUT = i > 0 ? process.argv[i + 1] : 'art-out';
 mkdirSync(OUT, { recursive: true });
-const FIGHTERS = ['dale', 'rox'].filter((id) => existsSync(`public/assets/fighters/${id}.glb`));
+const FIGHTERS = readdirSync('public/assets/fighters').filter((f) => f.endsWith('.glb')).map((f) => f.slice(0, -4));
 
 const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
 const browser = await launch();
