@@ -1,0 +1,102 @@
+/* Base page styles. */
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0b0f;
+  color: #f1ede0;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#app canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.title {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  pointer-events: none;
+  text-shadow: 2px 0 rgba(255, 0, 60, 0.55), -2px 0 rgba(0, 200, 255, 0.55);
+}
+
+.title-logo {
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.title-caption {
+  font-size: clamp(0.8rem, 2.4vw, 1.2rem);
+  letter-spacing: 0.3em;
+  opacity: 0.85;
+}
+
+.title-card {
+  margin-top: 1rem;
+  padding: 0.3rem 1rem;
+  background: #1b2fa8;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+  letter-spacing: 0.25em;
+  animation: blink 1.6s steps(1) infinite;
+}
+
+.title-version {
+  position: absolute;
+  right: calc(env(safe-area-inset-right) + 12px);
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  font-size: 0.7rem;
+  opacity: 0.55;
+  text-shadow: none;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* The VHS layer: scanlines and a soft vignette over everything. */
+.vhs {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-card {
+    animation: none;
+  }
+}
