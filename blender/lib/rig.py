@@ -180,6 +180,8 @@ class Pose:
       foot points, for kicks).
     hand_L / hand_R: wrist position, and aim (the direction the hand points).
     knee_L / elbow_L (and _R): optional pole positions (which way the joint bends).
+    shapes: {shape key: value} for the body's shape keys (expressions,
+      fists, a jaw); unset keys are 0.
     """
 
     def __init__(self, **parts):
@@ -191,6 +193,10 @@ class Pose:
     def but(self, **over):
         """A copy with some parts replaced."""
         return Pose(**{**self.parts, **over})
+
+    def shaped(self, **values):
+        """A copy with some shape keys set (the rest as they were)."""
+        return self.but(shapes={**self.parts.get("shapes", {}), **values})
 
 
 ORDER = ["hips", "spine", "chest", "neck", "head", "shoulder.L", "shoulder.R", "toe.L", "toe.R"]
@@ -257,7 +263,11 @@ def apply_pose(rig, pose, height):
 
 class Clip:
     """Keys poses into one action. Quaternions keep the same hemisphere from
-    key to key, so interpolation never takes the long way round."""
+    key to key, so interpolation never takes the long way round. The body's
+    shape keys (Clip.shape_keys, set by the fighter build) are keyed in the
+    same action, in a slot of their own, so each clip carries its face."""
+
+    shape_keys = None
 
     def __init__(self, rig, name, frames, height, loop=False):
         self.rig, self.height = rig, height
@@ -267,6 +277,10 @@ class Clip:
         if rig.animation_data is None:
             rig.animation_data_create()
         rig.animation_data.action = self.action
+        if Clip.shape_keys is not None:
+            if Clip.shape_keys.animation_data is None:
+                Clip.shape_keys.animation_data_create()
+            Clip.shape_keys.animation_data.action = self.action
         self._last = {}
 
     def key(self, frame, pose):
@@ -280,6 +294,11 @@ class Clip:
             self._last[pb.name] = q
             pb.keyframe_insert("rotation_quaternion", frame=frame)
             pb.keyframe_insert("location", frame=frame)
+        if Clip.shape_keys is not None:
+            values = pose.parts.get("shapes", {})
+            for kb in Clip.shape_keys.key_blocks[1:]:
+                kb.value = values.get(kb.name, 0.0)
+                kb.keyframe_insert("value", frame=frame)
 
     def finish(self):
         """A loop of N frames is keyed 1..N+1 (N+1 = 1), so it lasts exactly N/60 s."""

@@ -32,7 +32,11 @@ def lerp_pose(a, b, t):
     out = {}
     for key in set(a.parts) | set(b.parts):
         pa, pb = a.parts.get(key), b.parts.get(key)
-        if pa is None or pb is None:
+        if key == "shapes":
+            # Unset shape keys are 0.
+            pa, pb = pa or {}, pb or {}
+            out[key] = {k: pa.get(k, 0.0) + (pb.get(k, 0.0) - pa.get(k, 0.0)) * t for k in set(pa) | set(pb)}
+        elif pa is None or pb is None:
             out[key] = pb if pa is None else pa
         elif isinstance(pa, dict):
             out[key] = {k: lerp(pa[k], pb[k], t) if k in pa and k in pb else pb.get(k, pa.get(k)) for k in set(pa) | set(pb)}
@@ -130,6 +134,10 @@ class Stance:
     lead_aim = (-0.1, 0.45, 0.9)
     rear_aim = (0.25, 0.4, 0.9)
     bob = 0.012  # idle breathing
+    guard_fist = 0.8  # how closed the hands are on guard (strikes close them)
+    talk = False  # the jaw works in idle (Mumbles)
+    block_up = 1.42  # wrists' height blocking standing (the hands stay under the hurtbox's top)
+    block_head = 6  # the head ducks forward behind the guard (a cap's back rises with it)
     # Crouch depth and lean; fighter.build solves crouch_drop so the head
     # tops out at the crouching hurtbox.
     crouch_drop = 0.5
@@ -159,6 +167,7 @@ class Stance:
             toe_R=(0, self.rear_foot_yaw, 0),
             hand_L={"pos": self.s(self.lead_hand[:2] + (self.lead_hand[2] - bob * 0.6,)), "aim": self.lead_aim, "hint": (0, 1, 0)},
             hand_R={"pos": self.s(self.rear_hand[:2] + (self.rear_hand[2] - bob * 0.6,)), "aim": self.rear_aim, "hint": (0, 1, 0)},
+            shapes={"fist_L": self.guard_fist, "fist_R": self.guard_fist},
         )
 
     def crouch(self, bob=0.0):
@@ -215,12 +224,12 @@ class Stance:
     def block(self, crouching=False):
         """Forearms up in front of the face (or the body, crouching)."""
         base = self.crouch() if crouching else self.base()
-        up = 0.88 if crouching else 1.42
+        up = 0.88 if crouching else self.block_up
         return base.but(
             hand_L={"pos": self.s((0.06, 0.24, up)), "aim": (-0.3, 0.2, 1), "hint": (0, 1, 0)},
             hand_R={"pos": self.s((-0.06, 0.2, up + 0.04)), "aim": (0.3, 0.2, 1), "hint": (0, 1, 0)},
             chest=((40 if crouching else 14), self.chest_yaw - 4, 0),
-            head=((-8 if crouching else 6), -4, 0),
+            head=((-8 if crouching else self.block_head), -4, 0),
         )
 
 
@@ -238,7 +247,12 @@ def state_clips(rig, st, data):
         out.append(c.finish())
 
     base = st.base()
-    clip("idle", 60, [(1, st.base(st.bob)), (31, st.base(0)), (61, st.base(st.bob))], loop=True)
+    idle = {1: st.base(st.bob), 31: st.base(0), 61: st.base(st.bob)}
+    if st.talk:
+        # Chattering away to nobody: the jaw flaps in two bursts.
+        for f, v in ((6, 0.0), (9, 0.9), (12, 0.1), (15, 0.7), (18, 0.0), (36, 0.0), (39, 1.0), (43, 0.2), (46, 0.8), (50, 0.0)):
+            idle[f] = pose_at(idle, f).shaped(jaw=v)
+    clip("idle", 60, sorted(idle.items()), loop=True)
 
     # Walks: each foot steps once a cycle; the planted foot slides back at the
     # walk speed, so the feet don't skate. The cycle length is picked to give
@@ -312,8 +326,10 @@ def state_clips(rig, st, data):
     hit_low = base.but(hips={"offset": (0, -0.08 * k, -(st.drop + 0.1) * k), "turn": (16, st.hips_yaw, 0)}, spine=(24, st.hips_yaw, 0), chest=(42, st.chest_yaw, 0),
                        neck=(20, 0, 0), head=(22, 0, 0),
                        hand_L={"pos": st.s((0.06, 0.25, 0.98)), "aim": (0, 0.2, -1)}, hand_R={"pos": st.s((-0.04, 0.22, 1.0)), "aim": (0, 0.2, -1)})
+    hit_high = hit_high.shaped(hurt=1.0, fist_L=0.3, fist_R=0.3)
+    hit_low = hit_low.shaped(hurt=1.0, fist_L=0.3, fist_R=0.3)
     for name, pose in (("hit_high", hit_high), ("hit_low", hit_low)):
-        clip(name, 12, [(1, base), (3, pose), (6, lerp_pose(pose, base, 0.15)), (12, lerp_pose(pose, base, 0.45))])
+        clip(name, 12, [(1, base), (3, pose), (6, lerp_pose(pose, base, 0.15).shaped(hurt=1.0)), (12, lerp_pose(pose, base, 0.45).shaped(hurt=1.0))])
 
     # Lying on the back, head away from the opponent. The body frame is turned
     # by the root, so the limbs below are as if standing.
@@ -328,22 +344,27 @@ def state_clips(rig, st, data):
     airborne = base.but(root={"offset": (0, -0.2 * k, 0.5 * k), "turn": (-35, 0, 0)}, chest=(-20, 0, 0), head=(-20, 0, 0),
                         foot_L={"pos": st.s((0.1, 0.25, 0.15)), "turn": (30, 0, 0)}, foot_R={"pos": st.s((-0.12, 0.1, 0.25)), "turn": (30, 0, 0)},
                         hand_L={"pos": st.s((0.4, -0.05, 1.5)), "aim": (0.5, -0.3, 1)}, hand_R={"pos": st.s((-0.4, 0.0, 1.55)), "aim": (-0.5, -0.3, 1)})
+    airborne = airborne.shaped(hurt=1.0, fist_L=0.2, fist_R=0.2)
     clip("launched", 10, [(1, hit_high), (10, airborne)])
+    flat = flat.shaped(hurt=0.7, fist_L=0.2, fist_R=0.2)
     clip("down", 30, [(1, flat), (30, flat.but(head=(4, 6, 0)))])
     sit = base.but(root={"offset": (0, 0.1 * k, 0), "turn": (-25, 0, 0)}, hips={"offset": (0, 0, -0.5 * k), "turn": (0, 0, 0)},
                    chest=(15, 0, 0), foot_L={"pos": st.s((0.15, 0.3, 0.09))}, foot_R={"pos": st.s((-0.18, 0.15, 0.09))},
                    hand_L={"pos": st.s((0.3, -0.25, 0.45)), "aim": (0, -0.2, -1)}, hand_R={"pos": st.s((-0.3, -0.25, 0.45)), "aim": (0, -0.2, -1)})
     # Getup ends on idle's first frame: the game goes straight to idle after it.
-    clip("getup", 20, [(1, flat), (8, sit), (14, crouch), (20, st.base(st.bob))])
+    clip("getup", 20, [(1, flat), (8, sit.shaped(hurt=0.4)), (14, crouch), (20, st.base(st.bob))])
     lifted = base.but(root={"offset": (0, 0.25 * k, 0.45 * k), "turn": (20, 0, 0)}, chest=(-10, 0, 0), head=(-20, 0, 0),
                       foot_L={"pos": st.s((0.1, 0.0, 0.1)), "turn": (40, 0, 0)}, foot_R={"pos": st.s((-0.1, -0.05, 0.15)), "turn": (40, 0, 0)})
     over = base.but(root={"offset": (0, 0.2 * k, 1.2 * k), "turn": (-150, 0, 0)}, chest=(-20, 0, 0))
+    lifted, over = lifted.shaped(hurt=1.0), over.shaped(hurt=1.0)
     clip("thrown", 24, [(1, hit_high), (6, lifted), (12, over), (18, flat.but(root={"offset": (0, 0.7 * k, 0.4 * k), "turn": (-110, 0, 0)})), (24, flat)])
     stagger = base.but(hips={"offset": (0, -0.15 * k, -0.12 * k), "turn": (-10, st.hips_yaw + 15, 0)}, chest=(-25, 10, 0), head=(-35, 20, 0),
                        hand_L={"pos": st.s((0.35, 0.0, 1.0)), "aim": (0.4, 0, -1)}, hand_R={"pos": st.s((-0.35, -0.05, 1.0)), "aim": (-0.4, 0, -1)})
     kneel = crouch.but(root={"offset": (0, -0.2 * k, 0), "turn": (-20, 0, 0)}, chest=(10, 0, 0), head=(-10, 0, 0))
-    clip("ko", 90, [(1, hit_high), (14, stagger), (30, kneel), (44, flat.but(root={"offset": (0, 0.85 * k, 0.2 * k), "turn": (-95, 0, 0)})), (50, flat), (90, flat)])
-    clip("win", 120, [(1, base), (20, st.win()), (100, st.win(1)), (120, st.win(1))])
+    out_cold = flat.shaped(ko=1.0, hurt=0.0)
+    clip("ko", 90, [(1, hit_high), (14, stagger.shaped(hurt=1.0, fist_L=0, fist_R=0)), (30, kneel.shaped(hurt=0.6, ko=0.5)),
+                    (44, out_cold.but(root={"offset": (0, 0.85 * k, 0.2 * k), "turn": (-95, 0, 0)})), (50, out_cold), (90, out_cold)])
+    clip("win", 120, [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))])
     relaxed = base.but(hips={"offset": (0, 0, 0), "turn": (0, -10, 0)}, spine=(0, -10, 0), chest=(0, -10, 0), neck=(0, 0, 0), head=(0, 0, 0),
                        shoulder_L=(0, -10, 0), shoulder_R=(0, -10, 0),
                        foot_L={"pos": st.s((0.11, 0.03, 0.09)), "turn": (0, -10, 0)}, foot_R={"pos": st.s((-0.11, -0.03, 0.09)), "turn": (0, -10, 0)},
@@ -401,6 +422,7 @@ class Fitter:
             reach = 0.167 * k * 0.85
             wrist = (side * 0.3 - aim[0] * reach, tx - aim[1] * reach, ty - aim[2] * reach)
             parts[f"hand_{limb[-1]}"] = {"pos": wrist, "aim": aim, "hint": (0, 0, 1) if abs(aim[2]) < 0.8 else (0, 1, 0)}
+            parts["shapes"] = {**base.parts.get("shapes", {}), f"fist_{limb[-1]}": 1.0}
         else:
             back = tx < 0
             if ty > 0.5 * k or back:
@@ -468,9 +490,9 @@ class Fitter:
             side = 0.1 if s == "L" else -0.08
             if high:
                 return base.but(**{f"hand_{s}": {"pos": (side * 1.4 * k, -0.04 * k, 2.02 * k + zoff), "aim": (0, -0.15, 1), "hint": (0, 1, 0)}},
-                                chest=(-6, st.chest_yaw, 0), head=(-10, -4, 0))
+                                chest=(-6, st.chest_yaw, 0), head=(-10, -4, 0)).shaped(**{f"fist_{s}": 1.0})
             pos = (side * k, 0.08 * k, (1.9 if overhead else 1.32) * k + zoff)
-            return base.but(**{f"hand_{s}": {"pos": pos, "aim": (0, 0.2, 1) if overhead else (0, 0.6, 0.8), "hint": (0, 1, 0)}})
+            return base.but(**{f"hand_{s}": {"pos": pos, "aim": (0, 0.2, 1) if overhead else (0, 0.6, 0.8), "hint": (0, 1, 0)}}).shaped(**{f"fist_{s}": 1.0})
         sx = 0.1 if s == "L" else -0.1
         if high:
             return base.but(**{f"foot_{s}": {"pos": (sx * k, 0.3 * k, 1.42 * k), "aim": (0, 0.35, 1), "hint": (0, -1, 0.3)},
@@ -486,7 +508,7 @@ class Fitter:
             side = 0.08 if s == "L" else -0.08
             zoff = base.parts.get("hips", {}).get("offset", (0, 0, 0))[2]
             return base.but(**{f"hand_{s}": {"pos": (side * k, 0.24 * k, 1.98 * k + zoff), "aim": (0, 0.55, 0.85), "hint": (0, 1, 0)}},
-                            chest=(-2, st.chest_yaw, 0))
+                            chest=(-2, st.chest_yaw, 0)).shaped(**{f"fist_{s}": 1.0})
         sx = 0.1 if s == "L" else -0.1
         return self.chamber(base, limb, high=True).but(**{f"foot_{s}": {"pos": (sx * k, 0.5 * k, 1.45 * k), "aim": (0, 0.8, 0.6), "hint": (0, -0.6, 0.8)}})
 
@@ -534,6 +556,7 @@ def move_clips(rig, st, data, overrides):
                 reach = max(0.45, mv["throw"]["range"] - 0.45)
                 grab = base.but(hips={"offset": (0, min(0.3, reach - 0.45) * k, -st.drop * k), "turn": (12, st.hips_yaw + 15, 0)}, chest=(20, -10, 0),
                                 hand_L={"pos": (0.1 * k, reach, 1.15 * k), "aim": (0, 1, 0.1)}, hand_R={"pos": (-0.1 * k, reach - 0.05, 1.2 * k), "aim": (0, 1, 0.1)})
+                grab = grab.shaped(fist_L=0.0, fist_R=0.0)
                 at(max(2, f0 - 3), lerp_pose(base, grab, 0.5))
                 at(f0, grab)
                 at(f1, grab)
@@ -556,6 +579,7 @@ def move_clips(rig, st, data, overrides):
                                 head=(10, 0, 0), hand_L={"pos": (0.16 * k, reach + 0.22, 0.98 * k), "aim": (0, 0.8, -0.4)},
                                 hand_R={"pos": (-0.16 * k, reach + 0.16, 0.95 * k), "aim": (0, 0.8, -0.4)},
                                 foot_R={"pos": st.s((-0.12, 0.02, 0.09)), "turn": (0, st.rear_foot_yaw, 0)})
+                grab, wind, over = (q.shaped(fist_L=0.0, fist_R=0.0) for q in (grab, wind, over))
                 at(max(2, f0 - 5), wind)
                 at(f0, grab)
                 at(f1, grab)
@@ -612,6 +636,7 @@ def move_clips(rig, st, data, overrides):
                             hand_L={"pos": st.s((0.2, 0.0, 0.98)), "aim": (0.3, 0.2, -1)})
             door = lean.but(hand_R={"pos": st.s((-0.06, 0.52, 1.66)), "aim": (0, 1, 0.1), "hint": (0, 0, 1)})
             pull = lean.but(hand_R={"pos": st.s((-0.06, 0.22, 1.78)), "aim": (0, 0.45, 0.9), "hint": (0, 1, 0)})
+            door, pull = door.shaped(fist_R=1.0, jaw=1.0), pull.shaped(fist_R=1.0)
             for f, pose in ((2, pull), (4, door), (7, pull), (13, pull), (16, door), (19, pull)):
                 at(f, pose)
             windup = lean.but(hips={"offset": (0, -0.12 * k, -(st.drop + 0.04) * k), "turn": (-14, st.hips_yaw + 35, 0)}, chest=(-28, 40, 0),

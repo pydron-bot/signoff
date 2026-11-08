@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.4.4',
+    date: '2026-11-08',
+    title: 'Behind the scenes',
+    notes: [
+      'The fighters\' 3D models get their detail pass: painted faces that wince when hit and grin when they win, fists that close to punch, Dale\'s check blazer and striped tie, Rox\'s FEEL THE BURN headband, Hollis\'s SECURITY uniform and Mister Mumbles\' chipped wooden face, jaw and strings. The fights still use grey boxes for now.',
+      'New effects for the specials: the Isobar Lasso, Heat Lightning, the Key Ring, the Leg Warmer Lariat\'s ribbon, Tape Skip\'s VHS smear, a swirling Cold Front, and a hand puppet that really looks like Mumbles.',
+    ],
+  },
+  {
     version: '0.4.3',
     date: '2026-11-08',
     title: 'Behind the scenes',

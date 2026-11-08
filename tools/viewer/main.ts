@@ -134,8 +134,23 @@ function setView(v: string): void {
   $<HTMLSelectElement>('view').value = v;
   if (v === 'game') camera.position.set(0, 2.1, 9);
   else if (v === 'three') camera.position.set(facing * 3.2, 1.9, 3.6);
-  else camera.position.set(facing * 4.5, 1.2, 0);
-  controls.target.set(0, 1, 0);
+  else if (v === 'front') camera.position.set(facing * 4.5, 1.2, 0);
+  // A close-up of the face (in idle), for checking expressions and paint.
+  const h = FIGHTERS[fighterId] ? toFloat(FIGHTERS[fighterId].hurt.stand.y + FIGHTERS[fighterId].hurt.stand.h) : 1.8;
+  if (v === 'face') camera.position.set(facing * 1.1, h - 0.1, 0.45);
+  controls.target.set(0, v === 'face' ? h - 0.16 : 1, 0);
+  if (v === 'fx' && model) {
+    // Frame the effect meshes' line-up (see load) from the front.
+    const box = new THREE.Box3();
+    model.updateMatrixWorld(true);
+    for (const o of model.children) if (o.name.startsWith('fx_')) box.expandByObject(o);
+    if (!box.isEmpty()) {
+      const c = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      camera.position.set(c.x, c.y + 0.6, box.max.z + Math.max(size.x, size.y) * 3 + 1);
+      controls.target.copy(c);
+    }
+  }
   controls.update();
 }
 

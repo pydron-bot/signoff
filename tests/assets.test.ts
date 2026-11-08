@@ -44,28 +44,40 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   td_cinematic: { frames: 150 },
 };
 const MAX_TRIANGLES = 20000;
+/** One atlas per material, at most this size (docs/BLENDER-TODO.md, step 8). */
+const MAX_TEXTURE: Record<string, number> = { body: 1024, props: 512 };
 const FPS = 60;
 
 interface Gltf {
   nodes: { name: string; mesh?: number; skin?: number }[];
   skins?: { joints: number[] }[];
-  materials?: { name: string }[];
+  materials?: { name: string; pbrMetallicRoughness?: { baseColorTexture?: { index: number } } }[];
+  textures?: { source: number }[];
+  images?: { bufferView: number; mimeType: string }[];
+  bufferViews: { byteOffset?: number; byteLength: number }[];
   meshes: { primitives: { attributes: Record<string, number>; indices?: number }[] }[];
   accessors: { count: number; min?: number[]; max?: number[] }[];
   animations?: { name: string; samplers: { input: number }[] }[];
 }
 
-function readGlb(path: string): Gltf {
+function readGlb(path: string): Gltf & { bin: Buffer } {
   const b = readFileSync(path);
   expect(b.toString('ascii', 0, 4)).toBe('glTF');
   const len = b.readUInt32LE(12);
-  return JSON.parse(b.toString('utf8', 20, 20 + len)) as Gltf;
+  const bin = b.subarray(28 + len, 28 + len + b.readUInt32LE(20 + len));
+  return { ...(JSON.parse(b.toString('utf8', 20, 20 + len)) as Gltf), bin };
+}
+
+/** A PNG's width and height, from its header. */
+function pngSize(png: Buffer): [number, number] {
+  expect(png.toString('latin1', 1, 4)).toBe('PNG');
+  return [png.readUInt32BE(16), png.readUInt32BE(20)];
 }
 
 for (const f of Object.values(FIGHTERS)) {
   const path = `public/assets/fighters/${f.id}.glb`;
   describe.skipIf(!existsSync(path))(`${f.id}.glb`, () => {
-    const g = existsSync(path) ? readGlb(path) : ({} as Gltf);
+    const g = existsSync(path) ? readGlb(path) : ({} as ReturnType<typeof readGlb>);
 
     it('uses the shared skeleton', () => {
       expect(g.skins?.length).toBe(1);
@@ -79,6 +91,18 @@ for (const f of Object.values(FIGHTERS)) {
       let tris = 0;
       for (const m of g.meshes) for (const p of m.primitives) tris += g.accessors[p.indices ?? p.attributes.POSITION].count / 3;
       expect(tris).toBeLessThanOrEqual(MAX_TRIANGLES);
+    });
+
+    it('paints each material from one PNG atlas within its size', () => {
+      for (const m of g.materials ?? []) {
+        const tex = m.pbrMetallicRoughness?.baseColorTexture;
+        expect(tex, `${m.name} has an atlas`).toBeTruthy();
+        const img = g.images![g.textures![tex!.index].source];
+        expect(img.mimeType).toBe('image/png');
+        const view = g.bufferViews[img.bufferView];
+        const [w, h] = pngSize(g.bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+        expect(Math.max(w, h), `${m.name} atlas size`).toBeLessThanOrEqual(MAX_TEXTURE[m.name]);
+      }
     });
 
     it('has its body skinned, and effect meshes (fx_*) as plain props', () => {

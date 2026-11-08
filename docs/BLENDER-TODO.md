@@ -84,10 +84,26 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   solved so the head in `idle` tops out at the standing hurtbox, and the
   crouch depth so it tops out at the crouching one; both are checked on
   every frame of the standing and crouching clips.
+- `lib/texture.py` and `lib/paint.py`: the atlases. Every mesh is unwrapped
+  per material (smart project, even texel density, the face and chest at
+  twice it), then each texel is painted from the point on the surface it
+  shows (rest pose, fighter space): the part's flat colour run through its
+  paint function (stripes, checks, stitching, ribbing, wood grain, a 5×7
+  pixel font for lettering, painted faces), a soft painted light and a
+  warm, slightly desaturated 1987 grade. Seeded, so a rebuild gives the same
+  pixels. The PNGs are written to `art/textures/<id>_body.png` and
+  `<id>_props.png` for review.
+- Shape keys: parts may carry shape functions; the body gets `fist_L`,
+  `fist_R`, `hurt`, `ko`, `win` (and `jaw` for Mumbles), keyed by every
+  clip in the same action (strikes close the fist, hits swap to `hurt`, KO
+  closes the eyes, `win` grins).
 - `lib/glb.py`: compacts each export without changing it: channels that
   never leave the rest pose are dropped, rotations are stored as normalised
-  16-bit integers, all animation data shares one bufferView. About 0.7 MB
-  per fighter with 55+ clips.
+  16-bit integers, all animation data shares one bufferView. It also writes
+  every clip's morph weights (sampled from the shape-key curves: Blender's
+  exporter only writes them for the action assigned at export), so each
+  clip sets every weight and no expression carries over. About 1.2–1.5 MB
+  per fighter with 55+ clips and both atlases.
 
 ```sh
 npm run art                  # all: art/*.blend, public/assets/fighters/*.glb
@@ -106,12 +122,15 @@ whose hit is an effect, marked `prop`, only point at it). The
 **art viewer** loads a GLB the way the game will, with the hurtbox and each
 move's hitboxes drawn on their active frames:
 http://hive1:5174/tools/viewer/?f=dale on the dev server (`npm run dev`),
-or `?clip=s.FP&frame=7` to open a frame.
+or `?clip=s.FP&frame=7` to open a frame, `&view=face` for a close-up of the
+face or `&view=fx` for the effect meshes.
 
 ### What's in a fighter's GLB
 
 - `<id>_body`: the skinned body (materials `body`, and `props` for
-  accessories).
+  accessories), each material with its PNG atlas, and morph targets
+  `fist_L`, `fist_R`, `hurt`, `jaw` (Mumbles only), `ko`, `win`, whose
+  weights every clip animates.
 - `<id>_<part>`: other skinned parts that shouldn't count toward the
   fighter's size (Mumbles' strings, `mumbles_strings`).
 - `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
@@ -166,26 +185,26 @@ are authored facing right with the left foot and left hand leading.
 
 ### 2. Dale Storm
 
-- [ ] Model and textures (≤ 20k triangles, 2 materials). *Stylised low-poly with blended joints (1,468 triangles); more detail waits on the style.*
+- [x] Model and textures (≤ 20k triangles, 2 materials). *Detail pass done (step 8): 2,398 body triangles, plus 1,932 in effects.*
 - [x] State clips (table below)
 - [x] Move clips (generated table below), each matched to its active frames and hitbox
 - [x] Projectile visuals as separate small meshes in the same file: `fx_cold_front` (a rolling wall of wind, about 0.7 × 1.4 m) and `fx_hail` (a hailstone, about 0.6 × 0.5 m)
 
 ### 3. Rox Vega
 
-- [ ] Model and textures. *Stylised low-poly: leotard, tights, leg warmers, headband, big hair (1,468 triangles).*
+- [x] Model and textures. *Detail pass done (step 8): 2,474 body triangles, plus 240 in `fx_lariat_trail`.*
 - [x] State clips
 - [x] Move clips
 
 ### 4. Hollis Bey
 
-- [ ] Model and textures; the flashlight and key ring as props in the `props` material. *Blockout done: uniform, cap, moustache, belt with flashlight and keys as props (1,616 triangles).*
+- [x] Model and textures; the flashlight and key ring as props in the `props` material. *Detail pass done (step 8): 2,386 body triangles, plus 364 in effects.*
 - [x] State clips, and move clips (generated table below). `Clocking In` is a command grab: frames 10–12 reach for the opponent; the throw itself plays as the thrower's `throw` hold (the victim plays `thrown`)
 - [x] `fx_flashlight_beam` (a cone about 1.8 m long at head height) for Flashlight
 
 ### 5. Mister Mumbles
 
-- [ ] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part. *Blockout done: rig at 1.24 m with a head 1.43× larger (1.30 m overall); the jaw is a `props` part; strings in `mumbles_strings`.*
+- [x] Model and textures. He uses the shared rig scaled to 1.30 m (same bone names, so the contract test still applies); the jaw can be a shape key or a `props` part. *Detail pass done (step 8): 2,042 body triangles; rig at 1.29 m with a head 1.43× larger; the jaw is a shape key (`jaw`); strings and control bar in `mumbles_strings`.*
 - [x] State clips, and move clips. `Strings Attached` and `Exit Stage Left` are teleports: he is off screen for the listed frames (yanked up on his strings, then lowered back in); `Knock-Knock` is a slow, obvious wind-up (it can't be blocked, so it must read clearly)
 - [x] `fx_hand_puppet`: the decoy, a hand puppet on a little stand, about 0.5 × 1.2 m
 
@@ -215,7 +234,7 @@ Do these first: they're quick, and the detail pass builds on them. Found by play
 - [x] **Clocking In should reach.** It's a command grab with a range of 1.1 m on frames 10–12: both hands reaching forward at chest height, then (on a whiff, 13–50) an over-reach and a slow recovery so the miss is punishable and looks it. Today the hand rises to the head.
 - [x] **Bigger hit reactions.** *Head 40°, chest 30° back (or doubled over for `hit_low`) by frame 3, easing to about half by 12.* `hit_high` moves the head a few degrees; `hit_low` similarly. Snap the head and torso back 15–25° in the first 3 frames and ease back, so a hit reads at phone size. The game holds the clip for as long as the stun lasts.
 - [x] **Teleports land on time.** `Strings Attached` is still above the floor at frame 24 (hidden ends at 20). Be on the floor, in stance, by the last hidden frame + 2.
-- [ ] **The hand puppet should look like a puppet.** `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
+- [x] **The hand puppet should look like a puppet.** *A little Mumbles glove puppet: red felt jacket, white shirt and bow tie, pale painted head with black hair, glossy eyes and rosy cheeks, on a wooden pole and base.* `fx_hand_puppet` reads as a green desk lamp on a stand. It's a decoy, meant to be mistaken for Mumbles for a moment: a small puppet in his colours (red jacket, pale face) on a stand.
 
 ### 8. Detail pass (the style is approved; it wants more detail and textures)
 
@@ -240,46 +259,46 @@ Budget and rules for the pass:
 
 **Everyone**
 
-- [ ] Faces: brow ridge, nose, eye sockets with eyes (whites and pupils as separate flat-coloured pieces), mouth shape; enough to read an expression. Each fighter gets a signature expression (below), and the `hit_*`, `ko` and `win` clips swap it (shape keys or swapped rigid pieces)
-- [ ] Hands: mitts with a separate thumb, and a fist shape for strikes (swap or shape key), so punches read as punches
-- [ ] Shoes with soles and a toe cap; trouser and sleeve cuffs as separate rims
-- [ ] Hair as chunky faceted clumps with a parting, not one block, painted with a few strand lines and a highlight
-- [ ] UVs and the `body` / `props` atlases for every fighter; the asset test checks that textures stay within 1024² and 512²
+- [x] Faces: brow ridge, nose, eye sockets with eyes (whites and pupils as separate flat-coloured pieces), mouth shape; enough to read an expression. Each fighter gets a signature expression (below), and the `hit_*`, `ko` and `win` clips swap it (shape keys or swapped rigid pieces)
+- [x] Hands: mitts with a separate thumb, and a fist shape for strikes (swap or shape key), so punches read as punches
+- [x] Shoes with soles and a toe cap; trouser and sleeve cuffs as separate rims
+- [x] Hair as chunky faceted clumps with a parting, not one block, painted with a few strand lines and a highlight
+- [x] UVs and the `body` / `props` atlases for every fighter; the asset test checks that textures stay within 1024² and 512²
 
 **Dale Storm**: the smiling weatherman, smile fixed through every forecast
-- [ ] A huge, too-white smile and permanent raised eyebrows; side-parted hair with a quiff
-- [ ] Suit: lapels, a wide 1987 tie with a stripe, pocket square, two buttons; sleeves with cuffs
-- [ ] A clicker in the lead hand (`props`), and a little "CH 0" lapel pin
-- [ ] Textures: a faint 1980s check or pinstripe on the suit, a tie pattern (diagonal stripes), the station logo on the pin, a painted tan and too-white teeth
+- [x] A huge, too-white smile and permanent raised eyebrows; side-parted hair with a quiff
+- [x] Suit: lapels, a wide 1987 tie with a stripe, pocket square, two buttons; sleeves with cuffs
+- [x] A clicker in the lead hand (`props`), and a little "CH 0" lapel pin
+- [x] Textures: a faint 1980s check or pinstripe on the suit, a tie pattern (diagonal stripes), the station logo on the pin, a painted tan and too-white teeth
 
 **Rox Vega**: aerobics host who hasn't stopped since 1983
-- [ ] Big permed hair with a headband (two colours), sweatbands on both wrists
-- [ ] Leotard with a high-cut leg and a contrasting stripe or lightning flash; belt, tights, slouchy ribbed leg warmers (rings), high-tops with laces
-- [ ] A determined grin; a sweat drop on the brow (`props`) for `win`
-- [ ] Textures: neon gradient or zigzag on the leotard, "FEEL THE BURN" lettering on the headband, ribbing on the leg warmers, a shine on the tights, bright eye shadow
+- [x] Big permed hair with a headband (two colours), sweatbands on both wrists
+- [x] Leotard with a high-cut leg and a contrasting stripe or lightning flash; belt, tights, slouchy ribbed leg warmers (rings), high-tops with laces
+- [x] A determined grin; a sweat drop on the brow (`props`) for `win`
+- [x] Textures: neon gradient or zigzag on the leotard, "FEEL THE BURN" lettering on the headband, ribbing on the leg warmers, a shine on the tights, bright eye shadow
 
 **Hollis Bey**: night security guard, broad and tired
-- [ ] Peaked cap with a badge and a visor; a heavy moustache; a stubbled jaw (darker flat colour); tired, heavy-lidded eyes
-- [ ] Uniform: shoulder epaulettes, chest badge, two shirt pockets, a tie, a duty belt with pouches, the flashlight and the key ring (already props)
-- [ ] Heavy boots; a slight gut; bigger hands than the others
-- [ ] Textures: a "SECURITY" patch on the shoulder, "TRANSMITTER SITE" on the badge, a name tag ("BEY"), creased and slightly faded uniform fabric, a coffee stain, stubble
+- [x] Peaked cap with a badge and a visor; a heavy moustache; a stubbled jaw (darker flat colour); tired, heavy-lidded eyes
+- [x] Uniform: shoulder epaulettes, chest badge, two shirt pockets, a tie, a duty belt with pouches, the flashlight and the key ring (already props)
+- [x] Heavy boots; a slight gut; bigger hands than the others
+- [x] Textures: a "SECURITY" patch on the shoulder, "TRANSMITTER SITE" on the badge, a name tag ("BEY"), creased and slightly faded uniform fabric, a coffee stain, stubble
 
 **Mister Mumbles**: a ventriloquist's dummy with nobody's hand in him
-- [ ] The dummy face: painted round eyes, rosy cheek circles, a black painted hairline, and the hinged jaw with its two slot lines down the chin (the jaw drops in `idle` as if talking, and on the knocks in `Knock-Knock`)
-- [ ] Little suit with a bow tie and big buttons; wooden hands with visible finger lines; visible wooden joints (balls) at elbows and knees
-- [ ] The strings: a wooden control bar at the top of the frame they hang from (`mumbles_strings`)
-- [ ] Textures: wood grain on the hands and visible joints, chipped paint and a few cracks on the face (it's old), glossy painted eyes and cheeks, a tiny felt texture on the suit
+- [x] The dummy face: painted round eyes, rosy cheek circles, a black painted hairline, and the hinged jaw with its two slot lines down the chin (the jaw drops in `idle` as if talking, and on the knocks in `Knock-Knock`)
+- [x] Little suit with a bow tie and big buttons; wooden hands with visible finger lines; visible wooden joints (balls) at elbows and knees
+- [x] The strings: a wooden control bar at the top of the frame they hang from (`mumbles_strings`)
+- [x] Textures: wood grain on the hands and visible joints, chipped paint and a few cracks on the face (it's old), glossy painted eyes and cheeks, a tiny felt texture on the suit
 
 ### 9. Effects (for the moves whose effect is the hit)
 
 Effect meshes go in the fighter's GLB as `fx_*` in the `props` material, as now; the game places and animates copies.
 
-- [ ] `fx_isobar_lasso` (Dale): a curling isobar line with pressure numbers, reaching from the hand to 2.6 m at 0.8–1.4 m high
-- [ ] `fx_key_ring` (Hollis): the chain and keys, sweeping low to 1.9 m
-- [ ] `fx_heat_lightning` (Dale): a crackle around the rising fist
-- [ ] `fx_lariat_trail` (Rox): a pink ribbon arc for the spin
-- [ ] `fx_tape_skip`: a VHS-smear afterimage (one shared mesh, used for every fighter's Tape Skip dash; put it in `dale.glb` for now)
-- [ ] `fx_cold_front` reads as stacked ice; fine for a cold front, but give it a swirl so it reads as wind moving forward
+- [x] `fx_isobar_lasso` (Dale): a curling isobar line with pressure numbers, reaching from the hand to 2.6 m at 0.8–1.4 m high
+- [x] `fx_key_ring` (Hollis): the chain and keys, sweeping low to 1.9 m
+- [x] `fx_heat_lightning` (Dale): a crackle around the rising fist
+- [x] `fx_lariat_trail` (Rox): a pink ribbon arc for the spin
+- [x] `fx_tape_skip`: a VHS-smear afterimage (one shared mesh, used for every fighter's Tape Skip dash; put it in `dale.glb` for now)
+- [x] `fx_cold_front` reads as stacked ice; fine for a cold front, but give it a swirl so it reads as wind moving forward
 
 ### 10. Next
 
@@ -493,5 +512,12 @@ worked into the move data, and the table above updates itself.
 
 - **Clip ends (game side, Nov 8):** play one-shot clips with `LoopOnce` and `clampWhenFinished`, and update the skeleton (`skeleton.update()`) before measuring a skinned mesh, or the measurement shows the last rendered frame. `ko` and `getup` were right in the GLB; the viewer's readout lagged.
 - **`tape_skip` (game side):** a new 10-frame state clip for the Tape Skip dash; play it (with `fx_tape_skip`, when it exists) instead of `dash`.
+- **Detail pass (Nov 8, art side).** Step 8 and 9 done. Notes for the game side:
+  - The bodies use 2,042–2,474 triangles of the ~6,000 allowed, so there's room for more shape where review asks for it. Each GLB is 1.2–1.5 MB with both atlases (PNG; the KTX2 conversion should shrink that).
+  - Each fighter has morph targets on `<id>_body` (`fist_L`, `fist_R`, `hurt`, `jaw`, `ko`, `win`) and every clip animates all of them, so playing clips is enough; nothing needs setting by hand. Expressions: `hurt` in the hits, `launched`, `thrown`, `down` (part) and the start of `ko`; eyes closed at the end of `ko`; `win` grins (and shows Rox's sweat drop).
+  - Mumbles' strings now hang from a control bar 3.3 m up, on `root`, so they stay straight whatever he does; strings to his head, hands and knees.
+  - Rox now has a `props` material (her sweat drop and `fx_lariat_trail`).
+  - Effects are modelled where they're used: `fx_isobar_lasso` from the hand (0.6 m) to 2.6 m at 0.8–1.4 m; `fx_key_ring` from 0.4 m out and 0.45 m up to the keys at 1.9 m; `fx_heat_lightning` and `fx_hand_puppet`'s base centred on the origin; `fx_lariat_trail` round the origin at hand height; `fx_tape_skip` (in `dale.glb`, for every fighter) trails back from the origin (−x).
+  - The viewer has two new views: FACE (a close-up, for expressions) and EFFECTS.
 - **Answers to the notes above (game side):** mirroring to face left, the shorter walk loops, the root motion in `down`, `getup`, `thrown`, `ko`, `launched`, the teleports and `Star Jump`, and effect-only hits are all fine; the game will follow them when it loads the GLBs (next on the game side, with the clips played by simulation frame). Rox having one material is fine (the contract is body plus *at most* props).
 - **Blockout (Nov 8):** Dale's `idle` stands 1.72 m with knees bent (1.80 at rest). `s.FP`'s fist reaches x 0.90, y 1.34 on frames 7–8, so the hitbox fits the pose as it is; no timing changes needed yet.

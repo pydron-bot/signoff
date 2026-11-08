@@ -13,8 +13,13 @@ import numpy as np
 
 from .anim import DATA, check, move_clips, state_clips
 from .body import Build, new_parts
-from .common import export_glb, reset_scene, triangles
-from .rig import apply_pose, build_rig
+from .common import export_glb, reset_scene, shape_key_tracks, triangles
+from .rig import Clip, apply_pose, build_rig
+from .texture import paint, unwrap, use_atlas
+
+# Seen most (round start, win, intro): twice the texel density.
+DENSE = ("head", "face", "torso", "shirt", "tie", "lapel", "brow", "eye", "pupil", "nose", "mouth", "grin", "teeth", "lip",
+         "cheek", "jaw", "badge", "patch", "tag", "pin", "moustache", "headband")
 
 # The head tops out within this of the hurtbox's top in idle, the walks and
 # block_stand (crouch_idle against the crouching box): under by up to 3 cm,
@@ -122,6 +127,14 @@ def build(mod, out_dir, art_dir):
 
         mod.fx(make, b)
 
+    # The atlases: body 1024², props 512², painted from the parts.
+    objs = skinned + fx
+    unwrap(objs, {m["name"] for m in p.meta if m["name"].startswith(DENSE)}, p.meta)
+    for mi, size in ((0, 1024), (1, 512)):
+        if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
+            use_atlas(p.materials[mi], paint(objs, p.meta, mi, size, art_dir / "textures" / f"{mod.ID}_{p.materials[mi].name}.png"))
+
+    Clip.shape_keys = body.data.shape_keys
     fit_crouch(rig, body, st, hurt["crouch"][3])
     actions = state_clips(rig, st, data)
     moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
@@ -143,4 +156,5 @@ def build(mod, out_dir, art_dir):
 
     art_dir.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(art_dir / f"{mod.ID}.blend"), compress=True)
-    export_glb(out_dir / "fighters" / f"{mod.ID}.glb", [rig, *skinned, *fx])
+    morphs = {body.name: shape_key_tracks(body, actions + moves)} if body.data.shape_keys else {}
+    export_glb(out_dir / "fighters" / f"{mod.ID}.glb", [rig, *skinned, *fx], morphs)
