@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.29.0',
+    date: '2026-11-09',
+    title: 'Live from the Studio',
+    notes: [
+      "The Eleven O'Clock News has its set: the globe and the CH 0 NEWS header, the studio clock stuck at eleven, the cameras on their pedestals, BREAKING on the backdrop when the ticker starts, and a dead studio with its lamps fallen for Lights Out.",
+      'Kitchen Live has its set: a chequered floor, a long stainless counter with the stockpot and the knife block on it, shelves of jars and the KITCHEN LIVE sign, walls of flame for Grease Fire, and the big oven hanging open in a blackened kitchen for The Oven.',
+    ],
+  },
+  {
     version: '0.28.0',
     date: '2026-11-09',
     title: 'Two taps',

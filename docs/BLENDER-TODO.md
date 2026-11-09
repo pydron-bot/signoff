@@ -248,7 +248,7 @@ are authored facing right with the left foot and left hand leading.
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
 > 5. ~~**Step 21 A, finger joints**~~ *done (Nov 9): the five built fighters rebuilt on the split fingers.*
 > 6. ~~**Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price**~~ *done (Nov 9): `gus.glb` and `gideon.glb`.*
-> 7. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
+> 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
@@ -766,10 +766,12 @@ does.
 | The Ticker | `#081428` | `#d8e4ff` × 1.2 | `#fff4e0` × 2.2 from (−3, 6, 7) | `#ff3a3a` × 0.9 from (−3, 4, −4) |
 | Lights Out | `#020308` | `#8090b0` × 0.8 | `#fff0d0` × 2.0 from (0, 8, 6); the game dims it with each lamp down | `#3050a0` × 0.5 from (0, 3, −6) |
 
-- [ ] `set`, the three `seg_*` and the light rigs
-- [ ] `prop_desk` at the size above
-- [ ] `fx_lamp`, `fx_wreck`, `fx_mark`
-- [ ] Pass `tests/assets.test.ts`'s `news.glb` checks (written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.news`, the desk's size and place)
+*Done (Nov 9): `blender/stages/news.py`, 1,566 triangles (0.38 MB). Notes under* The two new stages (Nov 9, art side) *in Feedback.*
+
+- [x] `set`, the three `seg_*` and the light rigs. *The lights are the table above as given. The lamps hang from the grid in `seg_headlines`, not `set`, so that in Lights Out only their cables are left.*
+- [x] `prop_desk` at the size above. *Walnut, a curved front with a blue CH 0 NEWS panel, a dark top: 1.2 × 0.8 × 0.7 m.*
+- [x] `fx_lamp`, `fx_wreck`, `fx_mark`
+- [x] Pass `tests/assets.test.ts`'s `news.glb` checks (written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.news`, the desk's size and place)
 
 ### 20. Kitchen Live (stage, Nov 9, game side)
 
@@ -802,10 +804,12 @@ and the rest as above. The game side is in (0.22.0: `src/sim/stages.ts`,
 | Grease Fire | `#1c0800` | `#ffc890` × 1.2 | `#ffb060` × 2.0 from (0, 6, 7) | `#ff5010` × 1.2 from (0, 3, −4); the game flickers it |
 | The Oven | `#200400` | `#ff9a60` × 1.1; the game swells it slowly | `#ff8040` × 2.0 from (0, 5, 7) | `#ff3000` × 1.0 from (0, 2, −5) |
 
-- [ ] `set`, the three `seg_*` and the light rigs
-- [ ] `prop_pot` and `prop_knives` at the sizes above
-- [ ] `fx_flare`, `fx_mark`
-- [ ] Pass `tests/assets.test.ts`'s `kitchen.glb` checks
+*Done (Nov 9): `blender/stages/kitchen.py`, 4,210 triangles (1.20 MB). Notes under* The two new stages (Nov 9, art side) *in Feedback.*
+
+- [x] `set`, the three `seg_*` and the light rigs. *The lights are the table above as given. The hood sits over the hob at x = −1.2; the sign and the oven are to its right (x = 3.6 and 1.4).*
+- [x] `prop_pot` and `prop_knives` at the sizes above. *Exported at their counter places (x = ∓3, fwd −1.6, up 0.95).*
+- [x] `fx_flare`, `fx_mark`
+- [x] Pass `tests/assets.test.ts`'s `kitchen.glb` checks
 
 ### 21. Low-poly plus: what to keep from the HD experiment (Nov 9, game side)
 
@@ -1240,3 +1244,8 @@ worked into the move data, and the table above updates itself.
   - Every strike and height check passes; Fire and Brimstone is marked `prop` (the blast is the hit), so the hands aren't checked against its box.
   - `fx_brimstone`'s column of light is ten thin beams round him, not a solid column: placed on him, a solid one would hide him for the whole blast.
   - `lib/anim.py` has two new overrides: `palm` (an open hand on the strike) and `keys` (a function giving hand-keyed poses that replace the generated ones over their frames). `keys` is the way in for step 16 C's hand-keyed specials.
+- **The two new stages (Nov 9, art side).** Steps 19 and 20 done; `npm run art -- --only news` / `--only kitchen`. Notes for the game side:
+  - News: the riser is only its plate in the floor (`seg_ticker`). The desk rises 0.9 m over it with nothing underneath; a hydraulic column could be a separate object the game raises with it, if it wants one.
+  - News: the lamps over the floor are in `seg_headlines`, so they're gone in Lights Out, where the cables they hung from are left.
+  - Kitchen: `seg_prep` is the heaviest object (2,100 triangles, mostly jars); the whole stage is 4,210, about Feel the Burn's weight times three but well inside 20k. The flames are opaque cones in the `set` atlas, shaded root to tip; the game's flicker on the rim light sells them.
+  - Neither stage has a stage viewer yet: I checked them with a throwaway page (the segment's lights from the `lights` node, from the game camera). A `?stage=` mode in the art viewer would make this easier next time.
