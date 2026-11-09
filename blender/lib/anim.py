@@ -299,18 +299,23 @@ class Stance:
             hand_R={"pos": self.s((-0.05, 0.7, 1.3)), "aim": (0, 1, 0)})
 
     def dazed(self, t):
-        """Out on their feet (t: 0…1 round the sway): guard down, swaying
-        side to side, the head lolling the other way."""
+        """Out on their feet (t: 0…1 round the sway): slumped, guard gone,
+        swaying side to side with the head lolling the other way, the knees
+        buckling twice a sway and catching, the arms hanging limp, the jaw
+        slack. Pitiful (step 16 C)."""
         k, sw, up = self.k, math.sin(2 * math.pi * t), math.cos(2 * math.pi * t)
-        d = self.drop * 0.6
-        lean = (6, self.chest_yaw * 0.6, 8 * sw)
+        buckle = math.sin(2 * math.pi * t * 2) ** 8  # a sudden dip at the end of each swing
+        d = self.drop * 0.6 + 0.05 * buckle
+        lean = (16 + 4 * buckle, self.chest_yaw * 0.5, 10 * sw)
+        sag = (24, self.chest_yaw * 0.5, 10 * sw)  # the shoulders rolled forward
         return self.base(drop=d).but(
-            hips={"offset": (0.04 * k * sw, -0.03 * k, -(d + 0.012 * (1 - up)) * k), "turn": (-4, self.hips_yaw + 5 * sw, -4 * sw)},
-            spine=(2, (self.hips_yaw + self.chest_yaw * 0.6) / 2, 5 * sw), chest=lean, shoulder_L=lean, shoulder_R=lean,
-            neck=(12, 0, -10 * sw), head=(18 + 6 * up, 10 * sw, -22 * sw),
-            hand_L={"pos": self.s((0.2, 0.12, 0.92 + 0.03 * sw)), "aim": (0.2, 0.3, -1)},
-            hand_R={"pos": self.s((-0.2, 0.06, 0.9 - 0.03 * sw)), "aim": (-0.2, 0.3, -1)},
-        ).shaped(hurt=0.6, ko=0.35, jaw=0.6, fist_L=0.0, fist_R=0.0, open_L=0.6, open_R=0.6)
+            hips={"offset": (0.05 * k * sw, -0.04 * k, -(d + 0.015 * (1 - up)) * k), "turn": (-8, self.hips_yaw + 6 * sw, -5 * sw)},
+            spine=(6, (self.hips_yaw + self.chest_yaw * 0.5) / 2, 6 * sw), chest=lean, shoulder_L=sag, shoulder_R=sag,
+            neck=(18, 0, -12 * sw), head=(28 + 8 * up - 10 * buckle, 12 * sw, -26 * sw),
+            hand_L={"pos": self.s((0.2 + 0.03 * sw, 0.08, 0.8 + 0.03 * sw)), "aim": (0.15, 0.15, -1)},
+            hand_R={"pos": self.s((-0.2 + 0.03 * sw, 0.02, 0.78 - 0.03 * sw)), "aim": (-0.15, 0.1, -1)},
+            knee_L=self.s((self.lead_foot[0] - 0.04, 0.8, 0.5)), knee_R=self.s((self.rear_foot[0] + 0.04, 0.7, 0.5)),
+        ).shaped(hurt=0.75, ko=0.45 + 0.25 * buckle, jaw=0.75 + 0.2 * buckle, fist_L=0.0, fist_R=0.0, open_L=0.25, open_R=0.25)
 
     # Lying back in the air (launched, and the start of ko): the body is
     # posed as if standing, curled, then the root tips it onto its back
@@ -1122,6 +1127,18 @@ def move_clips(rig, st, data, overrides):
             elif rec > 3 and prev_end + max(1, round(rec * 0.35)) not in keys:
                 at(prev_end + max(1, round(rec * 0.35)), lerp_pose(keys[prev_end], base, 0.55))
         keys[total] = base
+        # The moves people watch get the showcase: specials (boosted ones
+        # bigger), the launcher and the string enders.
+        ender = " " in mid and not any(o.startswith(mid + " ") for o in data["moves"])
+        if ((mv["kind"] in ("special", "super") and mid != "td") or mid == "c.BP" or ender) and style not in ("teleport", "spin", "hop", "knock"):
+            spans = [h["frames"] for h in hits] + [(s["frame"], s["frame"]) for s in mv["spawns"]]
+            if mv.get("throw"):
+                spans.append(tuple(mv["throw"]["frames"]))
+            if spans:
+                first = (alt[0] if alt else limb) if hits else None
+                boosted = mid.endswith("+") or "(" in mid
+                showcase(keys, st, base, min(a for a, _ in spans), max(b for _, b in spans), total, first, 1.6 if boosted else 1.0,
+                         {alt[i % len(alt)] if alt else limb for i in range(len(hits))})
         if spec.get("keys"):
             custom = spec["keys"](st, base, mv)
             lo, hi = min(f for f, _ in custom), max(f for f, _ in custom)
@@ -1160,6 +1177,59 @@ def move_clips(rig, st, data, overrides):
         out.append(c.finish())
         strikes[mid] = checks
     return out, strikes, fitter.problems
+
+
+def showcase(keys, st, base, b0, b1, total, limb, g, strikers=()):
+    """The moves people watch (specials, the launcher, string enders, step
+    16 C): the key before the business (b0…b1) coils further back, the body
+    stretches into it over the business (the free arm thrown back, the rear
+    heel up) without moving the striking limb, then overshoots past it and
+    follows through for longer. g: how much (boosted versions go bigger);
+    strikers: every limb that hits in the move, left where the fit put it.
+    Only the striking limb is checked against the hitbox, on the active
+    frames, so the rest of the body is free."""
+    k = st.k
+    lead = limb is None or limb.endswith(".L")
+    sign = 1 if lead else -1
+    hand = limb is not None and limb.startswith("hand")
+    # Anticipation: wound up away from the strike, lower and back.
+    pre = [f for f in keys if 1 < f < b0]
+    f = max(pre) if pre else (b0 - 4 if b0 - 4 >= 2 else None)
+    if f is not None:
+        keys[f] = added(pose_at(keys, f), hips={"offset": (0, -0.05 * k * g, -0.03 * k * g), "turn": (0, 8 * g * sign, 0)},
+                        spine=(0, 8 * g * sign, 0), chest=(-4 * g, 14 * g * sign, 0), head=(6 * g, -8 * g * sign, 0))
+    # The stretch: the free arm thrown back (both, for a kick), the rear heel up.
+    for f in [f for f in keys if b0 <= f <= b1]:
+        p = keys[f]
+        # Shoulder height wherever the hips are (crouched, or in the air).
+        z = p.parts.get("hips", {}).get("offset", (0, 0, 0))[2]
+        parts = {}
+        if limb is not None:  # a spawn or a grab has both hands at the business
+            if (not hand or limb.endswith(".L")) and "hand.R" not in strikers:
+                parts["hand_R"] = {"pos": (-(0.22 + 0.04 * g) * k, -(0.12 + 0.1 * g) * k, 1.24 * k + z), "aim": (-0.4, -0.6, 0.2)}
+            if (not hand or limb.endswith(".R")) and "hand.L" not in strikers:
+                parts["hand_L"] = {"pos": ((0.24 + 0.04 * g) * k, -(0.08 + 0.1 * g) * k, 1.26 * k + z), "aim": (0.4, -0.6, 0.2)}
+        rear = p.parts.get("foot_R")
+        if hand and rear and "pos" in rear and "aim" not in rear and z > -0.2 * k and "foot.R" not in strikers:
+            parts["foot_R"] = moved(rear, (0, 0, 0.025 * k * g), (18 * g, rear.get("turn", (0, st.rear_foot_yaw, 0))[1], 0))
+        # Boosted: sunk lower and further in over the business (the striking
+        # hand or foot is placed in body space, so it stays on the box).
+        big = max(0.0, g - 1.0) * 2
+        keys[f] = added(p.but(**parts), head=(5 * g, 0, 0), hips={"offset": (0, 0.03 * k * big, -0.05 * k * big), "turn": (4 * big, 0, 0)})
+    # Overshoot past the business, then a longer follow-through.
+    f = b1 + 2
+    if total - b1 >= 10 and not any(b1 < x <= f for x in keys):
+        p = keys.get(b1) or pose_at(keys, b1)
+        parts = {}
+        if limb is not None:
+            key = f"{'hand' if hand else 'foot'}_{limb[-1]}"
+            if "pos" in p.parts.get(key, {}):
+                parts[key] = moved(p.parts[key], (0, 0.07 * k * g, 0))
+        over = added(p.but(**parts), hips={"offset": (0, 0.04 * k * g, -0.01 * k)}, chest=(5 * g, 0, 0), head=(4 * g, 0, 0))
+        for x in [x for x in keys if f < x < total]:
+            del keys[x]
+        keys[f] = over
+        keys[f + round((total - f) * 0.5)] = lerp_pose(over, base, 0.45)
 
 
 def shout(keys, mv, total):

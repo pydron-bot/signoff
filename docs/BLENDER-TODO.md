@@ -586,10 +586,10 @@ watch deserve more. Add per-move pose overrides (a file per fighter under
 `blender/data/`, read by `lib/anim.py`), keeping the strike frames on the
 hitbox (the build's check still applies):
 
-- [ ] Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
-- [ ] The launchers (`c.BP` for everyone) and the string enders: they start and end combos, and the camera is on them most.
+- [ ] *(Generated pass done, Nov 9: see* Showcase *in Feedback; hand-keyed signatures to follow.)* Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
+- [x] *(Done, Nov 9, by the showcase pass.)* The launchers (`c.BP` for everyone) and the string enders: they start and end combos, and the camera is on them most.
 - [ ] `intro`, `intro_2`, `win`, `win_2`, using the new hands and jaw (talking to camera, pointing, waving).
-- [ ] `dazed`: with the jaw slack and the hands open it can be much more pitiful.
+- [x] `dazed`: with the jaw slack and the hands open it can be much more pitiful. *Done (Nov 9): slumped, shoulders rolled forward, arms hanging limp, knock-kneed, the knees buckling and catching twice a sway with the eyes closing on each dip.*
 
 **D. Shape detail**
 
@@ -1568,3 +1568,8 @@ worked into the move data, and the table above updates itself.
   - Shared (`lib/body.py`): more sides on the torso (18), arms and legs (12) and neck (10), still faceted; a bowl in each ear; a heel block under every shoe (`heel: False` for Gus's clogs, `heel_h` for Margaret's court shoes); and `hair_cover`, which lays chunky locks over a hair blob in rows, so smooth hair breaks up into a silhouette.
   - Per fighter: Dale's helmet hair in locks swept to his right, collar points and a blazer hem; Rox's perm in curls; Hollis's crop under a rounder cap, a bristled moustache, belt loops, collar points and boot laces; Mumbles' lapels, pocket hanky, jacket hem and shoe straps; Margaret's layered bob, jacket hem, pocket flaps and heels; Gus's toque pleats as ribs with a lobed puff, the neckerchief's tails, moustache strands and hair locks; Gideon's sides swept back into a ducktail, and a jacket hem.
   - Shape keys unchanged (`hurt`, `ko`, `win` and each fighter's held props). GLBs: Dale 2.31 MB, Rox 2.21, Gus 2.16, Margaret 1.96, Gideon 1.94, Mumbles 1.92, Hollis 1.88, all under 5.
+- **Showcase (Nov 9, art side).** Step 16 C, first half: a generated pass (`showcase` in `lib/anim.py`) over every special and super (not `td`), the launcher `c.BP` and every string ender (a string id that no longer string starts with), except the moves already fully staged (teleports, spins, hops, Knock-Knock). Notes for the game side:
+  - Anticipation: the key before the business coils further back, lower, twisted away from the striking side. The stretch over the business: the free arm thrown back (both arms for a kick), the rear heel up, the head driving in. Then an overshoot two frames after it (the striking hand or foot 7 cm further, the hips in), held into a longer follow-through. Only the limbs that hit in the move are left where the fit put them, so every strike check still passes.
+  - Boosted versions (`+`, and Gideon's alternates) go 1.6 times as far and sink lower and further in over the business, so they look bigger as well as glowing.
+  - `dazed` is slumped and knock-kneed, the arms hanging, the knees buckling twice a sway with the eyes closing on each dip.
+  - GLBs grew 0.03–0.05 MB: Dale 2.36 MB, Rox 2.24, Gus 2.19, Margaret 2.00, Gideon 1.97, Mumbles 1.94, Hollis 1.91.
