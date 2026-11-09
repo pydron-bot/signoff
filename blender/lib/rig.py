@@ -3,7 +3,13 @@ it in fighter space.
 
 Deform bones (exported to the GLB, identical names in every fighter so clips
 retarget) are listed in DEFORM. The IK controls in CONTROLS stay in the .blend:
-the exporter bakes what they do into the deform bones' keys.
+the exporter bakes what they do into the deform bones' keys. A fighter may add
+its own x_* bones for secondary motion (add_bones; animated by lib/spring.py).
+
+The hands and the jaw are posed by values in a pose's `shapes`, as the fists
+used to be by shape keys: fist_L / fist_R curl the fingers (0 open … 1 a
+fist), point_L / point_R keep the index straight, open_L / open_R splay the
+hand, and jaw opens the jaw (or, for a fighter with jaw_slide, drops it).
 
 Clips are posed by placing the controls and turning the upper body in
 fighter space (see Pose), then keyed. Blender frame n is move frame n
@@ -13,7 +19,7 @@ start at time 0, so the game samples move frame n at (n - 1) / 60 s.
 import math
 
 import bpy
-from mathutils import Euler, Matrix, Vector
+from mathutils import Euler, Matrix, Quaternion, Vector
 
 from .common import fighter, from_blender
 
@@ -26,14 +32,21 @@ DEFORM = [
     ("chest", "spine"),
     ("neck", "chest"),
     ("head", "neck"),
+    ("jaw", "head"),
     ("shoulder.L", "chest"),
     ("upper_arm.L", "shoulder.L"),
     ("forearm.L", "upper_arm.L"),
     ("hand.L", "forearm.L"),
+    ("thumb.L", "hand.L"),
+    ("index.L", "hand.L"),
+    ("fingers.L", "hand.L"),
     ("shoulder.R", "chest"),
     ("upper_arm.R", "shoulder.R"),
     ("forearm.R", "upper_arm.R"),
     ("hand.R", "forearm.R"),
+    ("thumb.R", "hand.R"),
+    ("index.R", "hand.R"),
+    ("fingers.R", "hand.R"),
     ("thigh.L", "hips"),
     ("shin.L", "thigh.L"),
     ("foot.L", "shin.L"),
@@ -65,6 +78,11 @@ _LEFT = {
     "foot": ((0.10, 0, 0.09), (0.10, 0.13, 0.025)),
     "toe": ((0.10, 0.13, 0.025), (0.10, 0.20, 0.02)),
 }
+# The finger groups and jaw, placed from the hand and the head by build_rig.
+_PLACED = {"jaw", "thumb", "index", "fingers"}
+# How far a value of 1 turns them (degrees): fingers and index curl into a
+# fist, the thumb folds across, an open hand splays back; the jaw drops open.
+CURL, THUMB, SPLAY, THUMB_OUT, JAW = 100.0, 55.0, 18.0, 25.0, 16.0
 _CONNECTED = {"spine", "chest", "neck", "head", "upper_arm", "forearm", "hand", "shin", "foot", "toe"}
 
 
@@ -80,7 +98,56 @@ def joints(height):
     return out
 
 
-def build_rig(name, height):
+def hand_frame(j, s):
+    """Hand `s`'s frame at rest: the wrist, `a` along the hand to the
+    fingertips, `w` toward the thumb (forward), `n` out of the back of the
+    hand, and the hand's length."""
+    import numpy as np
+
+    wr, ht = (np.array(v) for v in j[f"hand.{s}"])
+    L = float(np.linalg.norm(ht - wr))
+    a = (ht - wr) / L
+    w = np.cross(a, (1.0, 0, 0))
+    w /= np.linalg.norm(w)
+    if w[1] < 0:
+        w = -w
+    n = np.cross(w, a)
+    n /= np.linalg.norm(n)
+    if n[0] * (1 if s == "L" else -1) < 0:
+        n = -n
+    return wr, a, w, n, L
+
+
+def finger_joints(height, s, size=1.0):
+    """(head, tail) of the thumb, index and finger-group bones on hand `s`:
+    the index and the other three fingers from the knuckles to the tips, the
+    thumb from its root by the wrist (body.hand builds the pieces to match)."""
+    wr, a, w, n, L = hand_frame(joints(height), s)
+    kk = height / 1.80 * size
+    L *= size
+    knuckle = 0.42 * L
+    return {
+        f"index.{s}": (wr + a * knuckle + w * 0.026 * kk, wr + a * L + w * 0.026 * kk),
+        f"fingers.{s}": (wr + a * knuckle - w * 0.012 * kk, wr + a * 0.95 * L - w * 0.012 * kk),
+        f"thumb.{s}": (wr + a * 0.2 * L + w * 0.044 * kk - n * 0.006 * kk, wr + a * 0.62 * L + w * 0.06 * kk - n * 0.012 * kk),
+    }
+
+
+def jaw_joint(height, head=1.0):
+    """The jaw's hinge under the ears and its tail at the chin, scaled about
+    the head's base like body.head_frame's parts."""
+    k = height / 1.80
+    hz = 1.55 * k
+
+    def hp(side, fwd, up):
+        return (side * k * head, fwd * k * head, hz + (up - 1.55) * k * head)
+
+    return hp(0, 0.0, 1.635), hp(0, 0.1, 1.552)
+
+
+def build_rig(name, height, head=1.0, hand=1.0):
+    """The rig for a fighter `height` m tall (`head` and `hand`: the build's
+    head and hand scale, so the jaw and finger joints sit in the mesh)."""
     data = bpy.data.armatures.new(f"{name}_rig")
     rig = bpy.data.objects.new(name, data)
     bpy.context.scene.collection.objects.link(rig)
@@ -102,9 +169,12 @@ def build_rig(name, height):
             b.use_connect = connect
         return b
 
+    placed = {"jaw": jaw_joint(height, head)}
+    for s in ("L", "R"):
+        placed.update(finger_joints(height, s, hand))
     for bname, parent in DEFORM:
-        h, t = j[bname]
-        new(bname, h, t, parent, connect=bname.split(".")[0] in _CONNECTED)
+        h, t = placed.get(bname) or j[bname]
+        new(bname, tuple(h), tuple(t), parent, connect=bname.split(".")[0] in _CONNECTED)
     for s, sx in (("L", 1), ("R", -1)):
         # IK targets match the hand and foot exactly, so copying their rotation is a no-op at rest.
         for part in ("hand", "foot"):
@@ -130,7 +200,77 @@ def build_rig(name, height):
             cr.target, cr.subtarget = rig, f"{target}.{s}"
     for pb in rig.pose.bones:
         pb.rotation_mode = "QUATERNION"
+    _bend_signs(rig, height)
     return rig
+
+
+def add_bones(rig, specs):
+    """A fighter's own bones (x_*, for secondary motion): specs are dicts
+    with name, parent, head and tail (fighter space), parents first."""
+    if not specs:
+        return
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode="EDIT")
+    eb = rig.data.edit_bones
+    for sp in specs:
+        b = eb.new(sp["name"])
+        b.head, b.tail = fighter(*sp["head"]), fighter(*sp["tail"])
+        d = (b.tail - b.head).normalized()
+        b.align_roll(Vector((0, 0, 1)) if abs(d.y) > 0.7 else Vector((0, -1, 0)))
+        b.parent = eb[sp["parent"]]
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for sp in specs:
+        rig.pose.bones[sp["name"]].rotation_mode = "QUATERNION"
+
+
+def _bend_signs(rig, height):
+    """Which way each finger and the jaw turn about their local axis (it
+    depends on the bones' roll): fingers and thumb toward the palm, the jaw
+    down. Stored on the bones as `bend`."""
+    import numpy as np
+
+    j = joints(height)
+    tests = {"jaw": ("X", Vector((0, 0, -1)))}
+    for s in ("L", "R"):
+        _, _, _, n, _ = hand_frame(j, s)
+        palm = fighter(*(-n))
+        for f in ("thumb", "index", "fingers"):
+            tests[f"{f}.{s}"] = ("Z", palm)
+    for name, (axis, want) in tests.items():
+        pb = rig.pose.bones[name]
+        bpy.context.view_layer.update()
+        before = pb.tail.copy()
+        pb.rotation_quaternion = Quaternion(Vector((1, 0, 0) if axis == "X" else (0, 0, 1)), math.radians(15))
+        bpy.context.view_layer.update()
+        moved = pb.tail - before
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        rig.data.bones[name]["bend"] = 1.0 if float(np.dot(moved, want)) > 0 else -1.0
+    bpy.context.view_layer.update()
+
+
+def pose_hands_and_jaw(rig, shapes):
+    """The finger groups and the jaw from a pose's shape values (see the
+    module docstring). Local rotations, so they ride on the posed hand and
+    head."""
+    for s in ("L", "R"):
+        fist = shapes.get(f"fist_{s}", 0.0)
+        splay = shapes.get(f"open_{s}", 0.0)
+        point = shapes.get(f"point_{s}", 0.0)
+        curl = fist * CURL - splay * SPLAY
+        for name, deg in ((f"fingers.{s}", curl), (f"index.{s}", curl * (1 - point) - point * 4), (f"thumb.{s}", fist * THUMB - splay * THUMB_OUT)):
+            pb = rig.pose.bones[name]
+            pb.rotation_quaternion = Quaternion(Vector((0, 0, 1)), math.radians(deg * pb.bone["bend"]))
+    pb = rig.pose.bones["jaw"]
+    v = shapes.get("jaw", 0.0)
+    slide = rig.get("jaw_slide", 0.0)
+    if slide:
+        # A dummy's jaw drops straight down between its slots (and back a touch).
+        down = pb.bone.matrix_local.to_3x3().inverted() @ Vector((0, 0.15 * slide * v, -slide * v))
+        pb.location = down
+        pb.rotation_quaternion = (1, 0, 0, 0)
+    else:
+        pb.location = (0, 0, 0)
+        pb.rotation_quaternion = Quaternion(Vector((1, 0, 0)), math.radians(rig.get("jaw_open", JAW) * v * pb.bone["bend"]))
 
 
 def _best_pole_angle(rig, bone, ik):
@@ -180,8 +320,9 @@ class Pose:
       foot points, for kicks).
     hand_L / hand_R: wrist position, and aim (the direction the hand points).
     knee_L / elbow_L (and _R): optional pole positions (which way the joint bends).
-    shapes: {shape key: value} for the body's shape keys (expressions,
-      fists, a jaw); unset keys are 0.
+    shapes: {shape key: value} for the body's shape keys (expressions, held
+      props), and the hand and jaw values (fist_*, point_*, open_*, jaw)
+      that pose_hands_and_jaw turns into bones; unset values are 0.
     """
 
     def __init__(self, **parts):
@@ -318,6 +459,7 @@ def apply_pose(rig, pose, height):
             w = hand.get("pos", j[f"hand.{s}"][0])
             elbow = (w[0] + 0.3 * sx, w[1] - 0.5, w[2] - 0.3)
         place(f"pole_elbow.{s}", rig.pose.bones[f"pole_elbow.{s}"].bone.matrix_local.to_3x3(), fighter(*elbow))
+    pose_hands_and_jaw(rig, pose.parts.get("shapes", {}))
     bpy.context.view_layer.update()
 
 

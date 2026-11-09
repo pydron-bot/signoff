@@ -276,7 +276,7 @@ class Stance:
             neck=(12, 0, -10 * sw), head=(18 + 6 * up, 10 * sw, -22 * sw),
             hand_L={"pos": self.s((0.2, 0.12, 0.92 + 0.03 * sw)), "aim": (0.2, 0.3, -1)},
             hand_R={"pos": self.s((-0.2, 0.06, 0.9 - 0.03 * sw)), "aim": (-0.2, 0.3, -1)},
-        ).shaped(hurt=0.6, ko=0.35, jaw=0.6, fist_L=0.1, fist_R=0.1)
+        ).shaped(hurt=0.6, ko=0.35, jaw=0.6, fist_L=0.0, fist_R=0.0, open_L=0.6, open_R=0.6)
 
     # Lying back in the air (launched, and the start of ko): the body is
     # posed as if standing, curled, then the root tips it onto its back
@@ -295,7 +295,7 @@ class Stance:
             foot_R={"pos": self.s((-0.12, 0.12 + 0.1 * tk, 0.16 + 0.55 * tk)), "turn": (-20, 0, 0)},
             knee_L=self.s((0.14, 0.9, 0.7)), knee_R=self.s((-0.14, 0.9, 0.7)),
             hand_L={"pos": self.s((0.5, 0.18, 1.3)), "aim": (0.8, 0.4, 0.4)}, hand_R={"pos": self.s((-0.5, 0.25, 1.25)), "aim": (-0.8, 0.5, 0.3)},
-        ).shaped(hurt=1.0, fist_L=0.2, fist_R=0.2)
+        ).shaped(hurt=1.0, jaw=0.5, fist_L=0.0, fist_R=0.0, open_L=1.0, open_R=1.0)
         df, du = self.juggle_shift
         return shifted(pose, (0, df, du))
 
@@ -308,7 +308,7 @@ class Stance:
             hand_R={"pos": self.s((-0.06, 0.2, up + 0.04)), "aim": (0.3, 0.2, 1), "hint": (0, 1, 0)},
             chest=((40 if crouching else 14), self.chest_yaw - 4, 0),
             head=((-8 if crouching else self.block_head), -4, 0),
-        )
+        ).shaped(fist_L=0.15, fist_R=0.15, open_L=0.3, open_R=0.3)
 
 
 # ---------------------------------------------------------------- state clips
@@ -404,10 +404,13 @@ def state_clips(rig, st, data):
     hit_low = base.but(hips={"offset": (0, -0.08 * k, -(st.drop + 0.1) * k), "turn": (16, st.hips_yaw, 0)}, spine=(24, st.hips_yaw, 0), chest=(42, st.chest_yaw, 0),
                        neck=(20, 0, 0), head=(22, 0, 0),
                        hand_L={"pos": st.s((0.06, 0.25, 0.98)), "aim": (0, 0.2, -1)}, hand_R={"pos": st.s((-0.04, 0.22, 1.0)), "aim": (0, 0.2, -1)})
-    hit_high = hit_high.shaped(hurt=1.0, fist_L=0.3, fist_R=0.3)
-    hit_low = hit_low.shaped(hurt=1.0, fist_L=0.3, fist_R=0.3)
+    # Hands thrown open and splayed, the jaw knocked open.
+    jolt = {"hurt": 1.0, "jaw": 0.6, "fist_L": 0.0, "fist_R": 0.0, "open_L": 1.0, "open_R": 1.0}
+    hit_high = hit_high.shaped(**jolt)
+    hit_low = hit_low.shaped(**jolt)
     for name, pose in (("hit_high", hit_high), ("hit_low", hit_low)):
-        clip(name, 12, [(1, base), (3, pose), (6, lerp_pose(pose, base, 0.15).shaped(hurt=1.0)), (12, lerp_pose(pose, base, 0.45).shaped(hurt=1.0))])
+        clip(name, 12, [(1, base), (3, pose), (6, lerp_pose(pose, base, 0.15).shaped(**{**jolt, "jaw": 0.4})),
+                        (12, lerp_pose(pose, base, 0.45).shaped(**{**jolt, "jaw": 0.2, "open_L": 0.6, "open_R": 0.6}))])
 
     # Lying on the back, head away from the opponent. The body frame is turned
     # by the root, so the limbs below are as if standing.
@@ -422,7 +425,7 @@ def state_clips(rig, st, data):
     # Launched: tipped flat on the back by frame 6, inside the juggle
     # hurtbox, then held there turning slowly (the game holds the last frame).
     clip("launched", 40, [(1, hit_high), (6, st.aloft()), (40, st.aloft(14))])
-    flat = flat.shaped(hurt=0.7, fist_L=0.2, fist_R=0.2)
+    flat = flat.shaped(hurt=0.7, jaw=0.3, fist_L=0.1, fist_R=0.1, open_L=0.5, open_R=0.5)
     clip("down", 30, [(1, flat), (30, flat.but(head=(4, 6, 0)))])
     sit = base.but(root={"offset": (0, 0.1 * k, 0), "turn": (-25, 0, 0)}, hips={"offset": (0, 0, -0.5 * k), "turn": (0, 0, 0)},
                    chest=(15, 0, 0), foot_L={"pos": st.s((0.15, 0.3, 0.09))}, foot_R={"pos": st.s((-0.18, 0.15, 0.09))},
@@ -434,7 +437,7 @@ def state_clips(rig, st, data):
     over = base.but(root={"offset": (0, 0.2 * k, 1.2 * k), "turn": (-150, 0, 0)}, chest=(-20, 0, 0))
     lifted, over = lifted.shaped(hurt=1.0), over.shaped(hurt=1.0)
     clip("thrown", 24, [(1, hit_high), (6, lifted), (12, over), (18, flat.but(root={"offset": (0, 0.7 * k, 0.4 * k), "turn": (-110, 0, 0)})), (24, flat)])
-    out_cold = flat.shaped(ko=1.0, hurt=0.0)
+    out_cold = flat.shaped(ko=1.0, hurt=0.0, jaw=0.7, fist_L=0.2, fist_R=0.2, open_L=0.0, open_R=0.0)
     # A K.O. falls through the launched pose (the same space), lands and bounces.
     clip("ko", 90, [(1, hit_high), (6, st.aloft()), (14, st.aloft(8).shaped(ko=0.4)), (24, out_cold),
                     (29, out_cold.but(root={"offset": (0, 0.85 * k, 0.18 * k), "turn": (-94, 0, 0)})), (34, out_cold), (90, out_cold)])
@@ -453,17 +456,19 @@ def state_clips(rig, st, data):
                        hand_L={"pos": st.s((0.14, 0.62, 1.55)), "aim": (0.1, 1, 0.2)}, hand_R={"pos": st.s((-0.14, 0.62, 1.55)), "aim": (-0.1, 1, 0.2)})
     through = release.but(chest=(40, -6, 0), shoulder_L=(40, -6, 0), shoulder_R=(40, -6, 0),
                           hand_L={"pos": st.s((0.16, 0.55, 0.95)), "aim": (0.1, 0.6, -0.8)}, hand_R={"pos": st.s((-0.16, 0.55, 0.95)), "aim": (-0.1, 0.6, -0.8)})
-    grab, overhead, release, through = (q.shaped(fist_L=0.0, fist_R=0.0) for q in (grab, overhead, release, through))
+    grab, overhead = (q.shaped(fist_L=0.5, fist_R=0.5, jaw=0.3) for q in (grab, overhead))
+    release, through = (q.shaped(fist_L=0.0, fist_R=0.0, open_L=0.7, open_R=0.7, jaw=0.8) for q in (release, through))
     clip("interact_throw", 22, [(1, base), (4, grab), (5, grab), (6, overhead), (8, release), (13, through), (22, base)])
-    clip("win", 120, [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))])
+    win = [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))]
+    clip("win", 120, talking(win, 26, 70, 1))
     relaxed = base.but(hips={"offset": (0, 0, 0), "turn": (0, -10, 0)}, spine=(0, -10, 0), chest=(0, -10, 0), neck=(0, 0, 0), head=(0, 0, 0),
                        shoulder_L=(0, -10, 0), shoulder_R=(0, -10, 0),
                        foot_L={"pos": st.s((0.11, 0.03, 0.09)), "turn": (0, -10, 0)}, foot_R={"pos": st.s((-0.11, -0.03, 0.09)), "turn": (0, -10, 0)},
                        hand_L={"pos": st.s((0.24, 0.02, 0.86)), "aim": (0.1, 0.05, -1)}, hand_R={"pos": st.s((-0.24, 0.02, 0.86)), "aim": (-0.1, 0.05, -1)})
-    clip("intro", 90, [(1, relaxed), (30, st.intro()), (60, st.intro(1)), (80, base), (90, base)])
+    clip("intro", 90, talking([(1, relaxed), (30, st.intro()), (60, st.intro(1)), (80, base), (90, base)], 6, 40, 2))
     # Second versions, for variety: the game alternates them by round.
-    clip("win_2", 120, st.win_2(base))
-    clip("intro_2", 90, st.intro_2(relaxed, base))
+    clip("win_2", 120, talking(st.win_2(base), 30, 76, 3))
+    clip("intro_2", 90, talking(st.intro_2(relaxed, base), 8, 30, 4))
     clip("td_cinematic", 150, [(1, base), (20, st.windup()), (130, st.windup()), (140, st.finish()), (150, st.finish())])
     return out
 
@@ -652,8 +657,9 @@ def move_clips(rig, st, data, overrides):
                 reach = max(0.45, mv["throw"]["range"] - 0.45)
                 grab = base.but(hips={"offset": (0, min(0.3, reach - 0.45) * k, -st.drop * k), "turn": (12, st.hips_yaw + 15, 0)}, chest=(20, -10, 0),
                                 hand_L={"pos": (0.1 * k, reach, 1.15 * k), "aim": (0, 1, 0.1)}, hand_R={"pos": (-0.1 * k, reach - 0.05, 1.2 * k), "aim": (0, 1, 0.1)})
-                grab = grab.shaped(fist_L=0.0, fist_R=0.0)
-                at(max(2, f0 - 3), lerp_pose(base, grab, 0.5))
+                reaching = grab.shaped(fist_L=0.0, fist_R=0.0, open_L=0.6, open_R=0.6)
+                grab = grab.shaped(fist_L=0.6, fist_R=0.6, jaw=0.3)
+                at(max(2, f0 - 3), lerp_pose(base, reaching, 0.5).shaped(**reaching.parts["shapes"]))
                 at(f0, grab)
                 at(f1, grab)
                 heave = grab.but(hips={"offset": (0, 0.05 * k, -0.02 * k), "turn": (-10, st.hips_yaw - 30, 0)}, chest=(-20, -60, 0),
@@ -675,7 +681,11 @@ def move_clips(rig, st, data, overrides):
                                 head=(10, 0, 0), hand_L={"pos": (0.16 * k, reach + 0.22, 0.98 * k), "aim": (0, 0.8, -0.4)},
                                 hand_R={"pos": (-0.16 * k, reach + 0.16, 0.95 * k), "aim": (0, 0.8, -0.4)},
                                 foot_R={"pos": st.s((-0.12, 0.02, 0.09)), "turn": (0, st.rear_foot_yaw, 0)})
-                grab, wind, over = (q.shaped(fist_L=0.0, fist_R=0.0) for q in (grab, wind, over))
+                # Hands open as they reach, closing on the catch; a whiff
+                # grabs at nothing and stays open.
+                wind = wind.shaped(fist_L=0.0, fist_R=0.0, open_L=0.8, open_R=0.8)
+                grab = grab.shaped(fist_L=0.55, fist_R=0.55, jaw=0.4)
+                over = over.shaped(fist_L=0.3, fist_R=0.3, open_L=0.3, open_R=0.3, jaw=0.6)
                 at(max(2, f0 - 5), wind)
                 at(f0, grab)
                 at(f1, grab)
@@ -856,11 +866,51 @@ def move_clips(rig, st, data, overrides):
 
             step_through(keys, motion, k, free, span=0.7 if style == "grapevine" else 0.5)
 
+        if mv["kind"] in ("special", "super"):
+            shout(keys, mv, total)
         for f in sorted(keys):
             c.key(f, keys[f])
         out.append(c.finish())
         strikes[mid] = checks
     return out, strikes, fitter.problems
+
+
+def shout(keys, mv, total):
+    """A special's shout: the jaw open over the move's business (its hits,
+    spawns, throw or counter window), from a couple of frames before."""
+    frames = [f for h in mv["hits"] for f in h["frames"]] + [sp["frame"] for sp in mv["spawns"]]
+    for key in ("throw", "counter"):
+        if mv.get(key) and mv[key].get("frames"):
+            frames += list(mv[key]["frames"])
+    if not frames:
+        return
+    f0, f1 = max(1, min(frames) - 2), min(total, max(frames) + 4)
+    for f in (f0 - 2, f0, f1, f1 + 4):
+        if 1 <= f <= total and f not in keys:
+            keys[f] = pose_at(keys, f)
+    for f in list(keys):
+        if f0 <= f <= f1:
+            keys[f] = keys[f].shaped(jaw=0.85)
+
+
+def talking(keys, f0, f1, seed):
+    """The jaw working over frames f0…f1 (intros and wins: talking to
+    camera), as extra keys over the clip's own: a syllable every 3–5 frames."""
+    import random
+
+    keys = dict(keys)
+    base = sorted(keys.items())
+    r = random.Random(seed)
+    f = f0
+    while f < f1:
+        keys[f] = pose_at(dict(base), f).shaped(jaw=0.0)
+        f2 = f + r.choice((2, 2, 3))
+        if f2 <= f1:
+            keys[f2] = pose_at(dict(base), f2).shaped(jaw=r.uniform(0.45, 1.0))
+        f = f2 + r.choice((1, 2, 3))
+    if f1 not in keys:
+        keys[f1] = pose_at(dict(base), f1).shaped(jaw=0.0)
+    return sorted(keys.items())
 
 
 def spin_pose(st, base, i):

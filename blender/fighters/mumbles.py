@@ -15,6 +15,8 @@ ID = "mumbles"
 HEIGHT = 1.24
 GIRTH = 0.85
 HEAD = 1.43
+# His jaw drops straight down between its slots this far (1.80 m reference, before HEAD).
+JAW_SLIDE = 0.024
 
 WOOD = (240, 210, 176)
 WOOD_DARK = (176, 128, 84)
@@ -113,22 +115,22 @@ def costume(p, b):
     p.hull("shirt", [b.p(x, f, u) for f in (0.104, 0.116) for x, u in ((-0.07, 1.455), (0.07, 1.455), (0, 1.3))], SHIRT, "chest", paint=lit)
     # A big red bow tie, and three big buttons.
     for sd in (1, -1):
-        p.hull(f"bow{sd}", [b.p(sd * x, f, u) for f in (0.118, 0.132) for x, u in ((0.01, 1.43), (0.065, 1.455), (0.065, 1.405))], RED, "chest", paint=lit)
-    p.box("bow_knot", b.p(0, 0.13, 1.43), (0.026, 0.02, 0.026), RED, "chest", paint=lit)
+        p.hull(f"bow{sd}", [b.p(sd * x, f, u) for f in (0.118, 0.132) for x, u in ((0.01, 1.43), (0.065, 1.455), (0.065, 1.405))], RED, "x_bow", paint=lit)
+    p.box("bow_knot", b.p(0, 0.13, 1.43), (0.026, 0.02, 0.026), RED, "x_bow", paint=lit)
     for i, u in enumerate((1.27, 1.17, 1.07)):
         p.blob(f"button{i}", b.p(0.0, 0.114, u), (0.022, 0.01, 0.022), WHITE, "chest" if u > 1.2 else "spine", paint=glossy)
 
-    hp, hr = head(p, b, c, paint=paint_face)
+    hp, hr = head(p, b, c, paint=paint_face, chin="head")
     # The painted mouth line, and the hinged jaw between the slots: a dark
     # cavity behind it shows when it drops (talking, knocking, hurt).
     mouth(p, b, (0, 0.112, 1.62), 0.088, 0.006, RED, kind="line", inner=RED)
     jc = hp(0, 0.09, 1.585)
-    drop = {"jaw": about(jc, move=(0, -0.004 * k * s, -0.024 * k * s)), "hurt": about(jc, move=(0, -0.003 * k * s, -0.014 * k * s)),
+    drop = {"hurt": about(jc, move=(0, -0.003 * k * s, -0.014 * k * s)),
             "ko": about(jc, move=(0, -0.004 * k * s, -0.028 * k * s)), "win": about(jc, move=(0, -0.002 * k * s, -0.01 * k * s))}
     p.box("mouth_cavity", hp(0, 0.09, 1.602), hr(0.088, 0.03, 0.02), (40, 10, 14), "head")
     p.hull("jaw", [hp(x, f, u) for x, f, u in ((-0.044, 0.112, 1.614), (0.044, 0.112, 1.614), (-0.044, 0.07, 1.614), (0.044, 0.07, 1.614),
                                               (-0.036, 0.108, 1.556), (0.036, 0.108, 1.556), (-0.036, 0.06, 1.548), (0.036, 0.06, 1.548), (0, 0.112, 1.548))],
-           WOOD, "head", paint=paint_jaw, shapes=drop)
+           WOOD, "jaw", paint=paint_jaw, shapes=drop)
 
     arms(p, b, {**c, "skin": WOOD}, sleeve=0.45, paint=felt, hand_paint=hands)
     for sd in ("L", "R"):
@@ -179,17 +181,37 @@ def extras(p, b):
     """Puppet strings from the head, hands and knees up to a wooden control
     bar overhead. The bar end is on `root`, so the strings hang straight
     whatever the body does (and he leaves on them when he teleports)."""
-    hz = b.j["head"][0][2]
     top = 3.3
-    head_top = (0, -0.005 * b.k * b.head, hz + (1.79 - 1.55) * b.k * b.head)
-    ends = {"head": ((0, 0, top), head_top), "hand.L": ((0.3, 0, top), b.j["hand.L"][0]), "hand.R": ((-0.3, 0, top), b.j["hand.R"][0]),
-            "shin.L": ((0.08, 0.25, top), b.j["shin.L"][0]), "shin.R": ((-0.08, -0.25, top), b.j["shin.R"][0])}
+    ends = string_ends(b)
     for bone, (high, low) in ends.items():
-        p.tube(f"string_{bone}", [(low, 0.004, {bone: 1.0}, STRING), (high, 0.004, {"root": 1.0}, STRING)], verts=3, mat=1)
+        # The middle rides x_string_<bone>, which lags after the end it hangs
+        # to (spring.py's follow), so the strings go slack and swing.
+        mid = lerp(low, high, 0.5)
+        p.tube(f"string_{bone}", [(low, 0.004, {bone: 1.0}, STRING), (mid, 0.004, {f"x_string_{bone}": 1.0}, STRING),
+                                  (high, 0.004, {"root": 1.0}, STRING)], verts=3, mat=1)
     # The control bar: a wooden cross.
     p.box("bar", (0, 0, top + 0.02), (0.68, 0.05, 0.04), POLE, "root", mat=1, paint=wood)
     p.box("bar_cross", (0, 0, top + 0.02), (0.05, 0.6, 0.04), POLE, "root", mat=1, paint=wood)
     p.box("bar_handle", (0, 0, top + 0.13), (0.04, 0.04, 0.2), POLE, "root", mat=1, paint=wood)
+
+
+def string_ends(b):
+    """Each string's (bar end, body end), by the bone it's tied to."""
+    hz = b.j["head"][0][2]
+    top = 3.3
+    head_top = (0, -0.005 * b.k * b.head, hz + (1.79 - 1.55) * b.k * b.head)
+    return {"head": ((0, 0, top), head_top), "hand.L": ((0.3, 0, top), b.j["hand.L"][0]), "hand.R": ((-0.3, 0, top), b.j["hand.R"][0]),
+            "shin.L": ((0.08, 0.25, top), b.j["shin.L"][0]), "shin.R": ((-0.08, -0.25, top), b.j["shin.R"][0])}
+
+
+def xbones(b):
+    """Secondary motion: the bow tie, and slack in the strings: each string
+    has a bone from the bar to its end that chases the end with a lag."""
+    out = [{"name": "x_bow", "parent": "chest", "head": b.p(0, 0.13, 1.445), "tail": b.p(0, 0.135, 1.39), "stiff": 0.2, "damp": 0.25, "max": 25}]
+    for bone, (high, low) in string_ends(b).items():
+        out.append({"name": f"x_string_{bone}", "parent": "root", "head": high, "tail": low, "stiff": 0.12, "damp": 0.22, "max": 12,
+                    "follow": (bone, low)})
+    return out
 
 
 class STANCE(Stance):

@@ -8,7 +8,7 @@ module adds its own costume parts on top.
 import numpy as np
 
 from .common import Parts, vertex_colour_material
-from .rig import joints
+from .rig import finger_joints, hand_frame, joints
 
 
 def lerp(a, b, t):
@@ -115,11 +115,12 @@ def head_frame(b):
 EXPRESSIONS = ("hurt", "ko", "win")
 
 
-def head(p, b, c, face=True, paint=None, skull=None):
+def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
     """Neck, head, ears and a face: a brow ridge and nose, eyes (whites and
     pupils as separate pieces) and brows, with shape keys for the
     expressions; the mouth and hair are up to each fighter. c may set eyes,
-    brows, whites, eye (white radii) and lids (0 open … 1 heavy-lidded)."""
+    brows, whites, eye (white radii) and lids (0 open … 1 heavy-lidded).
+    The chin rides the `jaw` bone (`chin`: another bone keeps it still)."""
     hp, hr, _ = head_frame(b)
     n0, n1 = b.j["neck"]
     p.tube("neck", [(lerp(n0, n1, -0.4), b.r(0.052), {"chest": 1.0}, c["skin"]),
@@ -130,7 +131,7 @@ def head(p, b, c, face=True, paint=None, skull=None):
     # The jaw and chin, a little squarer than the egg.
     p.hull("head_jaw", [hp(x, f, u) for x, f, u in ((-0.07, 0.04, 1.6), (0.07, 0.04, 1.6), (-0.06, 0.085, 1.585), (0.06, 0.085, 1.585),
                                                      (-0.035, 0.1, 1.552), (0.035, 0.1, 1.552), (-0.05, 0.02, 1.56), (0.05, 0.02, 1.56),
-                                                     (0, 0.105, 1.55), (-0.075, 0.0, 1.63), (0.075, 0.0, 1.63))], c["skin"], "head", paint=paint)
+                                                     (0, 0.105, 1.55), (-0.075, 0.0, 1.63), (0.075, 0.0, 1.63))], c["skin"], chin, paint=paint)
     for sd in (1, -1):
         p.blob(f"ear{sd}", hp(sd * 0.094, 0.0, 1.665), hr(0.018, 0.03, 0.036), c["skin"], "head", paint=paint)
     if not face:
@@ -173,12 +174,17 @@ def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), 
     cx, cf, cu = centre
     c0 = hp(*centre)
     shapes = {"hurt": about(c0, (0.85, 1, 2.0), (0, 0, -0.004)), "ko": about(c0, (0.6, 1, 1.7), (0, 0, -0.004)), "win": about(c0, (1.2, 1, 1.5))}
+
+    def lower(q):
+        # The mouth's lower half rides the jaw, so it opens when the jaw drops.
+        return {"jaw": 1.0} if q[2] < c0[2] - 1e-4 else {"head": 1.0}
+
     if kind == "grin":
         w, h = width / 2, height
         pts = [hp(cx + x * w, cf, cu + h * 0.35) for x in (-1, -0.5, 0, 0.5, 1)]
         pts += [hp(cx + x * w * 0.8, cf + 0.004, cu + h * 0.35 - h * (1 - x * x) * 1.0) for x in (-0.75, -0.4, 0, 0.4, 0.75)]
         pts += [hp(cx + x * w * 0.9, cf - 0.006, cu + h * 0.1) for x in (-1, 1)]
-        p.hull("mouth", pts, inner, "head", shapes=shapes)
+        p.hull("mouth", pts, inner, "head", shapes=shapes, weigh=lower)
         if teeth:
             # The upper teeth fill the top of the grin, in front of the mouth.
             tp = [hp(cx + x * w * 0.9, cf + 0.007, cu + h * 0.33) for x in (-1, -0.5, 0, 0.5, 1)]
@@ -187,11 +193,11 @@ def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), 
             p.hull("teeth", tp, teeth, "head", paint=paint, shapes={"hurt": about(c0, (0.85, 1, 1.0), (0, 0.001, 0.002)), "ko": about(c0, (0.6, 1, 0.8), (0, 0, 0.001)),
                                                                      "win": about(c0, (1.2, 1, 1.3))})
     else:
-        p.box("mouth", c0, hr(width, 0.012, height), inner if kind == "line" else colour, "head", shapes=shapes)
+        p.box("mouth", c0, hr(width, 0.012, height), inner if kind == "line" else colour, "head", shapes=shapes, weigh=lower)
         if kind == "lips":
             for name, du, hh in (("lip_top", height * 0.7, 0.45), ("lip_bottom", -height * 0.75, 0.55)):
                 lc = hp(cx, cf + 0.002, cu + du)
-                p.box(name, lc, hr(width * (1.05 if du > 0 else 0.95), 0.014, height * hh), colour, "head",
+                p.box(name, lc, hr(width * (1.05 if du > 0 else 0.95), 0.014, height * hh), colour, "head" if du > 0 else "jaw",
                       shapes={"hurt": about(c0, (0.85, 1, 2.0), (0, 0, -0.004)), "ko": about(c0, (0.6, 1, 1.7), (0, 0, -0.004)), "win": about(c0, (1.2, 1, 1.5))})
 
 
@@ -259,56 +265,35 @@ def clump(p, name, root, tip, width, colour, bone, paint=None, flat=0.6, shapes=
 
 
 def hand(p, b, s, colour, size=1.0, paint=None, thumb_colour=None):
-    """A mitt (fingers together) with a separate thumb, rigid on the hand,
-    and a `fist_L` / `fist_R` shape key that curls it into a fist."""
-    wr, ht = (np.array(v) for v in b.j[f"hand.{s}"])
+    """A mitt in four rigid pieces on the step-16 bones: the palm on the
+    hand, the index and the other three fingers (together) from the
+    knuckles, and the thumb. The bones curl them (rig.pose_hands_and_jaw);
+    the finger pieces start inside the palm so a curl shows no gap."""
+    wr, a, w, n, L = hand_frame(b.j, s)
+    L *= size
     hd = f"hand.{s}"
-    L = float(np.linalg.norm(ht - wr)) * size
-    a = (ht - wr) / np.linalg.norm(ht - wr)
-    w = np.cross(a, (1.0, 0, 0))
-    w /= np.linalg.norm(w)
-    if w[1] < 0:
-        w = -w  # w points forward: the thumb's side
-    n = np.cross(w, a)
-    n /= np.linalg.norm(n)
-    if n[0] * (1 if s == "L" else -1) < 0:
-        n = -n  # n points out: the back of the hand
     k = b.k * (1 + (b.g - 1) * 0.5) * size
+    fj = finger_joints(b.height, s, size)
 
     def at(t, u, v):
         return tuple(wr + a * t + w * u + n * v)
 
-    pts = []
-    for t, wid, th in ((-0.1, 0.034, 0.02), (0.15, 0.046, 0.024), (0.55, 0.048, 0.02), (0.9, 0.04, 0.016), (1.0, 0.03, 0.012)):
-        for u in (-1, 1):
-            for v in (-1, 1):
-                pts.append(at(t * L, u * wid * k, v * th * k * (1.0 if v > 0 else 0.9)))
-    centre = wr + a * 0.3 * L
+    def slab(name, sections, u0, u1, bone):
+        # sections: (t along the hand, half-width, half-thickness); u0…u1 the
+        # slice across it (−1 little-finger side … 1 thumb side).
+        pts = []
+        for t, wid, th in sections:
+            for u in (u0, u1):
+                for v in (-1, 1):
+                    pts.append(at(t * L, u * wid * k, v * th * k * (1.0 if v > 0 else 0.9)))
+        p.hull(name, pts, colour, bone, paint=paint)
 
-    def fist(q):
-        d = np.array(q) - wr
-        t, u, v = d @ a, d @ w, d @ n
-        knuckle = 0.42 * L
-        if t > knuckle:
-            # Fingers fold back under the palm.
-            over = t - knuckle
-            t = knuckle + over * 0.3
-            v = v * 1.2 - over * 0.75
-        else:
-            v = v * 1.25
-        return tuple(wr + a * t + w * u * 0.98 + n * v)
-
-    p.hull(f"mitt.{s}", pts, colour, hd, paint=paint, shapes={f"fist_{s}": fist})
-    tc = wr + a * 0.28 * L + w * 0.046 * k - n * 0.006 * k
-    tip = wr + a * 0.62 * L + w * 0.06 * k - n * 0.012 * k
-    tclosed = wr + a * 0.48 * L + w * 0.05 * k - n * 0.03 * k
-
-    def thumb(q):
-        d = np.array(q) - tc
-        return tuple(tclosed + d * 0.95)
-
-    clump(p, f"thumb.{s}", tuple(tc - a * 0.08 * L), tuple(tip), 0.017 * k, thumb_colour or colour, hd, paint=paint, flat=0.8,
-          shapes={f"fist_{s}": thumb})
+    slab(f"palm.{s}", ((-0.1, 0.034, 0.02), (0.15, 0.046, 0.024), (0.47, 0.048, 0.021)), -1, 1, hd)
+    fingers = ((0.4, 0.047, 0.019), (0.55, 0.048, 0.019), (0.9, 0.04, 0.016), (1.0, 0.03, 0.012))
+    slab(f"index.{s}", fingers, 0.32, 1, f"index.{s}")
+    slab(f"fingers.{s}", tuple((t, wid, th * 0.97) for t, wid, th in fingers[:3]) + ((0.95, 0.03, 0.012),), -1, 0.27, f"fingers.{s}")
+    th0, th1 = fj[f"thumb.{s}"]
+    clump(p, f"thumb.{s}", tuple(th0 + (th0 - th1) * 0.12), tuple(th1), 0.017 * k, thumb_colour or colour, f"thumb.{s}", paint=paint, flat=0.8)
 
 
 def grip(b, s):

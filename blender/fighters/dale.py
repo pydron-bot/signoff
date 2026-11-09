@@ -6,7 +6,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, grip, head, legs, lerp, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
 HEIGHT = 1.80
@@ -69,8 +69,14 @@ def costume(p, b):
     torso(p, b, c, waist=0.93, paint=suit)  # the blazer covers the hips
     p.hull("shirt", [b.p(-0.075, 0.104, 1.455), b.p(0.075, 0.104, 1.455), b.p(0, 0.104, 1.25),
                      b.p(-0.075, 0.116, 1.455), b.p(0.075, 0.116, 1.455), b.p(0, 0.116, 1.25)], SHIRT, "chest", paint=lit)
-    # The wide tie, 1987's widest, and its knot.
-    p.hull("tie", [b.p(x, f, u) for f in (0.118, 0.13) for x, u in ((-0.022, 1.43), (0.022, 1.43), (-0.05, 1.2), (0.05, 1.2), (0, 1.12))], TIE, "chest", paint=tie)
+    # The wide tie, 1987's widest, and its knot. It swings in two pieces
+    # (x_tie, x_tie_end), blended across the middle.
+    def tie_weights(q):
+        t = min(1.0, max(0.0, (1.33 * b.k - q[2]) / (0.1 * b.k)))
+        return {"x_tie": 1 - t, "x_tie_end": t} if t < 1 else {"x_tie_end": 1.0}
+
+    p.hull("tie", [b.p(x, f, u) for f in (0.118, 0.13) for x, u in ((-0.022, 1.43), (0.022, 1.43), (-0.04, 1.33), (0.04, 1.33), (-0.046, 1.27), (0.046, 1.27),
+                                                                    (-0.05, 1.2), (0.05, 1.2), (0, 1.12))], TIE, "chest", paint=tie, weigh=tie_weights)
     p.hull("tie_knot", [b.p(x, f, u) for f in (0.118, 0.138) for x, u in ((-0.028, 1.462), (0.028, 1.462), (-0.016, 1.425), (0.016, 1.425))], TIE, "chest", paint=tie)
     for s in (1, -1):
         # Wide notched lapels: a lower and an upper piece.
@@ -109,7 +115,7 @@ def costume(p, b):
         clump(p, f"hair_sweep{i}", hp(0.045, f, 1.762), hp(-0.1, f - 0.01, 1.705), 0.026 * b.k, HAIR, "head", paint=hair, flat=0.3)
     # The quiff: three broad, flat waves rolling forward off the parting.
     for i, (x, u) in enumerate(((0.035, 1.778), (0.0, 1.784), (-0.04, 1.776))):
-        clump(p, f"quiff{i}", hp(x + 0.03, 0.0, u - 0.004), hp(x - 0.02, 0.118, u + 0.004), 0.034 * b.k, HAIR, "head", paint=hair, flat=0.35)
+        clump(p, f"quiff{i}", hp(x + 0.03, 0.0, u - 0.004), hp(x - 0.02, 0.118, u + 0.004), 0.034 * b.k, HAIR, "x_quiff", paint=hair, flat=0.35)
     for sd in (1, -1):
         clump(p, f"sideburn{sd}", hp(sd * 0.088, 0.03, 1.715), hp(sd * 0.091, 0.04, 1.66), 0.012 * b.k, HAIR, "head", paint=hair)
 
@@ -147,8 +153,26 @@ def costume(p, b):
            "umbrella_canopy", "umbrella_strap", "umbrella_ferrule")
 
 
+def xbones(b):
+    """Secondary motion: the tie in two pieces, and the quiff."""
+    hp, _, _ = head_frame(b)
+    return [
+        {"name": "x_tie", "parent": "chest", "head": b.p(0, 0.13, 1.43), "tail": b.p(0, 0.135, 1.3), "stiff": 0.25, "damp": 0.45, "max": 18},
+        {"name": "x_tie_end", "parent": "x_tie", "head": b.p(0, 0.135, 1.3), "tail": b.p(0, 0.13, 1.12), "stiff": 0.22, "damp": 0.4, "max": 22},
+        {"name": "x_quiff", "parent": "head", "head": hp(0, 0.0, 1.776), "tail": hp(0, 0.118, 1.78), "stiff": 0.35, "damp": 0.35, "max": 8},
+    ]
+
+
 class STANCE(Stance):
     """Upright and smiling: a weatherman's half-turn to camera, hands up."""
+
+    def intro(self, t=0):
+        """The round intro: pointing back at the map behind him (his left),
+        talking it through, then squaring up."""
+        return self.base(drop=0.03).but(
+            chest=(-2, 20 + 8 * t, 0), head=(-6, 30 - 20 * t, 0),
+            hand_L={"pos": self.s((0.42, 0.08, 1.58 + 0.06 * t)), "aim": (1, 0.15, 0.45), "hint": (0, 1, 0)},
+        ).shaped(fist_L=1.0, point_L=1.0, win=0.6)
 
     def win_2(self, base):
         """"…and that's the forecast": hand on hip, clicking the map along."""

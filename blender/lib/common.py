@@ -214,14 +214,21 @@ class Parts:
             vert.co = Vector((vert.co.x * radii[0], vert.co.y * radii[1], vert.co.z * radii[2])) + c
         return self._add(name, bm, colour, bone, mat, paint=paint, shapes=shapes)
 
-    def hull(self, name, points, colour, bone, mat=0, paint=None, shapes=None):
-        """Convex hull of fighter-space points (torsos, shoes, lapels)."""
+    def hull(self, name, points, colour, bone, mat=0, paint=None, shapes=None, weigh=None):
+        """Convex hull of fighter-space points (torsos, shoes, lapels).
+        `weigh(point) → {bone: weight}` skins it across bones instead (a
+        mouth whose lower half rides the jaw, a tie in two pieces)."""
         bm = bmesh.new()
         for p in points:
             bm.verts.new(fighter(*p))
         bmesh.ops.convex_hull(bm, input=bm.verts)
         bmesh.ops.dissolve_limit(bm, angle_limit=0.01, verts=bm.verts, edges=bm.edges)
-        return self._add(name, bm, colour, bone, mat, paint=paint, shapes=shapes)
+        if weigh is None:
+            return self._add(name, bm, colour, bone, mat, paint=paint, shapes=shapes)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bm.verts.index_update()
+        weights = [weigh(from_blender(v.co)) for v in sorted(bm.verts, key=lambda v: v.index)]
+        return self._add(name, bm, colour, bone, mat, weights=weights, paint=paint, shapes=shapes, recalc=False)
 
     def poly(self, name, points, colour, bone, facing, mat=0, paint=None):
         """One flat, one-sided face through fighter-space points (walls,
@@ -233,12 +240,12 @@ class Parts:
             f.normal_flip()
         return self._add(name, bm, colour, bone, mat, paint=paint, recalc=False)
 
-    def box(self, name, centre, size, colour, bone, mat=0, paint=None, shapes=None):
+    def box(self, name, centre, size, colour, bone, mat=0, paint=None, shapes=None, weigh=None):
         """An axis-aligned box (size in side, fwd, up)."""
         cx, cf, cu = centre
         sx, sf, su = (s / 2 for s in size)
         pts = [(cx + i * sx, cf + j * sf, cu + k * su) for i in (-1, 1) for j in (-1, 1) for k in (-1, 1)]
-        return self.hull(name, pts, colour, bone, mat, paint, shapes)
+        return self.hull(name, pts, colour, bone, mat, paint, shapes, weigh)
 
     def join(self, name, rig=None):
         """One mesh, skinned to `rig` through its vertex groups (or, with no
