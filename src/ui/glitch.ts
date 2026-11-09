@@ -1,6 +1,6 @@
 /**
- * The VHS layer reacting to the fight: a tracking wobble and colour split
- * on big hits, a burst of static on a KO, and the PLEASE STAND BY card over
+ * The VHS layer reacting to the fight: a tracking tear and colour split
+ * on big hits (drawn by the post pass, src/render/post.ts), a burst of static on a KO, and the PLEASE STAND BY card over
  * the Technical Difficulties cinematic (the broadcast censoring the worst
  * of it), and a finisher's cut away: snow, colour bars, the stand-by card
  * or the set switching off. Reduce Motion keeps the cards and drops the
@@ -10,10 +10,11 @@
 import { TD_CINEMATIC_FRAMES, type Censor, type SimEvent } from '../sim';
 
 export class Glitch {
-  private readonly app: HTMLElement;
   private readonly staticLayer: HTMLElement;
   private readonly standby: HTMLElement;
   private wobble = 0;
+  /** An impact frame: steps left of the picture blown out to a negative. */
+  private impactLeft = 0;
   private staticLeft = 0;
   private standbyLeft = 0;
   /** A finisher's cut away: opaque, until its closing card. */
@@ -32,7 +33,6 @@ export class Glitch {
     parent: HTMLElement,
     public reduceMotion: boolean,
   ) {
-    this.app = document.getElementById('app')!;
     this.staticLayer = document.createElement('div');
     this.staticLayer.className = 'vhs-static';
     this.staticLayer.hidden = true;
@@ -51,6 +51,8 @@ export class Glitch {
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
+      // An ender or a KO lands on an impact frame (two steps of negative, one fading).
+      if ((e.type === 'hit' && e.weight === 3) || e.type === 'ko') this.impactLeft = IMPACT_STEPS;
       // The tracking wobble on heavy hits and counters, longer on an ender.
       if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, e.weight === 3 ? 16 : 10);
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
@@ -83,13 +85,30 @@ export class Glitch {
     this.censorLeft = frames;
   }
 
+  /** The tracking tear for the post pass, 0 to 1: strongest as it starts, easing off. */
+  get tear(): number {
+    return this.wobble > 0 ? Math.min(1, this.wobble / 10) : 0;
+  }
+
+  /** The impact frame for the post pass, 0 to 1. */
+  get impact(): number {
+    return this.impactLeft >= IMPACT_STEPS - 1 ? 1 : this.impactLeft > 0 ? 0.45 : 0;
+  }
+
+  /** The colour split: only for the first few steps of a wobble. */
+  get split(): number {
+    return this.wobble > 6 ? Math.min(1, (this.wobble - 6) / 6) : 0;
+  }
+
   step(): void {
     if (this.reduceMotion || this.vhs === 0) this.wobble = this.staticLeft = 0;
+    // A flash of negative is the one thing Reduce Motion always drops.
+    if (this.reduceMotion) this.impactLeft = 0;
+    else if (this.impactLeft > 0) this.impactLeft--;
     if (this.censorDelay > 0 && --this.censorDelay === 0 && this.pendingCut) {
       this.cut(this.pendingCut.kind, this.pendingCut.frames);
       this.pendingCut = null;
     }
-    this.app.classList.toggle('wobble', this.wobble > 0);
     if (this.wobble > 0) this.wobble--;
     this.staticLayer.hidden = this.staticLeft <= 0;
     if (this.staticLeft > 0) this.staticLeft--;
@@ -100,13 +119,14 @@ export class Glitch {
   }
 
   clear(): void {
-    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = 0;
+    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = this.impactLeft = 0;
     this.pendingCut = null;
     this.step();
   }
 }
 
 const LATE_NIGHT_DELAY = 24;
+const IMPACT_STEPS = 3;
 
 /** One frame of TV snow, made once. */
 function noiseUrl(): string {

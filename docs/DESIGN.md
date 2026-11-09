@@ -311,20 +311,51 @@ more it reacts to a big one than a small one.
   (about 1.7 seconds), then eases back, while the camera swings round and
   in on the loser. Replays and results are untouched: only the pacing
   changes.
+- **Hit reactions** follow the hit: head, body or legs by where it lands
+  (68% of the fighter's height and up is the head, under 35% the legs),
+  a heavy version for heavy and counter hits, two light versions that
+  alternate down a combo, their own for a crouching fighter, and a stagger
+  for a stun of 26 frames or more (a crushed guard, Breaking).
 - **The fighters' own light:** a rim on their edges in the segment's rim
-  colour, so they stand out from busy sets, and a soft contact shadow
-  that shrinks as they leave the floor.
-- Reduce Motion drops the shake, lean, push-ins and KO swing; the framing
-  and the slow motion stay.
+  colour, the key light stepped into lit, half-lit and shade, and a dark
+  outline, so they stand out from busy sets; a soft contact shadow that
+  falls away from the key light and shrinks as they leave the floor; and
+  their reflections in the floor (and in Burn's mirrors).
+- **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
+  Skip) trail a cyan and a magenta afterimage a few frames behind, like a
+  tape's colour lagging; an ender or a KO lands on two frames of negative.
+- **Each round goes on air:** the studio lights bang on in three banks
+  and the camera opens wide and high, settling on the fighters as the
+  intro ends; the first round introduces both fighters in lower thirds.
+- Reduce Motion drops the shake, lean, push-ins, KO swing, the round's
+  establishing shot, the echoes and the impact frames; the framing and the
+  slow motion stay.
 
 ### The broadcast look
 
-- Health bars are channel-strength meters; the round timer is a broadcast
-  clock; round announcements are on-screen captions with a station logo in
-  the corner.
-- A light VHS layer over everything: scanlines, slight colour bleed, a
-  tracking wobble on big hits. A Settings slider turns it down, and Reduce
-  Motion turns the wobble off.
+- Health bars are channel-strength meters, leaving a red chunk where the
+  last hits landed that drains a moment later; names sit on caption plates
+  with each fighter's show; the round timer is a broadcast clock; round
+  announcements are on-screen captions with a station logo (and a blinking
+  LIVE) in the corner.
+- **The picture** (`src/render/post.ts`): the scene is drawn into a
+  multisampled high-range buffer, and one pass puts it on screen as a tape
+  would: sharp brightness with the colour smeared sideways, a tracking
+  tear and a colour split on big hits, a glow from anything brighter than
+  white, a roll-off for highlights that leaves the darks alone, the
+  segment's colour grade, a vignette and grain. Scanlines stay in CSS so
+  they cover the HUD too. A phone draws the scene at 1.5x, not 2x. VHS
+  LOOK in Settings turns the tape down or off; Reduce Motion drops the
+  tears.
+- **Studio light** (`src/render/look.ts`): each segment's rig is relit
+  with less flat ambient and more key, a sky-and-ground ambient with the
+  floor's bounce colour, and a falloff that darkens the set behind the
+  fight, at the sides and up high, so the fighters read first. The set
+  takes baked occlusion, light maps and emission from the art as it lands
+  (docs/BLENDER-TODO.md, step 23). Haze, beams from the set's own lamps
+  and drifting dust (`src/render/atmosphere.ts`) give the air depth.
+- **The title** is the attract mode on a CRT in a dark room at 3:33 a.m.;
+  starting a match pushes in through the glass.
 - Commercial breaks between rounds show fake ads for the stage's world (a
   mattress store, a hotline, a toy) for 4 seconds while the set changes.
 
@@ -411,9 +442,15 @@ effects listen to them.
   about 20,000 triangles and 2 materials.
 - Animations are played by the simulation's frame number, not by clock
   time, so the pose on screen always matches the hitboxes.
+- **Performance overlay** (Settings → PERFORMANCE, or the ` key): frame
+  rate, mean and worst frame time, simulation steps a second, draw calls
+  against the budget, triangles, shaders and the drawing size.
 - With only two fighters on screen the budget is easier than Curbside's:
   under 100 draw calls on the iPhone profile, a fixed light setup per
-  segment, and every shader compiled during loading.
+  segment, and every shader compiled during loading (hidden objects
+  included). The picture's passes are about 9 draw calls; each fighter's
+  outline, floor reflection and (on Burn) mirror reflection are one more
+  per mesh, and the echoes only draw while they show.
 
 **Deploy.** The repo pydron-bot/signoff builds to https://deeek.org/signoff/
 with a copy of Curbside's Pages workflow and base path `/signoff/`. Storage

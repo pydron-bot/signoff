@@ -10,6 +10,7 @@ import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
+import { relight } from './look';
 import { applyLights, type StageLights, type StageSet } from './stageView';
 
 /** The objects the game needs from kitchen.glb; without them all, the stand-ins stay. */
@@ -25,11 +26,11 @@ const FLARE_TOP = 2.2;
 const HEAT_PERIOD = 120;
 
 type V3 = [number, number, number];
-const STAND_IN_LIGHTS: readonly SegmentLights[] = [
+const STAND_IN_LIGHTS: readonly SegmentLights[] = relight('kitchen', [
   { segment: 'Prep', background: '#1a1208', ambient: { color: '#fff4e0', intensity: 1.4 }, key: { color: '#fff0d8', intensity: 2.2, position: [-3, 6, 8] as V3 }, rim: { color: '#80c0ff', intensity: 0.6, position: [3, 4, -4] as V3 } },
   { segment: 'Grease Fire', background: '#1c0800', ambient: { color: '#ffc890', intensity: 1.2 }, key: { color: '#ffb060', intensity: 2.0, position: [0, 6, 7] as V3 }, rim: { color: '#ff5010', intensity: 1.2, position: [0, 3, -4] as V3 } },
   { segment: 'The Oven', background: '#200400', ambient: { color: '#ff9a60', intensity: 1.1 }, key: { color: '#ff8040', intensity: 2.0, position: [0, 5, 7] as V3 }, rim: { color: '#ff3000', intensity: 1.0, position: [0, 2, -5] as V3 } },
-];
+]);
 
 export class KitchenSet implements StageSet {
   readonly root = new THREE.Group();
@@ -83,7 +84,7 @@ export class KitchenSet implements StageSet {
     if (this.segment !== m.segment) {
       this.segment = m.segment;
       const spec = this.art?.lights[m.segment] ?? STAND_IN_LIGHTS[m.segment];
-      applyLights(this.scene, this.lights, spec);
+      applyLights(this.scene, this.lights, spec, this.art);
       this.ambientBase = spec.ambient.intensity;
       this.rimBase = spec.rim.intensity;
       this.part('set').visible = true;

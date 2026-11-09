@@ -14,6 +14,9 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
+import { powerOn } from './render/look';
+import { setOutlineSize } from './render/outline';
+import { Post } from './render/post';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
@@ -24,6 +27,7 @@ import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion
 import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
+import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
@@ -33,14 +37,20 @@ const SETUP_KEY = 'signoff.setup';
 const REPLAY_KEY = 'signoff.replay';
 /** Seconds the replay's back and forward buttons skip. */
 const SKIP_STEPS = 5 * 60;
+/** Settings → VHS LOOK (off, low, full): how much tape the post pass puts on the picture. */
+const VHS_AMOUNT = [0, 0.5, 1] as const;
 
 const app = document.getElementById('app')!;
 const title = document.getElementById('title')!;
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// The post pass renders several times a frame: the overlay counts them all.
+renderer.info.autoReset = false;
 app.appendChild(renderer.domElement);
+const post = new Post(renderer);
 
 const arena = new Arena();
+post.grade = arena.grade;
 const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const settings = loadSettings();
 const sound = new Sound();
@@ -60,6 +70,8 @@ document.body.append(pauseBtn);
 const replayBar = new ReplayBar(document.body);
 const moveListPanel = new MoveListPanel(document.body);
 const arcadeCard = new ArcadeCard(document.body);
+const perf = new PerfOverlay(document.body, renderer);
+perf.note = () => `POST ${post.hdr ? 'HDR' : '8-BIT'} ×${post.drawScale}`;
 initKeyboard();
 
 /** Puts the settings into effect everywhere they matter. */
@@ -69,10 +81,13 @@ function applySettings(): void {
   glitch.reduceMotion = rm;
   glitch.censorLevel = settings.censor;
   glitch.vhs = settings.vhs;
+  post.vhs = VHS_AMOUNT[settings.vhs];
+  post.stillGrain = rm;
   document.body.dataset.vhs = String(settings.vhs);
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
   touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
   touch.root.dataset.side = String(settings.touchSide);
+  if (perf.shown !== (settings.perf === 1)) perf.show(settings.perf === 1);
 }
 applySettings();
 
@@ -202,7 +217,7 @@ function inputSides(s: Session | null): boolean[] {
 function begin(s: Session): Session {
   for (const d of inputDisplays) d.clear();
   // Compile the models' shaders as they arrive, not on their first frame.
-  void arena.setFighters(s.match).then(() => renderer.compile(arena.scene, arena.camera));
+  void arena.setFighters(s.match).then(() => post.compileScene(arena.scene, arena.camera));
   clock.reset();
   return s;
 }
@@ -482,6 +497,13 @@ function results(winner: number): void {
 
 pauseBtn.addEventListener('click', () => pause(!paused));
 window.addEventListener('keydown', (e) => {
+  // The performance overlay, anywhere.
+  if (e.code === 'Backquote' && !e.repeat) {
+    settings.perf = settings.perf ? 0 : 1;
+    saveSettings(settings);
+    applySettings();
+    return;
+  }
   if (session?.options.mode === 'replay' && !paused && !e.repeat) {
     const a: ReplayAction | null =
       e.code === 'Space' ? 'toggle' : e.code === 'ArrowLeft' ? 'back' : e.code === 'ArrowRight' ? 'forward' : e.code === 'Home' ? 'restart' : e.code === 'KeyS' ? 'speed' : null;
@@ -496,6 +518,8 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyB') arena.showBoxes = !arena.showBoxes;
 });
 document.addEventListener('visibilitychange', () => {
+  // Time jumps while hidden: the overlay starts counting afresh.
+  perf.reset();
   if (document.hidden) pause(true);
 });
 
@@ -534,6 +558,11 @@ function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
   renderer.setSize(w, h, false);
+  // A phone's 2x screen is drawn at 1.5x: the tape's softness hides it, and the fill it saves pays for the glow.
+  const pr = renderer.getPixelRatio();
+  post.setSize(w * pr, h * pr, pr >= 2 ? 0.75 : 1);
+  setOutlineSize(h * pr * post.drawScale);
+  arena.setPixelHeight(h * pr * post.drawScale);
   arena.resize(w, h);
 }
 window.addEventListener('resize', resize);
@@ -541,9 +570,12 @@ resize();
 
 startDemo();
 // Compile every shader now, not mid-fight.
-renderer.compile(arena.scene, arena.camera);
+post.compileScene(arena.scene, arena.camera);
+post.compile();
 
+let lastFrame = 0;
 renderer.setAnimationLoop((now) => {
+  let stepped = 0;
   for (const k of menuPresses()) {
     if (arcadeCard.open) arcadeCard.key(k);
     else if (moveListPanel.open) moveListPanel.key(k);
@@ -560,6 +592,7 @@ renderer.setAnimationLoop((now) => {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
     const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
+    stepped = n;
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
@@ -603,7 +636,20 @@ renderer.setAnimationLoop((now) => {
     inputDisplays[i].update();
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
-  renderer.render(arena.scene, arena.camera);
+  const title = document.body.dataset.scene === 'title';
+  // The title's TV: settles in, and a match starting pushes in through the glass (cut with Reduce Motion).
+  const dt = Math.min(0.1, (now - lastFrame) / 1000);
+  lastFrame = now;
+  if (reducedMotion(settings, systemReduceMotion)) post.crt = title ? 1 : 0;
+  else post.crt = title ? Math.min(1, post.crt + dt / 0.5) : Math.max(0, post.crt - dt / 0.55);
+  post.dim = title ? 0.8 : powerOn(m);
+  post.saturation = title ? 0.85 : 1;
+  post.tear = glitch.tear;
+  post.split = glitch.split;
+  post.impact = glitch.impact;
+  renderer.info.reset();
+  post.render(arena.scene, arena.camera, now);
+  perf.frame(now, stepped);
 });
 
 document.getElementById('version')!.textContent = `v${VERSION} · ${BUILD_ID}`;

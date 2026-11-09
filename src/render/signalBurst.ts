@@ -128,7 +128,8 @@ export class SignalBurst {
       this.m.setPosition(x, this.py[i], 0.7);
       this.mesh.setMatrixAt(i, this.m);
       // Additive: fading the colour to black fades the bar.
-      this.mesh.setColorAt(i, this.c.copy(this.base[i]).multiplyScalar(t));
+      // Past white (×1.8), so the glow picks the bars up.
+      this.mesh.setColorAt(i, this.c.copy(this.base[i]).multiplyScalar(t * 1.8));
     }
     this.mesh.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;

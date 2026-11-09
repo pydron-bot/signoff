@@ -1,15 +1,22 @@
 /**
- * The broadcast HUD: health as channel-strength meters, the round clock,
- * round pips, Signal meters, captions for round calls, the commercial break
- * card, and training mode's readout. DOM only; it reads the match and the
- * step's events.
+ * The broadcast HUD: health as channel-strength meters (a bar under a
+ * segment mask, with a red chunk that drains a moment after each hit),
+ * name plates with each fighter's show, the round clock, round pips, Signal
+ * meters, the station bug, captions for round calls, the fighters' lower
+ * thirds as a match goes on air, the commercial break card, and training
+ * mode's readout. DOM only; it reads the match and the step's events.
  */
 import { BAR, DONATIONS_MAX, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
+import { FIGHTER_COLORS, FIGHTER_SHOWS } from '../core/fighterLook';
 import { tickerText } from './ticker';
 
-const SEGMENTS = 20;
+/** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
+const DRAIN_HOLD = 32;
+const DRAIN_RATE = 0.012;
+/** How long the fighters' lower thirds stay up at the start of a match (steps). */
+const INTRO_STEPS = 100;
 
 /** Fake ads for the commercial break, by stage and the segment coming up. */
 const ADS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
@@ -43,7 +50,11 @@ function tickerOn(m: MatchState): boolean {
 interface Side {
   root: HTMLElement;
   name: HTMLElement;
-  bars: HTMLElement[];
+  show: HTMLElement;
+  fill: HTMLElement;
+  damage: HTMLElement;
+  /** The lower third that introduces them. */
+  intro: HTMLElement;
   pips: HTMLElement[];
   meter: HTMLElement;
   meterFill: HTMLElement[];
@@ -71,6 +82,12 @@ export class Hud {
   /** Damage in each side's current combo, for the % beside the hits. */
   private comboDamage = [0, 0];
   private lastHealth = [-1, -1];
+  /** The health bar's red chunk (fractions of full) and how long it holds. */
+  private damage = [1, 1];
+  private hold = [0, 0];
+  private target = [1, 1];
+  private lastDamage = [-1, -1];
+  private introLeft = 0;
   private lastMeter = [-1, -1];
   private lastWins = [-1, -1];
   private lastSecs = -1;
@@ -86,7 +103,7 @@ export class Hud {
     this.clock = div('hud-clock');
     top.append(this.sides[0].root, this.clock, this.sides[1].root);
     const logo = div('hud-logo');
-    logo.textContent = 'CH 0';
+    logo.innerHTML = 'CH 0 <span class="hud-live">LIVE</span>';
     const cap = div('hud-caption');
     this.caption = div('hud-caption-main');
     this.captionSub = div('hud-caption-sub');
@@ -107,7 +124,7 @@ export class Hud {
     this.ticker.hidden = true;
     const meters = div('hud-meters');
     meters.append(this.sides[0].meter, this.sides[1].meter);
-    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo);
+    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo, this.sides[0].intro, this.sides[1].intro);
     parent.append(this.root);
   }
 
@@ -118,14 +135,15 @@ export class Hud {
 
   private side(i: number): Side {
     const root = div(`hud-side hud-side-${i}`);
+    const plate = div('hud-plate');
     const name = div('hud-name');
+    const show = div('hud-show');
+    plate.append(name, show);
     const health = div('hud-health');
-    const bars: HTMLElement[] = [];
-    for (let k = 0; k < SEGMENTS; k++) {
-      const b = div('hud-seg');
-      bars.push(b);
-      health.append(b);
-    }
+    const damage = div('hud-health-damage');
+    const fill = div('hud-health-fill');
+    health.append(damage, fill);
+    const intro = div(`hud-intro hud-intro-${i}`);
     const pipRow = div('hud-pips');
     const pips = [div('hud-pip'), div('hud-pip')];
     pipRow.append(...pips);
@@ -136,7 +154,7 @@ export class Hud {
       coin.push(c);
       coins.append(c);
     }
-    root.append(name, health, pipRow, coins);
+    root.append(plate, health, pipRow, coins);
     const meter = div(`hud-meter hud-meter-${i}`);
     const meterFill: HTMLElement[] = [];
     for (let k = 0; k < 3; k++) {
@@ -147,15 +165,26 @@ export class Hud {
       meterFill.push(fill);
     }
     const combo = div(`hud-combo hud-combo-${i}`);
-    return { root, name, bars, pips, meter, meterFill, combo, coins, coin };
+    return { root, name, show, fill, damage, intro, pips, meter, meterFill, combo, coins, coin };
   }
 
   start(m: MatchState, training: boolean): void {
     this.root.hidden = false;
     m.fighters.forEach((f, i) => {
-      this.sides[i].name.textContent = fighterData(f.fighter).name.toUpperCase();
-      this.sides[i].coins.hidden = fighterData(f.fighter).resource !== 'donations';
+      const s = this.sides[i];
+      const name = fighterData(f.fighter).name.toUpperCase();
+      const show = FIGHTER_SHOWS[f.fighter] ?? '';
+      s.name.textContent = name;
+      s.show.textContent = show.toUpperCase();
+      s.coins.hidden = fighterData(f.fighter).resource !== 'donations';
+      s.root.style.setProperty('--accent', `#${(FIGHTER_COLORS[f.fighter] ?? 0xcccccc).toString(16).padStart(6, '0')}`);
+      s.intro.style.setProperty('--accent', s.root.style.getPropertyValue('--accent'));
+      s.intro.innerHTML = `<div class="hud-intro-tag">${i === 0 ? 'TONIGHT' : 'AND'}</div><div class="hud-intro-name">${name}</div><div class="hud-intro-show">${show}</div>`;
+      s.intro.classList.remove('in');
+      this.damage[i] = this.target[i] = 1;
+      this.hold[i] = 0;
     });
+    this.introLeft = 0;
     this.training.hidden = !training;
     this.clock.classList.toggle('off', training);
     this.breakCard.hidden = true;
@@ -167,6 +196,7 @@ export class Hud {
     this.caption.textContent = '';
     this.captionSub.textContent = '';
     this.lastHealth = [-1, -1];
+    this.lastDamage = [-1, -1];
     this.lastMeter = [-1, -1];
     // A new view of a match: no combo counter left over from the last one.
     for (let i = 0; i < 2; i++) {
@@ -192,10 +222,25 @@ export class Hud {
 
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     const stage = stageData(m.stage);
+    // The red chunk: held after each hit, then drained down to the health left.
+    for (let i = 0; i < 2; i++) {
+      const f = m.fighters[i];
+      const t = f.health / f.maxHealth;
+      if (t < this.target[i]) this.hold[i] = DRAIN_HOLD;
+      this.target[i] = t;
+      if (this.damage[i] < t) this.damage[i] = t;
+      else if (this.hold[i] > 0) this.hold[i]--;
+      else this.damage[i] = Math.max(t, this.damage[i] - DRAIN_RATE);
+    }
     for (const e of ev) {
       switch (e.type) {
         case 'roundStart':
           this.breakCard.hidden = true;
+          // A match going on air: who's on tonight, as lower thirds.
+          if (e.round === 1 && this.training.hidden) {
+            this.introLeft = INTRO_STEPS;
+            for (const s of this.sides) s.intro.classList.add('in');
+          }
           this.say(`ROUND ${e.round}`, `${stage.name.toUpperCase()} · ${stage.segments[e.segment].name.toUpperCase()}`, 90);
           break;
         case 'fight':
@@ -309,6 +354,7 @@ export class Hud {
   /** Once per simulation step: captions and callouts keep sim time. */
   step(): void {
     for (let i = 0; i < 2; i++) if (this.comboLeft[i] > 0 && --this.comboLeft[i] === 0) this.sides[i].combo.textContent = '';
+    if (this.introLeft > 0 && --this.introLeft === 0) for (const s of this.sides) s.intro.classList.remove('in');
     if (this.captionLeft > 0 && --this.captionLeft === 0) {
       this.caption.textContent = '';
       this.captionSub.textContent = '';
@@ -326,11 +372,13 @@ export class Hud {
       const s = this.sides[i];
       if (f.health !== this.lastHealth[i]) {
         this.lastHealth[i] = f.health;
-        const lit = Math.ceil((f.health / f.maxHealth) * SEGMENTS);
-        for (let k = 0; k < SEGMENTS; k++) {
-          s.bars[k].classList.toggle('on', k < lit);
-          s.bars[k].classList.toggle('weak', lit <= SEGMENTS * 0.3);
-        }
+        const t = f.health / f.maxHealth;
+        s.fill.style.transform = `scaleX(${t})`;
+        s.fill.classList.toggle('weak', t <= 0.3);
+      }
+      if (this.damage[i] !== this.lastDamage[i]) {
+        this.lastDamage[i] = this.damage[i];
+        s.damage.style.transform = `scaleX(${this.damage[i]})`;
       }
       if (f.wins !== this.lastWins[i]) {
         this.lastWins[i] = f.wins;

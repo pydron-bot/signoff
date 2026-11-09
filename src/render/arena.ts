@@ -9,19 +9,24 @@
  * one, the contact shadows two), plus 3 to 7 a model.
  */
 import * as THREE from 'three';
+import { FIGHTER_COLORS } from '../core/fighterLook';
 import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
 import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
+import { Atmosphere } from './atmosphere';
+import { Echoes } from './echo';
 import { CameraRig, FOV } from './camera';
 import { ContactShadows, setRim } from './fighterLight';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
+import { FLOOR, MIRROR } from './reflection';
+import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a, gus: 0xe8e4d8, gideon: 0x6a4ab0 };
+const COLORS = FIGHTER_COLORS;
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
@@ -102,6 +107,8 @@ interface FighterView {
   flashColor: number;
   /** The 3D model once loaded, and which fighter it's for. */
   model: FighterModel | null;
+  /** Its VHS echoes, trailing fast moves. */
+  echoes: Echoes | null;
   id: string;
   /** The effect hit (a beam) shown over a move's first hit. */
   effect: EffectSlot;
@@ -139,6 +146,8 @@ class EffectSlot {
 
 export class Arena {
   readonly scene = new THREE.Scene();
+  /** The segment's colour grade, for the post pass. */
+  readonly grade: Grade = { ...NEUTRAL_GRADE };
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 0.1, 80);
   /** Where the camera goes, step by step (src/render/camera.ts). */
   private readonly rig = new CameraRig();
@@ -169,6 +178,8 @@ export class Arena {
   private readonly burst: SignalBurst;
   private readonly shadows: ContactShadows;
   private readonly rim: THREE.DirectionalLight;
+  private readonly key: THREE.DirectionalLight;
+  private readonly air: Atmosphere;
   private frame = 0;
   private projectileMat!: THREE.MeshBasicMaterial;
   /** The hand puppet decoy: a little wooden figure, not a blast of wind. */
@@ -178,7 +189,7 @@ export class Arena {
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
-    const ambient = new THREE.AmbientLight(0xffffff, 1.4);
+    const ambient = new THREE.HemisphereLight(0xffffff, 0x404048, 1.1);
     this.scene.add(ambient);
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(-3, 6, 8);
@@ -186,9 +197,11 @@ export class Arena {
     const rim = new THREE.DirectionalLight(0xffffff, 0);
     this.scene.add(rim);
     this.rim = rim;
+    this.key = key;
     this.shadows = new ContactShadows(this.scene);
-    this.stage = new StageView(this.scene, { ambient, key, rim });
+    this.stage = new StageView(this.scene, { ambient, key, rim, grade: this.grade });
     this.sparks = new Sparks(this.scene);
+    this.air = new Atmosphere(this.scene);
     this.burst = new SignalBurst(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
@@ -223,7 +236,7 @@ export class Arena {
     const limb = new THREE.Mesh(this.unit, limbMat);
     group.add(body, head, limb);
     this.scene.add(group);
-    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], model: null, id: '', effect: new EffectSlot(this.scene) };
+    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], model: null, echoes: null, id: '', effect: new EffectSlot(this.scene) };
   }
 
   /**
@@ -242,6 +255,8 @@ export class Arena {
       if (v.id === f.fighter) return;
       v.model?.dispose();
       v.model = null;
+      v.echoes?.dispose();
+      v.echoes = null;
       v.id = f.fighter;
       const id = f.fighter;
       loads.push(
@@ -251,6 +266,7 @@ export class Arena {
             if (v.id !== id) return;
             v.model = new FighterModel(art);
             this.scene.add(v.model.root);
+            v.echoes = new Echoes(art, this.scene);
           },
           // No GLB (or offline before it was cached): grey boxes.
           () => undefined,
@@ -265,6 +281,7 @@ export class Arena {
     this.poses.reset();
     this.rig.reset();
     this.burst.clear();
+    for (const v of this.fighters) v.echoes?.reset();
   }
 
   /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
@@ -289,6 +306,11 @@ export class Arena {
     this.rig.step(m, ev);
   }
 
+  /** The scene's drawing height in device pixels: effects sized in pixels follow it. */
+  setPixelHeight(px: number): void {
+    this.air.setHeight(px);
+  }
+
   resize(w: number, h: number): void {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -300,6 +322,8 @@ export class Arena {
     this.stage.update(m, this.frame);
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
+    this.shadows.setKey(this.key);
+    this.air.update(m, this.frame / 60);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
@@ -384,12 +408,16 @@ export class Arena {
     if (v.model) v.model.root.visible = shown && model !== null;
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
     const hurt = hurtBox(f);
+    // Grey boxes have no echoes; a model's start afresh when it's back.
+    if (!model) v.echoes?.reset();
     if (model) {
       v.head.visible = false;
       model.root.position.set(x, y, 0);
       model.root.scale.x = f.facing;
       const p = this.poses.pose(m, i, this.pose);
       model.pose(p.clip, p.frame, p.loop);
+      model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
+      v.echoes?.update(f, p, x, y, shown, !this.reduceMotion);
     } else if (lying) {
       // Flat on the floor; rising during getup.
       const h = f.mode === 'getup' ? 0.4 : 0.3;

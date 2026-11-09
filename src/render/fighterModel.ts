@@ -10,6 +10,8 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { STEPS_PER_SECOND } from '../sim/constants';
 import { addRim } from './fighterLight';
+import { addOutline } from './outline';
+import { FLOOR, MIRROR, addReflection } from './reflection';
 import { HELD_STAND_INS, LOOPS, standIn } from './pose';
 
 const loader = new GLTFLoader();
@@ -65,6 +67,12 @@ export function lambert(src: THREE.MeshStandardMaterial): THREE.MeshLambertMater
     opacity: src.opacity,
     alphaTest: src.alphaTest,
     side: src.side,
+    // What glows, and the baked shading on a set's second UV set (docs/BLENDER-TODO.md, step 23).
+    emissive: src.emissive,
+    emissiveMap: src.emissiveMap,
+    emissiveIntensity: src.emissiveIntensity,
+    aoMap: src.aoMap,
+    aoMapIntensity: src.aoMapIntensity,
   });
   m.name = src.name;
   return m;
@@ -88,10 +96,18 @@ export class FighterModel {
   private clip = '';
   private frame = -1;
   private tint = -1;
+  private readonly floorCopies: THREE.Mesh[];
+  private readonly mirrorCopies: THREE.Mesh[];
+  private readonly outline: THREE.Mesh[];
+  private readonly reflectionMaterials: THREE.Material[];
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
 
-  constructor(art: FighterArt) {
+  /**
+   * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
+   * that trail a fast move, src/render/echo.ts): no rim, reflections or outline.
+   */
+  constructor(art: FighterArt, ghost?: THREE.Material) {
     this.art = art;
     const model = SkeletonUtils.clone(art.scene);
     // The model faces glTF +z: a quarter turn faces it along +x.
@@ -103,6 +119,11 @@ export class FighterModel {
       if (!m.isMesh) return;
       // Skinned meshes move far from their bind-pose bounds (knockdowns, teleports).
       m.frustumCulled = false;
+      if (ghost) {
+        m.material = ghost;
+        m.renderOrder = 4;
+        return;
+      }
       const src = m.material as THREE.MeshStandardMaterial;
       let mat = swapped.get(src);
       if (!mat) {
@@ -114,6 +135,14 @@ export class FighterModel {
       m.material = mat;
     });
     this.root.add(model);
+    // Reflections in the floor and Burn's mirrors: copies on the same skeleton.
+    this.floorCopies = ghost ? [] : addReflection(model, FLOOR);
+    this.mirrorCopies = ghost ? [] : addReflection(model, MIRROR);
+    this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies].map((c) => c.material as THREE.Material);
+    // A dark line round the fighter (after the reflections, so they aren't outlined).
+    this.outline = ghost ? [] : addOutline(model);
+    for (const c of this.outline) c.visible = true;
+    if (this.outline.length) this.reflectionMaterials.push(this.outline[0].material as THREE.Material);
     // GLTFLoader drops the dot from bone names (hand.L is handL).
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
@@ -173,6 +202,12 @@ export class FighterModel {
     this.frame = frame;
   }
 
+  /** Shows the reflections the segment has (hidden, they cost no draw calls). */
+  showReflections(floor: boolean, mirror: boolean): void {
+    for (const c of this.floorCopies) c.visible = floor;
+    for (const c of this.mirrorCopies) c.visible = mirror;
+  }
+
   /** An emissive tint over the whole fighter (hit flash, armour, guard): 0 for none. */
   setTint(hex: number): void {
     if (hex === this.tint) return;
@@ -183,6 +218,7 @@ export class FighterModel {
   dispose(): void {
     this.mixer.stopAllAction();
     for (const m of this.materials) m.dispose();
+    for (const m of new Set(this.reflectionMaterials)) m.dispose();
     this.root.removeFromParent();
   }
 }

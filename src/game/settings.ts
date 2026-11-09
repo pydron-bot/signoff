@@ -1,7 +1,8 @@
 /**
  * Player settings, kept in localStorage under signoff.settings: how heavy
  * the broadcast censoring is, how strong the VHS look is, motion, music
- * volume, and the touch buttons' size and side. Each is an index into its
+ * volume, the touch buttons' size and side, the input display and the
+ * performance overlay. Each is an index into its
  * options, so a menu row can show and change it. No DOM here beyond storage.
  */
 export interface Settings {
@@ -19,6 +20,8 @@ export interface Settings {
   touchSide: number;
   /** The input display down the side: 0 off, 1 in Training (and combo showcases), 2 always. */
   inputs: number;
+  /** The performance overlay: 0 off, 1 on (the ` key toggles it too). */
+  perf: number;
 }
 
 export const SETTINGS_KEY = 'signoff.settings';
@@ -31,6 +34,7 @@ export const OPTIONS: Readonly<Record<keyof Settings, readonly string[]>> = {
   touchSize: ['SMALL', 'MEDIUM', 'LARGE'],
   touchSide: ['RIGHT', 'LEFT'],
   inputs: ['OFF', 'TRAINING', 'ALWAYS'],
+  perf: ['OFF', 'ON'],
 };
 
 export const LABELS: Readonly<Record<keyof Settings, string>> = {
@@ -41,10 +45,11 @@ export const LABELS: Readonly<Record<keyof Settings, string>> = {
   touchSize: 'TOUCH BUTTONS',
   touchSide: 'BUTTONS ON THE',
   inputs: 'INPUT DISPLAY',
+  perf: 'PERFORMANCE',
 };
 
 export function defaults(): Settings {
-  return { censor: 1, vhs: 2, motion: 0, music: 2, touchSize: 1, touchSide: 0, inputs: 1 };
+  return { censor: 1, vhs: 2, motion: 0, music: 2, touchSize: 1, touchSide: 0, inputs: 1, perf: 0 };
 }
 
 /** Anything stored that isn't a valid index falls back to the default. */

@@ -10,6 +10,7 @@ import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type LightSpec, type StageArt } from './stageModel';
+import { relight } from './look';
 import { applyLights, type StageLights, type StageSet } from './stageView';
 
 const STREAKS = 40;
@@ -295,7 +296,7 @@ export class WeatherSet implements StageSet {
     }
     this.storm!.visible = segment >= 1;
     this.flood!.visible = segment === 2;
-    applyLights(this.scene, this.lights, spec);
+    applyLights(this.scene, this.lights, spec, this.art);
     this.ambientBase = spec.ambient.intensity;
     this.flash = spec.flash ?? null;
   }
@@ -330,10 +331,12 @@ export class WeatherSet implements StageSet {
 }
 
 /** The stand-in's lights: the arena's defaults. */
-const STAND_IN_LIGHTS = {
-  segment: '',
-  background: '#07070c',
-  ambient: { color: '#ffffff', intensity: 1.4 },
-  key: { color: '#ffffff', intensity: 2.2, position: [-3, 6, 8] as [number, number, number] },
-  rim: { color: '#ffffff', intensity: 0 },
-};
+const STAND_IN_LIGHTS = relight('weather', [
+  {
+    segment: '',
+    background: '#07070c',
+    ambient: { color: '#ffffff', intensity: 1.4 },
+    key: { color: '#ffffff', intensity: 2.2, position: [-3, 6, 8] as [number, number, number] },
+    rim: { color: '#ffffff', intensity: 0 },
+  },
+])[0];
