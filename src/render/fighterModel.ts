@@ -103,7 +103,11 @@ export class FighterModel {
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
 
-  constructor(art: FighterArt) {
+  /**
+   * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
+   * that trail a fast move, src/render/echo.ts): no rim, reflections or outline.
+   */
+  constructor(art: FighterArt, ghost?: THREE.Material) {
     this.art = art;
     const model = SkeletonUtils.clone(art.scene);
     // The model faces glTF +z: a quarter turn faces it along +x.
@@ -115,6 +119,11 @@ export class FighterModel {
       if (!m.isMesh) return;
       // Skinned meshes move far from their bind-pose bounds (knockdowns, teleports).
       m.frustumCulled = false;
+      if (ghost) {
+        m.material = ghost;
+        m.renderOrder = 4;
+        return;
+      }
       const src = m.material as THREE.MeshStandardMaterial;
       let mat = swapped.get(src);
       if (!mat) {
@@ -127,13 +136,13 @@ export class FighterModel {
     });
     this.root.add(model);
     // Reflections in the floor and Burn's mirrors: copies on the same skeleton.
-    this.floorCopies = addReflection(model, FLOOR);
-    this.mirrorCopies = addReflection(model, MIRROR);
+    this.floorCopies = ghost ? [] : addReflection(model, FLOOR);
+    this.mirrorCopies = ghost ? [] : addReflection(model, MIRROR);
     this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies].map((c) => c.material as THREE.Material);
     // A dark line round the fighter (after the reflections, so they aren't outlined).
-    this.outline = addOutline(model);
+    this.outline = ghost ? [] : addOutline(model);
     for (const c of this.outline) c.visible = true;
-    this.reflectionMaterials.push(this.outline[0]?.material as THREE.Material);
+    if (this.outline.length) this.reflectionMaterials.push(this.outline[0].material as THREE.Material);
     // GLTFLoader drops the dot from bone names (hand.L is handL).
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
@@ -209,7 +218,7 @@ export class FighterModel {
   dispose(): void {
     this.mixer.stopAllAction();
     for (const m of this.materials) m.dispose();
-    for (const m of new Set(this.reflectionMaterials)) m?.dispose();
+    for (const m of new Set(this.reflectionMaterials)) m.dispose();
     this.root.removeFromParent();
   }
 }

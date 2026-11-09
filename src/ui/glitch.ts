@@ -13,6 +13,8 @@ export class Glitch {
   private readonly staticLayer: HTMLElement;
   private readonly standby: HTMLElement;
   private wobble = 0;
+  /** An impact frame: steps left of the picture blown out to a negative. */
+  private impactLeft = 0;
   private staticLeft = 0;
   private standbyLeft = 0;
   /** A finisher's cut away: opaque, until its closing card. */
@@ -49,6 +51,8 @@ export class Glitch {
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
+      // An ender or a KO lands on an impact frame (two steps of negative, one fading).
+      if ((e.type === 'hit' && e.weight === 3) || e.type === 'ko') this.impactLeft = IMPACT_STEPS;
       // The tracking wobble on heavy hits and counters, longer on an ender.
       if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, e.weight === 3 ? 16 : 10);
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
@@ -86,6 +90,11 @@ export class Glitch {
     return this.wobble > 0 ? Math.min(1, this.wobble / 10) : 0;
   }
 
+  /** The impact frame for the post pass, 0 to 1. */
+  get impact(): number {
+    return this.impactLeft >= IMPACT_STEPS - 1 ? 1 : this.impactLeft > 0 ? 0.45 : 0;
+  }
+
   /** The colour split: only for the first few steps of a wobble. */
   get split(): number {
     return this.wobble > 6 ? Math.min(1, (this.wobble - 6) / 6) : 0;
@@ -93,6 +102,9 @@ export class Glitch {
 
   step(): void {
     if (this.reduceMotion || this.vhs === 0) this.wobble = this.staticLeft = 0;
+    // A flash of negative is the one thing Reduce Motion always drops.
+    if (this.reduceMotion) this.impactLeft = 0;
+    else if (this.impactLeft > 0) this.impactLeft--;
     if (this.censorDelay > 0 && --this.censorDelay === 0 && this.pendingCut) {
       this.cut(this.pendingCut.kind, this.pendingCut.frames);
       this.pendingCut = null;
@@ -107,13 +119,14 @@ export class Glitch {
   }
 
   clear(): void {
-    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = 0;
+    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = this.impactLeft = 0;
     this.pendingCut = null;
     this.step();
   }
 }
 
 const LATE_NIGHT_DELAY = 24;
+const IMPACT_STEPS = 3;
 
 /** One frame of TV snow, made once. */
 function noiseUrl(): string {

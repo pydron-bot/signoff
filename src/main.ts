@@ -14,6 +14,7 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
+import { powerOn } from './render/look';
 import { setOutlineSize } from './render/outline';
 import { Post } from './render/post';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
@@ -561,6 +562,7 @@ function resize(): void {
   const pr = renderer.getPixelRatio();
   post.setSize(w * pr, h * pr, pr >= 2 ? 0.75 : 1);
   setOutlineSize(h * pr * post.drawScale);
+  arena.setPixelHeight(h * pr * post.drawScale);
   arena.resize(w, h);
 }
 window.addEventListener('resize', resize);
@@ -634,10 +636,11 @@ renderer.setAnimationLoop((now) => {
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
   const title = document.body.dataset.scene === 'title';
-  post.dim = title ? 0.45 : 1;
+  post.dim = title ? 0.45 : powerOn(m);
   post.saturation = title ? 0.7 : 1;
   post.tear = glitch.tear;
   post.split = glitch.split;
+  post.impact = glitch.impact;
   renderer.info.reset();
   post.render(arena.scene, arena.camera, now);
   perf.frame(now, stepped);

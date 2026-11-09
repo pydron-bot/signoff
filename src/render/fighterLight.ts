@@ -56,10 +56,21 @@ export function setRim(rim: THREE.DirectionalLight): void {
   RIM.strength.value = 0.4 + 0.3 * Math.min(1, rim.intensity);
 }
 
-/** A soft dark disc under each fighter. */
+/** A soft dark disc under each fighter, drawn out away from the key light. */
 export class ContactShadows {
   private readonly discs: THREE.Mesh[] = [];
   private readonly mat: THREE.MeshBasicMaterial[] = [];
+  /** How far the shadow falls along the floor per metre of height, from the key light (x, z). */
+  private castX = 0;
+  private castZ = 0;
+
+  /** The segment's key light: a low light throws a longer shadow. */
+  setKey(key: THREE.DirectionalLight): void {
+    const p = key.position;
+    const up = Math.max(1, p.y);
+    this.castX = Math.max(-0.6, Math.min(0.6, -p.x / up));
+    this.castZ = Math.max(-0.6, Math.min(0.6, -p.z / up));
+  }
 
   constructor(scene: THREE.Scene) {
     const c = document.createElement('canvas');
@@ -94,8 +105,10 @@ export class ContactShadows {
     const y = Math.max(0, toFloat(f.y));
     const s = Math.max(0.35, 1 - y / 2.5);
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
-    d.position.set(toFloat(f.x), 0.012, 0);
-    d.scale.set((lying ? 2.0 : 1.1) * s, 1, 0.7 * s);
+    // Pulled along the floor away from the key, about a third of the way to where the fighter's middle would land.
+    const reach = lying ? 0.1 : 0.35;
+    d.position.set(toFloat(f.x) + this.castX * reach, 0.012, this.castZ * reach * 0.5);
+    d.scale.set((lying ? 2.0 : 1.1 + Math.abs(this.castX) * 0.8) * s, 1, (0.7 + Math.abs(this.castZ) * 0.3) * s);
     this.mat[i].opacity = 0.65 * s;
   }
 }

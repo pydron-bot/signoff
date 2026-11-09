@@ -11,6 +11,8 @@
  */
 import * as THREE from 'three';
 import type { Grade } from './post';
+import { INTRO_FRAMES } from '../sim/constants';
+import type { MatchState } from '../sim';
 import type { SegmentLights } from './stageModel';
 
 /** Ambient traded for key: the rigs were tuned for a flat ambient with no ground colour. */
@@ -138,4 +140,15 @@ export function addSetLight(mat: THREE.Material): void {
       );
   };
   mat.customProgramCacheKey = () => 'signoff-set';
+}
+
+/**
+ * The studio's lights banging on bank by bank as a round goes on air: how
+ * bright the picture is, 0 to 1. Three steps over the first 24 steps of the
+ * intro, full otherwise.
+ */
+export function powerOn(m: MatchState): number {
+  if (m.phase !== 'intro') return 1;
+  const t = INTRO_FRAMES - m.phaseTimer;
+  return t < 8 ? 0.12 : t < 16 ? 0.4 : t < 24 ? 0.72 : 1;
 }

@@ -269,9 +269,17 @@ export class Post {
   compileScene(scene: THREE.Object3D, camera: THREE.Camera): void {
     const r = this.renderer;
     const was = r.getRenderTarget();
+    // Hidden things too (echoes, mirror copies, the next segment's pieces), so nothing compiles mid-fight.
+    const hidden: THREE.Object3D[] = [];
+    scene.traverse((o) => {
+      if (o.visible) return;
+      hidden.push(o);
+      o.visible = true;
+    });
     r.setRenderTarget(this.scene);
     r.compile(scene, camera);
     r.setRenderTarget(was);
+    for (const o of hidden) o.visible = false;
   }
 
   /** Compiles every pass's shader now, not on the first frame of a fight. */

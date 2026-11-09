@@ -6,11 +6,14 @@
  * weight: a shake (trauma, squared, so small hits barely stir it), a lean
  * the way the blow travels, and a quick push in on enders, launches, wall
  * splats and boosts. A KO swings it round and in on the loser while the
- * game runs in slow motion (src/game/slowMo.ts). Pure: no three.js, no
+ * game runs in slow motion (src/game/slowMo.ts). Each round opens on an
+ * establishing shot, wide and high, that settles on the fighters as the
+ * intro ends. Pure: no three.js, no
  * clock, no Math.random; the arena copies `shot` onto the real camera.
  */
 import type { MatchState, SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { INTRO_FRAMES } from '../sim/constants';
 import { segmentData } from '../sim/stages';
 
 /** Vertical field of view, degrees. */
@@ -48,6 +51,11 @@ const KO_OUT = 50;
 const KO_ORBIT = 0.22;
 const KO_CLOSER = 0.25;
 
+/** The round's establishing shot: how much further back, higher, and round to the side it starts. */
+const INTRO_BACK = 0.75;
+const INTRO_UP = 1.1;
+const INTRO_ORBIT = 0.2;
+
 /** Where the camera is and what it looks at, in metres (three.js space). */
 export interface Shot {
   x: number;
@@ -78,6 +86,9 @@ export class CameraRig {
   private koLoser = 0;
   private koSide = 1;
   private koT = -1;
+  /** 1 as a round's intro starts, easing to 0 (none with Reduce Motion); and the side it swings from. */
+  private intro = 0;
+  private introSide = 1;
 
   /** Jump straight to the framing on the next step (a new match, a replay seek, a new round). */
   reset(): void {
@@ -101,6 +112,11 @@ export class CameraRig {
     let z = Math.min(FAR, Math.max(near, (gap + 2 * room) / (2 * TAN * this.aspect))) + high;
     let x = (ax + bx) / 2;
     let y = (finisher ? 1.05 : LOOK_Y) + high * 0.6;
+    // The establishing shot: done by the last third of the intro.
+    const left = m.phase === 'intro' && !this.reduceMotion ? Math.max(0, (m.phaseTimer - INTRO_FRAMES / 3) / (INTRO_FRAMES * (2 / 3))) : 0;
+    this.intro = left * left * (3 - 2 * left);
+    z *= 1 + INTRO_BACK * this.intro;
+    y += INTRO_UP * this.intro;
     // The KO: in on the loser (not with Reduce Motion).
     const k = this.reduceMotion ? 0 : this.koWeight();
     if (k > 0) {
@@ -135,6 +151,8 @@ export class CameraRig {
     switch (e.type) {
       case 'roundStart':
         this.reset();
+        // Alternate sides, round by round.
+        this.introSide = e.round % 2 === 0 ? 1 : -1;
         break;
       case 'hit':
         this.kick(TRAUMA[e.weight] + (e.counter ? 0.1 : 0), PUSH[e.weight]);
@@ -192,7 +210,7 @@ export class CameraRig {
     const calm = this.reduceMotion;
     const lean = calm ? 0 : this.lean;
     const d = Math.max(3.5, this.fz - (calm ? 0 : this.push));
-    const orbit = calm ? 0 : KO_ORBIT * this.koSide * this.koWeight();
+    const orbit = calm ? 0 : KO_ORBIT * this.koSide * this.koWeight() + INTRO_ORBIT * this.introSide * this.intro;
     s.tx = this.fx + lean;
     s.ty = this.fy;
     s.x = s.tx + Math.sin(orbit) * d;
