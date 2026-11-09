@@ -1,0 +1,173 @@
+<title>Dale Storm HD</title>
+<style>
+/* Layout: one stage (the 3D view) with a control strip under it; studio-dark always, like a TV studio floor at night. */
+:root {
+  --bg: #101216; --panel: #181b21; --line: #2a2f38; --fg: #e9e6df; --muted: #9a968d; --accent: #e0b25a;
+  --display: "Bebas Neue", "Oswald", Impact, sans-serif; --body: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); margin: 0; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 28px; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: 0.04em; margin: 0; line-height: 0.95; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.stats { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--fg); font-weight: 500; }
+.stage { position: relative; aspect-ratio: 4 / 3; max-height: 72vh; width: 100%; max-width: 100%; background: radial-gradient(ellipse at 50% 35%, #232832, var(--bg) 70%); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.loading[hidden] { display: none; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); color: var(--muted); font-size: 0.85rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { background: var(--panel); color: var(--muted); border: 0; padding: 8px 12px; font: 500 0.85rem var(--body); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #17140d; }
+.seg button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label { font-size: 0.8rem; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; }
+select { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 7px 8px; font: 0.85rem var(--body); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 28px; font-size: 0.88rem; line-height: 1.55; color: var(--muted); }
+.notes h2 { font: 600 0.72rem var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg); margin: 0 0 4px; }
+.notes p { margin: 0; max-width: 65ch; min-width: 0; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<div class="wrap">
+  <header>
+    <h1>Dale Storm <span>HD</span></h1>
+    <div class="stats" id="stats"><span>Triangles <b>__TRIS__</b></span><span>Budget <b>18,000</b></span><span>Game model <b>__OLD_TRIS__</b></span></div>
+  </header>
+  <div class="stage" id="stage"><div class="loading" id="loading">Loading the model…</div></div>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Model">
+      <button id="m-hd" aria-pressed="true">HD experiment</button>
+      <button id="m-old" aria-pressed="false">Current game model</button>
+    </div>
+    <label for="clip">Clip <select id="clip"></select></label>
+    <div class="seg" role="group" aria-label="Playback">
+      <button id="play" aria-pressed="true">Playing</button>
+    </div>
+    <div class="seg" role="group" aria-label="Framing">
+      <button id="f-full" aria-pressed="true">Full body</button>
+      <button id="f-face" aria-pressed="false">Face</button>
+    </div>
+  </div>
+  <div class="notes">
+    <div><h2>What this is</h2><p>Dale rebuilt as one detailed character under 18,000 triangles: sculpted as distance fields in code, meshed at 1–3.5 mm, decimated to budget, skinned to his existing game rig, so every clip here is a real game clip.</p></div>
+    <div><h2>Textures</h2><p>A 2048² colour map painted per texel (skin, iris, camel check, silk tie), a normal map baked from the dense sculpt plus painted micro-detail (pores, weave, combed hair), and a roughness map.</p></div>
+    <div><h2>Not yet</h2><p>No face shape keys (hurt, KO, win), no umbrella prop, and the fingers curl as two groups because the rig has one bone per group. The game draws fighters with a simpler lit material, so normal maps would need a material change there.</p></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const HD = "__HD_GLB__";
+const OLD = "__OLD_GLB__";
+const CLIPS = ["idle", "walk_fwd", "s.BP", "s.FK", "Cold Front", "Isobar Lasso", "Heat Lightning", "hit_high", "intro", "win", "win_2", "ko"];
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 4 / 3, 0.05, 50);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xd8e0ff, 0x2a2420, 0.9));
+const key = new THREE.DirectionalLight(0xfff1e0, 2.4);
+key.position.set(-2.2, 3.5, 3);
+key.castShadow = true;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.camera.left = key.shadow.camera.bottom = -1.5;
+key.shadow.camera.right = key.shadow.camera.top = 1.5;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xcfe0ff, 1.6);
+rim.position.set(1, 2.6, -3);
+scene.add(rim);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.5);
+fill.position.set(3, 1.2, 2);
+scene.add(fill);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(2.2, 48), new THREE.MeshStandardMaterial({ color: 0x0d0f13, roughness: 0.95 }));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const loader = new THREE.GLTFLoader();
+const models = {};
+let current = null, mixer = null, action = null, playing = true;
+function bytes(b64) { const s = atob(b64); const a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a.buffer; }
+function load(name, b64) {
+  return new Promise((res, rej) => loader.parse(bytes(b64), "", (g) => {
+    g.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+    // Effects meshes in the game file stay hidden.
+    g.scene.traverse((o) => { if (o.isMesh && /^fx_/.test(o.name)) o.visible = false; });
+    models[name] = g; res(g);
+  }, rej));
+}
+let faceMode = false;
+const headPos = new THREE.Vector3();
+function headBone() {
+  let h = null;
+  if (current) current.scene.traverse((o) => { if (o.isBone && o.name === "head") h = o; });
+  return h;
+}
+function frame(which) {
+  const face = which === "face";
+  faceMode = face;
+  controls.target.set(0, 0.95, 0);
+  camera.position.set(1.1, 1.3, 3.4);
+  if (face) followHead(true);
+  controls.update();
+  document.getElementById("f-full").setAttribute("aria-pressed", String(!face));
+  document.getElementById("f-face").setAttribute("aria-pressed", String(face));
+}
+function show(name) {
+  if (current) scene.remove(current.scene);
+  current = models[name];
+  scene.add(current.scene);
+  mixer = new THREE.AnimationMixer(current.scene);
+  document.getElementById("m-hd").setAttribute("aria-pressed", String(name === "hd"));
+  document.getElementById("m-old").setAttribute("aria-pressed", String(name === "old"));
+  play(document.getElementById("clip").value);
+  if (faceMode) { mixer.update(0); followHead(true); }
+}
+function play(clipName) {
+  if (!current) return;
+  const clip = current.animations.find((c) => c.name === clipName) || current.animations[0];
+  if (action) action.stop();
+  action = mixer.clipAction(clip);
+  action.reset().play();
+  action.paused = !playing;
+}
+const sel = document.getElementById("clip");
+for (const c of CLIPS) { const o = document.createElement("option"); o.value = o.textContent = c; sel.appendChild(o); }
+sel.addEventListener("change", () => play(sel.value));
+document.getElementById("m-hd").onclick = () => show("hd");
+document.getElementById("m-old").onclick = () => show("old");
+document.getElementById("f-full").onclick = () => frame("full");
+document.getElementById("f-face").onclick = () => frame("face");
+const pb = document.getElementById("play");
+pb.onclick = () => { playing = !playing; pb.textContent = playing ? "Playing" : "Paused"; pb.setAttribute("aria-pressed", String(playing)); if (action) action.paused = !playing; };
+function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); }
+addEventListener("resize", resize);
+resize();
+frame("full");
+const clock = new THREE.Clock();
+// Face framing follows the head as the clip moves it (the camera keeps its offset).
+function followHead(jump) {
+  const h = headBone();
+  if (!h) return;
+  h.getWorldPosition(headPos);
+  headPos.y += 0.1;
+  const off = jump ? new THREE.Vector3(0.22, 0.03, 0.58) : camera.position.clone().sub(controls.target);
+  controls.target.copy(headPos);
+  camera.position.copy(headPos).add(off);
+}
+renderer.setAnimationLoop(() => { const dt = clock.getDelta(); if (mixer) mixer.update(dt); if (faceMode) followHead(false); controls.update(); renderer.render(scene, camera); });
+Promise.all([load("hd", HD), load("old", OLD)]).then(() => { document.getElementById("loading").hidden = true; show("hd"); })
+  .catch((e) => { document.getElementById("loading").textContent = "The model didn't load: " + e.message; });
+</script>
