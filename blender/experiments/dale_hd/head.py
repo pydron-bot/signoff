@@ -57,6 +57,10 @@ def skin():
 
     # The nose: bridge, tip, wings, columella; nostrils cut.
     m.add(cone(H(0, 0.090, 0.020), H(0, 0.115, -0.014), 0.0072, 0.0082, squash=(0.8, 1.0)), "head", "skin", k=0.008, name="bridge")
+    # The bridge's root and the nose's side walls, down into the face (the
+    # bridge alone stands off it and leaves a tunnel behind).
+    m.add(cone(H(0, 0.079, 0.021), H(0, 0.094, -0.020), 0.0105, 0.0125, squash=(0.9, 1.0)), "head", "skin", k=0.009, name="nose_root")
+    both(lambda s: m.add(ellipsoid(H(s * 0.0115, 0.087, -0.004), (0.0095, 0.012, 0.017), rot(yaw=s * 12)), "head", "skin", k=0.008, name="nose_side"))
     m.add(sphere(H(0, 0.1145, -0.019), 0.0108), "head", "skin", k=0.006, name="tip")
     both(lambda s: m.add(ellipsoid(H(s * 0.0110, 0.0995, -0.0262), (0.0072, 0.0098, 0.0068)), "head", "skin", k=0.007, name="ala"))
     m.add(cone(H(0, 0.111, -0.026), H(0, 0.101, -0.0335), 0.0042, 0.0036), "head", "skin", k=0.004, name="columella")
@@ -78,15 +82,17 @@ def skin():
             pts.append(H(x, f0 - 0.017 * t * t, y0 - sag * (1 - t * t) + lift * t * t))
         return pts
 
-    m.add(chain(arc(-0.0475, -0.0015, 0.0985), [0.0024, 0.0034, 0.0040, 0.0043, 0.0040, 0.0034, 0.0024]), "head", "lip", k=0.004, name="lip_top")
-    m.add(chain(arc(-0.0640, 0.0065, 0.0935), [0.0026, 0.0042, 0.0053, 0.0057, 0.0053, 0.0042, 0.0026]), J, "lip", k=0.004, name="lip_bottom")
+    m.add(chain(arc(-0.0478, -0.0012, 0.0975), [0.0018, 0.0030, 0.0037, 0.0040, 0.0037, 0.0030, 0.0018], squash=(1.0, 0.62)), "head", "lip", k=0.006, name="lip_top")
+    m.add(chain(arc(-0.0628, 0.0060, 0.0925), [0.0020, 0.0036, 0.0046, 0.0050, 0.0046, 0.0036, 0.0020], squash=(1.0, 0.62)), J, "lip", k=0.006, name="lip_bottom")
     # The skin of the upper lip, from the nose's base to the lip.
     m.add(ellipsoid(H(0, 0.087, -0.040), (0.021, 0.011, 0.011)), "head", "skin", k=0.008, name="upper_lip_skin")
+    # The corners of the mouth tuck into the cheeks.
+    both(lambda s: m.cut(ellipsoid(H(s * 0.0285, 0.0805, -0.0495), (0.0028, 0.0032, 0.0034)), k=0.003, name="commissure"))
     # The philtrum's two ridges, and the dip under the lower lip.
     both(lambda s: m.add(cone(H(s * 0.0042, 0.0985, -0.0355), H(s * 0.0050, 0.0995, -0.0435), 0.0018, 0.0021), "head", "skin", k=0.004, name="philtrum"))
     m.cut(ellipsoid(H(0, 0.0975, -0.0765), (0.016, 0.004, 0.0032)), k=0.005, name="labiomental")
     # The mouth opening, and the cavity behind it.
-    m.cut(chain(arc(-0.0545, 0.0045, 0.0965, w=0.0262, lift=0.0045), [0.0012, 0.0036, 0.0048, 0.0052, 0.0048, 0.0036, 0.0012]), k=0.0015, name="mouth", label="mouth")
+    m.cut(chain(arc(-0.0545, 0.0045, 0.0965, w=0.0262, lift=0.0045), [0.0010, 0.0028, 0.0038, 0.0042, 0.0038, 0.0028, 0.0010]), k=0.0015, name="mouth", label="mouth")
     m.cut(ellipsoid(H(0, 0.067, -0.056), (0.025, 0.026, 0.012)), k=0.002, name="cavity", label="mouth")
 
     # Eyes: lids wrap a ball a little bigger than the eye, an almond cut
@@ -170,7 +176,7 @@ def teeth():
     for i in range(n):
         t = -1 + 2 * (i + 0.5) / n
         x = t * 0.0255
-        f = 0.0915 - 0.020 * t * t
+        f = 0.0903 - 0.020 * t * t
         w = (0.0042 if abs(t) < 0.2 else 0.0036 if abs(t) < 0.55 else 0.0034)
         a = -np.degrees(np.arctan2(2 * 0.020 * t, 0.0255)) * 0.9
         c = H(x, f, -0.0545 + 0.006 * t * t)
@@ -178,7 +184,7 @@ def teeth():
         m.add(box(c, (w, 0.0032, 0.0052), 0.0016, rot(yaw=a)), "head", "tooth", k=0.0006, name="tooth")
         cl = H(x * 0.92, f - 0.002, -0.0635 + 0.006 * t * t)
         m.add(box(cl, (w * 0.82, 0.0028, 0.0040), 0.0014, rot(yaw=a)), "jaw", "tooth", k=0.0006, name="tooth_low")
-    g = [H(x, 0.0895 - 0.020 * (x / 0.0255) ** 2, -0.0487 + 0.006 * (x / 0.0255) ** 2) for x in np.linspace(-0.027, 0.027, 7)]
+    g = [H(x, 0.0883 - 0.020 * (x / 0.0255) ** 2, -0.0487 + 0.006 * (x / 0.0255) ** 2) for x in np.linspace(-0.027, 0.027, 7)]
     m.add(chain(g, [0.0030] * 7), "head", "gum", k=0.0015, name="gum")
     return m
 

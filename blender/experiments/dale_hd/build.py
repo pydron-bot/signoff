@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "blender"))
 
 from experiments.dale_hd import paint as PAINT  # noqa: E402
+from experiments.dale_hd.hands import CURL, FINGERS  # noqa: E402,F401
 from experiments.dale_hd.blend import to_object  # noqa: E402
 from experiments.dale_hd.pieces import PIECES  # noqa: E402
 
@@ -62,6 +63,116 @@ def fighter_co(obj):
     obj.data.vertices.foreach_get("co", co)
     co = co.reshape(-1, 3)
     return np.column_stack([co[:, 0], -co[:, 1], co[:, 2]])
+
+
+def finger_joints(rig):
+    """Split each finger group's bone at the knuckles of the modelled hand
+    (index, the middle finger for the group, the thumb), so a fist curls at
+    three joints instead of folding the whole finger at the base. Returns
+    {group bone: [its new child bones]}."""
+    from mathutils import Vector
+
+    from experiments.dale_hd.rigdata import hand_frame
+
+    def fighter_to_blender(p):
+        return Vector((p[0], -p[1], p[2]))
+
+    bpy.context.view_layer.objects.active = rig
+    rig.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    eb = rig.data.edit_bones
+    made = {}
+    for s in ("L", "R"):
+        wr, a, w, n, L = hand_frame(s)
+        for group, finger in (("index", "index"), ("fingers", "middle")):
+            (t0, w0), lens, *_ = FINGERS[finger]
+            joints, d = [], a
+            p = wr + a * t0 + w * w0
+            for j, ln in enumerate(lens[:2]):
+                ang = np.radians(CURL[j])
+                d = d * np.cos(ang) - n * np.sin(ang)
+                p = p + d * ln
+                joints.append(p)
+            made[f"{group}.{s}"] = _split(eb, f"{group}.{s}", [fighter_to_blender(q) for q in joints], f"{group}_{{}}.{s}")
+        # The thumb: its middle joint, where the first phalanx ends.
+        d1 = a * 0.80 + w * 0.32 - n * 0.30
+        mc = wr + a * 0.036 + w * 0.036 - n * 0.012
+        made[f"thumb.{s}"] = _split(eb, f"thumb.{s}", [fighter_to_blender(mc + d1 / np.linalg.norm(d1) * 0.036)], f"thumb_{{}}.{s}")
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for parent, kids in made.items():
+        for k in kids:
+            rig.data.bones[k]["bend"] = rig.data.bones[parent]["bend"]
+            rig.pose.bones[k].rotation_mode = "QUATERNION"
+    return made
+
+
+def _split(eb, name, points, pattern):
+    """Cut bone `name` where `points` project onto it; the pieces chain on
+    as children, same roll, so they turn about the same axis."""
+    b = eb[name]
+    h, t = b.head.copy(), b.tail.copy()
+    d = t - h
+    fr = sorted(max(0.15, min(0.85, (q - h).dot(d) / d.length_squared)) for q in points)
+    cuts = [h + d * f for f in fr] + [t]
+    roll, parent = b.roll, b
+    b.tail = cuts[0]
+    kids = []
+    for i in range(1, len(cuts)):
+        c = eb.new(pattern.format(i + 1))
+        c.head, c.tail, c.roll = cuts[i - 1], cuts[i], roll
+        c.parent, c.use_connect, c.use_deform = parent, True, True
+        kids.append(c.name)
+        parent = c
+    return kids
+
+
+def spread_curls(rig, made):
+    """Rewrite every clip's finger-group rotations across the new joints: a
+    curl toward the palm bends all three knuckles as a real fist does (the
+    thumb two); an opening (backward) turn stays at the base, halved, so
+    fingers never bend back past straight-ish."""
+    import math
+
+    from bpy_extras.anim_utils import action_get_channelbag_for_slot
+
+    for act in bpy.data.actions:
+        for slot in act.slots:
+            if slot.target_id_type != "OBJECT":
+                continue
+            bag = action_get_channelbag_for_slot(act, slot)
+            if bag is None:
+                continue
+            f0, f1 = int(act.frame_range[0]), int(act.frame_range[1])
+            for parent, kids in made.items():
+                path = f'pose.bones["{parent}"].rotation_quaternion'
+                fcs = [bag.fcurves.find(path, index=i) for i in range(4)]
+                if not all(fcs):
+                    continue
+                frames = list(range(f0, f1 + 1))
+                theta = []
+                for f in frames:
+                    w, z = fcs[0].evaluate(f), fcs[3].evaluate(f)
+                    theta.append(2 * math.atan2(z, w))
+                # The rig's full curl (100°) is a fist at one hinge; a real fist
+                # bends about 90°, 100° and 70° at the three knuckles.
+                shares = (0.6, 0.7) if parent.startswith("thumb") else (0.9, 1.0, 0.7)
+                bend = rig.data.bones[parent]["bend"]  # the rig's sign for "toward the palm"
+                series = {parent: [], **{k: [] for k in kids}}
+                for th in theta:
+                    parts = [th * x for x in shares] if th * bend >= 0 else [th * 0.5] + [0.0] * len(kids)
+                    for bn, ang in zip([parent, *kids], parts):
+                        series[bn].append(ang)
+                for bn, angs in series.items():
+                    p = f'pose.bones["{bn}"].rotation_quaternion'
+                    for i in range(4):
+                        fc = bag.fcurves.find(p, index=i) or bag.fcurves.new(p, index=i)
+                        fc.keyframe_points.clear()
+                        fc.keyframe_points.add(len(frames))
+                        vals = [(math.cos(x / 2), 0.0, 0.0, math.sin(x / 2))[i] for x in angs]
+                        fc.keyframe_points.foreach_set("co", [c for fr, v in zip(frames, vals) for c in (fr, v)])
+                        for kp in fc.keyframe_points:
+                            kp.interpolation = "LINEAR"
+                        fc.update()
 
 
 def skin(body, piece_of_vert, rig):
@@ -211,7 +322,10 @@ def main():
     for o in list(bpy.data.objects):
         if o is not rig:
             bpy.data.objects.remove(o)
+    made = finger_joints(rig)
+    spread_curls(rig, made)
     rig.data.pose_position = "REST"
+    log(f"finger joints: {sum(len(k) for k in made.values())} bones added, clips rewritten")
 
     # ---- Pieces: dense (for the bake) and decimated (the model).
     his, los = [], []

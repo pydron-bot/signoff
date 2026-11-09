@@ -11,10 +11,10 @@ from .sdf import Model, cone, ellipsoid, sphere
 # Knuckle (t, w), lengths of the three phalanges, base and tip radii, and
 # the fan angle across the hand (degrees toward the thumb).
 FINGERS = {
-    "index": ((0.077, 0.025), (0.044, 0.026, 0.021), 0.0094, 0.0074, 5),
-    "middle": ((0.080, 0.007), (0.048, 0.029, 0.022), 0.0097, 0.0076, 0),
-    "ring": ((0.077, -0.011), (0.045, 0.027, 0.021), 0.0091, 0.0071, -5),
-    "pinky": ((0.071, -0.027), (0.035, 0.021, 0.019), 0.0080, 0.0063, -11),
+    "index": ((0.077, 0.0265), (0.044, 0.026, 0.021), 0.0090, 0.0071, 5),
+    "middle": ((0.080, 0.0075), (0.048, 0.029, 0.022), 0.0092, 0.0073, 0),
+    "ring": ((0.077, -0.0115), (0.045, 0.027, 0.021), 0.0087, 0.0068, -6),
+    "pinky": ((0.071, -0.0285), (0.035, 0.021, 0.019), 0.0076, 0.0060, -12),
 }
 CURL = (8, 12, 8)  # rest flex at each knuckle, degrees toward the palm
 

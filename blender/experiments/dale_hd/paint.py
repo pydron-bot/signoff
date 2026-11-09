@@ -7,8 +7,8 @@ import numpy as np
 from .head import EYE, EYE_R, ORIGIN
 
 BASE = {
-    "skin": (214, 160, 128), "lip": (178, 102, 96), "mouth": (70, 22, 28), "nostril": (110, 60, 52), "lidrim": (196, 132, 118),
-    "brow": (200, 150, 118), "eye": (236, 230, 222), "cornea": (236, 230, 222), "tooth": (238, 232, 212), "gum": (190, 98, 100),
+    "skin": (214, 160, 128), "lip": (186, 112, 104), "mouth": (70, 22, 28), "nostril": (110, 60, 52), "lidrim": (196, 132, 118),
+    "brow": (200, 150, 118), "eye": (236, 230, 222), "cornea": (236, 230, 222), "tooth": (228, 220, 198), "gum": (190, 98, 100),
     "hair": (70, 46, 30), "jacket": (176, 136, 90), "lapel": (172, 132, 86), "shirt": (234, 232, 224), "tie": (160, 36, 34),
     "trousers": (84, 64, 50), "shoe": (52, 34, 24), "sole": (28, 22, 18), "button": (44, 34, 28), "square": (112, 160, 210),
     "pin": (196, 28, 36), "plastic": (40, 40, 44), "nail": (226, 178, 164),
@@ -70,15 +70,25 @@ def paint(P, N, lab):
         m = (np.asarray(mask, float) * a)[:, None]
         col[:] = col * (1 - m) + np.array(c, float) / 255 * m
 
-    # Lip colour stops at the lip line: the skin just above and below the
-    # lips lies within reach of the lips' shapes but is skin.
-    hx0, hu0 = P[:, 0] - ORIGIN[0], P[:, 2] - ORIGIN[2]
-    lift = 0.006 * np.clip(hx0 / 0.0275, -1, 1) ** 2
-    off = (lab == "lip") & ((hu0 > -0.0447 + lift) | (hu0 < -0.0712 + lift * 0.5))
+    # The lips are painted from their own outline (head.py's arcs: the
+    # grin lifts the corners), with a soft edge, not from the labels: the
+    # blend round each lip reaches past its edge.
+    hx0, hf0, hu0 = P[:, 0] - ORIGIN[0], P[:, 1] - ORIGIN[1], P[:, 2] - ORIGIN[2]
+    t = np.clip(hx0 / 0.0275, -1, 1)
+    knots = np.linspace(-1, 1, 7)
+    r_top = np.interp(t, knots, [0.0018, 0.0030, 0.0037, 0.0040, 0.0037, 0.0030, 0.0018])
+    r_bot = np.interp(t, knots, [0.0020, 0.0036, 0.0046, 0.0050, 0.0046, 0.0036, 0.0020])
+    top = -0.0478 + 0.0012 * (1 - t * t) + 0.006 * t * t + r_top * 0.95
+    bottom = -0.0628 - 0.006 * (1 - t * t) + 0.006 * t * t - r_bot * 0.95
+    mouth_line = -0.0545 - 0.0045 * (1 - t * t) + 0.0045 * t * t
+    in_x = np.clip((0.0285 - np.abs(hx0)) / 0.002, 0, 1)
+    up_band = np.clip((top - hu0) / 0.001, 0, 1) * (hu0 > mouth_line - 0.001)
+    lo_band = np.clip((hu0 - bottom) / 0.001, 0, 1) * (hu0 <= mouth_line + 0.001)
+    lipmask = np.where((hf0 > 0.07) & (np.abs(hx0) < 0.032), np.maximum(up_band, lo_band) * in_x, 0.0)
     lab = lab.copy()
-    lab[off] = "skin"
-    col[off] = np.array(BASE["skin"]) / 255
-    rough[off] = ROUGH["skin"]
+    lab[lab == "lip"] = "skin"
+    col[:] = np.array([BASE.get(l, (255, 0, 255)) for l in lab], dtype=float) / 255
+    rough[:] = np.array([ROUGH.get(l, 0.6) for l in lab], dtype=float)
     L = {k: lab == k for k in set(lab.tolist())}
     # ---- Skin (face, neck, ears, hands).
     sk = z("skin") | z("brow") | z("lidrim") | z("nostril") | z("nail") | z("lip")
@@ -97,7 +107,7 @@ def paint(P, N, lab):
     # A shaved man's shadow on the jaw and upper lip, under a TV tan.
     beard = ((hu < -0.03 - 0.25 * np.maximum(np.abs(hx) - 0.03, 0)) & (hu > -0.125) & (hf > -0.005)) | \
             ((np.abs(hx) < 0.026) & (hu < -0.036) & (hu > -0.047) & (hf > 0.08))
-    beard &= face & ~z("lip")
+    beard &= face & (lipmask < 0.3)
     stub = 0.5 + 0.5 * noise(P, 0.0012, 9)
     mix(beard, (120, 104, 98), 0.16 * stub)
     # Eyebrows: short hairs combed outward, darker where dense.
@@ -109,9 +119,10 @@ def paint(P, N, lab):
     strands = 0.5 + 0.5 * np.sin((hu * 1.0 + np.abs(hx) * 0.45) / 0.0009)
     mix(face, (52, 34, 22), np.clip(bmask * 1.4 * (0.6 + 0.4 * strands), 0, 1) * 0.95)
     # Lips: a soft edge into the skin; the inner lip darker and wetter.
-    lp = z("lip")
-    mix(lp, (170, 90, 86), 0.4 * fbm(P, 0.004, 2, 4)[:, None].ravel())
-    rough[lp] = 0.32
+    lipc = np.array((184, 104, 98)) / 255 * (0.92 + 0.12 * fbm(P, 0.003, 2, 4))[:, None]
+    m_ = lipmask * (z("skin") | z("lidrim"))
+    col[:] = col * (1 - m_[:, None]) + lipc * m_[:, None]
+    rough[:] = rough * (1 - m_) + 0.32 * m_
     # Lid rims pinker; a little darkness round the eyes.
     for s in (1, -1):
         mix(face, (150, 104, 92), 0.18 * ell(hx, hu, s * EYE[0], EYE[2], 0.022, 0.016) * (hf > 0.06))
