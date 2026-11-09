@@ -108,6 +108,7 @@ function showSettings(back: () => void): void {
         setup.sound = v;
         sound.mode = SOUND_MODES[v];
         if (sound.mode === 'off') sound.stopMusic(0);
+        sound.unlock();
         saveSetup();
       },
     },
@@ -116,8 +117,9 @@ function showSettings(back: () => void): void {
   pauseMenu.show('SETTINGS', rows);
 }
 
-// Audio may only start from a gesture (iOS Safari).
-for (const t of ['pointerdown', 'keydown'] as const) window.addEventListener(t, () => sound.unlock());
+// Audio may only start from a gesture (iOS Safari). A touch's pointerdown
+// doesn't count as one, its pointerup and touchend do, so listen to them all.
+for (const t of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const) window.addEventListener(t, () => sound.unlock(), { capture: true, passive: true });
 
 let touchUi = window.matchMedia('(pointer: coarse)').matches;
 window.addEventListener('pointerdown', (e) => {

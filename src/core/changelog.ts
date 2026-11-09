@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.32.0',
+    date: '2026-11-09',
+    title: 'Say Something',
+    notes: [
+      'The fighters have voices: a grunt behind a heavy swing, a shout on every special and throw, a cry when they\'re hit (bigger the harder the hit), an "oof" as they hit the floor, and a scream on a K.O.',
+      'Everyone sounds like themselves: Hollis deep and rough, Rox high and breathy, Gus gravelly, Margaret crisp, Gideon with a preacher\'s tremble, and Mister Mumbles squeaky, his wooden jaw clacking.',
+      'Sound on iPhone: the game now plays with the silent switch on, and starts on your first tap (it could stay silent before). Like most games, it pauses music from other apps while it plays.',
+      'Sound picks up again after a call or switching apps, on your next tap.',
+    ],
+  },
+  {
     version: '0.31.0',
     date: '2026-11-09',
     title: 'Impact',
