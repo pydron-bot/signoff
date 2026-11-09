@@ -593,8 +593,10 @@ hitbox (the build's check still applies):
 
 **D. Shape detail**
 
-- [ ] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
-- [ ] Keep each GLB under 5 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
+*Done (Nov 9): all seven, 3,300–4,900 body triangles. Notes under* Shape detail (Nov 9, art side) *in Feedback.*
+
+- [x] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
+- [x] Keep each GLB under 5 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
 
 ### 17. Chef Gus Lamarre (Nov 9, game side)
 
@@ -865,7 +867,7 @@ reference: `git show origin/art/dale-hd-experiment:blender/experiments/dale_hd/<
 **C. Stay faceted, stay cheap**
 
 - [x] Flat shading, one PNG atlas per material at today's sizes, Lambert-friendly colour (no normal, roughness or ORM maps). Give the face and hands more of the atlas than the body. *The hands joined the face's doubled texel density (`DENSE` in `lib/fighter.py`).*
-- [ ] Body up to about 8,000 triangles (16 D), effects as now. Keep every shape key and `fx_*` mesh, the heights against the hurtboxes, every strike in its hitbox and the juggle-box checks.
+- [x] Body up to about 8,000 triangles (16 D), effects as now. Keep every shape key and `fx_*` mesh, the heights against the hurtboxes, every strike in its hitbox and the juggle-box checks.
 - [x] Dale first: compare him with the experiment in the viewer's FACE view, then the rest. *Compared with his old face (the experiment's GLB isn't one the viewer loads); Derek approved Dale, then the rest.* Gus and Gideon are built to this standard from the start.
 
 ### 22. Hit reactions (Nov 9, game side)
@@ -1561,3 +1563,8 @@ worked into the move data, and the table above updates itself.
   - The shared head (`lib/body.py`) has a wedge nose with two nostrils, a cheekbone plane under each eye and a lid line over each eye that squints with it. `mouth(…, lips=, skin=)` rolls lips along a grin or a closed mouth, upper on `head`, lower on `jaw`, painted from their outline and fading into the skin, with a dark tuck at each corner. Dale, Rox, Gus, Gideon and Margaret have lips; Hollis's mouth is under his moustache and Mumbles' is painted on.
   - The build fails if any piece on the head, a hand or a bone under them isn't genus 0 (`check_genus`); every piece is closed today, so it guards future modelling.
   - Body triangles: Dale 3,458, Rox 3,418, Margaret 3,448, Gus 3,476, Gideon 3,378, Hollis 3,182, Mumbles 2,760. GLBs: Dale 2.05 MB, Gus 1.89, Rox 1.87, Mumbles 1.85, Margaret 1.80, Gideon 1.74, Hollis 1.66.
+- **Shape detail (Nov 9, art side).** Step 16 D done for all seven; every build check and `tests/assets.test.ts` passing. Notes for the game side:
+  - Body triangles: Rox 4,894, Gus 4,792, Dale 4,642, Hollis 4,322, Gideon 4,322, Margaret 4,280, Mumbles 3,288. That's well under 8,000: the extra went where it changes the silhouette or a close-up, and more would mostly be smoothing, which the style rules out.
+  - Shared (`lib/body.py`): more sides on the torso (18), arms and legs (12) and neck (10), still faceted; a bowl in each ear; a heel block under every shoe (`heel: False` for Gus's clogs, `heel_h` for Margaret's court shoes); and `hair_cover`, which lays chunky locks over a hair blob in rows, so smooth hair breaks up into a silhouette.
+  - Per fighter: Dale's helmet hair in locks swept to his right, collar points and a blazer hem; Rox's perm in curls; Hollis's crop under a rounder cap, a bristled moustache, belt loops, collar points and boot laces; Mumbles' lapels, pocket hanky, jacket hem and shoe straps; Margaret's layered bob, jacket hem, pocket flaps and heels; Gus's toque pleats as ribs with a lobed puff, the neckerchief's tails, moustache strands and hair locks; Gideon's sides swept back into a ducktail, and a jacket hem.
+  - Shape keys unchanged (`hurt`, `ko`, `win` and each fighter's held props). GLBs: Dale 2.31 MB, Rox 2.21, Gus 2.16, Margaret 1.96, Gideon 1.94, Mumbles 1.92, Hollis 1.88, all under 5.

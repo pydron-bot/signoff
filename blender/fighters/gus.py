@@ -13,7 +13,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import DATA, Stance
-from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "gus"
 HEIGHT = 1.85
@@ -115,7 +115,7 @@ def costume(p, b):
 
     skin = face_paint(b, SKIN, blush=BLUSH)
     c = {"skin": SKIN, "top": WHITES, "bottom": TROUSERS, "shoes": CLOGS, "hair": HAIR, "shoulders": 0.205, "hand": HAND,
-         "eye": (0.019, 0.008, 0.013), "lids": 0.35, "brows": MOUSTACHE, "brow_raise": 0.004, "sole": (60, 46, 34)}
+         "eye": (0.019, 0.008, 0.013), "lids": 0.35, "brows": MOUSTACHE, "brow_raise": 0.004, "sole": (60, 46, 34), "heel": False}
     # A big round body: broad at the belly, the shoulders rounded off.
     torso(p, b, c, waist=0.84, paint=whites, shape=[
         (0.80, 0.15, 0.1), (0.88, 0.185, 0.12), (0.98, 0.2, 0.135), (1.08, 0.205, 0.14), (1.17, 0.2, 0.135),
@@ -133,6 +133,8 @@ def costume(p, b):
     p.seg("collar", b.p(0, 0.0, 1.43), b.p(0, 0.004, 1.49), b.r(0.064), b.r(0.06), WHITES, "chest", paint=whites)
     p.seg("neckerchief", b.p(0, 0.006, 1.47), b.p(0, 0.008, 1.5), b.r(0.066), b.r(0.064), KERCHIEF, "chest", verts=10, paint=lit)
     p.hull("kerchief_knot", [b.p(x, f, u) for f in (0.06, 0.1) for x, u in ((-0.03, 1.49), (0.03, 1.49), (-0.02, 1.43), (0.02, 1.43), (0, 1.41))], KERCHIEF, "chest", paint=lit)
+    for sd in (1, -1):
+        clump(p, f"kerchief_tail{sd}", b.p(sd * 0.01, 0.09, 1.43), b.p(sd * 0.04, 0.12, 1.36), 0.016 * k, KERCHIEF, "chest", paint=lit, flat=0.3)
 
     # The striped apron, tied high over the belly and hanging to the knees.
     # Its lower half follows the thighs (so a kick takes it along) and its
@@ -168,6 +170,10 @@ def costume(p, b):
                MOUSTACHE, "head", paint=lit)
         clump(p, f"sideburn{sd}", hp(sd * 0.09, 0.03, 1.7), hp(sd * 0.093, 0.04, 1.645), 0.013 * k, HAIR, "head", paint=lit)
     p.blob("hair_back", hp(0, -0.05, 1.66), hr(0.097, 0.075, 0.08), HAIR, "head", paint=lit)
+    hair_cover(p, b, "hair_lock", (0, -0.05, 1.66), (0.097, 0.075, 0.08), HAIR, paint=lit, rows=((-25, 8), (5, 9)), az=(95, 265), flow=(0, -22), width=0.022, lift=1.0, flat=0.35)
+    # The moustache's strands, combed out to the waxed ends.
+    for i, x in enumerate((-0.04, -0.022, 0.0, 0.022, 0.04)):
+        clump(p, f"moustache_strand{i}", hp(x * 0.8, 0.128, 1.636), hp(x * 1.25, 0.122, 1.618), 0.01 * k, MOUSTACHE, "head", paint=moustache_paint, flat=0.5)
 
     # The toque: a band round the head, then the tall pleated crown puffing
     # out at the top (the top on x_toque, so it flops).
@@ -180,8 +186,17 @@ def costume(p, b):
 
     hs = b.k * b.head
     p.seg("toque_band", hp(0, -0.008, 1.715), hp(0, -0.006, 1.765), hs * 0.104, hs * 0.106, WHITES, "head", verts=12, paint=lit)
-    p.seg("toque", hp(0, -0.006, 1.762), hp(0, -0.014, 1.9), hs * 0.104, hs * 0.13, WHITES, "head", verts=12, paint=pleats)
-    p.blob("toque_top", hp(0, -0.016, 1.905), hr(0.142, 0.142, 0.04), WHITES, "x_toque", paint=pleats)
+    p.seg("toque", hp(0, -0.006, 1.762), hp(0, -0.014, 1.9), hs * 0.104, hs * 0.13, WHITES, "head", verts=16, paint=pleats)
+    # The pleats stand out as ribs round the crown.
+    for i in range(12):
+        ang = 2 * np.pi * (i + 0.5) / 12
+        cs, sn = np.cos(ang), np.sin(ang)
+        p.seg(f"pleat{i}", hp(0.104 * cs, -0.006 + 0.104 * sn, 1.766), hp(0.13 * cs, -0.014 + 0.13 * sn, 1.895), hs * 0.007, hs * 0.012, WHITES, "head", verts=4, paint=pleats)
+    p.blob("toque_top", hp(0, -0.016, 1.905), hr(0.142, 0.142, 0.04), WHITES, "x_toque", subdiv=2, paint=pleats)
+    for i in range(6):
+        # The puff's lobes, round the rim of the top.
+        ang = 2 * np.pi * i / 6
+        p.blob(f"toque_puff{i}", hp(0.095 * np.cos(ang), -0.016 + 0.095 * np.sin(ang), 1.9), hr(0.06, 0.06, 0.035), WHITES, "x_toque", paint=pleats)
 
     arms(p, b, c, sleeve=1.0, cuff=GREYED, paint=whites, hand_paint=skin)
     legs(p, b, c, shoe_h=0.09, paint=check, shoe_paint=clogs)

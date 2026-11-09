@@ -117,6 +117,13 @@ def costume(p, b):
     for sd in (1, -1):
         p.hull(f"bow{sd}", [b.p(sd * x, f, u) for f in (0.118, 0.132) for x, u in ((0.01, 1.43), (0.065, 1.455), (0.065, 1.405))], RED, "x_bow", paint=lit)
     p.box("bow_knot", b.p(0, 0.13, 1.43), (0.026, 0.02, 0.026), RED, "x_bow", paint=lit)
+    # Little notched lapels, a breast pocket with a red hanky, and a hem.
+    for sd in (1, -1):
+        p.hull(f"lapel{sd}", [b.p(sd * x, f + d, u) for d in (0, 0.012) for x, f, u in ((0.07, 0.11, 1.455), (0.135, 0.104, 1.4), (0.115, 0.108, 1.37), (0.035, 0.112, 1.3))],
+               SUIT, "chest", paint=felt)
+    p.box("pocket", b.p(-0.11, 0.108, 1.33), (0.06, 0.01, 0.012), SUIT, "chest", paint=felt)
+    p.hull("hanky", [b.p(x, f, u) for f in (0.104, 0.112) for x, u in ((-0.135, 1.336), (-0.085, 1.336), (-0.125, 1.362), (-0.105, 1.37), (-0.092, 1.358))], RED, "chest", paint=lit)
+    p.tube("jacket_hem", [(b.p(0, 0, u), (0.14 * b.k * b.g, 0.09 * b.k * b.g), {"hips": 1.0}, SUIT) for u in (0.79, 0.825)], verts=18, paint=felt)
     for i, u in enumerate((1.27, 1.17, 1.07)):
         p.blob(f"button{i}", b.p(0.0, 0.114, u), (0.022, 0.01, 0.022), WHITE, "chest" if u > 1.2 else "spine", paint=glossy)
 
@@ -141,8 +148,11 @@ def costume(p, b):
         # Ball joints at the elbows and knees; short trousers, white socks.
         p.blob(f"elbow_ball.{sd}", el, (b.r(0.055),) * 3, BARE_WOOD, f"forearm.{sd}", paint=wood)
         p.blob(f"knee_ball.{sd}", knee, (b.r(0.07),) * 3, BARE_WOOD, f"shin.{sd}", paint=wood)
-        p.seg(f"shorts_hem.{sd}", lerp(hip, knee, 0.62), lerp(hip, knee, 0.72), b.r(0.08), b.r(0.078), TROUSERS, f"thigh.{sd}", verts=10, paint=felt)
-        p.seg(f"sock.{sd}", lerp(knee, ankle, 0.72), lerp(knee, ankle, 1.0), b.r(0.056), b.r(0.052), SOCK, f"shin.{sd}", verts=10, paint=lit)
+        p.seg(f"shorts_hem.{sd}", lerp(hip, knee, 0.62), lerp(hip, knee, 0.72), b.r(0.08), b.r(0.078), TROUSERS, f"thigh.{sd}", verts=12, paint=felt)
+        p.seg(f"sock.{sd}", lerp(knee, ankle, 0.72), lerp(knee, ankle, 1.0), b.r(0.056), b.r(0.052), SOCK, f"shin.{sd}", verts=12, paint=lit)
+        # A strap over each shoe, buttoned at the side.
+        p.box(f"strap.{sd}", (ankle[0], 0.05 * k, 0.085 * k), (0.1 * k, 0.025 * k, 0.012 * k), SHOES, f"foot.{sd}", paint=lit)
+        p.blob(f"strap_button.{sd}", (ankle[0] + (0.05 if sd == "L" else -0.05) * k, 0.05 * k, 0.085 * k), (0.008, 0.008, 0.008), WHITE, f"foot.{sd}", paint=glossy)
     legs(p, b, {**c, "bottom": TROUSERS}, shin=WOOD, paint=wood)
 
     # String Pull: a string out of his lead fist, snapped forward like a whip.

@@ -71,7 +71,7 @@ def torso(p, b, c, waist=1.0, shape=None, paint=None):
     rings = []
     for h, w, d in sections:
         rings.append((b.p(0, 0, h), (w * b.k * b.g, d * b.k * b.g), weights(h), c["top"] if h >= waist - 1e-3 else c["bottom"]))
-    p.tube("torso", rings, verts=14, paint=paint)
+    p.tube("torso", rings, verts=18, paint=paint)
 
 
 def _section_at(sections, h):
@@ -127,7 +127,7 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
     p.tube("neck", [(lerp(n0, n1, -0.4), b.r(0.052), {"chest": 1.0}, c["skin"]),
                     (lerp(n0, n1, 0.15), b.r(0.05), {"chest": 0.4, "neck": 0.6}, c["skin"]),
                     (lerp(n0, n1, 0.8), b.r(0.048), {"neck": 0.6, "head": 0.4}, c["skin"]),
-                    (lerp(n0, n1, 1.3), b.r(0.046), {"head": 1.0}, c["skin"])], verts=8, paint=paint)
+                    (lerp(n0, n1, 1.3), b.r(0.046), {"head": 1.0}, c["skin"])], verts=10, paint=paint)
     p.blob("head", hp(0, 0.015, 1.665), hr(*(skull or (0.093, 0.105, 0.12))), c["skin"], "head", subdiv=2, paint=paint)
     # The jaw and chin, a little squarer than the egg.
     p.hull("head_jaw", [hp(x, f, u) for x, f, u in ((-0.07, 0.04, 1.6), (0.07, 0.04, 1.6), (-0.06, 0.085, 1.585), (0.06, 0.085, 1.585),
@@ -135,6 +135,8 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
                                                      (0, 0.105, 1.55), (-0.075, 0.0, 1.63), (0.075, 0.0, 1.63))], c["skin"], chin, paint=paint)
     for sd in (1, -1):
         p.blob(f"ear{sd}", hp(sd * 0.094, 0.0, 1.665), hr(0.018, 0.03, 0.036), c["skin"], "head", paint=paint)
+        # The bowl of the ear, darker, facing out and a little forward.
+        p.blob(f"ear_bowl{sd}", hp(sd * 0.104, 0.004, 1.663), hr(0.009, 0.018, 0.024), tuple(int(v * 0.72) for v in c["skin"]), "head", paint=paint)
     if not face:
         return hp, hr
     # The brow ridge over the eye sockets, and the nose.
@@ -458,14 +460,14 @@ def arms(p, b, c, sleeve=1.0, cuff=None, pads=False, paint=None, hand_paint=None
             (lerp(el, wr, 0.55), b.r(0.044), {fa: 1.0}, lower),
             (lerp(el, wr, 0.84), b.r(0.04), {fa: 1.0}, cuff or lower),
             (wr, b.r(0.038), {fa: 0.6, hd: 0.4}, cuff or lower),
-        ], verts=10, paint=paint)
+        ], verts=12, paint=paint)
         if 0.3 < sleeve < 0.9:
             # A short sleeve's hem, a separate rim above the elbow.
-            p.seg(f"sleeve_hem.{s}", lerp(sh, el, 0.7), lerp(sh, el, 0.8), b.r(0.06), b.r(0.058), c["top"], ua, verts=10, paint=paint)
+            p.seg(f"sleeve_hem.{s}", lerp(sh, el, 0.7), lerp(sh, el, 0.8), b.r(0.06), b.r(0.058), c["top"], ua, verts=12, paint=paint)
         elif sleeve >= 0.9:
-            p.seg(f"sleeve_cuff.{s}", lerp(el, wr, 0.8), lerp(el, wr, 0.9), b.r(0.05), b.r(0.049), c["top"], fa, verts=10, paint=paint)
+            p.seg(f"sleeve_cuff.{s}", lerp(el, wr, 0.8), lerp(el, wr, 0.9), b.r(0.05), b.r(0.049), c["top"], fa, verts=12, paint=paint)
         if cuff_rim:
-            p.seg(f"cuff.{s}", lerp(el, wr, 0.88), lerp(el, wr, 1.0), b.r(0.044), b.r(0.042), cuff_rim, fa, verts=10, paint=paint)
+            p.seg(f"cuff.{s}", lerp(el, wr, 0.88), lerp(el, wr, 1.0), b.r(0.044), b.r(0.042), cuff_rim, fa, verts=12, paint=paint)
         hand(p, b, s, c["skin"], c.get("hand", 1.0), paint=hand_paint)
 
 
@@ -488,9 +490,9 @@ def legs(p, b, c, shin=None, shoe_h=0.1, paint=None, shoe_paint=None, cuffs=True
             (lerp(knee, ankle, 0.14), b.r(0.06), {th: 0.15, sn: 0.85}, low),
             (lerp(knee, ankle, 0.6), b.r(0.056), {sn: 1.0}, low),
             (lerp(knee, ankle, 0.97), b.r(0.05), {sn: 0.7, ft: 0.3}, low),
-        ], verts=10, paint=paint)
+        ], verts=12, paint=paint)
         if cuffs and shin is None:
-            p.seg(f"trouser_cuff.{s}", lerp(knee, ankle, 0.86), lerp(knee, ankle, 0.97), b.r(0.058), b.r(0.057), c["bottom"], sn, verts=10, paint=paint)
+            p.seg(f"trouser_cuff.{s}", lerp(knee, ankle, 0.86), lerp(knee, ankle, 0.97), b.r(0.058), b.r(0.057), c["bottom"], sn, verts=12, paint=paint)
         x, k, g = ankle[0], b.k, b.g
         w = 0.047 * k * g
         h = shoe_h * k
@@ -499,7 +501,46 @@ def legs(p, b, c, shin=None, shoe_h=0.1, paint=None, shoe_paint=None, cuffs=True
         p.hull(f"toecap.{s}", [(x + dx, 0.128 * k, u) for dx in (-w * 0.96, w * 0.96) for u in (0.02 * k, h * 0.7)]
                + [(x + dx, 0.215 * k, u) for dx in (-w * 0.77, w * 0.77) for u in (0.02 * k, h * 0.42)], c.get("toecap", c["shoes"]), f"toe.{s}", paint=shoe_paint)
         sole = c.get("sole", tuple(max(0, v - 18) for v in c["shoes"]))
+        if c.get("heel", True):
+            # A heel block under the back of the shoe, a step up from the sole.
+            hh = c.get("heel_h", 0.018) * k
+            p.hull(f"heel.{s}", [(x + dx, f * k, u) for dx in (-w * 1.0, w * 1.0) for f in (-0.07, -0.01) for u in (0.0, 0.022 * k + hh)], sole, ft, paint=shoe_paint)
         ws = w * 1.08
         p.hull(f"sole.{s}", [(x + dx, f * k, u) for dx in (-ws, ws) for f in (-0.072, 0.13) for u in (0, 0.022 * k)], sole, ft, paint=shoe_paint)
         p.hull(f"sole_toe.{s}", [(x + dx, f * k, u) for dx in (-ws, ws) for f in (0.128,) for u in (0, 0.022 * k)]
                + [(x + dx, 0.222 * k, u) for dx in (-ws * 0.8, ws * 0.8) for u in (0, 0.02 * k)], sole, f"toe.{s}", paint=shoe_paint)
+
+
+def hair_cover(p, b, name, centre, radii, colour, bone="head", paint=None, rows=((10, 6),), az=(-180, 180), flow=(0, -25),
+               width=0.024, lift=1.04, flat=0.4, skip=None, shapes=None, mirror=True):
+    """Chunky faceted clumps laid over a hair blob (reference head
+    coordinates: its centre and radii), so its silhouette breaks up into
+    locks. rows: (elevation in degrees, how many clumps round) from the
+    blob's middle; az the arc they cover (0 is the front, 90 the
+    character's left); flow (azimuth, elevation) in degrees from root to
+    tip (mirrored left to right unless `mirror` is off); skip(az, el)
+    leaves a gap (the face). Spaced evenly, so a rebuild is the same."""
+    import math
+
+    hp, _, _ = head_frame(b)
+    cx, cf, cu = centre
+    rx, rf, ru = radii
+
+    def on(a, e, r):
+        a, e = math.radians(a), math.radians(e)
+        return hp(cx + rx * r * math.cos(e) * math.sin(a), cf + rf * r * math.cos(e) * math.cos(a), cu + ru * r * math.sin(e))
+
+    n = 0
+    for i, (el, count) in enumerate(rows):
+        span = az[1] - az[0]
+        full = span >= 359
+        for j in range(count):
+            t = (j + (0.5 if i % 2 else 0.0)) / (count if full else max(1, count - 1))
+            a = az[0] + span * t
+            if skip and skip(a, el):
+                continue
+            # Mirrored, locks on the character's left flow left and on the right,
+            # right; otherwise they all sweep the same way (a side parting).
+            fa = flow[0] if not mirror or math.sin(math.radians(a)) >= 0 else -flow[0]
+            clump(p, f"{name}{n}", on(a, el, 0.9), on(a + fa, el + flow[1], lift), width * b.k * b.head, colour, bone, paint=paint, flat=flat, shapes=shapes)
+            n += 1

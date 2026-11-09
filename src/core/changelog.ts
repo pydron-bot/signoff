@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.35.0',
+    date: '2026-11-09',
+    title: 'Sharp Dressed',
+    notes: [
+      "More detail on the whole cast: hair in chunky locks and curls instead of smooth helmets (Rox's perm especially), Gus's toque with real pleats and a puffed top, Gideon's hair swept back into a ducktail, and Hollis's cropped hair under a rounder cap.",
+      'Clothes with edges: collar points, jacket hems, pocket flaps, Mumbles\' pocket hanky and shoe straps, Hollis\'s belt loops and boot laces, heels on the shoes.',
+    ],
+  },
+  {
     version: '0.34.0',
     date: '2026-11-09',
     title: 'Picture Quality',

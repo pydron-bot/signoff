@@ -7,7 +7,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import about, arms, clump, face_paint, head, head_frame, legs, lerp, lit, mouth, torso
+from lib.body import about, arms, clump, face_paint, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "rox"
 HEIGHT = 1.75
@@ -114,6 +114,9 @@ def costume(p, b):
         # The perm's lower curls swing (x_perm at the back, x_perm.L/R at the sides).
         bone = {13: "x_perm", 14: "x_perm", 15: "x_perm", 8: "x_perm.L", 10: "x_perm.L", 9: "x_perm.R", 11: "x_perm.R"}.get(i, "head")
         p.blob(f"hair{i}", hp(x, f, u), hr(r, r * 0.9, r * 0.85), HAIR, bone, paint=hair)
+    # Curls all over the perm, the face left clear.
+    hair_cover(p, b, "curl", (0, -0.02, 1.665), (0.13, 0.115, 0.125), HAIR, paint=hair, rows=((-35, 10), (-8, 14), (20, 14), (48, 9), (72, 4)),
+               flow=(18, -22), width=0.03, lift=1.0, flat=0.55, skip=lambda a, e: abs(a) < 52 and e < 40)
     # The two-colour headband: teal with FEEL THE BURN, a pink edge.
     p.seg("headband", hp(0, 0.0, 1.729), hp(0, 0.0, 1.753), b.k * b.head * 0.106, b.k * b.head * 0.1, WARMERS, "head", verts=16, paint=headband)
     p.seg("headband_edge", hp(0, 0.0, 1.753), hp(0, 0.0, 1.76), b.k * b.head * 0.1, b.k * b.head * 0.096, LEOTARD, "head", verts=16, paint=lit)
@@ -129,15 +132,15 @@ def costume(p, b):
     for s in ("L", "R"):
         el, wr = b.j[f"forearm.{s}"]
         # Terry sweatbands on both wrists.
-        p.seg(f"sweatband.{s}", lerp(el, wr, 0.74), lerp(el, wr, 0.96), b.r(0.05), b.r(0.048), WARMERS, f"forearm.{s}", verts=10, paint=warmers)
+        p.seg(f"sweatband.{s}", lerp(el, wr, 0.74), lerp(el, wr, 0.96), b.r(0.05), b.r(0.048), WARMERS, f"forearm.{s}", verts=12, paint=warmers)
     legs(p, b, {**c, "bottom": TIGHTS}, shin=TIGHTS, shoe_h=0.12, paint=tights, shoe_paint=shoes)
     for s in ("L", "R"):
         knee, ankle = b.j[f"shin.{s}"]
         # Slouchy leg warmers in rings from mid-shin to the ankle, and the
         # high-tops' collars.
         for i, (t0, t1, r0, r1) in enumerate(((0.32, 0.5, 0.066, 0.07), (0.5, 0.68, 0.071, 0.067), (0.68, 0.86, 0.068, 0.073), (0.86, 0.97, 0.072, 0.064))):
-            p.seg(f"warmer{i}.{s}", lerp(knee, ankle, t0), lerp(knee, ankle, t1), b.r(r0), b.r(r1), WARMERS, f"shin.{s}", verts=10, paint=warmers)
-        p.seg(f"hightop.{s}", (ankle[0], 0.0, 0.07 * k), (ankle[0], 0.0, 0.15 * k), b.r(0.062), b.r(0.058), SHOES, f"shin.{s}", verts=10, paint=shoes)
+            p.seg(f"warmer{i}.{s}", lerp(knee, ankle, t0), lerp(knee, ankle, t1), b.r(r0), b.r(r1), WARMERS, f"shin.{s}", verts=12, paint=warmers)
+        p.seg(f"hightop.{s}", (ankle[0], 0.0, 0.07 * k), (ankle[0], 0.0, 0.15 * k), b.r(0.062), b.r(0.058), SHOES, f"shin.{s}", verts=12, paint=shoes)
 
 
 def xbones(b):

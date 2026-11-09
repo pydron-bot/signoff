@@ -8,7 +8,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, ring, torso
+from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, ring, torso
 
 ID = "hollis"
 HEIGHT = 1.90
@@ -79,9 +79,14 @@ def costume(p, b):
     p.blob("gut", b.p(0, 0.05, 1.07), (b.r(0.13), 0.075 * k * g, 0.11 * k), SHIRT, "spine", subdiv=2, paint=shirt)
     p.hull("tie", [b.p(x, f, u) for f in (0.112, 0.122) for x, u in ((-0.018, 1.44), (0.018, 1.44), (-0.03, 1.22), (0.03, 1.22), (0, 1.19))], NAVY, "chest", paint=lit)
     p.hull("collar", [b.p(x, f, u) for f in (0.06, 0.11) for x, u in ((-0.075, 1.48), (0.075, 1.48), (-0.04, 1.43), (0.04, 1.43), (0, 1.445))], SHIRT, "chest", paint=shirt)
+    for sd in (1, -1):
+        p.hull(f"collar_point{sd}", [b.p(sd * x, f, u) for x, f, u in ((0.014, 0.118, 1.465), (0.07, 0.106, 1.475), (0.045, 0.12, 1.42),
+                                                                     (0.014, 0.11, 1.465), (0.07, 0.098, 1.475), (0.045, 0.112, 1.42))], SHIRT, "chest", paint=shirt)
     # The duty belt, with pouches, the buckle, the flashlight and the keys.
     p.hull("belt", b.ring(0.178, 0.112, 0.035, 0.93) + b.ring(0.178, 0.112, 0.035, 0.995), BELT, "hips", paint=lit)
     p.box("buckle", b.p(0, 0.12, 0.962), (0.055, 0.012, 0.045), METAL, "hips", mat=1, paint=lit)
+    for i, x in enumerate((-0.07, 0.055, -0.17, 0.17)):
+        p.box(f"belt_loop{i}", b.p(x, 0.118 - abs(x) * 0.3, 0.962), (0.014, 0.008, 0.075), BELT, "hips", paint=lit)
     for i, x in enumerate((0.1, 0.15, -0.12)):
         p.box(f"pouch{i}", b.p(x, 0.115 - abs(x) * 0.25, 0.945), (0.05, 0.03, 0.065), BELT, "hips", paint=lit)
     p.box("badge", b.p(0.08, 0.12, 1.36), (0.04, 0.008, 0.048), GOLD, "chest", mat=1, paint=badge)
@@ -106,9 +111,13 @@ def costume(p, b):
                                                      (-0.02, 0.13, 1.64), (0.02, 0.13, 1.64), (0, 0.13, 1.632), (-0.03, 0.122, 1.614), (0.03, 0.122, 1.614))],
            HAIR, "head", paint=lit)
     p.blob("hair", hp(0, -0.04, 1.66), hr(0.096, 0.08, 0.08), HAIR, "head", paint=lit)
+    # Cropped short under the cap, and the moustache's bristling lower edge.
+    hair_cover(p, b, "crop", (0, -0.04, 1.66), (0.096, 0.08, 0.08), HAIR, paint=lit, rows=((-30, 8), (0, 9)), az=(95, 265), flow=(0, -18), width=0.02, lift=1.0, flat=0.3)
+    for i, x in enumerate((-0.042, -0.025, -0.008, 0.008, 0.025, 0.042)):
+        clump(p, f"bristle{i}", hp(x, 0.118, 1.622), hp(x * 1.12, 0.122, 1.6), 0.008 * k, HAIR, "head", paint=lit, flat=0.5)
     # The peaked cap: an eight-sided crown, the band, the visor and the badge.
-    p.seg("cap", hp(0, -0.005, 1.7), hp(0, 0.005, 1.775), b.k * b.head * 0.106, b.k * b.head * 0.12, NAVY, "head", verts=8, paint=lit)
-    p.seg("cap_top", hp(0, 0.005, 1.775), hp(0, 0.005, 1.782), b.k * b.head * 0.12, b.k * b.head * 0.1, NAVY, "head", verts=8, paint=lit)
+    p.seg("cap", hp(0, -0.005, 1.7), hp(0, 0.005, 1.775), b.k * b.head * 0.106, b.k * b.head * 0.12, NAVY, "head", verts=12, paint=lit)
+    p.seg("cap_top", hp(0, 0.005, 1.775), hp(0, 0.005, 1.782), b.k * b.head * 0.12, b.k * b.head * 0.1, NAVY, "head", verts=12, paint=lit)
     p.seg("cap_band", hp(0, -0.005, 1.695), hp(0, -0.003, 1.725), b.k * b.head * 0.108, b.k * b.head * 0.109, BELT, "head", verts=12, paint=lit)
     p.hull("visor", [hp(x, f, 1.69 + d) for d in (0, 0.008) for x, f in ((-0.09, 0.07), (0.09, 0.07), (-0.07, 0.17), (0.07, 0.17), (0, 0.185))], BELT, "x_peak", mat=1, paint=lit)
     p.box("cap_badge", hp(0, 0.122, 1.742), hr(0.032, 0.01, 0.034), GOLD, "head", mat=1, paint=lit)
@@ -131,7 +140,11 @@ def costume(p, b):
     for s in ("L", "R"):
         knee, ankle = b.j[f"shin.{s}"]
         # The boots' tops, a rim over the trousers.
-        p.seg(f"boot_top.{s}", lerp(knee, ankle, 0.45), lerp(knee, ankle, 0.52), b.r(0.064), b.r(0.062), BOOTS, f"shin.{s}", verts=10, paint=boots)
+        p.seg(f"boot_top.{s}", lerp(knee, ankle, 0.45), lerp(knee, ankle, 0.52), b.r(0.064), b.r(0.062), BOOTS, f"shin.{s}", verts=12, paint=boots)
+        # Laces criss-crossing up the boot's front.
+        for i, t in enumerate((0.6, 0.72, 0.84)):
+            q = lerp(knee, ankle, t)
+            p.box(f"lace{i}.{s}", (q[0], q[1] + b.r(0.058), q[2]), (0.04 * k, 0.006, 0.008 * k), (150, 120, 80), f"shin.{s}", paint=lit)
 
 
 def xbones(b):

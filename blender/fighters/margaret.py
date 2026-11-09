@@ -11,7 +11,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "margaret"
 HEIGHT = 1.75
@@ -73,7 +73,7 @@ def costume(p, b):
 
     skin = face_paint(b, SKIN, eyes_shadow=(92, 52, 64), blush=(150, 72, 66), extra=lips_paint)
     c = {"skin": SKIN, "top": SUIT, "bottom": SUIT, "shoes": SHOES, "hair": HAIR, "shoulders": 0.2, "eye": (0.021, 0.008, 0.015),
-         "brows": HAIR, "brow_lift": (0.008, 0.0)}
+         "brows": HAIR, "brow_lift": (0.008, 0.0), "heel_h": 0.035}
     # The jacket: nipped at the waist, flaring over the hips to its hem.
     torso(p, b, c, waist=0.84, paint=pinstripe, shape=[
         (0.80, 0.13, 0.085), (0.88, 0.162, 0.096), (0.98, 0.152, 0.092), (1.08, 0.136, 0.086), (1.17, 0.142, 0.09),
@@ -88,6 +88,11 @@ def costume(p, b):
         p.hull(f"lapel{sd}", [b.p(sd * x, f + d, u) for d in (0, 0.012) for x, f, u in ((0.07, 0.108, 1.46), (0.15, 0.1, 1.39), (0.12, 0.104, 1.36), (0.02, 0.108, 1.2))],
                LAPEL, "chest", paint=pinstripe)
     p.blob("button", b.p(0.0, 0.1, 1.15), (0.012, 0.006, 0.012), GOLD, "spine", mat=1, paint=glossy)
+    # The jacket's hem over the hips, and a flap over each hip pocket.
+    p.tube("jacket_hem", [(b.p(0, 0, u), (0.135 * k * b.g, 0.09 * k * b.g), {"hips": 1.0}, SUIT) for u in (0.79, 0.82)], verts=18, paint=pinstripe)
+    for sd in (1, -1):
+        p.hull(f"pocket_flap{sd}", [b.p(sd * x, f, u) for x, f, u in ((0.06, 0.098, 0.9), (0.135, 0.084, 0.9), (0.06, 0.1, 0.875), (0.135, 0.086, 0.875),
+                                                                    (0.06, 0.088, 0.9), (0.135, 0.074, 0.9))], LAPEL, "hips", paint=pinstripe)
     # The station's pin on her lapel.
     pin_at = b.p(-0.11, 0.122, 1.39)
 
@@ -113,6 +118,9 @@ def costume(p, b):
     p.blob("hair_back", hp(0, -0.055, 1.65), hr(0.1, 0.075, 0.085), HAIR, "head", paint=hair_paint)
     for i, (x0, x1, f) in enumerate(((0.04, -0.1, 0.085), (0.045, -0.07, 0.05), (0.035, -0.09, 0.015))):
         clump(p, f"fringe{i}", hp(x0, f - 0.02, 1.788), hp(x1, f + 0.03, 1.712), 0.026 * k, HAIR, "head", paint=hair_paint, flat=0.3)
+    # Sleek layers down the back of the bob.
+    hair_cover(p, b, "layer", (0, -0.055, 1.65), (0.1, 0.075, 0.085), HAIR, paint=hair_paint, rows=((-20, 7), (12, 8)), az=(110, 250), flow=(0, -35),
+               width=0.03, lift=1.0, flat=0.25)
     for sd, bone in ((1, "x_bob.L"), (-1, "x_bob.R")):
         # From inside the cap, flaring out to a sharp line at the chin.
         pts = []
