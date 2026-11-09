@@ -38,7 +38,7 @@ const moves = table(
   // Command normals
   normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [1.0, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'j.BK' } }),
   normal('j.BP', { name: 'Descending Book', kind: 'air', startup: 8, active: 5, recovery: 7, reach: [0.1, 0.95], at: [0.6, 1.2], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 48, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Ascension Kick', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 62, hitstun: 20, blockstun: 12 }),
@@ -94,6 +94,27 @@ const moves = table(
     armor: [4, 17],
     hits: [strike({ frames: [18, 22], reach: [-2.2, 2.2], at: [0, 2.4], damage: 110, hitstun: 0, blockstun: 16, chip: 22, launch: 0.18 })],
   }),
+  // In the air: arms out, hanging there, and the light goes off all round him. Pops them up.
+  move('Rapture', {
+    name: 'Rapture',
+    kind: 'special',
+    stance: 'air',
+    total: 40,
+    boost: 'Rapture+',
+    hover: [1, 26],
+    landing: 6,
+    hits: [strike({ frames: [14, 20], reach: [-1.0, 1.0], at: [-0.6, 1.8], damage: 55, hitstun: 0, blockstun: 14, chip: 8, launch: 0.16 })],
+  }),
+  move('Rapture+', {
+    name: 'Rapture (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 40,
+    armor: [1, 13],
+    hover: [1, 26],
+    landing: 6,
+    hits: [strike({ frames: [14, 20], reach: [-1.5, 1.5], at: [-1.0, 2.2], damage: 70, hitstun: 0, blockstun: 14, chip: 12, launch: 0.18 })],
+  }),
   throwMove(105),
   interactMove(),
   technicalDifficulties(1.6),
@@ -132,6 +153,9 @@ const finishers = [
     .blow(26, { react: 'none', damage: 110 })
     .blow(40, { react: 'none', damage: 140 })
     .done({ id: 'Last Rites', name: 'Last Rites', kind: 'signoff', range: 'mid', input: ['d', 'b'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('standby').done({ id: 'Passing the Plate', name: 'Passing the Plate', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Collection Plate', hold: 'b' }, 40),
+  new Script(moves).wait(22).cut('bars').done({ id: 'Raptured', name: 'Raptured', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Rapture' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Final Collection', name: 'Final Collection', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Fire and Brimstone' }, 40),
   rerun(moves),
 ];
@@ -159,6 +183,8 @@ export const GIDEON: FighterData = {
     b: {},
   },
   specials: { n: 'Fire and Brimstone', f: 'Collection Plate', d: 'Laying On of Hands' },
+  airSpecials: { n: 'Rapture' },
+  airStrings: [{ name: 'Hallelujah', path: ['j.FP', 'BK'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

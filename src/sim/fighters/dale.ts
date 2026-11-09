@@ -32,7 +32,7 @@ const moves = table(
     cancel: [11, 17],
   }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Jumping Boot', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
@@ -97,6 +97,30 @@ const moves = table(
     invuln: [1, 7],
     hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.8, 2.2], damage: 75, hitstun: 0, blockstun: 14, launch: 0.2 })],
   }),
+  // In the air: the umbrella opens and he hangs there, dropping hail on the way down.
+  move('Downpour', {
+    name: 'Downpour',
+    kind: 'special',
+    stance: 'air',
+    total: 34,
+    boost: 'Downpour+',
+    hover: [1, 16],
+    landing: 6,
+    spawns: [{ frame: 12, projectile: hailDown(0.05, 45) }],
+  }),
+  move('Downpour+', {
+    name: 'Downpour (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 34,
+    hover: [1, 20],
+    landing: 6,
+    spawns: [
+      { frame: 12, projectile: hailDown(0.03, 38) },
+      { frame: 15, projectile: hailDown(0.06, 38) },
+      { frame: 18, projectile: hailDown(0.09, 38) },
+    ],
+  }),
   throwMove(100),
   interactMove(),
   technicalDifficulties(1.6),
@@ -139,6 +163,9 @@ const finishers = [
     .blow(24, { react: 'none', damage: 90 })
     .blow(36, { react: 'none', damage: 130 })
     .done({ id: 'Severe Weather Warning', name: 'Severe Weather Warning', kind: 'signoff', range: 'far', input: ['d', 'b'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('bars').done({ id: 'Cold Snap', name: 'Cold Snap', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Cold Front', hold: 'b' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Washed Out', name: 'Washed Out', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Downpour' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Struck by Lightning', name: 'Struck by Lightning', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Heat Lightning' }, 40),
   rerun(moves),
 ];
@@ -146,6 +173,11 @@ const finishers = [
 /** A hailstone that falls from above at distance x: an overhead. */
 function hail(x: number, damage: number) {
   return projectile({ at: [x, 3.0], speed: [0, -0.1], size: [-0.3, 0.3, 0, 0.5], life: 60, groundEnds: true, effect: { damage, height: 'overhead', hitstun: 22, blockstun: 14, push: 0.03, chip: 10 } });
+}
+
+/** Hail thrown down and forward from the air: an overhead. */
+function hailDown(vx: number, damage: number) {
+  return projectile({ at: [0.4, 0.4], speed: [vx, -0.09], size: [-0.25, 0.25, 0, 0.5], life: 50, groundEnds: true, effect: { damage, height: 'overhead', hitstun: 22, blockstun: 14, push: 0.03, chip: 8 } });
 }
 
 export const DALE: FighterData = {
@@ -171,6 +203,8 @@ export const DALE: FighterData = {
     b: { FK: 'b.FK' },
   },
   specials: { n: 'Heat Lightning', f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
+  airSpecials: { n: 'Downpour' },
+  airStrings: [{ name: 'Squall', path: ['j.FP', 'BP'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

@@ -8,11 +8,14 @@
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { stageCueAge } from '../sim/finisher';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type LightSpec, type StageArt } from './stageModel';
 import { relight } from './look';
 import { applyLights, type StageLights, type StageSet } from './stageView';
 
+/** How long the Stage Sign-Off's bolt keeps striking after its cue. */
+const CUE_BOLT_FRAMES = 26;
 const STREAKS = 40;
 const PAPERS = 14;
 const MARKERS = 5;
@@ -222,6 +225,16 @@ export class WeatherSet implements StageSet {
       const s = this.scorches[k];
       s.visible = hz?.id === 'lightning' && this.scorched[k] === true;
       if (s.visible) s.position.set(toFloat(hz.spots[k]), 0, 0);
+    }
+    // Act of God: the studio's storm comes down on the loser where they lie (the Stage Sign-Off).
+    const cue = stageCueAge(m);
+    if (cue >= 0 && cue < CUE_BOLT_FRAMES) {
+      this.bolt.visible = frame % 2 === 0 || cue < 4;
+      this.bolt.position.set(toFloat(m.fighters[1 - m.finish.player].x), 0, 0);
+      for (const s of this.sparks) {
+        s.visible = true;
+        s.rotation.y = Math.random() * Math.PI * 2;
+      }
     }
     // The storm's flash with each bolt.
     this.lights.ambient.intensity = this.ambientBase + (this.bolt.visible && this.flash ? this.flash.intensity : 0);

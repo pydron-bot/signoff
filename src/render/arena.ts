@@ -17,7 +17,8 @@ import type { Box } from '../sim/types';
 import { Atmosphere } from './atmosphere';
 import { Echoes } from './echo';
 import { CameraRig, FOV } from './camera';
-import { ContactShadows, setRim } from './fighterLight';
+import { ContactShadows, setRim, setSignal } from './fighterLight';
+import { WearTracker } from './wear';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
 import { FLOOR, MIRROR } from './reflection';
@@ -169,6 +170,11 @@ export class Arena {
     this.rig.reduceMotion = on;
   }
   showBoxes = false;
+  /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
+  tape = 1;
+  private readonly wear = new WearTracker();
+  /** The cold open: the match isn't running yet, so the fighters idle on display time. */
+  idling = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
   private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
   /** The hurtbox of a body nothing can hit right now. */
@@ -281,6 +287,7 @@ export class Arena {
     this.poses.reset();
     this.rig.reset();
     this.burst.clear();
+    this.wear.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -304,6 +311,7 @@ export class Arena {
       }
     }
     this.rig.step(m, ev);
+    this.wear.step(m, ev);
   }
 
   /** The scene's drawing height in device pixels: effects sized in pixels follow it. */
@@ -322,6 +330,8 @@ export class Arena {
     this.stage.update(m, this.frame);
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
+    // The signal damage flickers on display time; held still for Reduce Motion.
+    setSignal(this.reduceMotion ? 0 : this.frame / 60, this.tape);
     this.shadows.setKey(this.key);
     this.air.update(m, this.frame / 60);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
@@ -415,7 +425,13 @@ export class Arena {
       model.root.position.set(x, y, 0);
       model.root.scale.x = f.facing;
       const p = this.poses.pose(m, i, this.pose);
+      if (this.idling) {
+        p.clip = 'idle';
+        p.frame = this.frame + 1;
+        p.loop = true;
+      }
       model.pose(p.clip, p.frame, p.loop);
+      model.setWear(this.wear.wear[i]);
       model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
       v.echoes?.update(f, p, x, y, shown, !this.reduceMotion);
     } else if (lying) {

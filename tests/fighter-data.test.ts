@@ -110,11 +110,19 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     for (const id of [...Object.values(f.normals.s), ...Object.values(f.normals.c), ...Object.values(f.normals.f), ...Object.values(f.normals.b)]) expect(kind(id), id).toBe('normal');
     for (const id of Object.values(f.normals.j)) expect(kind(id), id).toBe('air');
     for (const id of Object.values(f.specials)) expect(kind(id), id).toBe('special');
+    // Air specials are specials done in the air.
+    expect(Object.keys(f.airSpecials).length, 'air specials').toBeGreaterThan(0);
+    for (const id of Object.values(f.airSpecials)) {
+      expect(kind(id), id).toBe('special');
+      expect(f.moves[id].stance, id).toBe('air');
+      if (f.moves[id].boost) expect(f.moves[f.moves[id].boost!].stance, id).toBe('air');
+    }
     expect(kind(f.throwMove)).toBe('throw');
     expect(kind(f.superMove)).toBe('super');
     expect(kind(f.interactMove)).toBe('interact');
     for (const mv of moves) {
-      for (const next of Object.values(mv.chain)) expect(kind(next), `${mv.id} chains to ${next}`).toBe('normal');
+      // A ground string chains into normals, an air string into jumping normals.
+      for (const next of Object.values(mv.chain)) expect(kind(next), `${mv.id} chains to ${next}`).toBe(mv.kind === 'air' ? 'air' : 'normal');
       if (mv.boost) {
         const b = f.moves[mv.boost];
         expect(b, mv.boost).toBeDefined();
@@ -131,6 +139,14 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     expect(f.strings.length).toBeGreaterThanOrEqual(8);
     expect(f.strings.length).toBeLessThanOrEqual(12);
     for (const s of f.strings) expect(stringMoves(f, s), s.name).not.toBeNull();
+  });
+
+  it('has an air string or two, each starting from a jumping normal and chaining through real moves', () => {
+    expect(f.airStrings.length).toBeGreaterThanOrEqual(1);
+    for (const s of f.airStrings) {
+      expect(Object.values(f.normals.j), s.name).toContain(s.path[0]);
+      expect(stringMoves(f, s), s.name).not.toBeNull();
+    }
   });
 
   it.each(f.strings.map((s) => [s.name, s] as const))('string %s: blocks in full, and its safe flag matches the measured advantage', (_n, s) => {

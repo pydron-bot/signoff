@@ -33,7 +33,7 @@ const moves = table(
   // A stiff arm into the chest: slow, but it crushes a guard (and he can't be jabbed out of the stagger).
   normal('f.FK', { name: 'Stiff Arm', startup: 20, active: 3, recovery: 20, reach: [0.2, 1.05], at: [0.9, 1.6], damage: 55, hitstun: 20, blockstun: 14, push: 0.04, guardCrush: true }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Chop', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Chop', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 8, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 65, hitstun: 19, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 7, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Body Drop', kind: 'air', startup: 10, active: 6, recovery: 8, reach: [-0.3, 1.0], at: [0, 0.5], height: 'overhead', damage: 80, hitstun: 20, blockstun: 13 }),
@@ -120,6 +120,26 @@ const moves = table(
     motion: [{ frames: [4, 18], vx: 0.09 }],
     hits: [strike({ frames: [16, 19], reach: [0.1, 1.1], at: [0.6, 1.6], damage: 70, hitstun: 0, blockstun: 18, knockdown: true, push: 0.08 })],
   }),
+  // In the air: he hangs there and sweeps the flashlight down across the floor. It blinds and goes through armour.
+  move('Searchlight', {
+    name: 'Searchlight',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    boost: 'Searchlight+',
+    hover: [1, 22],
+    landing: 8,
+    hits: [strike({ frames: [12, 16], reach: [0.2, 2.0], at: [-1.6, 0.4], height: 'overhead', damage: 50, hitstun: 30, blockstun: 14, armorBreak: true })],
+  }),
+  move('Searchlight+', {
+    name: 'Searchlight (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    hover: [1, 22],
+    landing: 8,
+    hits: [strike({ frames: [12, 16], reach: [0.2, 2.5], at: [-1.9, 0.5], height: 'overhead', damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
+  }),
   throwMove(130),
   interactMove(),
   technicalDifficulties(1.6),
@@ -156,6 +176,9 @@ const finishers = [
     .blow(30, { react: 'none', damage: 95 })
     .blow(46, { react: 'none', damage: 140 })
     .done({ id: 'End of Shift', name: 'End of Shift', kind: 'signoff', range: 'mid', input: ['f', 'd'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('static').done({ id: 'Off Duty', name: 'Off Duty', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Searchlight' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Cuffed', name: 'Cuffed', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'FP FP FK' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Clocked Out', name: 'Clocked Out', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Clocking In' }, 40),
   rerun(moves),
 ];
@@ -183,6 +206,8 @@ export const HOLLIS: FighterData = {
     b: {},
   },
   specials: { n: 'Night Shift', f: 'Clocking In', b: 'Flashlight', d: 'Key Ring' },
+  airSpecials: { n: 'Searchlight' },
+  airStrings: [{ name: 'Lights Out Chop', path: ['j.FP', 'BP'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

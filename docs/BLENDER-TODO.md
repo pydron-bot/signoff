@@ -254,9 +254,10 @@ are authored facing right with the left foot and left hand leading.
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
-> 10. **Step 23, baked light on the sets**: ambient occlusion, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
+> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 > 12. **Step 25, the fighting styles pilot**: Rox's and Hollis's new and changed normals, and a timing profile per fighter. Game side in (0.37.0); stand-ins play until the clips land.
+> 13. **Step 26, air specials**: one special in the air for every fighter, and its boosted version (14 clips). Game side in (0.38.0); stand-ins play until the clips land.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1004,17 +1005,19 @@ only some file size.
 
 **A. Ambient occlusion (every stage)**
 
-- [ ] A second UV set (`TEXCOORD_1`) on `set`, every `seg_*` and every
+*Done (Nov 9): all four stages (`blender/lib/bake.py`). Notes under* Ambient occlusion (Nov 9, art side) *in Feedback.*
+
+- [x] A second UV set (`TEXCOORD_1`) on `set`, every `seg_*` and every
   `prop_*`: a lightmap unwrap, no overlaps, a margin of 4 pixels or more.
   `fx_*` meshes don't need one.
-- [ ] Bake ambient occlusion (Cycles, distance about 1.5 m, denoised) into a
+- [x] Bake ambient occlusion (Cycles, distance about 1.5 m, denoised) into a
   greyscale atlas on that UV set: 1024² for the `set` material (`set` and
   every `seg_*`), 512² for `props`. Export it as the material's glTF
   occlusion texture (`occlusionTexture`, `texCoord: 1`).
-- [ ] Bake the `seg_*` pieces with segment 1's pieces in place (they're what
+- [x] Bake the `seg_*` pieces with segment 1's pieces in place (they're what
   is seen most), and each prop on its own (props move, so no floor in their
   bake: the game gives them their contact).
-- [ ] Soft, not black: the darkest corner about 35%. The game applies it to
+- [x] Soft, not black: the darkest corner about 35%. The game applies it to
   the sky-and-ground and ambient light only, never the key light, so it
   reads as corners and contact, not dirt.
 
@@ -1056,16 +1059,18 @@ light over the hob, the oven pouring orange across the floor.
 
 **C. What glows**
 
+*Done (Nov 9) for the four stages and the effect meshes; Hollis's lens waits on the game side. Notes under* What glows (Nov 9, art side) *in Feedback.*
+
 The game's new glow (0.34.0) takes anything brighter than white and lets it
 bloom, so whatever gives off light needs to say so: give it an emission in
 Blender (the Principled BSDF's emission colour and strength export as glTF
 `emissiveFactor`/`emissiveTexture` and `KHR_materials_emissive_strength`).
 
-- [ ] Paint emission into an emissive texture on the existing UVs (black
+- [x] Paint emission into an emissive texture on the existing UVs (black
   everywhere that doesn't glow; it compresses to almost nothing), so there
   are still two materials. Strength 1.5 to 4: about 1.5 for a lit screen, 3
   for a neon tube or a lamp lens, 4 for lightning and flame.
-- [ ] Stages: Weather: the monitor's colour bars, the lamp's lens, the
+- [x] Stages: Weather: the monitor's colour bars, the lamp's lens, the
   cameras' red tally lights, `fx_lightning` (4), `fx_spark` (3),
   `fx_puddle`'s rings (1.5; the game swells them on the warning). Burn: the
   neon sign (3), the chase lights (2), the dawn sky in the windows (1.2),
@@ -1073,7 +1078,7 @@ Blender (the Principled BSDF's emission colour and strength export as glTF
   clock's face, the lamp lenses (3), the *BREAKING* panel (2), the tally
   lights. Kitchen: the *KITCHEN LIVE* sign (2.5), the hood light, the fire
   walls (3), `fx_flare` (4), the oven's mouth (3).
-- [ ] Fighters: only what really glows: Hollis's flashlight lens, and the
+- [x] *(The effects; Hollis's lens is left: see Feedback.)* Fighters: only what really glows: Hollis's flashlight lens, and the
   `fx_*` meshes that are light or energy (Cold Front, Heat Lightning, Live
   Feed, Tape Skip's flash, Fire and Brimstone; 1.5 to 3). Bodies and
   clothes stay unlit.
@@ -1248,6 +1253,51 @@ themselves even in clips nobody hand-keys:
 - [ ] Review in the art viewer at play size, side by side with the old
   clips: could you name the fighter from the silhouette of each strike?
 
+### 26. Air specials (Nov 9, game side)
+
+Every fighter has a special in the air now (Special while jumping, once a
+jump), with a boosted version, and air strings that chain one jumping
+normal into another. The air strings reuse the jumping normals' clips; the
+air specials are new, and until a clip lands the game plays the stand-in
+in brackets (`STAND_INS`, `ART_PENDING` in `src/render/pose.ts`). The
+boosted clip (`+`) can be the plain one with more on it, as elsewhere.
+Frames, hitboxes, hovers and dives are in the clip table below.
+
+- [ ] `dale:Downpour`, `Downpour+` (34 frames; stand-in `j.BP`): the
+  umbrella opens over his head and he hangs there (frames 1–16, 1–20
+  boosted), the free arm hurling hail down and forward on 12 (and 15 and
+  18 boosted).
+- [ ] `rox:Aerobic Dive`, `Aerobic Dive+` (40 frames; stand-in `j.FK`): a
+  beat's pause (1–5), then down at 45° heel first from 6, the other leg
+  tucked, arms swept back; it's cut short when she lands.
+- [ ] `mumbles:Cut the Strings`, `Cut the Strings+` (34 frames; stand-in
+  `Strings Attached`): the strings snap and he's gone (off screen 5–15),
+  back behind them at the same height on 12, hanging limp, then dropping
+  feet first from 16.
+- [ ] `hollis:Searchlight`, `Searchlight+` (38 frames; stand-in
+  `Flashlight`): he hangs in the air (1–22) and sweeps the flashlight
+  down across the floor in front of him, 12–16. The beam effect
+  (`fx_flashlight_beam`) can be reused, aimed down.
+- [ ] `margaret:On the Wire`, `On the Wire+` (32 frames; stand-in
+  `Breaking`): she hangs at the height she's at and shoots straight across
+  (6–16), the cue cards held out like a blade, hitting on 8–14 (two hits
+  boosted, 8–10 and 13–15).
+- [ ] `gus:Cleaver Toss`, `Cleaver Toss+` (32 frames; stand-in `Mise en
+  Place`): a cleaver thrown down and forward from the air on 10 (and 14
+  boosted), hanging there 1–12.
+- [ ] `gideon:Rapture`, `Rapture+` (40 frames; stand-in `Fire and
+  Brimstone`): arms out, head back, hanging (1–26), the light going off all
+  round him on 14–20; armoured 1–13 boosted (glows).
+
+**The sets in the Stage Sign-Offs.** Each stage's own finisher (close up,
+the loser's back to a wall, → ↓ BLOCK) ends with the set coming down on
+the loser where they lie, and it uses pieces the sets already have: the
+lightning bolt and the cable sparks (Weather), `fx_shard` and `fx_shatter`
+(Burn), `fx_lamp` and `fx_wreck` (News), `fx_flare` (Kitchen), placed at
+the loser in any segment, not only the one whose hazard they belong to. No
+new art is needed; if a piece looks wrong outside its own segment's
+lighting, that's the thing to fix.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -1300,7 +1350,7 @@ are the specials (`+` is the boosted version, which can share most of the
 plain one), `interact` is kicking a stage prop.
 <!-- clips:start (generated by `npm run docs:clips`; do not edit by hand) -->
 
-#### Dale Storm (`dale`): 32 move clips
+#### Dale Storm (`dale`): 34 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1333,11 +1383,13 @@ plain one), `interact` is kicking a stage prop.
 | `Isobar Lasso` | Isobar Lasso | special | stand | 45 | 18–21: x 0.60…2.60, y 0.80…1.40 (mid) |
 | `Isobar Lasso+` | Isobar Lasso (boosted) | special | stand | 45 | 18–21: x 0.60…2.60, y 0.80…1.40 (mid) |
 | `Heat Lightning` | Heat Lightning | special | stand | 40 | 6–9: x 0.10…0.90, y 0.80…2.20 (mid) |
+| `Downpour` | Downpour | special | air | 34 | 12: spawns projectile at x 0.40, y 0.40; 1–16: hangs in the air |
+| `Downpour+` | Downpour (boosted) | special | air | 34 | 12: spawns projectile at x 0.40, y 0.40; 15: spawns projectile at x 0.40, y 0.40; … 4 hits to 18 |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
-#### Rox Vega (`rox`): 36 move clips
+#### Rox Vega (`rox`): 38 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1374,11 +1426,13 @@ plain one), `interact` is kicking a stage prop.
 | `Count of Eight+` | Count of Eight (boosted) | special | stand | 47 | 9–10: x 0.20…1.10, y 0.40…0.90 (mid); 12–13: x 0.20…1.10, y 0.40…0.90 (mid); … 9 hits to 31 |
 | `Star Jump` | Star Jump | special | stand | 34 | 16–18: x 0.20…1.00, y 0.90…1.60 (overhead) |
 | `Star Jump+` | Star Jump (boosted) | special | stand | 34 | 16–18: x 0.20…1.00, y 0.90…1.60 (overhead); 1–15: armour (glows) |
+| `Aerobic Dive` | Aerobic Dive | special | air | 40 | 7–38: x 0.00…0.80, y -0.10…0.50 (overhead); 1–5: hangs in the air; 6: dives (forward 0.11, down 0.13 m a frame) |
+| `Aerobic Dive+` | Aerobic Dive (boosted) | special | air | 40 | 7–38: x 0.00…0.80, y -0.10…0.50 (overhead); 1–5: hangs in the air; 6: dives (forward 0.11, down 0.13 m a frame) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.40, y 0.30…1.60 (mid) |
 
-#### Hollis Bey (`hollis`): 33 move clips
+#### Hollis Bey (`hollis`): 35 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1412,11 +1466,13 @@ plain one), `interact` is kicking a stage prop.
 | `Key Ring+` | Key Ring (boosted) | special | stand | 40 | 12–14: x 0.40…1.90, y 0.00…0.40 (low); 20–22: x 0.40…1.90, y 0.80…1.50 (mid) |
 | `Night Shift` | Night Shift | special | stand | 39 | 16–19: x 0.10…1.00, y 0.60…1.60 (mid); 1–18: armour (glows) |
 | `Night Shift+` | Night Shift (boosted) | special | stand | 39 | 16–19: x 0.10…1.10, y 0.60…1.60 (mid); 1–22: armour (glows) |
+| `Searchlight` | Searchlight | special | air | 38 | 12–16: x 0.20…2.00, y -1.60…0.40 (overhead); 1–22: hangs in the air |
+| `Searchlight+` | Searchlight (boosted) | special | air | 38 | 12–16: x 0.20…2.50, y -1.90…0.50 (overhead); 1–22: hangs in the air |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
-#### Mister Mumbles (`mumbles`): 32 move clips
+#### Mister Mumbles (`mumbles`): 34 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1449,11 +1505,13 @@ plain one), `interact` is kicking a stage prop.
 | `Exit Stage Left` | Exit Stage Left | special | stand | 30 | 6–20: off screen; 12: reappears far back |
 | `Knock-Knock` | Knock-Knock | special | stand | 55 | 30–33: x 0.15…1.20, y 0.00…0.90 (unblockable) |
 | `Knock-Knock+` | Knock-Knock (boosted) | special | stand | 50 | 24–27: x 0.15…1.40, y 0.00…0.90 (unblockable) |
+| `Cut the Strings` | Cut the Strings | special | air | 34 | 17–32: x -0.30…0.60, y -0.10…0.50 (overhead); 5–15: off screen; … 5 hits to 32 |
+| `Cut the Strings+` | Cut the Strings (boosted) | special | air | 34 | 17–32: x -0.30…0.60, y -0.10…0.50 (overhead); 5–15: off screen; … 5 hits to 32 |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.30, y 0.30…1.60 (mid) |
 
-#### Margaret Okafor (`margaret`): 35 move clips
+#### Margaret Okafor (`margaret`): 37 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1489,11 +1547,13 @@ plain one), `interact` is kicking a stage prop.
 | `Live Feed+` | Live Feed (boosted) | special | stand | 40 | 14: spawns projectile at x 0.70, y 0.00 (waits 12 frames) |
 | `Lead Story` | Lead Story | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead) |
 | `Lead Story+` | Lead Story (boosted) | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead); 4–19: armour (glows) |
+| `On the Wire` | On the Wire | special | air | 32 | 8–14: x 0.10…0.90, y 0.40…1.20 (overhead); 1–20: hangs in the air |
+| `On the Wire+` | On the Wire (boosted) | special | air | 32 | 8–10: x 0.10…0.90, y 0.40…1.20 (overhead); 13–15: x 0.10…0.90, y 0.40…1.20 (overhead); 1–20: hangs in the air |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
-#### Chef Gus Lamarre (`gus`): 32 move clips
+#### Chef Gus Lamarre (`gus`): 34 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1526,11 +1586,13 @@ plain one), `interact` is kicking a stage prop.
 | `Mise en Place+` | Mise en Place (boosted) | special | stand | 40 | 14: spawns projectile at x 1.60, y 3.00 (waits 18 frames); 16: spawns projectile at x 2.90, y 3.00 (waits 26 frames) |
 | `Chop Chop` | Chop Chop | special | crouch | 48 | 14–16: x 0.20…2.00, y 0.00…0.35 (low) |
 | `Chop Chop+` | Chop Chop (boosted) | special | crouch | 48 | 12–13: x 0.20…2.00, y 0.00…0.35 (low); 20–22: x 0.20…2.10, y 0.00…0.35 (low) |
+| `Cleaver Toss` | Cleaver Toss | special | air | 32 | 10: spawns projectile at x 0.50, y 0.60; 1–12: hangs in the air |
+| `Cleaver Toss+` | Cleaver Toss (boosted) | special | air | 32 | 10: spawns projectile at x 0.50, y 0.60; 14: spawns projectile at x 0.50, y 0.60; 1–16: hangs in the air |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
 
-#### Rev. Gideon Price (`gideon`): 29 move clips
+#### Rev. Gideon Price (`gideon`): 31 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1560,6 +1622,8 @@ plain one), `interact` is kicking a stage prop.
 | `Laying On of Hands (healing)` | Laying On of Hands (healing) | special | stand | 46 | 10–12: x 0.20…1.00, y 1.20…1.70 (mid); 24: heals (glows) |
 | `Fire and Brimstone` | Fire and Brimstone | special | stand | 50 | 18–21: x -1.20…1.20, y 0.00…1.80 (mid) |
 | `Fire and Brimstone (blessed)` | Fire and Brimstone (blessed) | special | stand | 54 | 18–22: x -2.20…2.20, y 0.00…2.40 (mid); 4–17: armour (glows) |
+| `Rapture` | Rapture | special | air | 40 | 14–20: x -1.00…1.00, y -0.60…1.80 (mid); 1–26: hangs in the air |
+| `Rapture+` | Rapture (boosted) | special | air | 40 | 14–20: x -1.50…1.50, y -1.00…2.20 (mid); 1–26: hangs in the air; 1–13: armour (glows) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
@@ -1666,3 +1730,17 @@ worked into the move data, and the table above updates itself.
   - Boosted versions (`+`, and Gideon's alternates) go 1.6 times as far and sink lower and further in over the business, so they look bigger as well as glowing.
   - `dazed` is slumped and knock-kneed, the arms hanging, the knees buckling twice a sway with the eyes closing on each dip.
   - GLBs grew 0.03–0.05 MB: Dale 2.36 MB, Rox 2.24, Gus 2.19, Margaret 2.00, Gideon 1.97, Mumbles 1.94, Hollis 1.91.
+- **Ambient occlusion (Nov 9, art side).** Step 23 A done for all four stages; `npm test` passing. Notes for the game side:
+  - Every object in a stage GLB has `TEXCOORD_1`, and `set` and `props` carry the AO as `occlusionTexture` on `texCoord` 1 (1024² and 512², greyscale PNG). `set`, the `seg_*` pieces and the `prop_*` objects are unwrapped onto it without overlaps (8 texels between islands); the `fx_*` meshes share those materials, so their `TEXCOORD_1` all sits on a white corner of the atlas: no AO on effects. `water` has none.
+  - The exporter only writes occlusion from a glTF node group, so `lib/glb.py`'s `add_occlusion` adds it to the GLB after export. The atlases are also in `art/textures/stage-<id>_<material>_ao.png` for review.
+  - Passes: `set` with segment 1's pieces in place (a stage's `FIRST`; Weather has none), each later segment's pieces with the set and segment 1's around them, each prop on its own. Cycles on the CPU (the P1000 isn't picked up), 256 samples, distance 1.5 m, a 3×3 smoothing inside the islands in place of a denoiser.
+  - The curve: raw AO is taken to the 4th power, then lifted so 0 lands at 35%. Raw AO in the corners players see is only 0.75–0.9 (a few texels a metre, and the contact line is thin), so without the power it barely showed; faces hidden in contact reach the 35%, open floor stays white. Under the game's key light it reads as soft corners (the side walls' feet, under the hood, the mirrors' base), not dirt. Seen on a throwaway page from about the game camera, not yet in a match.
+  - GLBs: Kitchen 1.60 MB, Weather 1.11, Burn 0.98, News 0.74 (all under 2 MB; Kitchen leaves about 0.4 MB for 23 B's light map).
+  - The light maps (23 B) can use the same `TEXCOORD_1` layout as is.
+- **What glows (Nov 9, art side).** Step 23 C done for the four stages and the fighters' effects; `npm test` passing. Notes for the game side:
+  - Each stage and fighter module has an `EMISSION` table (part name pattern → strength, or a rule on the painted texels: `bright()` for letters, tubes and bulbs on a dark or red ground; Burn's windows glow sky and sun but not the muntins or rooftops). `lib/texture.py` paints it into an emission atlas per material on the existing UVs, each texel's colour scaled by its strength over the material's strongest; the material's emission strength is that strongest. glTF: `emissiveTexture`, `emissiveFactor` [1, 1, 1], `KHR_materials_emissive_strength`. The atlas is at most 1024² (Kitchen's 2048² of flames was half a megabyte), in `art/textures/*_glow.png` for review.
+  - Strengths as the table above, but two came down after a look with a bloom: Burn's morning sky (Double Time) 0.7, since it's pale and washed the panes out at 1.2, and the News clock face 1.0, since a white face at 1.5 blooms into a ball. The cameras' tally lights (Weather, News) and Margaret's feed tally 2; the kitchen sign's letters and bulbs 2.5 on an unlit red ground; Kitchen has a new `hood_light` panel under the hood (2), and `oven_halo` 1.5 round the oven's mouth (3).
+  - `glowFallback` in `src/render/look.ts` steps aside on its own now: `fx_lightning`, `fx_spark` and `fx_flare` carry their emission.
+  - `fx_puddle`'s rings glow at 1.5 in the file, but `weatherSet.ts` sets the puddles' `emissive` colour (0 at rest), and with an emissive map that colour multiplies the map: at rest the rings don't glow, on the shock they glow in its colour. Probably what you want; say if not.
+  - **Fighters:** emission is only on the effect meshes (Cold Front, Heat Lightning, Tape Skip's streaks, Live Feed and its tally, Fire and Brimstone's fire and glory). The `props` material is shared with the body's accessories, and `setTint` sets the body's `emissive` colour, which with an emissive map would only flash the glowing texels. So `fighterModel.ts` now clears the body materials' emission (the fx meshes keep theirs: they get their own materials). **Hollis's lens is not lit** for the same reason: it needs `setTint` to add its tint on top of the glow (a uniform in `addRim`'s shader, say) rather than replace `emissive`. Once that's in, add `"lens": 3` to Hollis's `EMISSION`.
+  - GLBs: Kitchen 1.90 MB, which leaves about 0.1 MB for its 23 B light map (one 1024² PNG is more): 23 B may need the set atlas's flames or the light map at 512² there.

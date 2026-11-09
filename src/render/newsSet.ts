@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { stageCueAge } from '../sim/finisher';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
 import { relight } from './look';
@@ -20,6 +21,8 @@ const DESK_Z = -0.4;
 const RISER_TOP = 0.9;
 const LAMP_TOP = 6;
 const WRECK_FRAMES = 90;
+/** Frames the Stage Sign-Off's lamp takes to land. */
+const CUE_DROP = 6;
 /** Each fallen lamp takes this share of the key light, down to the floor below. */
 const DIM_STEP = 0.12;
 const DIM_FLOOR = 0.35;
@@ -126,6 +129,15 @@ export class NewsSet implements StageSet {
     const wreck = this.part('fx_wreck');
     wreck.visible = lamps && t >= warn && t < warn + active + WRECK_FRAMES;
     if (wreck.visible) wreck.position.set(at, 0, 0);
+    // Lights Down: a lamp comes off the grid onto the loser (the Stage Sign-Off).
+    const cue = stageCueAge(m);
+    if (cue >= 0) {
+      const x = toFloat(m.fighters[1 - m.finish.player].x);
+      lamp.visible = cue < CUE_DROP;
+      if (lamp.visible) lamp.position.set(x, LAMP_TOP * (1 - (cue + 1) / CUE_DROP), 0);
+      wreck.visible = cue >= CUE_DROP - 1;
+      if (wreck.visible) wreck.position.set(x, 0, 0);
+    }
     if (m.segment === 2) {
       const down = live ? Math.floor((m.roundFrame - hz.first - warn) / hz.period) + 1 : 0;
       const k = Math.max(DIM_FLOOR, 1 - DIM_STEP * Math.max(0, down));

@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { stageCueAge } from '../sim/finisher';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
 import { relight } from './look';
@@ -123,6 +124,15 @@ export class KitchenSet implements StageSet {
     if (flare.visible) {
       flare.position.set(at, 0, 0);
       flare.scale.y = Math.min(1, (t - hz.warn + 1) / 4) * (1 + 0.15 * Math.sin(m.roundFrame * 0.9)) * (FLARE_TOP / 2.2);
+    }
+    // Well Done: the burners flare up under the loser (the Stage Sign-Off).
+    const cue = stageCueAge(m);
+    if (cue >= 0) {
+      flare.visible = true;
+      flare.position.set(toFloat(m.fighters[1 - m.finish.player].x), 0, 0);
+      flare.scale.y = Math.min(1.4, (cue + 1) / 4) * (1 + 0.2 * Math.sin(cue * 0.9)) * (FLARE_TOP / 2.2);
+      this.lights.rim.intensity = this.rimBase * (1.6 + 0.4 * Math.sin(cue * 0.7));
+      return;
     }
     // The fire's light flickers; the oven's heat swells and fades.
     if (m.segment === 1) this.lights.rim.intensity = this.rimBase * (0.8 + 0.3 * Math.sin(m.roundFrame * 0.5) * Math.sin(m.roundFrame * 0.13));

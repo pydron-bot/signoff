@@ -43,7 +43,7 @@ import {
 } from './constants';
 import type { SimEvent } from './events';
 import { segmentData } from './stages';
-import { airborne, firstHit, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, toIdle, wallX } from './fighter';
+import { airborne, firstHit, inWindow, launch, markKo, moveOf, setSlide, startMove, takeDamage, tech, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
 import { BLOCK, DOWN, bitIndex } from './input';
@@ -126,7 +126,7 @@ function throwable(f: FighterState, reeling = false): boolean {
       return true;
     case 'move': {
       const mv = moveOf(f);
-      return mv.kind !== 'air' && !inWindow(f.moveFrame, mv.invuln);
+      return mv.stance !== 'air' && !inWindow(f.moveFrame, mv.invuln);
     }
     default:
       return false;
@@ -402,7 +402,7 @@ export function applyHit(
   if (d.mode === 'move' && !d.armorUsed && !e.armorBreak && inWindow(d.moveFrame, moveOf(d).armor)) {
     d.armorUsed = true;
     const ko = takeDamage(d, e.damage);
-    if (ko) d.koMove = moveId;
+    if (ko) markKo(d, a, moveId);
     d.hitstop = stop;
     if (!projectile) a.hitstop = stop;
     gainMeter(m, a, e.damage);
@@ -415,6 +415,9 @@ export function applyHit(
   }
 
   if (kind === 'super') {
+    // Landed: spent for the match.
+    a.tdUsed = true;
+    a.tdCooldown = 0;
     a.mode = 'cinematic';
     a.timer = TD_CINEMATIC_FRAMES;
     a.victim = false;
@@ -455,7 +458,7 @@ export function applyHit(
   // Anything that ends the exchange on the ground lands as an ender; a launcher on a body already up is one more juggle hit.
   let ender = ko || relaunching;
   if (ko) {
-    d.koMove = moveId;
+    markKo(d, a, moveId);
     launch(d, dir, KNOCK_VY, false);
   } else if (relaunching) {
     // A boosted special (1 bar) pops a juggled body back up to full height.

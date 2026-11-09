@@ -6,6 +6,7 @@
  * thirds as a match goes on air, the commercial break card, and training
  * mode's readout. DOM only; it reads the match and the step's events.
  */
+import { finisherData } from '../sim/finisher';
 import { BAR, DONATIONS_MAX, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
@@ -276,6 +277,9 @@ export class Hud {
         case 'superHit':
           this.say('TECHNICAL DIFFICULTIES', 'PLEASE STAND BY', 150);
           break;
+        case 'superReady':
+          this.callout(e.player, 'SIGNAL RESTORED');
+          break;
         case 'firstHit': {
           const c = this.sides[e.player].combo;
           c.textContent = 'FIRST HIT';
@@ -345,7 +349,8 @@ export class Hud {
       c.innerHTML = `<div class="hud-signoff-show">3:34 A.M.</div><div class="hud-signoff-line">${loser.name.toUpperCase()} WAKES UP ON THE SOFA.<br>THE TV IS SHOWING STATIC.</div><div class="hud-signoff-stamp">RERUN</div>`;
     } else {
       const stamp = kind === 'cancellation' ? 'CANCELLED' : 'SIGNED OFF';
-      c.innerHTML = `<div class="hud-break-top">CHANNEL 0</div><div class="hud-signoff-show">${show}</div><div class="hud-signoff-stamp">${stamp}</div><div class="hud-signoff-line">${id.toUpperCase()} · THANK YOU FOR WATCHING</div>`;
+      const name = finisherData(m.fighters[winner].fighter, id).name;
+      c.innerHTML = `<div class="hud-break-top">CHANNEL 0</div><div class="hud-signoff-show">${show}</div><div class="hud-signoff-stamp">${stamp}</div><div class="hud-signoff-line">${name.toUpperCase()} · THANK YOU FOR WATCHING</div>`;
     }
     c.hidden = false;
     this.captionLeft = 1;

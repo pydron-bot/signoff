@@ -218,6 +218,12 @@ export class Sound {
     } else if (t === 'wood') this.tone(420, 0.06, 0.2, 'triangle', 300);
   }
 
+  /** One syllable of a fighter talking (the cold open's lines). */
+  babble(player: number, fighter: string): void {
+    if (!this.live) return;
+    this.voices?.say(player, fighter, 'talk', Math.random());
+  }
+
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     if (!this.live) return;
     for (const c of this.vocals.step(m, ev, this.cues)) this.voices?.say(c.player, m.fighters[c.player].fighter, c.kind, c.size);
@@ -273,6 +279,13 @@ export class Sound {
           break;
         case 'reversal':
           this.tone(440, 0.2, 0.08, 'sawtooth', 880);
+          break;
+        case 'superReady':
+          // The test tone coming back on: Technical Difficulties is there again.
+          this.tone(1000, 0.25, 0.06, 'sine');
+          break;
+        case 'jumpCancel':
+          this.noise(0.08, 2400, 0.08, 'highpass');
           break;
         case 'special':
           if (e.move.startsWith('Knock-Knock')) {
@@ -374,6 +387,23 @@ export class Sound {
             // Hydraulics.
             this.tone(70, 0.6, 0.18, 'sawtooth', 140);
           } else this.tone(120, 0.35, 0.12, 'sawtooth');
+          break;
+        case 'stageCue':
+          // A Stage Sign-Off: the set's own hazard, louder, on the loser.
+          if (e.stage === 'weather') {
+            this.noise(0.5, 6000, 0.45, 'highpass', 0.5);
+            this.tone(55, 1.4, 0.4, 'sine', 30, 0.05);
+          } else if (e.stage === 'burn') {
+            this.noise(0.7, 4000, 0.4, 'highpass', 0.2);
+            this.tone(2200, 0.4, 0.08, 'triangle', 1200, 0.1);
+          } else if (e.stage === 'news') {
+            this.noise(0.2, 5000, 0.25, 'highpass');
+            this.tone(80, 0.7, 0.4, 'square', 40, 0.08);
+            this.noise(0.6, 600, 0.35, 'lowpass', 1, 0.08);
+          } else {
+            this.noise(1.2, 400, 0.45, 'lowpass');
+            this.noise(0.8, 2500, 0.15, 'bandpass', 1, 0.05);
+          }
           break;
         case 'hazardHit':
           this.tone(110, 0.3, 0.15, 'square', 90);

@@ -120,6 +120,10 @@ export interface MoveSpec {
   hidden?: Window;
   tithe?: MoveData['tithe'];
   heal?: MoveData['heal'];
+  hover?: Window;
+  /** Metres a frame, forward and up (negative: down). */
+  dive?: { frame: number; vx: number; vy: number };
+  landing?: number;
 }
 
 export function move(id: string, s: MoveSpec): MoveData {
@@ -159,6 +163,9 @@ export function move(id: string, s: MoveSpec): MoveData {
     hidden: s.hidden,
     tithe: s.tithe,
     heal: s.heal,
+    hover: s.hover,
+    dive: s.dive && { frame: s.dive.frame, vx: fx(s.dive.vx), vy: fx(s.dive.vy) },
+    landing: s.landing,
     startup: starts.length ? Math.min(...starts) : 0,
     lastActive: ends.length ? Math.max(...ends) : 0,
   };
@@ -200,7 +207,8 @@ export function normal(id: string, s: NormalSpec): MoveData {
         ? [{ frames: [s.startup, last + Math.ceil(s.recovery / 2)], box: box(Math.max(0, s.reach[0]), limbEnd, s.at[0], s.at[1]) }]
         : [],
     chain: s.chain,
-    cancel: kind === 'normal' ? [last + 1, last + CANCEL_LATE] : undefined,
+    // Air normals cancel too: into the next step of an air string, or (on a hit) an air special.
+    cancel: kind === 'normal' ? [last + 1, last + CANCEL_LATE] : kind === 'air' ? [last + 1, last + Math.min(CANCEL_LATE, s.recovery)] : undefined,
     boost: s.boost,
     armor: s.armor,
     invuln: s.invuln,
@@ -308,6 +316,12 @@ export class Script {
     return this;
   }
 
+  /** A Stage Sign-Off's cue: the set does the rest from here. */
+  cue(): this {
+    this.beats.push({ at: this.t, cue: true });
+    return this;
+  }
+
   /** Cut away here (to `censor`); blows written after it are heard, not seen. */
   cut(censor: Censor): this {
     this.cutAt = this.t;
@@ -316,7 +330,7 @@ export class Script {
   }
 
   /** The finished data; the closing card comes `card` frames after the cut. */
-  done(head: { id: string; name: string; kind: FinisherKind; range: FinishRange; input: FinishDir[]; button: Attack | 'block'; trigger?: string }, card: number): FinisherData {
+  done(head: { id: string; name: string; kind: FinisherKind; range: FinishRange; input: FinishDir[]; button: Attack | 'block'; trigger?: string; hold?: FinishDir; stage?: string }, card: number): FinisherData {
     if (!this.cutAt) throw new Error(`finisher ${head.id} never cuts away`);
     const cardAt = this.cutAt + card;
     return { ...head, beats: [...this.beats].sort((a, b) => a.at - b.at), cut: this.cutAt, censor: this.censor, card: cardAt, total: cardAt + FINISH_CARD_FRAMES };

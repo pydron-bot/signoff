@@ -1,5 +1,8 @@
 // Wiring only: logic lives in modules. Title (with a CPU-vs-CPU demo
 // behind it) → a session (vs CPU, training, vs player) → results.
+import { humanSide, loadFound, markFound } from './game/found';
+import { banter } from './game/banter';
+import { ColdOpen } from './ui/coldOpen';
 import * as THREE from 'three';
 import { registerSW } from 'virtual:pwa-register';
 import type { CpuLevel } from './ai/cpu';
@@ -10,14 +13,14 @@ import { GUIDE_DUMMY } from './game/comboGuides';
 import { FixedStep } from './game/loop';
 import { SlowMo } from './game/slowMo';
 import { parseReplay, type Replay } from './game/replay';
-import { DUMMIES, Session, type Mode } from './game/session';
+import { DUMMIES, PRACTICES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
 import { powerOn } from './render/look';
 import { setOutlineSize } from './render/outline';
 import { Post } from './render/post';
-import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
+import { FIGHTERS, Input, STAGES, STAGE_IDS, canTD, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
@@ -33,6 +36,8 @@ import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 const FIGHTER_IDS = Object.keys(FIGHTERS);
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
+/** Cancellations players have found (signoff.found). */
+const found = loadFound();
 const SETUP_KEY = 'signoff.setup';
 const REPLAY_KEY = 'signoff.replay';
 /** Seconds the replay's back and forward buttons skip. */
@@ -56,6 +61,23 @@ const settings = loadSettings();
 const sound = new Sound();
 const glitch = new Glitch(document.body, reducedMotion(settings, systemReduceMotion));
 const hud = new Hud(document.body);
+/** The cold open before round 1: the fighters' lines (any button skips). */
+const coldOpen = new ColdOpen(
+  document.body,
+  (side, fighter) => sound.babble(side, fighter),
+  () => endColdOpen(),
+);
+/** What skips the cold open: an attack, Block, Special or Throw. */
+const SKIP_BITS = Input.FP | Input.BP | Input.FK | Input.BK | Input.BLOCK | Input.SPECIAL | Input.THROW;
+let coldOpenHeld = 0;
+
+function endColdOpen(): void {
+  coldOpen.end();
+  arena.idling = false;
+  // The match starts now, not with the time the lines took.
+  clock.reset();
+}
+
 const inputDisplays = [new InputDisplay(document.body, 0), new InputDisplay(document.body, 1)] as const;
 const touch = new TouchControls(document.body);
 touch.bindHold(hud.p1Meter, Input.METER);
@@ -82,6 +104,7 @@ function applySettings(): void {
   glitch.censorLevel = settings.censor;
   glitch.vhs = settings.vhs;
   post.vhs = VHS_AMOUNT[settings.vhs];
+  arena.tape = VHS_AMOUNT[settings.vhs];
   post.stillGrain = rm;
   document.body.dataset.vhs = String(settings.vhs);
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
@@ -226,6 +249,7 @@ function startDemo(): void {
   demo = true;
   over = false;
   paused = false;
+  endColdOpen();
   // A different pairing behind the title each time.
   const a = Math.floor(Math.random() * FIGHTER_IDS.length);
   const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
@@ -259,6 +283,13 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
   paused = false;
   arcadeCard.hide();
   session = newSession(mode, FIGHTER_IDS[setup.p1], p2, stage, level);
+  // A match against someone opens on the two of them trading a line.
+  if (mode === 'cpu' || mode === 'versus') {
+    const o = session.options;
+    coldOpen.begin(o.p1, o.p2, banter(o.p1, o.p2, o.seed));
+    arena.idling = true;
+    coldOpenHeld = ~0;
+  } else endColdOpen();
   title.hidden = true;
   titleMenu.hide();
   hud.start(session.match, session.training);
@@ -459,9 +490,11 @@ function pause(on: boolean): void {
   ];
   if (s.training) {
     rows.push(
-      { label: 'RESET POSITIONS (R)', run: () => (s.reset(), pause(false)) },
+      { label: 'RESET POSITIONS (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
       { label: 'SEGMENT', options: STAGES[s.match.stage].segments.map((g, k) => `${k + 1} ${g.name.toUpperCase()}`), value: s.match.segment, onChange: (v) => s.setSegment(v) },
       { label: 'DUMMY', options: ['STAND', 'BLOCK ALL', 'CROUCH BLOCK', 'CPU'], value: DUMMIES.indexOf(s.dummy), onChange: (v) => (s.dummy = DUMMIES[v]) },
+      // Finisher practice: one hit wins the match, then Stay tuned with no time limit (or a cancellation), and again.
+      { label: 'FINISHERS', options: ['OFF', 'PRACTISE', 'AT THE WALL'], value: PRACTICES.indexOf(s.practice), onChange: (v) => (s.setPractice(PRACTICES[v]), hud.start(s.match, true)) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );
   }
@@ -514,7 +547,10 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (!session?.training || paused) return;
-  if (e.code === 'KeyR') session.reset();
+  if (e.code === 'KeyR') {
+    session.reset();
+    hud.start(session.match, true);
+  }
   if (e.code === 'KeyB') arena.showBoxes = !arena.showBoxes;
 });
 document.addEventListener('visibilitychange', () => {
@@ -588,7 +624,14 @@ renderer.setAnimationLoop((now) => {
   const s = session;
   if (!s) return;
   const replaying = s.options.mode === 'replay';
-  if (!paused && !over && !(replaying && replayPaused)) {
+  if (coldOpen.active && !paused) {
+    // Any new press skips it (not one still held from the menu).
+    readInputs();
+    const bits = frame[0] | frame[1];
+    if (bits & ~coldOpenHeld & SKIP_BITS) endColdOpen();
+    else if (!coldOpen.update(Math.min(0.1, (now - lastFrame) / 1000))) endColdOpen();
+    coldOpenHeld = bits;
+  } else if (!paused && !over && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
     const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
@@ -596,7 +639,10 @@ renderer.setAnimationLoop((now) => {
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
+      const resets = s.resets;
       s.tick(frame[0], frame[1], ev);
+      // Finisher practice started over: a clean picture for the next one.
+      if (s.resets !== resets) hud.start(s.match, true);
       arena.step(s.match, ev);
       inputSides(s);
       for (let i = 0; i < 2; i++) if (sides[i]) inputDisplays[i].log.push(s.inputs[i], s.match.fighters[i].facing);
@@ -609,6 +655,8 @@ renderer.setAnimationLoop((now) => {
       glitch.step();
       slowMo.step(s.match, ev);
       for (const e of ev) {
+        // A cancellation a player landed is found: the move list shows it from now on.
+        if (e.type === 'finisher' && e.kind === 'cancellation' && humanSide(s.options.mode, e.player)) markFound(found, s.match.fighters[e.player].fighter, e.id);
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();
         else {
@@ -625,9 +673,9 @@ renderer.setAnimationLoop((now) => {
   const m = session!.match;
   arena.render(m);
   if (!demo) {
-    hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : s.guideRun ? showcaseCaption(s) : '');
+    hud.update(m, s.adv.last, s.training ? (s.practice !== 'off' ? `Finishers: one hit wins, then take your time · R reset · Esc menu` : `Dummy: ${s.dummy} · R reset · B boxes · Esc menu`) : s.guideRun ? showcaseCaption(s) : '');
     const p1 = m.fighters[0];
-    touch.setTD(!p1.tdUsed && p1.health > 0 && p1.health * 100 < p1.maxHealth * TD_HEALTH_PCT);
+    touch.setTD(canTD(p1));
     touch.setInteract(propInReach(m, p1) >= 0);
   }
   inputSides(session);
@@ -642,7 +690,8 @@ renderer.setAnimationLoop((now) => {
   lastFrame = now;
   if (reducedMotion(settings, systemReduceMotion)) post.crt = title ? 1 : 0;
   else post.crt = title ? Math.min(1, post.crt + dt / 0.5) : Math.max(0, post.crt - dt / 0.55);
-  post.dim = title ? 0.8 : powerOn(m);
+  // The cold open plays in the studio before the lights bang on: half lit.
+  post.dim = title ? 0.8 : coldOpen.active ? 0.55 : powerOn(m);
   post.saturation = title ? 0.85 : 1;
   post.tear = glitch.tear;
   post.split = glitch.split;

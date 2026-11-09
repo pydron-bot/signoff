@@ -242,6 +242,10 @@ def compact(path, morphs=None):
     body += b"\0" * ((-len(body)) % 4)
     gltf["accessors"], gltf["bufferViews"] = new_acc, new_views
     gltf["buffers"] = [{"byteLength": len(body)}]
+    return _write(path, gltf, body)
+
+
+def _write(path, gltf, body):
     js = json.dumps(gltf, separators=(",", ":")).encode()
     js += b" " * ((-len(js)) % 4)
     total = 12 + 8 + len(js) + 8 + len(body)
@@ -250,3 +254,26 @@ def compact(path, morphs=None):
         f.write(struct.pack("<I4s", len(js), b"JSON") + js)
         f.write(struct.pack("<I4s", len(body), b"BIN\0") + body)
     return total
+
+
+def add_occlusion(path, pngs):
+    """pngs: {material name: PNG path}. Embeds each as that material's
+    occlusionTexture on texCoord 1 (a stage's baked AO, lib/bake.py); the
+    exporter only writes occlusion from a glTF node group, so it's added here."""
+    gltf, body = _read(path)
+    body = bytearray(body)
+    for m in gltf.get("materials", []):
+        png = pngs.get(m["name"])
+        if png is None:
+            continue
+        data = open(png, "rb").read()
+        body += b"\0" * ((-len(body)) % 4)
+        gltf["bufferViews"].append({"buffer": 0, "byteOffset": len(body), "byteLength": len(data)})
+        body += data
+        gltf.setdefault("images", []).append({"name": f"{m['name']}_ao", "mimeType": "image/png", "bufferView": len(gltf["bufferViews"]) - 1})
+        gltf.setdefault("samplers", []).append({"magFilter": 9729, "minFilter": 9987})
+        gltf.setdefault("textures", []).append({"sampler": len(gltf["samplers"]) - 1, "source": len(gltf["images"]) - 1})
+        m["occlusionTexture"] = {"index": len(gltf["textures"]) - 1, "texCoord": 1}
+    body += b"\0" * ((-len(body)) % 4)
+    gltf["buffers"] = [{"byteLength": len(body)}]
+    return _write(path, gltf, bytes(body))

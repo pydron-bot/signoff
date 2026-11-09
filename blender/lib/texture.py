@@ -22,6 +22,7 @@ import numpy as np
 # 1987 video: a touch desaturated and warm.
 GRADE_DESAT = 0.1
 GRADE_WARM = np.array([1.0, 0.985, 0.95])
+GLOW_MAX = 1024
 
 
 class Texels:
@@ -113,9 +114,17 @@ def _face_parts(me):
     return a
 
 
-def paint(objects, meta, mi, size, path, seed=1987):
+def paint(objects, meta, mi, size, path, seed=1987, glow=None):
     """Rasterise material mi's faces of every object into a size² atlas,
-    paint it, and save it as PNG at `path`. Returns the Blender image."""
+    paint it, and save it as PNG at `path`. Returns the Blender image.
+
+    glow: {part name regex: strength, or f(Texels) → strengths, the Texels'
+    colours being the painted ones} for what
+    gives off light (step 23 C). With it, returns (image, emission image,
+    strength): the emission atlas (`<path>_glow.png`, at most GLOW_MAX²) is each glowing texel's
+    painted colour scaled by its strength over the material's strongest, and
+    the material's emission strength is that strongest; None if nothing in
+    this material glows."""
     img = np.zeros((size, size, 3), dtype=np.float32)
     owner = np.full((size, size), -1, dtype=np.int32)
     pos = np.zeros((size, size, 3), dtype=np.float32)
@@ -136,11 +145,70 @@ def paint(objects, meta, mi, size, path, seed=1987):
     # The grade, then fill the gutters around islands so mipmaps don't bleed.
     lum = img @ np.array([0.299, 0.587, 0.114])
     img = (img + (lum[..., None] - img) * GRADE_DESAT) * GRADE_WARM
+    emit = _emission(img, owner, pos, nrm, meta, glow, seed) if glow else None
     img = _dilate(img, owner >= 0, 6)
-    return _save(np.clip(img, 0, 255), path)
+    out = _save(np.clip(img, 0, 255), path)
+    if glow is None:
+        return out
+    if emit is None:
+        return out, None, 0.0
+    e, strongest = emit
+    e = _dilate(e, owner >= 0, 6)
+    # At most 1024² (on the same UVs): the bloom softens it anyway, and a
+    # stage's 2048² of flames is half a megabyte.
+    while e.shape[0] > GLOW_MAX:
+        e = (e[0::2, 0::2] + e[1::2, 0::2] + e[0::2, 1::2] + e[1::2, 1::2]) / 4
+    return out, _save(np.clip(e, 0, 255), Path(path).with_name(Path(path).stem + "_glow.png")), strongest
 
 
-def _raster(obj, mi, size, img, owner, pos, nrm):
+def _emission(img, owner, pos, nrm, meta, glow, seed):
+    import re
+
+    strength = np.zeros(owner.shape, dtype=np.float32)
+    rules = [(re.compile(k), v) for k, v in glow.items()]
+    for pid in np.unique(owner):
+        if pid < 0:
+            continue
+        rule = next((v for k, v in rules if k.fullmatch(meta[pid]["name"])), None)
+        if rule is None:
+            continue
+        sel = owner == pid
+        if callable(rule):
+            t = Texels(pos[sel].astype(np.float64), nrm[sel].astype(np.float64), img[sel].astype(np.float64),
+                       np.random.default_rng([seed, pid]))
+            strength[sel] = rule(t)
+        else:
+            strength[sel] = rule
+    strongest = float(strength.max())
+    if strongest <= 0:
+        return None
+    lin = np.where(img <= 10.31, img / 255 / 12.92, ((img / 255 + 0.055) / 1.055) ** 2.4)
+    lin = lin * (strength / strongest)[..., None]
+    return _linear_to_srgb(lin), strongest
+
+
+def bright(s, lo=150, hi=200):
+    """A glow rule: strength s where the painted colour is bright (letters,
+    tubes, bulbs), nothing on the dark or saturated ground around them."""
+    def rule(t):
+        lum = t.c @ np.array([0.299, 0.587, 0.114])
+        return s * np.clip((lum - lo) / (hi - lo), 0, 1)
+    return rule
+
+
+def use_glow(material, image, strength):
+    """The emission atlas on the material's emission colour, at `strength`
+    (glTF: emissiveTexture, KHR_materials_emissive_strength)."""
+    tree = material.node_tree
+    bsdf = tree.nodes["Principled BSDF"]
+    tex = tree.nodes.new("ShaderNodeTexImage")
+    tex.image = image
+    tex.interpolation = "Linear"
+    tree.links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+    bsdf.inputs["Emission Strength"].default_value = strength
+
+
+def _raster(obj, mi, size, img, owner, pos, nrm, layer="UV"):
     me = obj.data
     me.calc_loop_triangles()
     n = len(me.loop_triangles)
@@ -158,7 +226,7 @@ def _raster(obj, mi, size, img, owner, pos, nrm):
     me.polygons.foreach_get("normal", pnorm)
     pnorm = pnorm.reshape(-1, 3)
     uv = np.empty(len(me.loops) * 2)
-    me.uv_layers["UV"].data.foreach_get("uv", uv)
+    me.uv_layers[layer].data.foreach_get("uv", uv)
     uv = uv.reshape(-1, 2)
     co = np.empty(len(me.vertices) * 3)
     me.vertices.foreach_get("co", co)

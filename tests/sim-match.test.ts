@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { fx } from '../src/sim/fixed';
 import { createRng, nextInt } from '../src/sim/rng';
-import { BAR, BUFFER, FIGHTERS, Input, ROUND_FRAMES, THROW_HOLD, createMatch, frameData, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
+import { BAR, BUFFER, FIGHTERS, Input, ROUND_FRAMES, TD_RECHARGE_FRAMES, THROW_HOLD, createMatch, frameData, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
 import { count, place, presses, ready, run } from './sim-helpers';
 
 const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, METER } = Input;
@@ -327,6 +327,34 @@ describe('Technical Difficulties', () => {
 
     run(m, 120);
     expect(count(run(m, 30, presses({ 0: SPECIAL }, BLOCK)), 'superStart')).toBe(0);
+  });
+
+  it('missed, it is not spent: it comes back after the recharge, and the HUD hears when', () => {
+    const m = ready('rox', 'dale');
+    place(m, -2.5, 2.5);
+    const a = m.fighters[0];
+    a.health = 250;
+    const ev = run(m, 60, presses({ 0: SPECIAL }, BLOCK));
+    expect(count(ev, 'superStart')).toBe(1);
+    expect(count(ev, 'superHit')).toBe(0);
+    expect(a.tdUsed).toBe(false);
+    expect(a.tdCooldown).toBeGreaterThan(0);
+    // Still recharging: nothing.
+    expect(count(run(m, 30, presses({ 0: SPECIAL }, BLOCK)), 'superStart')).toBe(0);
+    const later = run(m, TD_RECHARGE_FRAMES);
+    expect(later.find((e) => e.type === 'superReady')).toMatchObject({ player: 0 });
+    expect(a.tdCooldown).toBe(0);
+    expect(count(run(m, 10, presses({ 0: SPECIAL }, BLOCK)), 'superStart')).toBe(1);
+  });
+
+  it('blocked, it chips and recharges too', () => {
+    const m = ready('rox', 'dale');
+    place(m, -0.3, 0.3);
+    m.fighters[0].health = 250;
+    const ev = run(m, 60, presses({ 0: SPECIAL }, BLOCK), BLOCK);
+    expect(count(ev, 'block')).toBe(1);
+    expect(m.fighters[0].tdUsed).toBe(false);
+    expect(m.fighters[0].tdCooldown).toBeGreaterThan(0);
   });
 
   it('is not available above 30% health', () => {

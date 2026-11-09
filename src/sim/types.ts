@@ -136,6 +136,12 @@ export interface MoveData {
   readonly tithe?: { readonly cost: number; readonly into: string };
   /** Heals its owner this much on this frame. */
   readonly heal?: { readonly frame: number; readonly amount: number };
+  /** In the air: frames it hangs where it is (no gravity). */
+  readonly hover?: Window;
+  /** In the air: on this frame it sets off at this speed (a dive). */
+  readonly dive?: { readonly frame: number; readonly vx: Fx; readonly vy: Fx };
+  /** In the air: frames on the floor when it lands before it's over (AIR_ATTACK_LAND_FRAMES by default). */
+  readonly landing?: number;
   /** First and last frames that can hit (0 when the move never hits). */
   readonly startup: number;
   readonly lastActive: number;
@@ -177,6 +183,8 @@ export interface FinishBeat {
   readonly at: number;
   readonly move?: string;
   readonly blow?: FinishBlow;
+  /** A Stage Sign-Off: the set takes over here (the lightning, the lamp, the mirrors, the fire). */
+  readonly cue?: boolean;
 }
 
 /** A scripted finisher. Steps count from 1 when it starts. */
@@ -188,8 +196,12 @@ export interface FinisherData {
   /** Taps in order, then the button (all within FINISH_INPUT_WINDOW). Empty for a cancellation. */
   readonly input: readonly FinishDir[];
   readonly button: Attack | 'block';
-  /** A cancellation: the special (or its boost) that must land the final K.O. */
+  /** A cancellation: the move (a special counts with its boost) that must land the final K.O. */
   readonly trigger?: string;
+  /** A cancellation: the direction the winner must be holding as it lands. */
+  readonly hold?: FinishDir;
+  /** A Stage Sign-Off: the stage whose set does it (anyone can, near a wall). */
+  readonly stage?: string;
   readonly beats: readonly FinishBeat[];
   /** The step the picture cuts away, and to what. */
   readonly cut: number;
@@ -229,6 +241,10 @@ export interface FighterData {
   };
   /** Neutral + Special falls back to forward. */
   readonly specials: Readonly<Partial<Record<SpecialDir, string>>> & { readonly f: string };
+  /** Specials in the air (Special while jumping, by direction; missing directions fall back to the first listed). Once a jump. */
+  readonly airSpecials: Readonly<Partial<Record<SpecialDir, string>>>;
+  /** Air strings: a jumping normal that chains into another, on hit or block. */
+  readonly airStrings: readonly StringData[];
   readonly throwMove: string;
   readonly superMove: string;
   readonly interactMove: string;

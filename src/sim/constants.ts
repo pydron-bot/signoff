@@ -23,6 +23,10 @@ export const PREJUMP_FRAMES = 3;
 export const JUMP_LAND_FRAMES = 2;
 export const AIR_ATTACK_LAND_FRAMES = 4;
 export const START_X = fx(1.5);
+/** The jump out of a launcher that hit (a jump cancel) is a hop: this % of the fighter's jump speed. */
+export const HOP_PCT = 75;
+/** A jump cancel (once a combo) counts as this many extra hits for damage scaling. */
+export const JUMP_CANCEL_SCALE = 2;
 
 // Hits
 /** The freeze of a hit that has no weight of its own: projectiles (only the defender freezes), hazards, a crushed guard. */
@@ -126,6 +130,8 @@ export const CUT_AWAY_FRAMES = 20;
 export const TD_HEALTH_PCT = 30;
 export const TD_DAMAGE_PCT = 30;
 export const TD_CINEMATIC_FRAMES = 150;
+/** Missed or blocked, it comes back after this long (only a hit spends it for the match). */
+export const TD_RECHARGE_FRAMES = 12 * STEPS_PER_SECOND;
 
 // Rounds
 export const ROUND_FRAMES = 60 * STEPS_PER_SECOND;
@@ -139,6 +145,8 @@ export const STAY_TUNED_FRAMES = 4 * STEPS_PER_SECOND;
 export const FINISH_CLOSE = fx(1.3);
 /** ...far from here. */
 export const FINISH_FAR = fx(2.4);
+/** A Stage Sign-Off: close up, with the loser's back to a wall at most this far behind them. */
+export const STAGE_FINISH_WALL = fx(1.5);
 /** A finisher's taps and button must all come within this many frames. */
 export const FINISH_INPUT_WINDOW = 40;
 /** How long the closing card stays up. */

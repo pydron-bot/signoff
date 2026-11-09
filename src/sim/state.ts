@@ -49,6 +49,9 @@ export interface FighterState {
   crouching: boolean;
   jumpDir: -1 | 0 | 1;
   airAttackUsed: boolean;
+  airSpecialUsed: boolean;
+  /** The jump being taken off is a jump cancel's hop. */
+  hop: boolean;
   move: string;
   moveFrame: number;
   /** One bit per hit of the current move that has connected. */
@@ -76,6 +79,8 @@ export interface FighterState {
   /** Spent this combo: the one ground and wall bounce. */
   groundBounced: boolean;
   wallBounced: boolean;
+  /** A jump cancel has followed this fighter into the air this combo (once a combo). */
+  chased: boolean;
   /** Defence: the delayed getup is used this knockdown; frames left in which a move is a reversal; the move under way is one. */
   getupDelayed: boolean;
   wakeup: number;
@@ -86,7 +91,11 @@ export interface FighterState {
   cutAwayUsed: boolean;
   /** The move that took the last of this fighter's health ('' if none), for cancellations. */
   koMove: string;
+  /** The directions the winner held as that blow landed (heldDirs), for cancellations that ask for one. */
+  koHeld: number;
   tdUsed: boolean;
+  /** Frames until Technical Difficulties can be tried again after a miss or a block. */
+  tdCooldown: number;
   wins: number;
   input: InputState;
 }
@@ -177,6 +186,8 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     crouching: false,
     jumpDir: 0,
     airAttackUsed: false,
+    airSpecialUsed: false,
+    hop: false,
     move: '',
     moveFrame: 0,
     hitMask: 0,
@@ -200,11 +211,14 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     reversal: false,
     groundBounced: false,
     wallBounced: false,
+    chased: false,
     bounce: 'none',
     ko: false,
     cutAwayUsed: false,
     koMove: '',
+    koHeld: 0,
     tdUsed: false,
+    tdCooldown: 0,
     wins: 0,
     input: createInput(),
   };

@@ -16,6 +16,8 @@ import {
   DELAYED_GETUP,
   GETUP_FRAMES,
   GRAVITY,
+  HOP_PCT,
+  JUMP_CANCEL_SCALE,
   GROUND_BOUNCE_VY,
   JUGGLE_GRAVITY,
   JUMP_LAND_FRAMES,
@@ -29,6 +31,7 @@ import {
   TAPE_SKIP_SPEED,
   TD_DAMAGE_PCT,
   TD_HEALTH_PCT,
+  TD_RECHARGE_FRAMES,
   TECH_FRAMES,
   TECH_PUSH,
   THROW_HOLD,
@@ -53,7 +56,7 @@ export function moveOf(f: FighterState): MoveData {
 }
 
 export function airborne(f: FighterState): boolean {
-  return f.y > 0 || f.mode === 'air' || f.mode === 'launched' || (f.mode === 'move' && moveOf(f).kind === 'air');
+  return f.y > 0 || f.mode === 'air' || f.mode === 'launched' || (f.mode === 'move' && moveOf(f).stance === 'air');
 }
 
 export function inWindow(frame: number, w: readonly [number, number] | undefined): boolean {
@@ -80,6 +83,7 @@ export function endCombo(f: FighterState): void {
   f.comboMoves.length = 0;
   f.groundBounced = false;
   f.wallBounced = false;
+  f.chased = false;
   f.bounce = 'none';
 }
 
@@ -104,7 +108,7 @@ export function startMove(f: FighterState, id: string): void {
   f.reversal = f.wakeup > 0;
   f.wakeup = 0;
   f.crouching = mv.stance === 'crouch';
-  if (mv.kind !== 'air') f.vx = 0;
+  if (mv.stance !== 'air') f.vx = 0;
 }
 
 /** Into the air, falling: juggleable or (knockdowns, KOs) not. */
@@ -124,6 +128,18 @@ export function setSlide(f: FighterState, dir: number, speed: Fx): void {
   f.slideDir = dir < 0 ? -1 : 1;
 }
 
+/** The directions a fighter holds, relative to facing: 1 forward, 2 back, 4 down, 8 up. */
+export function heldDirs(f: FighterState): number {
+  const h = f.input.held;
+  return (h & forwardBit(f.facing) ? 1 : 0) | (h & backBit(f.facing) ? 2 : 0) | (h & DOWN ? 4 : 0) | (h & UP ? 8 : 0);
+}
+
+/** The blow that took the last of `d`'s health: which move, and what its attacker held (for cancellations). */
+export function markKo(d: FighterState, a: FighterState, move: string): void {
+  d.koMove = move;
+  d.koHeld = heldDirs(a);
+}
+
 /** Returns true if this took the fighter's last health. */
 export function takeDamage(f: FighterState, dmg: number): boolean {
   f.health = Math.max(0, f.health - dmg);
@@ -139,11 +155,13 @@ export function takeDamage(f: FighterState, dmg: number): boolean {
 export function tick(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
   if (f.wakeup > 0 && f.mode !== 'getup') f.wakeup--;
+  // Recharging only while the fight is on (and not during its own attempt).
+  if (f.tdCooldown > 0 && m.phase === 'fight' && f.move !== fighterData(f.fighter).superMove && --f.tdCooldown === 0 && !f.tdUsed) ev.push({ type: 'superReady', player: i });
   switch (f.mode) {
     case 'move': {
       const mv = moveOf(f);
       if (f.moveFrame < mv.total) f.moveFrame++;
-      else if (mv.kind === 'air') f.mode = 'air';
+      else if (mv.stance === 'air') f.mode = 'air';
       else toIdle(f);
       return;
     }
@@ -173,9 +191,12 @@ function endTimed(m: MatchState, i: number, ev: SimEvent[]): void {
   switch (f.mode) {
     case 'prejump':
       f.mode = 'air';
-      f.vy = d.jumpVy;
+      // Out of a launcher, a lower hop: it meets the body on its way up instead of sailing over it.
+      f.vy = f.hop ? Math.floor((d.jumpVy * HOP_PCT) / 100) : d.jumpVy;
+      f.hop = false;
       f.vx = f.jumpDir * f.facing * d.jumpVx;
       f.airAttackUsed = false;
+      f.airSpecialUsed = false;
       return;
     case 'down':
       // Down held: stay down a little longer (once a knockdown), so a timed attack on the getup misses.
@@ -216,7 +237,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
     dir = -t.facing;
   }
   const ko = takeDamage(f, dmg);
-  if (ko) f.koMove = grabMove;
+  if (ko) markKo(f, t, grabMove);
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
@@ -229,7 +250,7 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   const dmg = Math.floor((f.maxHealth * TD_DAMAGE_PCT) / 100);
   f.victim = false;
   const ko = takeDamage(f, dmg);
-  if (ko) f.koMove = 'td';
+  if (ko) markKo(f, a, 'td');
   const dir = f.x >= a.x ? 1 : -1;
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
@@ -249,10 +270,10 @@ export function control(m: MatchState, i: number, ev: SimEvent[]): void {
       groundControl(m, i, ev);
       return;
     case 'move':
-      moveControl(f, i, ev);
+      moveControl(m, i, ev);
       return;
     case 'air':
-      airControl(f);
+      airControl(f, i, ev);
       return;
     case 'hitstun':
     case 'launched':
@@ -273,8 +294,9 @@ function scaled(v: Fx, pct: number): Fx {
   return pct === 100 ? v : Math.floor((v * pct) / 100);
 }
 
-function canTD(f: FighterState): boolean {
-  return !f.tdUsed && f.health > 0 && f.health * 100 < f.maxHealth * TD_HEALTH_PCT;
+/** Technical Difficulties is there to use: under 30% health, never landed this match, not recharging after a miss. */
+export function canTD(f: FighterState): boolean {
+  return !f.tdUsed && f.tdCooldown === 0 && f.health > 0 && f.health * 100 < f.maxHealth * TD_HEALTH_PCT;
 }
 
 function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
@@ -289,6 +311,23 @@ function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
     id = tithe.into;
     ev.push({ type: 'donation', player: i, total: f.donations, spent: tithe.cost });
   }
+  beginSpecial(f, i, id, ev);
+}
+
+/** The air special for the direction held, if the fighter has one and hasn't used it this jump. */
+function airSpecialFor(f: FighterState): string | null {
+  if (f.airSpecialUsed) return null;
+  const a = fighterData(f.fighter).airSpecials;
+  return a[f.input.specialDir] ?? a.n ?? a.f ?? a.d ?? a.b ?? null;
+}
+
+function startAirSpecial(f: FighterState, i: number, id: string, ev: SimEvent[]): void {
+  f.airSpecialUsed = true;
+  f.airAttackUsed = true;
+  beginSpecial(f, i, id, ev);
+}
+
+function beginSpecial(f: FighterState, i: number, id: string, ev: SimEvent[]): void {
   startMove(f, id);
   ev.push({ type: 'special', player: i, move: id });
   // A double tap, or METER with it, boosts it straight away, however long the special waited to come out.
@@ -319,7 +358,8 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   if (held & BLOCK) {
     if (pressed(inp, SPECIAL) && canTD(f)) {
       consume(inp, SPECIAL);
-      f.tdUsed = true;
+      // Spent only if it lands (combat.ts); a miss or a block leaves it recharging.
+      f.tdCooldown = TD_RECHARGE_FRAMES;
       startMove(f, d.superMove);
       ev.push({ type: 'superStart', player: i });
       return;
@@ -416,9 +456,11 @@ export function footwork(m: MatchState, i: number, canJump: boolean): void {
 }
 
 /** Inside a move: boost a special, Tape Skip the recovery, chain a string or cancel into a special. */
-function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
+function moveControl(m: MatchState, i: number, ev: SimEvent[]): void {
+  const f = m.fighters[i];
   const mv = moveOf(f);
-  if (mv.kind === 'air' || mv.kind === 'throw' || mv.kind === 'super') return;
+  if (mv.kind === 'throw' || mv.kind === 'super') return;
+  const air = mv.stance === 'air';
   const inp = f.input;
   // Only presses made during this move count, so a held or early press can't fire twice.
   const since = f.moveFrame;
@@ -433,7 +475,8 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
   }
   // Not while a special is waiting to cancel out of a hit: then METER is for boosting it.
   const specialNext = f.contact === 'hit' && mv.kind !== 'special' && pressed(inp, SPECIAL, since);
-  if (mv.startup > 0 && f.moveFrame >= mv.startup && f.meter >= BAR && !specialNext && pressed(inp, METER, since)) {
+  // No Tape Skip in the air: it's a dash.
+  if (!air && mv.startup > 0 && f.moveFrame >= mv.startup && f.meter >= BAR && !specialNext && pressed(inp, METER, since)) {
     consume(inp, METER);
     f.meter -= BAR;
     f.mode = 'dash';
@@ -447,8 +490,26 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
   if (inWindow(f.moveFrame, mv.cancel)) {
     // Specials cancel only out of a hit (and never out of another special): confirm it first. Strings go on regardless.
     if (f.contact === 'hit' && mv.kind !== 'special' && pressed(inp, SPECIAL, since)) {
-      consume(inp, SPECIAL);
-      startSpecial(f, i, ev);
+      if (!air) {
+        consume(inp, SPECIAL);
+        startSpecial(f, i, ev);
+        return;
+      }
+      const id = airSpecialFor(f);
+      if (id) {
+        consume(inp, SPECIAL);
+        startAirSpecial(f, i, id, ev);
+        return;
+      }
+    }
+    // A launcher that connects can be jump-cancelled, to follow them up into an air string.
+    // Once a combo, and it costs scaling: the air adds style, not damage.
+    const o = m.fighters[1 - i];
+    if (!air && f.contact === 'hit' && opensJuggle(mv) && !o.chased && pressed(inp, UP, since)) {
+      consume(inp, UP);
+      o.chased = true;
+      o.combo += JUMP_CANCEL_SCALE;
+      jump(f, i, ev);
       return;
     }
     const atk = bufferedAttack(inp, since);
@@ -456,7 +517,7 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
     if (atk && next) {
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, next);
-    } else if (atk && f.contact === 'hit' && opensJuggle(mv)) {
+    } else if (!air && atk && f.contact === 'hit' && opensJuggle(mv)) {
       // A launcher (or a bounce) that connects cancels into any normal, to follow them up into the air.
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, normalFor(f, atk));
@@ -470,13 +531,34 @@ function opensJuggle(mv: MoveData): boolean {
   return h !== undefined && (h.launch !== undefined || h.groundBounce === true || h.wallBounce === true);
 }
 
-function airControl(f: FighterState): void {
+function airControl(f: FighterState, i: number, ev: SimEvent[]): void {
+  if (pressed(f.input, SPECIAL)) {
+    const id = airSpecialFor(f);
+    if (id) {
+      consume(f.input, SPECIAL);
+      startAirSpecial(f, i, id, ev);
+      return;
+    }
+  }
   if (f.airAttackUsed) return;
   const atk = bufferedAttack(f.input);
   if (!atk) return;
   consume(f.input, ATTACK_BITS[atk]);
   f.airAttackUsed = true;
   startMove(f, fighterData(f.fighter).normals.j[atk]);
+}
+
+/** Straight up out of a launcher that hit (holding forward or back picks the arc), via the usual take-off. */
+function jump(f: FighterState, i: number, ev: SimEvent[]): void {
+  const held = f.input.held;
+  f.mode = 'prejump';
+  f.move = '';
+  f.hop = true;
+  f.timer = PREJUMP_FRAMES - 1;
+  f.jumpDir = held & forwardBit(f.facing) ? 1 : held & backBit(f.facing) ? -1 : 0;
+  f.vx = 0;
+  f.crouching = false;
+  ev.push({ type: 'jumpCancel', player: i });
 }
 
 /** Cut Away, the combo breaker: a full meter, all of it, to knock the attacker away mid-combo, once a round. */
@@ -531,12 +613,24 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
       f.health += amount;
       ev.push({ type: 'heal', player: i, amount });
     }
-    if (mv.kind !== 'air') {
+    if (mv.stance !== 'air') {
       f.vx = 0;
       for (const mo of mv.motion) if (inWindow(f.moveFrame, mo.frames)) f.vx = f.facing * mo.vx;
+    } else {
+      // In the air a move keeps the jump's drift unless it says otherwise.
+      for (const mo of mv.motion) if (inWindow(f.moveFrame, mo.frames)) f.vx = f.facing * mo.vx;
+      if (mv.dive && mv.dive.frame === f.moveFrame) {
+        f.vx = f.facing * mv.dive.vx;
+        f.vy = mv.dive.vy;
+      }
     }
   }
-  if (airborne(f)) {
+  const hover = f.mode === 'move' && inWindow(f.moveFrame, moveOf(f).hover);
+  if (hover) {
+    // Hanging in the air: no fall while it lasts.
+    f.vy = 0;
+    f.x += f.vx;
+  } else if (airborne(f)) {
     // A juggled body falls faster with every juggle hit.
     f.vy -= f.mode === 'launched' && f.juggleable ? Math.floor((GRAVITY * (100 + JUGGLE_GRAVITY * f.juggle)) / 100) : GRAVITY;
     f.y += f.vy;
@@ -582,7 +676,9 @@ function teleport(m: MatchState, i: number, to: 'behind' | 'away', ev: SimEvent[
     f.x = Math.abs(x) <= w ? x : o.x - dir * BEHIND;
   } else f.x = clamp(f.x - dir * AWAY, -w, w);
   f.x = clamp(f.x, -w, w);
-  f.y = 0;
+  // From the air it reappears at the same height, hanging there.
+  if (moveOf(f).stance === 'air') f.vy = 0;
+  else f.y = 0;
   f.vx = 0;
   f.slide = 0;
   if (o.x !== f.x) f.facing = o.x > f.x ? 1 : -1;
@@ -611,7 +707,7 @@ function land(f: FighterState, i: number, ev: SimEvent[]): void {
       return;
     case 'move':
       f.mode = 'landing';
-      f.timer = AIR_ATTACK_LAND_FRAMES - 1;
+      f.timer = (moveOf(f).landing ?? AIR_ATTACK_LAND_FRAMES) - 1;
       f.move = '';
       f.vx = 0;
       return;

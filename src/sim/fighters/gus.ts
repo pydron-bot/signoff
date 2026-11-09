@@ -58,7 +58,7 @@ const moves = table(
     cancel: [16, 22],
   }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Spoon', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.85], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Spoon', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.85], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BP', { name: 'Jumping Skillet', kind: 'air', startup: 9, active: 5, recovery: 7, reach: [0.1, 1.1], at: [0.7, 1.3], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Clog', kind: 'air', startup: 7, active: 7, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 45, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Jumping Cleaver', kind: 'air', startup: 10, active: 5, recovery: 8, reach: [0.1, 1.2], at: [0.3, 0.9], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
@@ -148,6 +148,29 @@ const moves = table(
     ],
     hurt: [{ frames: [12, 30], box: box(0.2, 1.9, 0, 0.35) }],
   }),
+  // In the air: a cleaver thrown down and forward, flatter and further than the hail.
+  move('Cleaver Toss', {
+    name: 'Cleaver Toss',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    boost: 'Cleaver Toss+',
+    hover: [1, 12],
+    landing: 6,
+    spawns: [{ frame: 10, projectile: cleaver(0.11, -0.06, 50) }],
+  }),
+  move('Cleaver Toss+', {
+    name: 'Cleaver Toss (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    hover: [1, 16],
+    landing: 6,
+    spawns: [
+      { frame: 10, projectile: cleaver(0.11, -0.06, 42) },
+      { frame: 14, projectile: cleaver(0.08, -0.09, 42) },
+    ],
+  }),
   throwMove(110),
   interactMove(),
   technicalDifficulties(1.8),
@@ -188,9 +211,17 @@ const finishers = [
     .blow(28, { react: 'none', damage: 110 })
     .blow(44, { react: 'none', damage: 140 })
     .done({ id: 'Last Service', name: 'Last Service', kind: 'signoff', range: 'mid', input: ['b', 'f'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('static').done({ id: 'Burnt', name: 'Burnt', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Flambé', hold: 'd' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Off the Menu', name: 'Off the Menu', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Cleaver Toss' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Eighty-Sixed', name: 'Eighty-Sixed', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Tenderise' }, 40),
   rerun(moves),
 ];
+
+/** A cleaver thrown from the air: an overhead that stops when it hits the floor. */
+function cleaver(vx: number, vy: number, damage: number) {
+  return projectile({ at: [0.5, 0.6], speed: [vx, vy], size: [-0.2, 0.2, 0, 0.3], life: 50, groundEnds: true, effect: { damage, height: 'overhead', hitstun: 20, blockstun: 14, push: 0.03, chip: 8 } });
+}
 
 export const GUS: FighterData = {
   id: 'gus',
@@ -215,6 +246,8 @@ export const GUS: FighterData = {
     b: { BP: 'b.BP' },
   },
   specials: { n: 'Tenderise', f: 'Flambé', b: 'Mise en Place', d: 'Chop Chop' },
+  airSpecials: { n: 'Cleaver Toss' },
+  airStrings: [{ name: 'Spoon and Skillet', path: ['j.FP', 'BP'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

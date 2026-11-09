@@ -8,7 +8,7 @@
  */
 import { effect, type EffectSpec } from './fighters/build';
 import { fx, type Fx } from './fixed';
-import type { Box, HitEffect } from './types';
+import type { Box, Censor, HitEffect } from './types';
 import { box } from './fighters/build';
 
 export interface HazardData {
@@ -65,6 +65,8 @@ export interface SegmentData {
 export interface StageData {
   readonly id: string;
   readonly name: string;
+  /** The Stage Sign-Off: what the set does to the loser, and what the broadcast cuts to. */
+  readonly finisher: { readonly name: string; readonly censor: Censor };
   readonly segments: readonly [SegmentData, SegmentData, SegmentData];
 }
 
@@ -147,6 +149,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
   weather: {
     id: 'weather',
     name: 'Weather at Eleven',
+    finisher: { name: 'Act of God', censor: 'static' },
     segments: [
       {
         name: 'The Studio',
@@ -201,6 +204,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
   burn: {
     id: 'burn',
     name: 'Feel the Burn at Dawn',
+    finisher: { name: 'Mirror, Mirror', censor: 'bars' },
     segments: [
       {
         name: 'Warm-Up',
@@ -240,6 +244,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
   news: {
     id: 'news',
     name: "The Eleven O'Clock News",
+    finisher: { name: 'Lights Down', censor: 'standby' },
     segments: [
       {
         name: 'Headlines',
@@ -294,6 +299,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
   kitchen: {
     id: 'kitchen',
     name: 'Kitchen Live',
+    finisher: { name: 'Well Done', censor: 'off' },
     segments: [
       {
         name: 'Prep',

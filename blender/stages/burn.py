@@ -25,6 +25,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.texture import bright
 
 ID = "burn"
 DENSE = ("sign", "double_sign", "dead_sign")
@@ -64,6 +65,9 @@ SIGN_LINES = (("FEEL THE BURN", 0.3, 0.0, 3.55), ("AT DAWN", 0.22, 0.0, 3.17))
 
 # Light rig per segment, for the game (three.js space: x, y up, z toward
 # the camera). Written to the `lights` node's extras; see BLENDER-TODO.
+# Segment 1's pieces: in place for the set's AO bake (lib/bake.py).
+FIRST = ("seg_warmup",)
+
 LIGHTS = [
     {"segment": "Warm-Up", "background": "#1a0c14",
      "ambient": {"color": "#ffe6d8", "intensity": 1.3},
@@ -78,6 +82,21 @@ LIGHTS = [
      "key": {"color": "#c8b8ff", "intensity": 1.4, "position": [0, 8, 6]},
      "rim": {"color": "#ff4a8a", "intensity": 0.6, "position": [0, 3, -6]}},
 ]
+
+# The windows' sky ramps and suns (pane()).
+DAWN = (((0, (255, 168, 104)), (0.35, (242, 118, 132)), (1, (104, 66, 136))), (-3.0, 4.2, 0.42, (255, 224, 156)))
+MORNING = (((0, (255, 226, 170)), (0.4, (226, 220, 210)), (1, (150, 196, 236))), (3.0, 6.1, 0.34, (255, 250, 226)))
+
+# What gives off light (step 23 C): part name → strength, or a rule. The
+# rules are looked up when the atlas is painted, after pane() is defined.
+EMISSION = {
+    "sign|double_sign": 3,
+    "dead_sign": bright(3, 120, 170),
+    "chase": bright(2, 100, 150),
+    r"dawn\d+": lambda t: pane_glow(*DAWN)(t),
+    # The morning sky is pale, so it glows less to keep the panes from washing out.
+    r"morning\d+": lambda t: pane_glow(*MORNING, sky=0.7)(t),
+}
 
 
 def lit(t, **k):
@@ -197,6 +216,20 @@ def pane(stops, sun, roofs, frame, stars=False):
         c = P.put(c, skyline(x, u, cx), roofs)
         return muntins(c, x, u, cx, frame)
     return paint
+
+
+def pane_glow(stops, sun, sky=1.2, sun_s=3.0):
+    """A glow rule for pane(): the sky at `sky`, the sun's disc at `sun_s`,
+    the rooftops and muntins dark (found by painting them black)."""
+    shape = pane(stops, sun, (0, 0, 0), (0, 0, 0))
+
+    def rule(t):
+        s = np.where(shape(t).sum(axis=1) > 0, sky, 0.0)
+        if sun:
+            sx, su, sr, _ = sun
+            s = np.where(np.hypot(t.side - sx, t.up - su) < sr, sun_s, s)
+        return s
+    return rule
 
 
 def mirror(x0, x1):
@@ -426,8 +459,7 @@ def build(make):
         for k, x in enumerate((-7, -3.5, 0, 3.5, 7)):
             p.seg(f"bracket{k}", (x, MIRROR_F + 0.03, 1.0), (x, -3.55, 1.0), 0.015, 0.015, ALU, "set", verts=4, paint=metal)
         sign_board(p, "sign", -3.84, neon(SIGN_LINES, PINK))
-        panes(p, "dawn", WALL_F + 0.01, pane(((0, (255, 168, 104)), (0.35, (242, 118, 132)), (1, (104, 66, 136))),
-                                          (-3.0, 4.2, 0.42, (255, 224, 156)), (70, 34, 62), (226, 214, 208)))
+        panes(p, "dawn", WALL_F + 0.01, pane(*DAWN, (70, 34, 62), (226, 214, 208)))
         for s in (-1, 1):
             p.box(f"sidewall{s}", (s * 6.4, -1.5, 2.5), (0.8, 5.0, 5.0), SIDE, "set", paint=side_wall)
             x = s * 5.55
@@ -438,8 +470,7 @@ def build(make):
     def double(p):
         p.box("chase", (0, -3.8, 3.06), (16.2, 0.06, 0.12), BOARD, "set", paint=chase)
         sign_board(p, "double_sign", -3.76, neon((("DOUBLE TIME", 0.32, 0.0, 3.52), ("132 BPM", 0.2, 0.0, 3.17)), CYAN))
-        panes(p, "morning", WALL_F + 0.02, pane(((0, (255, 226, 170)), (0.4, (226, 220, 210)), (1, (150, 196, 236))),
-                                             (3.0, 6.1, 0.34, (255, 250, 226)), (150, 112, 132), (240, 234, 228)))
+        panes(p, "morning", WALL_F + 0.02, pane(*MORNING, (150, 112, 132), (240, 234, 228)))
 
     def burnout(p):
         rng = np.random.default_rng(11)

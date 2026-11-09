@@ -59,6 +59,9 @@ BAND_U = 1.0
 LAMP_X = (-5, -3, -1, 1, 3, 5)
 GRID_U = 6.8
 
+# Segment 1's pieces: in place for the set's AO bake (lib/bake.py).
+FIRST = ("seg_headlines",)
+
 LIGHTS = [
     {"segment": "Headlines", "background": "#06101e",
      "ambient": {"color": "#dfe8ff", "intensity": 1.3},
@@ -73,6 +76,16 @@ LIGHTS = [
      "key": {"color": "#fff0d0", "intensity": 2.0, "position": [0, 8, 6]},
      "rim": {"color": "#3050a0", "intensity": 0.5, "position": [0, 3, -6]}},
 ]
+
+# What gives off light (step 23 C): part name → strength, or a rule.
+EMISSION = {
+    "globe": lambda t: np.where(np.hypot(t.side, t.up - GLOBE_U) < GLOBE_R, 1.5, 0.0),
+    "header": 2,
+    "clock": 1.0,  # a white face: any more and it blooms into a ball
+    r"lamp\d_lens|fresnel_lens": 3,
+    "breaking": 2,
+    r"tally-?\d+": 2,
+}
 
 
 def lit(t, **k):

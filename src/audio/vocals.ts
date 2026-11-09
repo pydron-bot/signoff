@@ -10,7 +10,8 @@
  */
 import { fighterData, type MatchState, type SimEvent } from '../sim';
 
-export type VocalKind = 'effort' | 'shout' | 'pain' | 'oof' | 'scream';
+/** `talk` is one syllable of speech, for the cold open's lines. */
+export type VocalKind = 'effort' | 'shout' | 'pain' | 'oof' | 'scream' | 'talk';
 
 export interface VocalCue {
   player: number;

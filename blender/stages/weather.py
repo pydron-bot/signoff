@@ -19,6 +19,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.texture import bright
 
 ID = "weather"
 DENSE = ("map", "header", "screen", "tv_screen")
@@ -67,6 +68,16 @@ LIGHTS = [
      "key": {"color": "#d8f0f4", "intensity": 1.7, "position": [-2, 6, 7]},
      "rim": {"color": "#4fa8c8", "intensity": 0.7, "position": [0, -1, 4]}},
 ]
+
+# What gives off light (step 23 C): part name → strength, or a rule.
+EMISSION = {
+    "tv_screen": 1.5,
+    "lamp_lensring": 3,
+    "(camera|dolly)_tally": 2,
+    r"(trunk|branch)\d+|flash": 4,
+    r"spark.*": 3,
+    "puddle": bright(1.5, 190, 215),
+}
 
 
 def lit(t, **k):

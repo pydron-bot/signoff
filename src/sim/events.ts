@@ -37,9 +37,13 @@ export type SimEvent =
   | { type: 'decoyPop'; player: number; x: Fx; y: Fx }
   | { type: 'throwTech'; player: number }
   | { type: 'tapeSkip'; player: number }
+  /** A launcher that hit, cancelled into a jump to follow them up. */
+  | { type: 'jumpCancel'; player: number }
   | { type: 'cutAway'; player: number }
   | { type: 'superStart'; player: number }
   | { type: 'superHit'; player: number }
+  /** Technical Difficulties has recharged after a miss or a block. */
+  | { type: 'superReady'; player: number }
   | { type: 'knockdown'; player: number }
   | { type: 'ko'; player: number }
   | { type: 'roundOver'; winner: number; reason: 'ko' | 'time' }
@@ -54,6 +58,8 @@ export type SimEvent =
   | { type: 'stayTuned'; winner: number }
   /** A finisher starts (kind tells which); its blows arrive as ordinary hit events. */
   | { type: 'finisher'; player: number; id: string; kind: FinisherKind }
+  /** A Stage Sign-Off's moment: the set comes down on the loser where they lie. */
+  | { type: 'stageCue'; player: number; stage: string; x: Fx }
   /** The broadcast cuts away from the worst of it for `frames` steps; the sound carries on. */
   | { type: 'finisherCut'; player: number; censor: Censor; frames: number }
   /** The closing card: the loser's show goes off the air (or, for a Rerun, they wake up at home). */

@@ -173,6 +173,9 @@ export class CameraRig {
       case 'superHit':
         this.kick(0.8, 0);
         break;
+      case 'stageCue':
+        this.kick(0.8, 0.5);
+        break;
       case 'hazardStrike':
         this.kick(e.hazard === 'lightning' ? 0.55 : e.hazard === 'lamps' ? 0.45 : e.hazard === 'shards' ? 0.35 : 0.28, 0);
         break;

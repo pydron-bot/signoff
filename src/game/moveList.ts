@@ -4,8 +4,9 @@
  * normals, the system moves and the finishers. Directions are written for a
  * fighter facing right (→ is forward). No DOM here.
  */
-import { BOOST_TAP, DELAYED_GETUP, FLAWLESS_BLOCKSTUN_CUT, FLAWLESS_WINDOW, PUNISH_DAMAGE_PCT, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
+import { BOOST_TAP, DELAYED_GETUP, FLAWLESS_BLOCKSTUN_CUT, FLAWLESS_WINDOW, PUNISH_DAMAGE_PCT, TD_HEALTH_PCT, TD_RECHARGE_FRAMES, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
 import { guides, runGuide } from './comboGuides';
+import { STAGE_INPUT } from '../sim/finisher';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
 export interface MoveRow {
@@ -78,10 +79,28 @@ function normalInput(f: FighterData, id: string): string | null {
   return null;
 }
 
-function finisherRow(fin: FinisherData): MoveRow {
-  const input = fin.kind === 'cancellation' ? `win with ${fin.trigger}` : `${fin.input.map((d) => TAP[d]).join(' ')} ${fin.button === 'block' ? 'BLOCK' : fin.button}`;
-  const kind = fin.kind === 'signoff' ? 'Sign-Off' : fin.kind === 'rerun' ? 'merciful' : 'Cancellation';
-  return { name: fin.name, input, notes: fin.kind === 'cancellation' ? kind : `${kind} · ${RANGE[fin.range]}`, frames: '' };
+/** What ends the match for a cancellation, in a few words that don't give it away. */
+function triggerKind(f: FighterData, fin: FinisherData): string {
+  const m = f.moves[fin.trigger!];
+  const what = m.kind === 'throw' || m.throwData ? (m.kind === 'throw' ? 'a throw' : 'a grab') : m.kind === 'super' ? 'Technical Difficulties' : m.kind === 'special' ? (m.stance === 'air' ? 'an air special' : 'a special') : 'a string';
+  return fin.hold ? `${what}, holding a direction` : what;
+}
+
+/** The cancellation everyone knows about: a special on the ground, nothing held. The others are found by playing. */
+export function openCancellation(f: FighterData, fin: FinisherData): boolean {
+  return fin.kind === 'cancellation' && !fin.hold && Object.values(f.specials).includes(fin.trigger!);
+}
+
+function finisherRow(f: FighterData, fin: FinisherData, found: (id: string) => boolean): MoveRow {
+  if (fin.kind === 'cancellation') {
+    if (!openCancellation(f, fin) && !found(fin.id)) return { name: '???', input: `win with ${triggerKind(f, fin)}`, notes: 'Cancellation · not found yet', frames: '' };
+    const m = f.moves[fin.trigger!];
+    const how = m.kind === 'normal' ? `${m.name} (the end of a string)` : m.name;
+    return { name: fin.name, input: `win with ${how}${fin.hold ? `, holding ${TAP[fin.hold]}` : ''}`, notes: 'Cancellation', frames: '' };
+  }
+  const input = `${fin.input.map((d) => TAP[d]).join(' ')} ${fin.button === 'block' ? 'BLOCK' : fin.button}`;
+  const kind = fin.kind === 'signoff' ? 'Sign-Off' : 'merciful';
+  return { name: fin.name, input, notes: `${kind} · ${RANGE[fin.range]}`, frames: '' };
 }
 
 /** The fighter's combo guides: the presses in order (a boost as SP SP), and what the combo does. */
@@ -100,7 +119,8 @@ export function comboRows(fighter: string): MoveRow[] {
   });
 }
 
-export function moveList(fighter: string): MoveSection[] {
+/** `found` says which hidden cancellations a player has landed (all of them by default). */
+export function moveList(fighter: string, found: (id: string) => boolean = () => true): MoveSection[] {
   const f = fighterData(fighter);
   const specials: MoveRow[] = [];
   for (const dir of ['n', 'f', 'b', 'd'] as const) {
@@ -122,6 +142,20 @@ export function moveList(fighter: string): MoveSection[] {
     return { name: s.name, input: [first, ...s.path.slice(1)].join(' · '), notes: [heights.join(', '), s.safe ? 'safe on block' : '', ...end].filter(Boolean).join(' · '), frames: frames(f.moves[ids[ids.length - 1]]) };
   });
 
+  // In the air: Special while jumping (once a jump), and the air strings.
+  const air: MoveRow[] = [];
+  for (const dir of ['n', 'f', 'b', 'd'] as const) {
+    const id = f.airSpecials[dir];
+    if (!id) continue;
+    const m = f.moves[id];
+    const boost = m.boost ? f.moves[m.boost] : null;
+    air.push({ name: m.name, input: `in the air: ${DIR[dir]}SP`, notes: [traits(m), boost ? `SP again: ${traits(boost) || 'stronger'}` : ''].filter(Boolean).join(' · '), frames: '' });
+  }
+  for (const s of f.airStrings) {
+    const ids = stringMoves(f, s) ?? [];
+    air.push({ name: s.name, input: `in the air: ${s.path.map((p, k) => (k === 0 ? p.replace(/^j\./, '') : p)).join(' · ')}`, notes: [ids.map((id) => f.moves[id].name).join(', '), 'chains on hit or block'].join(' · '), frames: '' });
+  }
+
   const command: MoveRow[] = [];
   for (const side of ['f', 'b'] as const) {
     for (const [btn, id] of Object.entries(f.normals[side])) {
@@ -140,9 +174,10 @@ export function moveList(fighter: string): MoveSection[] {
   const system: MoveRow[] = [
     { name: 'Throw', input: 'THROW (← THROW: throw backward)', notes: 'break it with THROW', frames: '' },
     { name: 'Boost', input: 'SP SP (or SP, METER)', notes: `a quick double tap (within ${BOOST_TAP} frames, keep the direction from the first): 1 bar; on a juggled opponent it relaunches them (as often as you have bars)`, frames: '' },
-    { name: 'Tape Skip', input: 'METER during any move', notes: 'cancels it into a dash: 1 bar', frames: '' },
+    { name: 'Jump Cancel', input: '↑ (or ↗) as a launcher hits', notes: 'a hop after them, into an air string and an air special', frames: '' },
+    { name: 'Tape Skip', input: 'METER during any ground move', notes: 'cancels it into a dash: 1 bar', frames: '' },
     { name: 'Cut Away', input: 'METER while being hit', notes: 'breaks the combo: needs a full meter and spends all of it, once a round', frames: '' },
-    { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },
+    { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health; once it lands it's gone for the match, but missed or blocked it comes back after ${TD_RECHARGE_FRAMES / 60} seconds`, frames: '' },
     { name: 'Flawless Block', input: 'BLOCK just before the hit', notes: `pressed within ${FLAWLESS_WINDOW} frames of it landing: no chip, out of blockstun ${FLAWLESS_BLOCKSTUN_CUT} frames sooner (easier to punish), a little meter`, frames: '' },
     { name: 'Stay Down', input: '↓ while knocked down', notes: `get up ${DELAYED_GETUP} frames later, once a knockdown: their timed attack on your getup misses`, frames: '' },
     { name: 'Reversal', input: 'any attack while getting up', notes: 'comes out on the first frame you can move', frames: '' },
@@ -152,9 +187,13 @@ export function moveList(fighter: string): MoveSection[] {
   return [
     { title: 'Specials', rows: specials },
     { title: 'Strings', rows: strings },
+    { title: 'In the air', rows: air },
     { title: 'Combos (from point blank; wait = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },
-    { title: 'Finishers (after the deciding round)', rows: f.finishers.map(finisherRow) },
+    { title: 'Finishers (after the deciding round)', rows: [
+        ...f.finishers.map((fin) => finisherRow(f, fin, found)),
+        { name: 'Stage Sign-Off', input: `${STAGE_INPUT.map((d) => TAP[d]).join(' ')} BLOCK`, notes: 'Sign-Off · close, their back to a wall: every stage has its own', frames: '' },
+      ] },
   ];
 }

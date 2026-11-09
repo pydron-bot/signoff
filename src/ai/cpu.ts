@@ -6,9 +6,10 @@
  * It has its own seeded random numbers, so a match against it replays
  * exactly from the same seed.
  */
-import { BAR, Input, METER_MAX, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
+import { BAR, Input, METER_MAX, canTD, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
+import { backToWall, stageFinisher } from '../sim/finisher';
 import { propInReach } from '../sim/stage';
 import { segmentData } from '../sim/stages';
 
@@ -93,13 +94,14 @@ export class Cpu {
   }
 
   /** "Stay tuned" after it won: pick a finisher, walk into its range, enter it like a player would. */
-  private finish(me: FighterState, them: FighterState): number {
+  private finish(m: MatchState, me: FighterState, them: FighterState): number {
     if (!this.finishing) {
       const all = fighterData(me.fighter).finishers;
       const signOffs = all.filter((f) => f.kind === 'signoff');
       const pass = this.level === LEVELS.easy ? 50 : 10;
-      // Mostly a Sign-Off; now and then it shows mercy.
-      const fin = this.roll(pass) ? null : this.roll(10) ? (all.find((f) => f.kind === 'rerun') ?? null) : signOffs[nextInt(this.rng, signOffs.length)];
+      // Mostly a Sign-Off (the stage's own if they're against a wall); now and then it shows mercy.
+      const wall = backToWall(m, this.player) && this.roll(40);
+      const fin = this.roll(pass) ? null : this.roll(10) ? (all.find((f) => f.kind === 'rerun') ?? null) : wall ? stageFinisher(m.stage, me.fighter) : signOffs[nextInt(this.rng, signOffs.length)];
       this.finishing = { fin, t: 0 };
     }
     const f = this.finishing.fin;
@@ -135,7 +137,7 @@ export class Cpu {
     const me = m.fighters[this.player];
     const them = m.fighters[1 - this.player];
     this.observe(m, me, them);
-    if (m.phase === 'stayTuned' && m.matchWinner === this.player) return this.finish(me, them);
+    if (m.phase === 'stayTuned' && m.matchWinner === this.player) return this.finish(m, me, them);
     if (m.phase !== 'fight') {
       this.plan = null;
       if (m.phase === 'intro') this.finishing = null;
@@ -290,7 +292,7 @@ export class Cpu {
     const back = me.facing > 0 ? LEFT : RIGHT;
     const r = nextInt(this.rng, 100);
 
-    if (!me.tdUsed && me.health * 100 < me.maxHealth * TD_HEALTH_PCT && dist < fx(1.3) && this.roll(25)) {
+    if (canTD(me) && dist < fx(1.3) && this.roll(25)) {
       this.start(tap(BLOCK | SPECIAL, BLOCK));
       return;
     }
@@ -305,6 +307,11 @@ export class Cpu {
     }
     if (s.recovering && d.style === 'rushdown' && dist < fx(2.4) && this.roll(this.level.antiAir)) {
       this.start(this.special(me, back | SPECIAL));
+      return;
+    }
+    // Now and then it goes over the top: a jump-in, with an air attack or its air special.
+    if (dist > fx(1.3) && dist < fx(2.8) && this.roll(this.level === LEVELS.easy ? 4 : 8)) {
+      this.start(this.jumpIn(me, d));
       return;
     }
     switch (d.style) {
@@ -497,6 +504,27 @@ export class Cpu {
       else if (r < 75) this.start(tap(fwd | FK));
       else this.start(hold(back, 8));
     }
+  }
+
+  /** A jump forward: an air special near the top (boosted when it can), or an attack on the way down. */
+  private jumpIn(me: FighterState, d: FighterData): Plan {
+    const fwd = me.facing > 0 ? RIGHT : LEFT;
+    const special = Object.keys(d.airSpecials).length > 0 && this.roll(45);
+    const boost = special && me.meter >= BAR && this.roll(this.level.boost);
+    const btn = this.roll(50) ? FK : BK;
+    let pressedAt = -1;
+    return (f, t) => {
+      if (t < 4) return UP | fwd;
+      if (f.mode === 'prejump') return 0;
+      if (f.mode !== 'air' && f.mode !== 'move') return t < 10 ? 0 : null;
+      if (special && f.mode === 'air' && f.vy <= fx(0.03) && pressedAt < 0) {
+        pressedAt = t;
+        return SPECIAL;
+      }
+      if (boost && pressedAt >= 0 && t === pressedAt + 3) return SPECIAL;
+      if (!special && f.mode === 'air' && f.vy < 0 && f.y < fx(1.3)) return btn;
+      return 0;
+    };
   }
 
   /** A special, boosted when it has the meter and the nerve. */

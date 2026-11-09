@@ -3,10 +3,11 @@
 // script playing through to the end of the match for every pairing.
 import { describe, expect, it } from 'vitest';
 import { Cpu } from '../src/ai/cpu';
-import { FIGHTERS, Input, STAY_TUNED_FRAMES, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
-import { finisherData, rangeOf } from '../src/sim/finisher';
+import { FIGHTERS, Input, STAGE_IDS, STAY_TUNED_FRAMES, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
+import { STAGE_INPUT, finisherData, rangeOf, stageCueAge, stageFinisher } from '../src/sim/finisher';
 import { fx } from '../src/sim/fixed';
 import { count, place, presses, ready, run } from './sim-helpers';
+import { stageData } from '../src/sim/stages';
 
 const { LEFT, RIGHT, UP, DOWN, BLOCK, SPECIAL, FK, ATTACK_BITS } = Input;
 const roster = Object.values(FIGHTERS);
@@ -40,9 +41,17 @@ const RANGE_GAP = { close: 1.0, mid: 1.8, far: 2.8, any: 1.8 } as const;
 
 describe('finisher data', () => {
   for (const f of roster) {
-    it(`${f.name}: two Sign-Offs, a Rerun and a Cancellation that hold together`, () => {
+    it(`${f.name}: two Sign-Offs, a Rerun and three Cancellations that hold together`, () => {
       const kinds = f.finishers.map((x) => x.kind).sort();
-      expect(kinds).toEqual(['cancellation', 'rerun', 'signoff', 'signoff']);
+      expect(kinds).toEqual(['cancellation', 'cancellation', 'cancellation', 'rerun', 'signoff', 'signoff']);
+      // One of them is ended by a special on the ground, as before; each asks for something different.
+      const cancels = f.finishers.filter((x) => x.kind === 'cancellation');
+      expect(cancels.some((x) => Object.values(f.specials).includes(x.trigger!) && !x.hold)).toBe(true);
+      expect(new Set(cancels.map((x) => `${x.trigger}/${x.hold ?? ''}`)).size).toBe(cancels.length);
+      // A held-direction version comes before a plain one on the same move, or the plain one would always win.
+      cancels.forEach((x, k) => {
+        if (x.hold) for (const y of cancels.slice(0, k)) expect(y.trigger === x.trigger && !y.hold, x.id).toBe(false);
+      });
       expect(f.show.length).toBeGreaterThan(0);
       for (const fin of f.finishers) {
         expect(fin.cut).toBeGreaterThan(0);
@@ -54,7 +63,7 @@ describe('finisher data', () => {
           if (b.move) expect(f.moves[b.move], `${fin.id}: ${b.move}`).toBeDefined();
         }
         if (fin.kind === 'cancellation') {
-          expect(Object.values(f.specials)).toContain(fin.trigger);
+          expect(f.moves[fin.trigger!], `${fin.id}: ${fin.trigger}`).toBeDefined();
           expect(fin.input).toEqual([]);
         } else {
           expect(fin.input.length).toBeGreaterThanOrEqual(2);
@@ -154,6 +163,51 @@ describe('cancellations', () => {
     expect(ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Final Collection', kind: 'cancellation' });
   });
 
+  it('one that asks for a held direction needs it: Dale\'s Cold Front, holding back, is Cold Snap', () => {
+    const fin = (hold: number) => {
+      const m = ready('dale', 'rox');
+      m.fighters[0].wins = 1;
+      m.fighters[1].health = 1;
+      place(m, -1.5, 1.5);
+      const ev = run(m, 400, (_m, t) => (t === 0 ? RIGHT | SPECIAL : hold));
+      return { m, ev };
+    };
+    const held = fin(LEFT);
+    expect(held.ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Cold Snap', kind: 'cancellation' });
+    // Without it, Cold Front is just a finishing blow.
+    expect(fin(0).m.phase).toBe('stayTuned');
+  });
+
+  it('an air special can end it too (Rox: Aerobic Dive is Hit the Wall)', () => {
+    const m = ready('rox', 'dale');
+    m.fighters[0].wins = 1;
+    m.fighters[1].health = 1;
+    place(m, -1.0, 0.2);
+    const ev = run(m, 400, presses({ 0: UP, 10: SPECIAL }));
+    expect(ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Hit the Wall' });
+  });
+
+  it('a string ender, or a throw, can be the trigger (Hollis: Cuff \'Em is Cuffed)', () => {
+    const m = ready('hollis', 'rox');
+    m.fighters[0].wins = 1;
+    place(m, -0.4, 0.4);
+    // The grab at the end of the string catches them reeling, and that's the K.O.
+    m.fighters[1].health = 2000;
+    const hollis = FIGHTERS.hollis;
+    const ev = run(m, 400, (mm, t) => {
+      const a = mm.fighters[0];
+      if (t === 0) return Input.FP;
+      if (a.mode === 'move' && a.move === 's.FP' && a.moveFrame === (hollis.moves['s.FP'].cancel?.[0] ?? 2) - 1) return Input.FP;
+      if (a.mode === 'move' && a.move === 'FP FP' && a.moveFrame === (hollis.moves['FP FP'].cancel?.[0] ?? 2) - 1) {
+        mm.fighters[1].health = 1;
+        return FK;
+      }
+      return 0;
+    });
+    const fin = ev.find((e) => e.type === 'finisher');
+    expect(fin).toMatchObject({ id: 'Cuffed' });
+  });
+
   it('any other finishing blow goes to Stay tuned', () => {
     const m = winMatch('dale', 'rox');
     expect(m.phase).toBe('stayTuned');
@@ -208,5 +262,77 @@ describe('the CPU', () => {
       signOffs += started.filter((e) => e.type === 'finisher' && e.kind === 'signoff').length;
     }
     expect(signOffs).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('Stage Sign-Offs', () => {
+  /** P1 wins on this stage and walks the loser's back to the right-hand wall: close up, the wall within reach behind them. */
+  function atWall(p1: string, stage: string, loserFromWall = 0.6): MatchState {
+    const m = createMatch({ p1, p2: 'rox', stage });
+    while (m.phase !== 'fight') step(m, 0, 0, []);
+    m.fighters[0].wins = 1;
+    m.fighters[1].health = 1;
+    place(m, -0.4, 0.4);
+    run(m, 300, (mm, t) => (mm.phase === 'fight' && t === 0 ? FK : 0));
+    expect(m.phase).toBe('stayTuned');
+    run(m, 25);
+    const wall = stageData(stage).segments[m.segment].halfWidth / 65536 - 0.3;
+    place(m, wall - loserFromWall - 1.0, wall - loserFromWall);
+    return m;
+  }
+
+  const enter = (m: MatchState) => {
+    const at: Record<number, number> = {};
+    let t = 0;
+    for (const d of STAGE_INPUT) {
+      at[t] = at[t + 1] = DIR[d];
+      t += 4;
+    }
+    at[t] = BLOCK;
+    const ev: SimEvent[] = [];
+    const inputs = presses(at);
+    for (let k = 0; k < 20 && m.phase === 'stayTuned'; k++) step(m, inputs(m, k), 0, ev);
+    return ev;
+  };
+
+  for (const stage of STAGE_IDS) {
+    it(`${stageData(stage).name}: ${stageData(stage).finisher.name}, for anyone, close up with the loser's back to the wall`, () => {
+      for (const f of roster) {
+        const m = atWall(f.id, stage);
+        const ev = enter(m);
+        expect(ev.find((e) => e.type === 'finisher'), f.id).toMatchObject({ id: `stage:${stage}`, kind: 'signoff' });
+        const rest = run(m, stageFinisher(stage, f.id).total + 10);
+        const cue = rest.find((e) => e.type === 'stageCue');
+        expect(cue, f.id).toMatchObject({ stage });
+        expect(count(rest, 'finisherCut')).toBe(1);
+        expect(rest.find((e) => e.type === 'finisherCard')).toMatchObject({ id: `stage:${stage}` });
+        expect(m.phase).toBe('over');
+      }
+    });
+  }
+
+  it('not away from the wall: the same input does nothing', () => {
+    const m = atWall('dale', 'weather', 2.5);
+    expect(count(enter(m), 'finisher')).toBe(0);
+    expect(m.phase).toBe('stayTuned');
+  });
+
+  it('the set reads how long since its cue, and the loser is thrown into it first', () => {
+    const m = atWall('gus', 'kitchen');
+    enter(m);
+    const fin = stageFinisher('kitchen', 'gus');
+    const at = fin.beats.find((b) => b.cue)!.at;
+    expect(stageCueAge(m)).toBe(-1);
+    while (m.finish.frame < at) run(m, 1);
+    expect(stageCueAge(m)).toBe(0);
+    // Thrown back against the wall they had behind them.
+    const wall = stageData('kitchen').segments[m.segment].halfWidth / 65536 - 0.3;
+    expect(m.fighters[1].x / 65536).toBeGreaterThan(wall - 0.5);
+    run(m, 10);
+    expect(stageCueAge(m)).toBe(10);
+  });
+
+  it('finisherData finds it by id, like any other', () => {
+    expect(finisherData('hollis', 'stage:news').name).toBe('Lights Down');
   });
 });
