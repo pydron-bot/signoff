@@ -24,6 +24,7 @@ import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion
 import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
+import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
@@ -60,6 +61,7 @@ document.body.append(pauseBtn);
 const replayBar = new ReplayBar(document.body);
 const moveListPanel = new MoveListPanel(document.body);
 const arcadeCard = new ArcadeCard(document.body);
+const perf = new PerfOverlay(document.body, renderer);
 initKeyboard();
 
 /** Puts the settings into effect everywhere they matter. */
@@ -73,6 +75,7 @@ function applySettings(): void {
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
   touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
   touch.root.dataset.side = String(settings.touchSide);
+  if (perf.shown !== (settings.perf === 1)) perf.show(settings.perf === 1);
 }
 applySettings();
 
@@ -482,6 +485,13 @@ function results(winner: number): void {
 
 pauseBtn.addEventListener('click', () => pause(!paused));
 window.addEventListener('keydown', (e) => {
+  // The performance overlay, anywhere.
+  if (e.code === 'Backquote' && !e.repeat) {
+    settings.perf = settings.perf ? 0 : 1;
+    saveSettings(settings);
+    applySettings();
+    return;
+  }
   if (session?.options.mode === 'replay' && !paused && !e.repeat) {
     const a: ReplayAction | null =
       e.code === 'Space' ? 'toggle' : e.code === 'ArrowLeft' ? 'back' : e.code === 'ArrowRight' ? 'forward' : e.code === 'Home' ? 'restart' : e.code === 'KeyS' ? 'speed' : null;
@@ -496,6 +506,8 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyB') arena.showBoxes = !arena.showBoxes;
 });
 document.addEventListener('visibilitychange', () => {
+  // Time jumps while hidden: the overlay starts counting afresh.
+  perf.reset();
   if (document.hidden) pause(true);
 });
 
@@ -544,6 +556,7 @@ startDemo();
 renderer.compile(arena.scene, arena.camera);
 
 renderer.setAnimationLoop((now) => {
+  let stepped = 0;
   for (const k of menuPresses()) {
     if (arcadeCard.open) arcadeCard.key(k);
     else if (moveListPanel.open) moveListPanel.key(k);
@@ -560,6 +573,7 @@ renderer.setAnimationLoop((now) => {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
     const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
+    stepped = n;
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
@@ -604,6 +618,7 @@ renderer.setAnimationLoop((now) => {
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
   renderer.render(arena.scene, arena.camera);
+  perf.frame(now, stepped);
 });
 
 document.getElementById('version')!.textContent = `v${VERSION} · ${BUILD_ID}`;

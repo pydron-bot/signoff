@@ -1020,3 +1020,20 @@ body[data-vhs='1'] .vhs {
 .input-BL {
   background: rgba(127, 215, 255, 0.35);
 }
+
+/* The performance overlay (Settings → PERFORMANCE, or `): top left, under the health bar. */
+.perf {
+  position: fixed;
+  top: calc(64px + env(safe-area-inset-top));
+  left: calc(14px + env(safe-area-inset-left));
+  padding: 4px 7px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #cfe8cf;
+  font: 11px/1.35 ui-monospace, Menlo, monospace;
+  pointer-events: none;
+  z-index: 30;
+  white-space: nowrap;
+}
+.perf .ok { color: #7dff8a; }
+.perf .warn { color: #ffd84a; }
+.perf .bad { color: #ff5a5a; }
