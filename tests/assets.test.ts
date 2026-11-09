@@ -311,3 +311,71 @@ describe.skipIf(!existsSync(burnPath))('burn.glb', () => {
     expect(hi[1]).toBeLessThan(1.5);
   });
 });
+
+/**
+ * The stages built since: the objects the game reads, materials and atlas
+ * sizes, the triangle cap, a light rig per segment, and each prop at its
+ * size where the sim puts it (docs/BLENDER-TODO.md, steps 19 and 20).
+ */
+function stageChecks(id: string, objects: string[], props: Record<string, { at: number; size: [number, number] }>): void {
+  const path = `public/assets/stages/${id}.glb`;
+  describe.skipIf(!existsSync(path))(`${id}.glb`, () => {
+    const g = existsSync(path) ? readGlb(path) : ({} as ReturnType<typeof readGlb>);
+    const node = (name: string) => g.nodes.find((n) => n.name === name);
+    const bounds = (name: string): [number[], number[]] => {
+      const lo = [Infinity, Infinity, Infinity];
+      const hi = [-Infinity, -Infinity, -Infinity];
+      for (const p of g.meshes[node(name)!.mesh!].primitives) {
+        const a = g.accessors[p.attributes.POSITION];
+        for (let k = 0; k < 3; k++) {
+          lo[k] = Math.min(lo[k], a.min![k]);
+          hi[k] = Math.max(hi[k], a.max![k]);
+        }
+      }
+      return [lo, hi];
+    };
+
+    it('has every object the game shows, as plain meshes', () => {
+      for (const name of objects) expect(node(name)?.mesh, name).toBeDefined();
+      expect(g.skins ?? []).toEqual([]);
+    });
+
+    it('keeps to set and props, atlases within size, under 20k triangles', () => {
+      let tris = 0;
+      for (const m of g.meshes) for (const p of m.primitives) tris += g.accessors[p.indices ?? p.attributes.POSITION].count / 3;
+      expect(tris).toBeLessThanOrEqual(20000);
+      for (const m of g.materials ?? []) {
+        expect(['set', 'props']).toContain(m.name);
+        const tex = m.pbrMetallicRoughness?.baseColorTexture;
+        const img = g.images![g.textures![tex!.index].source];
+        const view = g.bufferViews[img.bufferView];
+        const [w, h] = pngSize(g.bin.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength));
+        expect(Math.max(w, h), `${m.name} atlas size`).toBeLessThanOrEqual(STAGE_TEXTURE[m.name]);
+      }
+    });
+
+    it('has a light rig for each segment', () => {
+      const lights = JSON.parse(String(node('lights')?.extras?.segments)) as { segment: string }[];
+      expect(lights.map((l) => l.segment)).toEqual(STAGES[id].segments.map((s) => s.name));
+    });
+
+    for (const [name, p] of Object.entries(props)) {
+      it(`puts ${name} where the sim does, at its size, standing on its origin`, () => {
+        expect(node(name)!.translation?.[0] ?? 0).toBeCloseTo(p.at, 3);
+        const [lo, hi] = bounds(name);
+        expect(lo[1]).toBeCloseTo(0, 2);
+        expect(hi[0] - lo[0], `${name} width`).toBeLessThanOrEqual(p.size[0] + 0.05);
+        expect(hi[1] - lo[1], `${name} height`).toBeLessThanOrEqual(p.size[1] + 0.05);
+      });
+    }
+  });
+}
+
+const propX = (stage: string, id: string) => toFloat(STAGES[stage].segments[0].props.find((p) => p.id === id)!.x);
+stageChecks('news', ['set', 'seg_headlines', 'seg_ticker', 'seg_lightsout', 'prop_desk', 'fx_lamp', 'fx_wreck', 'fx_mark'], {
+  prop_desk: { at: propX('news', 'desk'), size: [1.2, 0.8] },
+});
+stageChecks('kitchen', ['set', 'seg_prep', 'seg_grease', 'seg_oven', 'prop_pot', 'prop_knives', 'fx_flare', 'fx_mark'], {
+  prop_pot: { at: propX('kitchen', 'pot'), size: [0.6, 0.45] },
+  prop_knives: { at: propX('kitchen', 'knives'), size: [0.3, 0.5] },
+});

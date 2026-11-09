@@ -67,6 +67,8 @@ const EFFECTS: Readonly<Record<string, Readonly<Record<string, Effect>>>> = {
   gideon: {
     'Collection Plate': fx('fx_plate', 'projectile'),
     'Collection Plate+': fx('fx_plate', 'projectile'),
+    'Fire and Brimstone': fx('fx_brimstone', 'fighter'),
+    'Fire and Brimstone (blessed)': fx('fx_brimstone', 'fighter'),
   },
   gus: {
     'Flambé': fx('fx_flambe', 'projectile'),
