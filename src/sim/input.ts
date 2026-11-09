@@ -8,7 +8,7 @@
  * pressed, which gives the 8-frame buffer, dashes and motion inputs. It is
  * plain data and part of the match state.
  */
-import { BUFFER, DASH_WINDOW, MOTION_WINDOW } from './constants';
+import { BOOST_TAP, BUFFER, DASH_WINDOW, MOTION_WINDOW } from './constants';
 import { ATTACKS, type Attack, type SpecialDir } from './types';
 
 export const UP = 1 << 0;
@@ -87,7 +87,11 @@ export function readInput(inp: InputState, raw: number, facing: number, frozen: 
       inp.age[i] = 0;
     }
   }
-  if (pressed & SPECIAL) inp.specialDir = specialDirection(inp, facing);
+  if (pressed & SPECIAL) {
+    // The second tap of a boost keeps the first tap's direction, so letting go of it in between doesn't change the special.
+    const dir = specialDirection(inp, facing);
+    if (dir !== 'n' || inp.gap[bitIndex(SPECIAL)] > BOOST_TAP) inp.specialDir = dir;
+  }
 }
 
 /** Pressed within the buffer, and fewer than `since` frames ago (pass a move's frame to ignore presses from before it). */

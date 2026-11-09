@@ -233,6 +233,44 @@ describe('signal meter', () => {
     expect(poor.fighters[0].move).toBe('Cold Front');
   });
 
+  // Rox's jab cancelled into Count of Eight (↓ Special) on hit: the special waits for the hit, so both
+  // presses of a quick double tap come before it starts.
+  const jabThenSpecial = (extra: Record<number, number>) => {
+    const m = ready('rox', 'dale');
+    place(m, -0.4, 0.4);
+    m.firstHit = true;
+    m.fighters[0].meter = BAR;
+    const ev = run(m, 40, presses({ 0: FP, 6: DOWN | SPECIAL, ...extra }));
+    return { m, ev };
+  };
+
+  it('a quick double tap boosts a special cancelled out of a hit, though both taps come before it starts', () => {
+    const { m, ev } = jabThenSpecial({ 8: SPECIAL });
+    expect(count(ev, 'boost')).toBe(1);
+    expect(m.fighters[0].move).toBe('Count of Eight+');
+    expect(m.fighters[0].meter).toBeLessThan(BAR);
+  });
+
+  it('METER with the special boosts it (the touch meter), instead of Tape Skipping the normal', () => {
+    const { ev } = jabThenSpecial({ 8: METER });
+    expect(count(ev, 'boost')).toBe(1);
+    expect(count(ev, 'tapeSkip')).toBe(0);
+  });
+
+  it('METER early in a special from neutral boosts it', () => {
+    const m = ready();
+    m.fighters[0].meter = BAR;
+    const ev = run(m, 6, presses({ 0: RIGHT | SPECIAL, 2: METER }));
+    expect(count(ev, 'boost')).toBe(1);
+    expect(m.fighters[0].move).toBe('Cold Front+');
+  });
+
+  it('one press of Special never boosts, bar or no bar', () => {
+    const { ev } = jabThenSpecial({});
+    expect(count(ev, 'special')).toBe(1);
+    expect(count(ev, 'boost')).toBe(0);
+  });
+
   it('Tape Skip turns an unsafe blocked move into a dash, for a bar', () => {
     const m = ready();
     place(m, -0.3, 0.3);

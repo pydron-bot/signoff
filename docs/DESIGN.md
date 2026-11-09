@@ -301,7 +301,7 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
 | Front Kick / Back Kick | Bottom-left / bottom-right of the diamond | J / K | A / B |
 | Block | Large button under the right thumb | L | RB |
 | Special (direction + Special) | Button above the diamond | O | RT |
-| Boosted special | Press Special again as the special starts (1 bar) | O again | RT again |
+| Boosted special | Double-tap Special, or Special then tap the meter (1 bar); in a combo both can come before the special starts | O O | RT RT |
 | Throw | Small button beside Block | U + J | LB |
 | Interact with the stage | Button that appears only near an object | ; | LT |
 | Tape Skip / Cut Away | Tap the meter (Cut Away when being hit) | Space | Y + B |

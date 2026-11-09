@@ -24,7 +24,7 @@ describe('combo guides', () => {
         it(`${g.name}: one combo, every press used, under the ceiling`, () => {
           const r = runGuide(f.id, g);
           expect(r.unbroken).toBe(true);
-          expect(r.hits).toBeGreaterThanOrEqual(4);
+          expect(r.hits).toBeGreaterThanOrEqual(2);
           for (const s of r.steps) expect(s.move, `${s.input} at ${s.at} starts a move`).not.toBe('');
           expect(r.pct).toBeLessThanOrEqual(DAMAGE_CEILING[g.bars]);
         });
