@@ -1073,7 +1073,7 @@ Blender (the Principled BSDF's emission colour and strength export as glTF
 
 The game now reflects the fighters in Burn's mirrors (0.34.0, segments 1
 and 2), drawn over the panes at z = −3.9 between x = −8 and 8, from the
-floor to 3.1 m. Keep the panes there (or tell the game side where they
+floor to 3.0 m (where the chase lights start). Keep the panes there (or tell the game side where they
 moved), and keep their painted room faint and a little darker than now so
 the fighters' reflections read over it.
 

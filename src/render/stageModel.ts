@@ -32,6 +32,13 @@ export interface SegmentLights {
   falloff?: number;
   /** The segment's colour grade (game side). */
   grade?: Grade;
+  /** How strongly the floor reflects the fighters, and its height (game side). */
+  gloss?: number;
+  floorY?: number;
+  /** How strongly Burn's mirrors reflect them (game side). */
+  mirror?: number;
+  /** Darkens the whole set, never the fighters (game side). */
+  setDim?: number;
   /** How strongly the baked light map lights the set, 0 to 2 (docs/BLENDER-TODO.md, step 23). */
   lightMap?: number;
   /** The baked light map for this segment: a file beside the GLB in public/assets/stages/. */

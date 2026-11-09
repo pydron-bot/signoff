@@ -10,6 +10,7 @@ import { BurnSet } from './burnSet';
 import { KitchenSet } from './kitchenSet';
 import { NewsSet } from './newsSet';
 import { setFalloff } from './look';
+import { setReflections } from './reflection';
 import type { Grade } from './post';
 import { applyLightMap, type SegmentLights, type StageArt } from './stageModel';
 import { WeatherSet } from './weatherSet';
@@ -44,7 +45,8 @@ export function applyLights(scene: THREE.Scene, lights: StageLights, spec: Segme
     grade.contrast = spec.grade.contrast;
     grade.bloom = spec.grade.bloom;
   }
-  setFalloff(spec.falloff ?? 0.5);
+  setFalloff(spec.falloff ?? 0.5, spec.setDim ?? 0);
+  setReflections(spec.gloss ?? 0, spec.floorY ?? 0, spec.mirror ?? 0);
   if (art) applyLightMap(art, spec);
   key.color.set(spec.key.color);
   key.intensity = spec.key.intensity;

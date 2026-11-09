@@ -10,6 +10,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { STEPS_PER_SECOND } from '../sim/constants';
 import { addRim } from './fighterLight';
+import { FLOOR, MIRROR, addReflection } from './reflection';
 import { HELD_STAND_INS, LOOPS, standIn } from './pose';
 
 const loader = new GLTFLoader();
@@ -94,6 +95,9 @@ export class FighterModel {
   private clip = '';
   private frame = -1;
   private tint = -1;
+  private readonly floorCopies: THREE.Mesh[];
+  private readonly mirrorCopies: THREE.Mesh[];
+  private readonly reflectionMaterials: THREE.Material[];
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
 
@@ -120,6 +124,10 @@ export class FighterModel {
       m.material = mat;
     });
     this.root.add(model);
+    // Reflections in the floor and Burn's mirrors: copies on the same skeleton.
+    this.floorCopies = addReflection(model, FLOOR, new Map());
+    this.mirrorCopies = addReflection(model, MIRROR, new Map());
+    this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies].map((c) => c.material as THREE.Material);
     // GLTFLoader drops the dot from bone names (hand.L is handL).
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
@@ -179,6 +187,12 @@ export class FighterModel {
     this.frame = frame;
   }
 
+  /** Shows the reflections the segment has (hidden, they cost no draw calls). */
+  showReflections(floor: boolean, mirror: boolean): void {
+    for (const c of this.floorCopies) c.visible = floor;
+    for (const c of this.mirrorCopies) c.visible = mirror;
+  }
+
   /** An emissive tint over the whole fighter (hit flash, armour, guard): 0 for none. */
   setTint(hex: number): void {
     if (hex === this.tint) return;
@@ -189,6 +203,7 @@ export class FighterModel {
   dispose(): void {
     this.mixer.stopAllAction();
     for (const m of this.materials) m.dispose();
+    for (const m of new Set(this.reflectionMaterials)) m.dispose();
     this.root.removeFromParent();
   }
 }

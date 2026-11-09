@@ -17,6 +17,7 @@ import { CameraRig, FOV } from './camera';
 import { ContactShadows, setRim } from './fighterLight';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
+import { FLOOR, MIRROR } from './reflection';
 import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
@@ -393,6 +394,7 @@ export class Arena {
       model.root.scale.x = f.facing;
       const p = this.poses.pose(m, i, this.pose);
       model.pose(p.clip, p.frame, p.loop);
+      model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
     } else if (lying) {
       // Flat on the floor; rising during getup.
       const h = f.mode === 'getup' ? 0.4 : 0.3;
