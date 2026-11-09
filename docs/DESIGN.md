@@ -311,6 +311,11 @@ more it reacts to a big one than a small one.
   (about 1.7 seconds), then eases back, while the camera swings round and
   in on the loser. Replays and results are untouched: only the pacing
   changes.
+- **Hit reactions** follow the hit: head, body or legs by where it lands
+  (68% of the fighter's height and up is the head, under 35% the legs),
+  a heavy version for heavy and counter hits, two light versions that
+  alternate down a combo, their own for a crouching fighter, and a stagger
+  for a stun of 26 frames or more (a crushed guard, Breaking).
 - **The fighters' own light:** a rim on their edges in the segment's rim
   colour, so they stand out from busy sets, and a soft contact shadow
   that shrinks as they leave the floor.
@@ -411,6 +416,9 @@ effects listen to them.
   about 20,000 triangles and 2 materials.
 - Animations are played by the simulation's frame number, not by clock
   time, so the pose on screen always matches the hitboxes.
+- **Performance overlay** (Settings → PERFORMANCE, or the ` key): frame
+  rate, mean and worst frame time, simulation steps a second, draw calls
+  against the budget, triangles, shaders and the drawing size.
 - With only two fighters on screen the budget is easier than Curbside's:
   under 100 draw calls on the iPhone profile, a fixed light setup per
   segment, and every shader compiled during loading.

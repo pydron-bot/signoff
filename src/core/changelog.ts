@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.33.0',
+    date: '2026-11-09',
+    title: 'Behind the Scenes',
+    notes: [
+      'Performance overlay: Settings → PERFORMANCE (or the ` key on a keyboard) shows the frame rate, how long frames take (and the worst in the last second), simulation steps a second, draw calls and triangles, in the top left.',
+      'Hits are ready to look different by where they land: a snap of the head, a punch to the ribs, doubled over by a heavy one, a knee buckling, reeling from a long stun. The game already picks the right one; the new animations are on their way, and until then the fighters react as before.',
+    ],
+  },
+  {
     version: '0.32.0',
     date: '2026-11-09',
     title: 'Say Something',

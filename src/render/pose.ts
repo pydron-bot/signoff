@@ -5,8 +5,10 @@
  * the sim), so the pose on screen always matches the hitboxes. Pure: no
  * three.js, no clock. Clip names and lengths: docs/BLENDER-TODO.md.
  */
-import { INTRO_FRAMES } from '../sim/constants';
+import { GUARD_CRUSH_STUN, INTRO_FRAMES } from '../sim/constants';
 import type { SimEvent } from '../sim/events';
+import { fighterData } from '../sim/fighters';
+import { toFloat } from '../sim/fixed';
 import type { FighterState, MatchState } from '../sim/state';
 import { segmentData, type PropData } from '../sim/stages';
 
@@ -31,6 +33,16 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
 export const STAND_INS: Readonly<Record<string, string>> = {
   // Picking up and throwing a prop (the boombox, step 14).
   interact_throw: 'interact',
+  // Hit reactions (step 22): the two they refine.
+  hit_head: 'hit_high',
+  hit_head_2: 'hit_high',
+  hit_head_heavy: 'hit_high',
+  hit_body: 'hit_high',
+  hit_body_2: 'hit_high',
+  hit_body_heavy: 'hit_high',
+  stagger: 'hit_high',
+  hit_legs: 'hit_low',
+  hit_crouch: 'hit_low',
   // Juggle reactions (step 16): the held end of `launched`.
   juggle_hit: 'launched',
   relaunch: 'launched',
@@ -45,6 +57,34 @@ export const HELD_STAND_INS: ReadonlySet<string> = new Set(['juggle_hit', 'relau
 export function standIn(fighter: string, clip: string): string | undefined {
   return STAND_INS[`${fighter}:${clip}`] ?? STAND_INS[clip];
 }
+/** Contact this high on the body (a share of the fighter's standing height) or higher is the head; below LEGS_AT, the legs. */
+export const HEAD_AT = 0.68;
+export const LEGS_AT = 0.35;
+/** A stun this long or longer staggers, whatever the height (a crushed guard is exactly this). */
+export const STAGGER_STUN = GUARD_CRUSH_STUN;
+
+type HitEvent = Extract<SimEvent, { type: 'hit' }>;
+
+/**
+ * The reaction to a hit on a standing or crouching fighter (docs/BLENDER-TODO.md,
+ * step 22): by where it landed, how hard, and how long the stun. Light and
+ * medium hits alternate between two versions down a combo, so a string
+ * doesn't replay one jolt. `f` is the fighter hit, after the hit.
+ */
+export function hitReaction(e: HitEvent, f: FighterState, finisher: boolean): string {
+  // A finisher's blows: always heavy, head and body in turn (their contact height isn't a strike's).
+  if (finisher) return e.height === 'low' ? 'hit_legs' : e.combo % 2 === 0 ? 'hit_body_heavy' : 'hit_head_heavy';
+  if (f.crouching) return 'hit_crouch';
+  if (f.timer >= STAGGER_STUN) return 'stagger';
+  const stand = fighterData(f.fighter).hurt.stand;
+  const at = (toFloat(e.y) - toFloat(f.y)) / toFloat(stand.y + stand.h);
+  if (e.height === 'low' || at < LEGS_AT) return 'hit_legs';
+  const head = at >= HEAD_AT;
+  if (e.weight >= 2 || e.counter) return head ? 'hit_head_heavy' : 'hit_body_heavy';
+  const second = e.combo % 2 === 0;
+  return head ? (second ? 'hit_head_2' : 'hit_head') : second ? 'hit_body_2' : 'hit_body';
+}
+
 /** Frames of the `crouch` clip before `crouch_idle` takes over. */
 export const CROUCH_IN = 6;
 
@@ -147,7 +187,14 @@ export class PoseTracker {
       }
       if (t.state !== 'hitstun') continue;
       t.since = 0;
-      t.clip = (e.type === 'hit' && e.height === 'low') || f.crouching ? 'hit_low' : 'hit_high';
+      // A stage hazard has no contact point: a heavy body blow, or a crouching one.
+      t.clip = e.type === 'hit' ? hitReaction(e, f, m.phase === 'finisher') : f.crouching ? 'hit_crouch' : 'hit_body_heavy';
+    }
+    // A crushed guard reels.
+    for (const e of ev) {
+      if (e.type !== 'guardCrush') continue;
+      const t = this.tracks[e.defender];
+      if (t.state === 'hitstun') this.react(t, 'stagger');
     }
     // Popped back up: by a boosted special, off the floor or off the wall (after the hit that caused it, so it wins).
     for (const e of ev) {
@@ -169,7 +216,8 @@ export class PoseTracker {
     t.base = f.moveFrame;
     // Landing from an air attack takes longer (the sim set the longer timer).
     if (s === 'landing') t.clip = f.timer >= 2 ? 'land_attack' : 'land';
-    else if (s === 'hitstun') t.clip = f.crouching ? 'hit_low' : 'hit_high';
+    // Until the hit's event picks the reaction (the same step).
+    else if (s === 'hitstun') t.clip = f.crouching ? 'hit_crouch' : 'hit_body';
     else t.clip = s;
   }
 

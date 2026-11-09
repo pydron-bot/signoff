@@ -878,18 +878,21 @@ a GLB the game plays the fallback in the last column):
 
 | Clip | Frames | When the game plays it | Falls back to |
 | --- | --- | --- | --- |
-| `hit_head` | 12 | A light or medium hit landing high (contact at 75% of the fighter's standing height or above) | `hit_high` |
+| `hit_head` | 12 | A light or medium hit landing high (contact at 68% of the fighter's standing height or above: most punches) | `hit_high` |
 | `hit_head_2` | 12 | The same, on the next hit of a combo: the game alternates the two, so a string doesn't replay one jolt | `hit_high` |
 | `hit_head_heavy` | 18 | A heavy hit or a counter hit landing high | `hit_high` |
-| `hit_body` | 12 | A light or medium hit to the body (between 40% and 75%) | `hit_high` |
+| `hit_body` | 12 | A light or medium hit to the body (between 35% and 68%: most kicks) | `hit_high` |
 | `hit_body_2` | 12 | The alternate, as for `hit_head_2` | `hit_high` |
 | `hit_body_heavy` | 18 | A heavy hit or a counter hit to the body | `hit_high` |
-| `hit_legs` | 12 | A low hit (or contact below 40%) on a standing fighter | `hit_low` |
+| `hit_legs` | 12 | A low hit (or contact below 35%) on a standing fighter | `hit_low` |
 | `hit_crouch` | 12 | Any hit on a crouching fighter | `hit_low` |
 | `stagger` | 30 | A long stun, 26 frames or more, whatever the height: a crushed guard (Tenderise), Margaret's Breaking (36), the Nightstick, the Flashlight, the Isobar Lasso | `hit_high` |
 
 Launches, knockdowns and bounces don't use these (they're `launched`, the
-juggle reactions, `down` and `ko`).
+juggle reactions, `down` and `ko`). A finisher's blows alternate
+`hit_head_heavy` and `hit_body_heavy` (`hit_legs` for a low one), so those
+two are seen most up close. *Game side done (0.33.0): the game picks these
+already and plays the fallback until a GLB has the clip.*
 
 **How they're played** (the same as `hit_high` today):
 
