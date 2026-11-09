@@ -335,6 +335,17 @@ more it reacts to a big one than a small one.
 - Music per show in the style of its era: synth news themes, aerobics pop, a
   jingle for the children's show, an organ for the televangelist. Made with
   Web Audio like Curbside's radio, so no big audio files.
+- **Fighter voices**, synthesised too (a buzz at each fighter's pitch shaped
+  into vowels by formant filters): an effort on heavy attacks, a shout on
+  every special and throw, a cry when hit that grows with the hit's weight,
+  an "oof" hitting the floor, a scream on a KO. One voice per fighter, and a
+  cooldown so a combo isn't a wall of grunts (heavy hits and KOs always get
+  through). Each has a profile: Hollis deep and rough, Rox high and
+  breathy, Gideon with a preacher's vibrato, Mumbles squeaky with a jaw
+  that clacks. NO ANNOUNCER mutes only the announcer.
+- **On iPhone** the game plays through the silent switch (as a game should;
+  it pauses other apps' music while it plays), and audio starts on the
+  first tap's release, which is when iOS allows it.
 
 ## Controls
 

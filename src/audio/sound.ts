@@ -9,6 +9,8 @@ import type { HitWeight, MatchState, SimEvent } from '../sim';
 import { INTRO_FRAMES, STEPS_PER_SECOND, fighterData } from '../sim';
 import { Music } from './music';
 import { timbre, type Timbre } from './timbre';
+import { VocalDirector, type VocalCue } from './vocals';
+import { Voices } from './voice';
 import { SCORES } from './score';
 
 export type SoundMode = 'on' | 'novoice' | 'off';
@@ -33,11 +35,22 @@ export class Sound {
   private cue: { stage: string; segment: number } | null = null;
   /** 0 to 1 (Settings). */
   musicVolume = 1;
+  /** Older iOS: the silent <audio> that lets Web Audio play through the silent switch. */
+  private silentLoop: HTMLAudioElement | null = null;
+  /** The fighters' voices: when (vocals.ts) and how (voice.ts). */
+  private voices: Voices | null = null;
+  private readonly vocals = new VocalDirector();
+  private readonly cues: VocalCue[] = [];
 
-  /** Audio can only start from a user gesture (iOS): call from the first tap or key. */
+  /**
+   * Audio can only start from a user gesture (iOS): call from every tap and
+   * key. Also resumes after iOS interrupts the audio (a call, the app in
+   * the background), and asks to play through the silent switch.
+   */
   unlock(): void {
+    this.throughSilentSwitch();
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state !== 'running') void this.ctx.resume();
       return;
     }
     const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -58,7 +71,30 @@ export class Sound {
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     this.music = new Music(this.ctx, this.master, this.noiseBuf);
+    this.voices = new Voices(this.ctx, this.master, this.noiseBuf);
     this.music.setVolume(this.musicVolume);
+  }
+
+  /**
+   * iOS mutes Web Audio with the silent switch: it plays in the "ambient"
+   * category. Safari 17 lets a page ask for "playback" instead (it plays
+   * through the switch, as a game's sound should, and pauses other apps'
+   * music); older iOS switches when an <audio> element plays, so a silent
+   * one loops there. With the sound off, back to ambient.
+   */
+  private throughSilentSwitch(): void {
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    const want = this.mode === 'off' ? 'ambient' : 'playback';
+    if (session) {
+      if (session.type !== want) session.type = want;
+      return;
+    }
+    if (want !== 'playback' || this.silentLoop || !/iP(hone|ad|od)/.test(navigator.userAgent)) return;
+    const a = new Audio(silentWavUrl());
+    a.loop = true;
+    a.setAttribute('playsinline', '');
+    void a.play().catch(() => undefined);
+    this.silentLoop = a;
   }
 
   setMusicVolume(v: number): void {
@@ -184,9 +220,11 @@ export class Sound {
 
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     if (!this.live) return;
+    for (const c of this.vocals.step(m, ev, this.cues)) this.voices?.say(c.player, m.fighters[c.player].fighter, c.kind, c.size);
     for (const e of ev) {
       switch (e.type) {
         case 'roundStart':
+          this.vocals.reset();
           // The music starts with the fight, so its beat keeps time with the round clock (Burnout's shards fall on it).
           this.playMusic(m.stage, e.segment, INTRO_FRAMES / STEPS_PER_SECOND);
           this.ident();
@@ -391,4 +429,25 @@ export class Sound {
       }
     }
   }
+}
+
+/** A tenth of a second of silence as a WAV (8 kHz, 8-bit mono), for the silent loop. */
+function silentWavUrl(): string {
+  const n = 800;
+  const b = new DataView(new ArrayBuffer(44 + n));
+  const text = (at: number, t: string) => [...t].forEach((c, k) => b.setUint8(at + k, c.charCodeAt(0)));
+  text(0, 'RIFF');
+  b.setUint32(4, 36 + n, true);
+  text(8, 'WAVEfmt ');
+  b.setUint32(16, 16, true);
+  b.setUint16(20, 1, true);
+  b.setUint16(22, 1, true);
+  b.setUint32(24, 8000, true);
+  b.setUint32(28, 8000, true);
+  b.setUint16(32, 1, true);
+  b.setUint16(34, 8, true);
+  text(36, 'data');
+  b.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([b.buffer], { type: 'audio/wav' }));
 }
