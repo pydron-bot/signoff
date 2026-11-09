@@ -78,10 +78,28 @@ function normalInput(f: FighterData, id: string): string | null {
   return null;
 }
 
-function finisherRow(fin: FinisherData): MoveRow {
-  const input = fin.kind === 'cancellation' ? `win with ${fin.trigger}` : `${fin.input.map((d) => TAP[d]).join(' ')} ${fin.button === 'block' ? 'BLOCK' : fin.button}`;
-  const kind = fin.kind === 'signoff' ? 'Sign-Off' : fin.kind === 'rerun' ? 'merciful' : 'Cancellation';
-  return { name: fin.name, input, notes: fin.kind === 'cancellation' ? kind : `${kind} · ${RANGE[fin.range]}`, frames: '' };
+/** What ends the match for a cancellation, in a few words that don't give it away. */
+function triggerKind(f: FighterData, fin: FinisherData): string {
+  const m = f.moves[fin.trigger!];
+  const what = m.kind === 'throw' || m.throwData ? (m.kind === 'throw' ? 'a throw' : 'a grab') : m.kind === 'super' ? 'Technical Difficulties' : m.kind === 'special' ? (m.stance === 'air' ? 'an air special' : 'a special') : 'a string';
+  return fin.hold ? `${what}, holding a direction` : what;
+}
+
+/** The cancellation everyone knows about: a special on the ground, nothing held. The others are found by playing. */
+export function openCancellation(f: FighterData, fin: FinisherData): boolean {
+  return fin.kind === 'cancellation' && !fin.hold && Object.values(f.specials).includes(fin.trigger!);
+}
+
+function finisherRow(f: FighterData, fin: FinisherData, found: (id: string) => boolean): MoveRow {
+  if (fin.kind === 'cancellation') {
+    if (!openCancellation(f, fin) && !found(fin.id)) return { name: '???', input: `win with ${triggerKind(f, fin)}`, notes: 'Cancellation · not found yet', frames: '' };
+    const m = f.moves[fin.trigger!];
+    const how = m.kind === 'normal' ? `${m.name} (the end of a string)` : m.name;
+    return { name: fin.name, input: `win with ${how}${fin.hold ? `, holding ${TAP[fin.hold]}` : ''}`, notes: 'Cancellation', frames: '' };
+  }
+  const input = `${fin.input.map((d) => TAP[d]).join(' ')} ${fin.button === 'block' ? 'BLOCK' : fin.button}`;
+  const kind = fin.kind === 'signoff' ? 'Sign-Off' : 'merciful';
+  return { name: fin.name, input, notes: `${kind} · ${RANGE[fin.range]}`, frames: '' };
 }
 
 /** The fighter's combo guides: the presses in order (a boost as SP SP), and what the combo does. */
@@ -100,7 +118,8 @@ export function comboRows(fighter: string): MoveRow[] {
   });
 }
 
-export function moveList(fighter: string): MoveSection[] {
+/** `found` says which hidden cancellations a player has landed (all of them by default). */
+export function moveList(fighter: string, found: (id: string) => boolean = () => true): MoveSection[] {
   const f = fighterData(fighter);
   const specials: MoveRow[] = [];
   for (const dir of ['n', 'f', 'b', 'd'] as const) {
@@ -171,6 +190,6 @@ export function moveList(fighter: string): MoveSection[] {
     { title: 'Combos (from point blank; wait = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },
-    { title: 'Finishers (after the deciding round)', rows: f.finishers.map(finisherRow) },
+    { title: 'Finishers (after the deciding round)', rows: f.finishers.map((fin) => finisherRow(f, fin, found)) },
   ];
 }

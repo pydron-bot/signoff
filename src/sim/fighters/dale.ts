@@ -163,6 +163,9 @@ const finishers = [
     .blow(24, { react: 'none', damage: 90 })
     .blow(36, { react: 'none', damage: 130 })
     .done({ id: 'Severe Weather Warning', name: 'Severe Weather Warning', kind: 'signoff', range: 'far', input: ['d', 'b'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('bars').done({ id: 'Cold Snap', name: 'Cold Snap', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Cold Front', hold: 'b' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Washed Out', name: 'Washed Out', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Downpour' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Struck by Lightning', name: 'Struck by Lightning', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Heat Lightning' }, 40),
   rerun(moves),
 ];

@@ -153,6 +153,9 @@ const finishers = [
     .blow(26, { react: 'none', damage: 110 })
     .blow(40, { react: 'none', damage: 140 })
     .done({ id: 'Last Rites', name: 'Last Rites', kind: 'signoff', range: 'mid', input: ['d', 'b'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('standby').done({ id: 'Passing the Plate', name: 'Passing the Plate', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Collection Plate', hold: 'b' }, 40),
+  new Script(moves).wait(22).cut('bars').done({ id: 'Raptured', name: 'Raptured', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Rapture' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Final Collection', name: 'Final Collection', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Fire and Brimstone' }, 40),
   rerun(moves),
 ];

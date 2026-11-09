@@ -173,6 +173,9 @@ const finishers = [
     .blow(26, { react: 'none', damage: 95 })
     .blow(40, { react: 'none', damage: 150 })
     .done({ id: 'Exit Stage Left', name: 'Exit Stage Left', kind: 'signoff', range: 'far', input: ['b', 'f'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('standby').done({ id: 'Put Away', name: 'Put Away', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'throw', hold: 'b' }, 40),
+  new Script(moves).wait(22).cut('static').done({ id: 'Pulled the Strings', name: 'Pulled the Strings', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Cut the Strings' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'No Laughing Matter', name: 'No Laughing Matter', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Knock-Knock' }, 40),
   rerun(moves),
 ];

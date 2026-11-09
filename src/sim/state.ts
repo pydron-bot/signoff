@@ -89,6 +89,8 @@ export interface FighterState {
   cutAwayUsed: boolean;
   /** The move that took the last of this fighter's health ('' if none), for cancellations. */
   koMove: string;
+  /** The directions the winner held as that blow landed (heldDirs), for cancellations that ask for one. */
+  koHeld: number;
   tdUsed: boolean;
   /** Frames until Technical Difficulties can be tried again after a miss or a block. */
   tdCooldown: number;
@@ -211,6 +213,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     ko: false,
     cutAwayUsed: false,
     koMove: '',
+    koHeld: 0,
     tdUsed: false,
     tdCooldown: 0,
     wins: 0,

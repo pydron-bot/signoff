@@ -240,6 +240,9 @@ const finishers = [
     .blow(34, { react: 'none', damage: 87 })
     .blow(44, { react: 'none', damage: 120 })
     .done({ id: 'Feel the Burn', name: 'Feel the Burn', kind: 'signoff', range: 'mid', input: ['d', 'f'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('static').done({ id: 'Hit the Wall', name: 'Hit the Wall', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Aerobic Dive' }, 40),
+  new Script(moves).wait(22).cut('bars').done({ id: 'Out of Step', name: 'Out of Step', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'FP FP FK FK BP' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Final Count', name: 'Final Count', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Count of Eight' }, 40),
   rerun(moves),
 ];

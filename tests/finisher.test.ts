@@ -40,9 +40,17 @@ const RANGE_GAP = { close: 1.0, mid: 1.8, far: 2.8, any: 1.8 } as const;
 
 describe('finisher data', () => {
   for (const f of roster) {
-    it(`${f.name}: two Sign-Offs, a Rerun and a Cancellation that hold together`, () => {
+    it(`${f.name}: two Sign-Offs, a Rerun and three Cancellations that hold together`, () => {
       const kinds = f.finishers.map((x) => x.kind).sort();
-      expect(kinds).toEqual(['cancellation', 'rerun', 'signoff', 'signoff']);
+      expect(kinds).toEqual(['cancellation', 'cancellation', 'cancellation', 'rerun', 'signoff', 'signoff']);
+      // One of them is ended by a special on the ground, as before; each asks for something different.
+      const cancels = f.finishers.filter((x) => x.kind === 'cancellation');
+      expect(cancels.some((x) => Object.values(f.specials).includes(x.trigger!) && !x.hold)).toBe(true);
+      expect(new Set(cancels.map((x) => `${x.trigger}/${x.hold ?? ''}`)).size).toBe(cancels.length);
+      // A held-direction version comes before a plain one on the same move, or the plain one would always win.
+      cancels.forEach((x, k) => {
+        if (x.hold) for (const y of cancels.slice(0, k)) expect(y.trigger === x.trigger && !y.hold, x.id).toBe(false);
+      });
       expect(f.show.length).toBeGreaterThan(0);
       for (const fin of f.finishers) {
         expect(fin.cut).toBeGreaterThan(0);
@@ -54,7 +62,7 @@ describe('finisher data', () => {
           if (b.move) expect(f.moves[b.move], `${fin.id}: ${b.move}`).toBeDefined();
         }
         if (fin.kind === 'cancellation') {
-          expect(Object.values(f.specials)).toContain(fin.trigger);
+          expect(f.moves[fin.trigger!], `${fin.id}: ${fin.trigger}`).toBeDefined();
           expect(fin.input).toEqual([]);
         } else {
           expect(fin.input.length).toBeGreaterThanOrEqual(2);
@@ -152,6 +160,51 @@ describe('cancellations', () => {
     place(m, -0.3, 0.3);
     const ev = run(m, 600, presses({ 0: SPECIAL }));
     expect(ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Final Collection', kind: 'cancellation' });
+  });
+
+  it('one that asks for a held direction needs it: Dale\'s Cold Front, holding back, is Cold Snap', () => {
+    const fin = (hold: number) => {
+      const m = ready('dale', 'rox');
+      m.fighters[0].wins = 1;
+      m.fighters[1].health = 1;
+      place(m, -1.5, 1.5);
+      const ev = run(m, 400, (_m, t) => (t === 0 ? RIGHT | SPECIAL : hold));
+      return { m, ev };
+    };
+    const held = fin(LEFT);
+    expect(held.ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Cold Snap', kind: 'cancellation' });
+    // Without it, Cold Front is just a finishing blow.
+    expect(fin(0).m.phase).toBe('stayTuned');
+  });
+
+  it('an air special can end it too (Rox: Aerobic Dive is Hit the Wall)', () => {
+    const m = ready('rox', 'dale');
+    m.fighters[0].wins = 1;
+    m.fighters[1].health = 1;
+    place(m, -1.0, 0.2);
+    const ev = run(m, 400, presses({ 0: UP, 10: SPECIAL }));
+    expect(ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Hit the Wall' });
+  });
+
+  it('a string ender, or a throw, can be the trigger (Hollis: Cuff \'Em is Cuffed)', () => {
+    const m = ready('hollis', 'rox');
+    m.fighters[0].wins = 1;
+    place(m, -0.4, 0.4);
+    // The grab at the end of the string catches them reeling, and that's the K.O.
+    m.fighters[1].health = 2000;
+    const hollis = FIGHTERS.hollis;
+    const ev = run(m, 400, (mm, t) => {
+      const a = mm.fighters[0];
+      if (t === 0) return Input.FP;
+      if (a.mode === 'move' && a.move === 's.FP' && a.moveFrame === (hollis.moves['s.FP'].cancel?.[0] ?? 2) - 1) return Input.FP;
+      if (a.mode === 'move' && a.move === 'FP FP' && a.moveFrame === (hollis.moves['FP FP'].cancel?.[0] ?? 2) - 1) {
+        mm.fighters[1].health = 1;
+        return FK;
+      }
+      return 0;
+    });
+    const fin = ev.find((e) => e.type === 'finisher');
+    expect(fin).toMatchObject({ id: 'Cuffed' });
   });
 
   it('any other finishing blow goes to Stay tuned', () => {

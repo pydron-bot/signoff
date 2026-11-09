@@ -194,8 +194,10 @@ export interface FinisherData {
   /** Taps in order, then the button (all within FINISH_INPUT_WINDOW). Empty for a cancellation. */
   readonly input: readonly FinishDir[];
   readonly button: Attack | 'block';
-  /** A cancellation: the special (or its boost) that must land the final K.O. */
+  /** A cancellation: the move (a special counts with its boost) that must land the final K.O. */
   readonly trigger?: string;
+  /** A cancellation: the direction the winner must be holding as it lands. */
+  readonly hold?: FinishDir;
   readonly beats: readonly FinishBeat[];
   /** The step the picture cuts away, and to what. */
   readonly cut: number;

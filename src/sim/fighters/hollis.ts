@@ -176,6 +176,9 @@ const finishers = [
     .blow(30, { react: 'none', damage: 95 })
     .blow(46, { react: 'none', damage: 140 })
     .done({ id: 'End of Shift', name: 'End of Shift', kind: 'signoff', range: 'mid', input: ['f', 'd'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('static').done({ id: 'Off Duty', name: 'Off Duty', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Searchlight' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Cuffed', name: 'Cuffed', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'FP FP FK' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Clocked Out', name: 'Clocked Out', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Clocking In' }, 40),
   rerun(moves),
 ];

@@ -1,5 +1,6 @@
 // Wiring only: logic lives in modules. Title (with a CPU-vs-CPU demo
 // behind it) → a session (vs CPU, training, vs player) → results.
+import { humanSide, loadFound, markFound } from './game/found';
 import * as THREE from 'three';
 import { registerSW } from 'virtual:pwa-register';
 import type { CpuLevel } from './ai/cpu';
@@ -33,6 +34,8 @@ import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 const FIGHTER_IDS = Object.keys(FIGHTERS);
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
+/** Cancellations players have found (signoff.found). */
+const found = loadFound();
 const SETUP_KEY = 'signoff.setup';
 const REPLAY_KEY = 'signoff.replay';
 /** Seconds the replay's back and forward buttons skip. */
@@ -609,6 +612,8 @@ renderer.setAnimationLoop((now) => {
       glitch.step();
       slowMo.step(s.match, ev);
       for (const e of ev) {
+        // A cancellation a player landed is found: the move list shows it from now on.
+        if (e.type === 'finisher' && e.kind === 'cancellation' && humanSide(s.options.mode, e.player)) markFound(found, s.match.fighters[e.player].fighter, e.id);
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();
         else {

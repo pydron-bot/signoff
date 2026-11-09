@@ -3,6 +3,7 @@
  * controls legend, and frame data in training. Scrolls with up/down (keys
  * or pad) or a swipe; left/right switch fighter; OK, back or pause closes.
  */
+import { loadFound } from '../game/found';
 import type { MenuKey } from '../input/devices';
 import { moveList } from '../game/moveList';
 import { fighterData } from '../sim';
@@ -78,7 +79,8 @@ export class MoveListPanel {
     const id = this.fighters[this.index];
     this.title.textContent = `${fighterData(id).name.toUpperCase()} · MOVE LIST`;
     this.body.replaceChildren();
-    for (const s of moveList(id)) {
+    const found = loadFound();
+    for (const s of moveList(id, (fin) => found.has(`${id}:${fin}`))) {
       const h = document.createElement('div');
       h.className = 'movelist-section';
       h.textContent = s.title.toUpperCase();

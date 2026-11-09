@@ -211,6 +211,9 @@ const finishers = [
     .blow(28, { react: 'none', damage: 110 })
     .blow(44, { react: 'none', damage: 140 })
     .done({ id: 'Last Service', name: 'Last Service', kind: 'signoff', range: 'mid', input: ['b', 'f'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('static').done({ id: 'Burnt', name: 'Burnt', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Flambé', hold: 'd' }, 40),
+  new Script(moves).wait(22).cut('standby').done({ id: 'Off the Menu', name: 'Off the Menu', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Cleaver Toss' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Eighty-Sixed', name: 'Eighty-Sixed', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Tenderise' }, 40),
   rerun(moves),
 ];

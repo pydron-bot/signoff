@@ -206,6 +206,9 @@ const finishers = [
     .blow(26, { react: 'none', damage: 110 })
     .blow(40, { react: 'none', damage: 140 })
     .done({ id: 'And That Was the News', name: 'And That Was the News', kind: 'signoff', range: 'mid', input: ['b', 'd'], button: 'BK' }, 100),
+  // More cancellations: each asks for its own way of ending it (and a held direction comes before a plain one).
+  new Script(moves).wait(16).cut('standby').done({ id: 'Dead Air', name: 'Dead Air', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'On the Wire' }, 40),
+  new Script(moves).wait(22).cut('bars').done({ id: 'Correction', name: 'Correction', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Teleprompter Read' }, 40),
   new Script(moves).wait(20).cut('off').done({ id: 'Stop the Presses', name: 'Stop the Presses', kind: 'cancellation', range: 'any', input: [], button: 'block', trigger: 'Breaking' }, 40),
   rerun(moves),
 ];

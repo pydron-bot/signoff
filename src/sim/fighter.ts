@@ -126,6 +126,18 @@ export function setSlide(f: FighterState, dir: number, speed: Fx): void {
   f.slideDir = dir < 0 ? -1 : 1;
 }
 
+/** The directions a fighter holds, relative to facing: 1 forward, 2 back, 4 down, 8 up. */
+export function heldDirs(f: FighterState): number {
+  const h = f.input.held;
+  return (h & forwardBit(f.facing) ? 1 : 0) | (h & backBit(f.facing) ? 2 : 0) | (h & DOWN ? 4 : 0) | (h & UP ? 8 : 0);
+}
+
+/** The blow that took the last of `d`'s health: which move, and what its attacker held (for cancellations). */
+export function markKo(d: FighterState, a: FighterState, move: string): void {
+  d.koMove = move;
+  d.koHeld = heldDirs(a);
+}
+
 /** Returns true if this took the fighter's last health. */
 export function takeDamage(f: FighterState, dmg: number): boolean {
   f.health = Math.max(0, f.health - dmg);
@@ -223,7 +235,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
     dir = -t.facing;
   }
   const ko = takeDamage(f, dmg);
-  if (ko) f.koMove = grabMove;
+  if (ko) markKo(f, t, grabMove);
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
   ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
@@ -236,7 +248,7 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   const dmg = Math.floor((f.maxHealth * TD_DAMAGE_PCT) / 100);
   f.victim = false;
   const ko = takeDamage(f, dmg);
-  if (ko) f.koMove = 'td';
+  if (ko) markKo(f, a, 'td');
   const dir = f.x >= a.x ? 1 : -1;
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);

@@ -125,16 +125,23 @@ export function afterStayTuned(m: MatchState): void {
   settleLoser(m, true);
 }
 
-/** The cancellation the winner earned with the final K.O., or null. */
+const HOLD_BIT: Readonly<Record<FinishDir, number>> = { f: 1, b: 2, d: 4, u: 8 };
+
+/**
+ * The cancellation the winner earned with the final K.O., or null. They're
+ * tried in the order the fighter lists them, so one that asks for a held
+ * direction comes before a plain one on the same move.
+ */
 export function earnedCancellation(m: MatchState, winner: number): FinisherData | null {
   const w = m.fighters[winner];
   const l = m.fighters[1 - winner];
   if (!l.ko || !l.koMove) return null;
   for (const fin of fighterData(w.fighter).finishers) {
     if (fin.kind !== 'cancellation' || !fin.trigger) continue;
+    if (fin.hold && (l.koHeld & HOLD_BIT[fin.hold]) === 0) continue;
     const t = moveData(w.fighter, fin.trigger);
     // The special itself, its boost, or its paid-for version.
-    if (l.koMove === fin.trigger || l.koMove === t.boost || l.koMove === t.tithe?.into) return fin;
+    if (l.koMove === fin.trigger || l.koMove === `${fin.trigger}+` || l.koMove === t.boost || l.koMove === t.tithe?.into) return fin;
   }
   return null;
 }

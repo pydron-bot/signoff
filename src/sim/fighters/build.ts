@@ -324,7 +324,7 @@ export class Script {
   }
 
   /** The finished data; the closing card comes `card` frames after the cut. */
-  done(head: { id: string; name: string; kind: FinisherKind; range: FinishRange; input: FinishDir[]; button: Attack | 'block'; trigger?: string }, card: number): FinisherData {
+  done(head: { id: string; name: string; kind: FinisherKind; range: FinishRange; input: FinishDir[]; button: Attack | 'block'; trigger?: string; hold?: FinishDir }, card: number): FinisherData {
     if (!this.cutAt) throw new Error(`finisher ${head.id} never cuts away`);
     const cardAt = this.cutAt + card;
     return { ...head, beats: [...this.beats].sort((a, b) => a.at - b.at), cut: this.cutAt, censor: this.censor, card: cardAt, total: cardAt + FINISH_CARD_FRAMES };
