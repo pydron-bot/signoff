@@ -240,8 +240,10 @@ are authored facing right with the left foot and left hand leading.
 > 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
-> 5. **Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price** (Nov 9): the two new fighters, on the step 16 skeleton. They play as grey boxes until then.
-> 6. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
+> 5. **Step 21 A, finger joints** (Nov 9): the rig change, first, so the new fighters are built on it.
+> 6. **Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price** (Nov 9): the two new fighters, on the step 21 A skeleton and to step 21 B–C's standard. They play as grey boxes until then.
+> 7. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
+> 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -539,7 +541,7 @@ lengths, and fails a GLB over 2 MB.
 
 *Done (Nov 9). Notes under* The skeleton (Nov 9, art side) *in Feedback.*
 
-- [x] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`. *Done: placed from each fighter's hand and head scale; `RIG_BONES` in `tests/assets.test.ts` now includes them (required).*
+- [x] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. *(Superseded by step 21 A: each group's bone splits at the knuckles.)* Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`. *Done: placed from each fighter's hand and head scale; `RIG_BONES` in `tests/assets.test.ts` now includes them (required).*
 - [x] Hands posed by the bones in every clip, generated from the move data like the rest: a fist on strikes (replacing the `fist_L`/`fist_R` shape keys: drop them, it saves about a tenth of each GLB), open on blocks, `hit_*`, `launched` and `dazed` (fingers splayed), grabbing on throws and `Clocking In`/`Cuff 'Em`, pointing where it's in character (Dale at the map in `intro`, Margaret at the camera). *Done: the mitts are four pieces now (palm, index, three fingers, thumb); the fist keys are gone. Dale points back at the map (his left) through `intro`. Margaret's point comes with her.*
 - [x] The jaw on its bone: gritted on strikes, a shout on specials, slack in `ko` and `dazed`, talking in intros and wins. Mumbles' `jaw` shape key becomes the bone (his clacking and `Knock-Knock` knocks). *Done: the chin and the mouth's lower half ride it, so the mouth opens; Mumbles' jaw slides straight down between its slots instead of hinging (`JAW_SLIDE`). Shouts run over a special's hits, spawns, grab or counter window; strikes keep it shut.*
 - [x] Secondary motion on each fighter's own `x_*` bones, baked as a seeded spring (lag and overshoot) from the bone it hangs from, so every clip gets it without hand keys: Dale's tie (2 bones) and quiff, Rox's perm (2–3) and headband tails, Hollis's key ring and cap peak, Mumbles' bow tie and the slack of his strings, Margaret's pages and bob. Keep it small: nothing may push the mesh outside the hurtbox checks. *Done (`lib/spring.py`): Dale `x_tie`, `x_tie_end`, `x_quiff`; Rox `x_perm`, `x_perm.L/R`, `x_band` (new headband tails, tied at the back); Hollis `x_keys`, `x_peak`; Mumbles `x_bow` and an `x_string_*` per string, whose middle chases its end with a lag. Every build check still passes. Margaret's come with her.*
@@ -769,6 +771,53 @@ and the rest as above. The game side is in (0.22.0: `src/sim/stages.ts`,
 - [ ] `prop_pot` and `prop_knives` at the sizes above
 - [ ] `fx_flare`, `fx_mark`
 - [ ] Pass `tests/assets.test.ts`'s `kitchen.glb` checks
+
+### 21. Low-poly plus: what to keep from the HD experiment (Nov 9, game side)
+
+`art/dale-hd-experiment` rebuilt Dale as one detailed character: sculpted as
+distance fields in code, 17,778 triangles, one mesh and material, PBR with
+baked normal and roughness maps, three joints per finger. Reviewed on Nov 9
+in the viewer and in a training match on the iPhone profile: up close it's a
+big step (a real face, real hands), but at play size (a fighter is 200–300
+pixels tall on the phone) the detail disappears, the game draws fighters
+with Lambert (`src/render/fighterModel.ts`), so the normal and roughness maps
+are dropped, and a smooth, semi-realistic Dale clashes with the faceted
+roster. It also misses the GLB contract (4.8 MB, JPEG textures, no `fx_*`
+meshes or shape keys, finger bones outside the rig).
+
+**Decision (Derek, Nov 9): keep the stylised low-poly look and bring over
+the experiment's best ideas.** Don't merge the branch; its code is the
+reference: `git show origin/art/dale-hd-experiment:blender/experiments/dale_hd/<file>`.
+
+| From the experiment | Keep? |
+| --- | --- |
+| Three joints per finger, curls spread over them (`build.py`: `split_fingers`, `spread_curls`) | **Yes** (A) |
+| Hand proportions: phalanx lengths, knuckles, palm and thumb ball (`hands.py`: `FINGERS`) | **Yes**, faceted (A) |
+| Faces closed with no tunnels, checked by genus (`topology.py`) | **Yes** (B) |
+| Lips set into the face, painted from their outline (`head.py`, `paint.py`) | **Yes** (B) |
+| More texel density on the face and hands than the body (`build.py`: `DENSITY`) | **Yes**, within today's atlas sizes (C) |
+| Smooth shading, normal and roughness maps, JPEG textures, 18k triangles | **No** |
+
+**A. Finger joints** (first: Gus and Gideon are built on it)
+
+- [ ] Split each finger group's bone at the knuckles: new shared deform bones `thumb_2`, `index_2`, `index_3`, `fingers_2`, `fingers_3` on each hand (`.L`, `.R`), each the child of the one before, in `blender/lib/rig.py` DEFORM. The names are `FINGER_JOINTS` in `tests/assets.test.ts`, which accepts all ten or none while fighters are rebuilt. Bone counts stay under 48 (Mumbles, the most, goes from 35 to 45).
+- [ ] Spread the curls: the rig's one-hinge curl (100°) becomes about 90°, 100° and 70° over the three knuckles, using each bone's bend sign; a splay or an open hand stays on the base joint, halved, so fingers never bend backwards. Port `spread_curls` into `lib/anim.py` so every generated clip gets it.
+- [ ] Hands modelled to the joints, still faceted: each finger as separate tapering pieces (4–6 sides), knuckle bumps, a palm with the thumb's ball. About 400 triangles a hand.
+- [ ] Mind the 2 MB: ten more bones in about 66 clips. Key the new joints only where they move (not every frame) and keep the spring off them. If a GLB still can't fit, note it in Feedback rather than raising the limit.
+- [ ] Once every GLB has them, tell the game side to move `FINGER_JOINTS` into `RIG_BONES`.
+
+**B. Faces** (with 16 D's shape pass)
+
+- [ ] Planes that read at a distance: brow ridge, cheekbones, the nose as a wedge with nostrils, the jaw as its own piece on its bone.
+- [ ] No holes or tunnels: the experiment had one behind the nose bridge. Port `topology.py`'s genus check into the build checks (`lib/fighter.py`): the head and each hand must be genus 0.
+- [ ] Lips set into the face with tucked corners, painted from their outline with a soft edge instead of a flat shape.
+- [ ] Keep the stylised eyes (they read at play size); add a lid line.
+
+**C. Stay faceted, stay cheap**
+
+- [ ] Flat shading, one PNG atlas per material at today's sizes, Lambert-friendly colour (no normal, roughness or ORM maps). Give the face and hands more of the atlas than the body.
+- [ ] Body up to about 8,000 triangles (16 D), effects as now. Keep every shape key and `fx_*` mesh, the heights against the hurtboxes, every strike in its hitbox and the juggle-box checks.
+- [ ] Dale first: compare him with the experiment in the viewer's FACE view, then the rest. Gus and Gideon are built to this standard from the start.
 
 ### State clips (every fighter)
 
