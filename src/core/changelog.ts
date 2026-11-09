@@ -14,6 +14,21 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.31.0',
+    date: '2026-11-09',
+    title: 'Impact',
+    notes: [
+      'A closer camera: the fighters fill about half the screen now, not a quarter. It pulls back as you part, rises with jumps and juggles, and stops at the walls.',
+      'Hits have weight. A jab is quick and light; a heavy hit freezes longer, shakes the screen, flashes bigger and sounds it; a launcher, knockdown or bounce lands hardest of all. Frame advantage is exactly as it was.',
+      'Hits sound like what hit you: fists snap, kicks thump, Gus\'s pans ring and his knives shing, Hollis\'s nightstick knocks, and enders land with a low boom.',
+      'The signal spray: the picture tears where a hit lands, bars of broken video bursting the way the blow went. The harder the hit, the more it breaks.',
+      'The camera hits back: it leans with the blow and pushes in on launchers, wall splats, boosted specials and Technical Difficulties. Reduce Motion turns all of this off.',
+      'K.O.: the last hit plays in slow motion while the camera swings in on the loser.',
+      'The fighters stand out from the set: a rim of light in each segment\'s colour, and a shadow under their feet.',
+      "Mister Mumbles' boosted Hand Puppet hits a little softer (60 to 52), to keep his full-meter combo in line now that the timing of combos has shifted. Combo guides are updated to the new timing.",
+    ],
+  },
+  {
     version: '0.30.0',
     date: '2026-11-09',
     title: 'Standing Your Ground',

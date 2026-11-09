@@ -14,6 +14,12 @@ export type SpecialDir = 'n' | 'f' | 'b' | 'd';
 export type Stance = 'stand' | 'crouch' | 'air';
 export type MoveKind = 'normal' | 'air' | 'special' | 'throw' | 'super' | 'interact';
 export type Window = readonly [number, number];
+/**
+ * How hard a hit lands, for its freeze and for everything that shows it
+ * (camera, sparks, sound): 0 light, 1 medium, 2 heavy, 3 an ender (it
+ * launches, knocks down, bounces, relaunches or KOs).
+ */
+export type HitWeight = 0 | 1 | 2 | 3;
 
 /** A box in fighter space: +x is the way the fighter faces, y = 0 is their feet. */
 export interface Box {

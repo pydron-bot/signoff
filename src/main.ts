@@ -8,6 +8,7 @@ import { BUILD_ID } from './core/build';
 import { VERSION } from './core/changelog';
 import { GUIDE_DUMMY } from './game/comboGuides';
 import { FixedStep } from './game/loop';
+import { SlowMo } from './game/slowMo';
 import { parseReplay, type Replay } from './game/replay';
 import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
@@ -178,6 +179,8 @@ function keepReplay(r: Replay | null): void {
 }
 const ev: SimEvent[] = [];
 const clock = new FixedStep();
+/** A KO runs in slow motion for a moment. */
+const slowMo = new SlowMo();
 
 function newSession(mode: Mode, p1: string, p2: string, stage: string, level: CpuLevel = LEVELS[setup.level]): Session {
   const s = new Session({ mode, p1, p2, stage, level, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
@@ -220,6 +223,7 @@ function startDemo(): void {
   sound.stopMusic();
   title.hidden = false;
   glitch.clear();
+  slowMo.clear();
   document.body.dataset.scene = 'title';
   showTitle();
 }
@@ -305,6 +309,7 @@ function seekReplay(frame: number): void {
   arena.resync();
   hud.start(s.match, false);
   glitch.clear();
+  slowMo.clear();
   clock.reset();
 }
 
@@ -552,7 +557,7 @@ renderer.setAnimationLoop((now) => {
   if (!paused && !over && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
     const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
-    const n = clock.advance(now * speed);
+    const n = clock.advance(now * speed, slowMo.scale);
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
@@ -567,6 +572,7 @@ renderer.setAnimationLoop((now) => {
         glitch.onEvents(ev);
       }
       glitch.step();
+      slowMo.step(s.match, ev);
       for (const e of ev) {
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();

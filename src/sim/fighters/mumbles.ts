@@ -63,7 +63,7 @@ const moves = table(
     name: 'Hand Puppet (boosted)',
     kind: 'special',
     total: 30,
-    hits: [strike({ frames: [8, 10], reach: [0.15, 1.2], at: [0.6, 1.3], damage: 60, hitstun: 0, blockstun: 14, launch: 0.15 })],
+    hits: [strike({ frames: [8, 10], reach: [0.15, 1.2], at: [0.6, 1.3], damage: 52, hitstun: 0, blockstun: 14, launch: 0.15 })],
     spawns: [{ frame: 12, projectile: decoy(2, 420) }],
   }),
   move('Strings Attached', {

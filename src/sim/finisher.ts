@@ -9,6 +9,7 @@
  */
 import { BUFFER, FINISH_CLOSE, FINISH_FAR, FINISH_INPUT_WINDOW, GETUP_FRAMES } from './constants';
 import type { SimEvent } from './events';
+import { hitWeight } from './combat';
 import { footwork, launch, moveOf, startMove, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
@@ -214,7 +215,10 @@ function blow(m: MatchState, i: number, b: FinishBlow, id: string, ev: SimEvent[
     case 'none':
       break;
   }
-  if (b.damage > 0) ev.push({ type: 'hit', attacker: i, defender: 1 - i, move: id, damage: b.damage, height: b.react === 'low' ? 'low' : 'mid', counter: false, combo: l.combo, x: l.x, y: l.y });
+  if (b.damage > 0) {
+    const weight = hitWeight(b.damage, b.react === 'launch' || b.react === 'knockdown');
+    ev.push({ type: 'hit', attacker: i, defender: 1 - i, move: id, damage: b.damage, height: b.react === 'low' ? 'low' : 'mid', counter: false, combo: l.combo, weight, dir, x: l.x, y: l.y });
+  }
 }
 
 function stagger(l: FighterState, low: boolean): void {

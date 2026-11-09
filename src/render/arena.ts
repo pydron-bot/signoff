@@ -5,16 +5,19 @@
  * of their hurtboxes with attacks as limb boxes (lit red while they can
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
  * are some, else boxes. It reads the latest match step and the step's events
- * and never changes the match. About 16 draw calls, plus 3 to 7 a model.
+ * and never changes the match. About 19 draw calls (the signal spray is
+ * one, the contact shadows two), plus 3 to 7 a model.
  */
 import * as THREE from 'three';
 import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
 import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
-import { segmentData } from '../sim/stages';
 import type { Box } from '../sim/types';
+import { CameraRig, FOV } from './camera';
+import { ContactShadows, setRim } from './fighterLight';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
+import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
@@ -22,7 +25,9 @@ const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
-const FLASH = 0x9a9a9a;
+/** The hit flash by weight (light, medium, heavy, ender): steps, and how bright. */
+const FLASH_STEPS = [3, 4, 6, 8] as const;
+const FLASH = [0x303030, 0x404040, 0x585858, 0x707070] as const;
 
 /**
  * How an effect mesh is placed: on a projectile (its look), stretched over
@@ -94,6 +99,7 @@ interface FighterView {
   bodyMat: THREE.MeshLambertMaterial;
   limbMat: THREE.MeshLambertMaterial;
   flash: number;
+  flashColor: number;
   /** The 3D model once loaded, and which fighter it's for. */
   model: FighterModel | null;
   id: string;
@@ -133,7 +139,9 @@ class EffectSlot {
 
 export class Arena {
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.1, 80);
+  readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 0.1, 80);
+  /** Where the camera goes, step by step (src/render/camera.ts). */
+  private readonly rig = new CameraRig();
   private readonly fighters: FighterView[];
   private readonly projectiles: THREE.Mesh[] = [];
   private readonly projectileFx: EffectSlot[] = [];
@@ -145,11 +153,12 @@ export class Arena {
   private shared: Map<string, THREE.Object3D> | null = null;
   private readonly fist = new THREE.Vector3();
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
-  private shake = 0;
-  private camX = 0;
-  private camZ = 12;
-  private camY = 2.1;
-  reduceMotion = false;
+  get reduceMotion(): boolean {
+    return this.rig.reduceMotion;
+  }
+  set reduceMotion(on: boolean) {
+    this.rig.reduceMotion = on;
+  }
   showBoxes = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
   private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
@@ -157,6 +166,9 @@ export class Arena {
   private readonly hurtOffMat = new THREE.LineBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.35 });
   private readonly stage: StageView;
   private readonly sparks: Sparks;
+  private readonly burst: SignalBurst;
+  private readonly shadows: ContactShadows;
+  private readonly rim: THREE.DirectionalLight;
   private frame = 0;
   private projectileMat!: THREE.MeshBasicMaterial;
   /** The hand puppet decoy: a little wooden figure, not a blast of wind. */
@@ -173,8 +185,11 @@ export class Arena {
     this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0);
     this.scene.add(rim);
+    this.rim = rim;
+    this.shadows = new ContactShadows(this.scene);
     this.stage = new StageView(this.scene, { ambient, key, rim });
     this.sparks = new Sparks(this.scene);
+    this.burst = new SignalBurst(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
     this.projectileMat = pm;
@@ -208,7 +223,7 @@ export class Arena {
     const limb = new THREE.Mesh(this.unit, limbMat);
     group.add(body, head, limb);
     this.scene.add(group);
-    return { group, body, head, limb, bodyMat, limbMat, flash: 0, model: null, id: '', effect: new EffectSlot(this.scene) };
+    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], model: null, id: '', effect: new EffectSlot(this.scene) };
   }
 
   /**
@@ -219,6 +234,7 @@ export class Arena {
    */
   setFighters(m: MatchState): Promise<void> {
     this.poses.reset();
+    this.rig.reset();
     const loads: Promise<void>[] = [this.stage.setStage(m.stage)];
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
@@ -247,36 +263,43 @@ export class Arena {
   /** After a jump in time (a replay seek): poses start afresh from the new step. */
   resync(): void {
     this.poses.reset();
+    this.rig.reset();
+    this.burst.clear();
   }
 
   /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
   step(m: MatchState, ev: readonly SimEvent[]): void {
     this.poses.step(m, ev);
     this.sparks.update();
+    this.burst.update();
     for (const v of this.fighters) if (v.flash > 0) v.flash--;
     this.sparks.onEvents(ev);
+    this.burst.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
-        this.fighters[e.defender].flash = 6;
-        this.shake = Math.max(this.shake, e.damage >= 60 ? 0.12 : 0.05);
-      } else if (e.type === 'block') this.fighters[e.defender].flash = 3;
-      else if (e.type === 'superHit') this.shake = 0.25;
-      else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.shake = Math.max(this.shake, 0.15);
-      else if (e.type === 'hazardStrike' && e.hazard === 'shards') this.shake = Math.max(this.shake, 0.08);
-      else if (e.type === 'hazardStrike' && e.hazard === 'lamps') this.shake = Math.max(this.shake, 0.12);
-      else if (e.type === 'hazardStrike' && e.hazard === 'flare') this.shake = Math.max(this.shake, 0.06);
+        const v = this.fighters[e.defender];
+        v.flash = FLASH_STEPS[e.weight];
+        v.flashColor = FLASH[e.weight];
+      } else if (e.type === 'block') {
+        const v = this.fighters[e.defender];
+        v.flash = 3;
+        v.flashColor = FLASH[0];
+      }
     }
+    this.rig.step(m, ev);
   }
 
   resize(w: number, h: number): void {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.rig.aspect = w / h;
   }
 
   render(m: MatchState): void {
-    const [a, b] = m.fighters;
     this.frame++;
     this.stage.update(m, this.frame);
+    // After the set has lit the segment (its rim may pulse on the beat).
+    setRim(this.rim);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
@@ -301,28 +324,10 @@ export class Arena {
         slot.holder.scale.set(p.dir, 1, 1);
       }
     }
-    // Follow the midpoint; pull back as the fighters part.
-    const mid = (toFloat(a.x) + toFloat(b.x)) / 2;
-    const gap = Math.abs(toFloat(a.x) - toFloat(b.x));
-    const aspect = Math.max(this.camera.aspect, 1);
-    // A finisher comes in close and low, rising and pulling back to keep anyone thrown up in shot.
-    const close = m.phase === 'finisher';
-    const high = close ? Math.max(toFloat(a.y), toFloat(b.y)) : 0;
-    const wantZ = close ? Math.max(7, ((gap + 2.5) * 2.2) / aspect + 3.5 + high * 2) : Math.min(16, Math.max(10.5, ((gap + 4) * 2.2) / aspect + 6));
-    this.camY += ((close ? 1.6 + high * 0.6 : 2.1) - this.camY) * 0.08;
-    // The camera keeps the walls about in shot: it follows the fighters to 2.5 m short of them.
-    const reach = toFloat(segmentData(m.stage, m.segment).halfWidth) - 2.5;
-    this.camX += (Math.max(-reach, Math.min(reach, mid)) - this.camX) * 0.15;
-    this.camZ += (wantZ - this.camZ) * 0.1;
-    let sx = 0;
-    let sy = 0;
-    if (this.shake > 0.001 && !this.reduceMotion) {
-      sx = (Math.random() - 0.5) * this.shake;
-      sy = (Math.random() - 0.5) * this.shake;
-    }
-    this.shake *= 0.85;
-    this.camera.position.set(this.camX + sx, this.camY + sy, this.camZ);
-    this.camera.lookAt(this.camX + sx * 0.5, this.camY - 0.75, 0);
+    const c = this.rig.shot;
+    this.camera.position.set(c.x, c.y, c.z);
+    this.camera.lookAt(c.tx, c.ty, 0);
+    if (c.roll !== 0) this.camera.rotateZ(c.roll);
   }
 
   /** Shows the fx mesh for a fighter's move in `slot`, if it has one and the art is loaded. */
@@ -416,6 +421,7 @@ export class Arena {
         v.limbMat.opacity = model ? 0.4 : 1;
       }
     }
+    this.shadows.update(m, i, shown);
     if (shown) this.drawEffect(f, v, mv, x, y, model ? this.pose.clip : '');
     else v.effect.show('', undefined);
     // Flash when hit; dim while invulnerable on the floor.
@@ -428,7 +434,7 @@ export class Arena {
     else if (mv && mv.armor && !f.armorUsed && f.moveFrame >= mv.armor[0] && f.moveFrame <= mv.armor[1]) glow = 0x803000;
     else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') glow = 0x501070;
     v.bodyMat.emissive.setHex(glow);
-    model?.setTint(v.flash > 0 ? FLASH : glow);
+    model?.setTint(v.flash > 0 ? v.flashColor : glow);
     // The body's box always shows with the hit boxes; faded when nothing can hit it (on the floor, a knockdown, the juggle limit).
     const o = this.hurtOverlays[i];
     o.visible = this.showBoxes && shown;

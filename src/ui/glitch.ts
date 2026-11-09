@@ -51,7 +51,8 @@ export class Glitch {
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
-      if (e.type === 'hit' && (e.damage >= 60 || e.counter)) this.wobble = Math.max(this.wobble, 12);
+      // The tracking wobble on heavy hits and counters, longer on an ender.
+      if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, e.weight === 3 ? 16 : 10);
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
       else if (e.type === 'ko') this.staticLeft = 24;
       else if (e.type === 'superHit') this.standbyLeft = TD_CINEMATIC_FRAMES;

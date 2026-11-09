@@ -279,6 +279,44 @@ often lets the moment pass. Finisher inputs:
 | Chef Gus Lamarre (*Kitchen Live*) | Order Up: close, down, back, BP | Last Service: mid, back, forward, BK |
 | Rev. Gideon Price (*The Hour of Power*) | Faith Healing: close, forward, down, BP | Last Rites: mid, down, back, BK |
 
+### Hits and the camera
+
+What makes a hit land is how much the game reacts to it, and how much
+more it reacts to a big one than a small one.
+
+- **Hit weight.** Every strike lands *light* (under 40 damage before
+  scaling: jabs, the hits of a flurry), *medium* (40 to 59), *heavy* (60
+  and up) or as an *ender* (it launches, knocks down, bounces, relaunches
+  or KOs). The freeze on contact goes by weight: 6, 8, 11 and 14 frames,
+  4 more on a counter hit. Both fighters freeze together, so it changes no
+  frame advantage; a projectile keeps the plain 8, as its thrower doesn't
+  freeze with it.
+- **Everything else follows the weight:** the spark's size and how long it
+  lingers, the body's flash, the screen shake, the VHS wobble (heavy and
+  up), and the sound, built in layers: a snap (fist, foot, special, or the
+  ring of a pan, the shing of a blade, the knock of a nightstick), a thud,
+  a crunch from medium up, and a sub drop and tape warble on an ender. A
+  bus compressor keeps it loud without clipping.
+- **The signal spray** stands in for blood: thin bars of broken video
+  (red, magenta, white, cyan) burst from the contact the way the blow
+  travels, flicker like a tape dropout, fall a little and fade, more and
+  further the heavier the hit; an ender adds tracking tears across the
+  body.
+- **The camera** keeps the fighters about half the screen's height up
+  close, pulls back only as far as the gap between them needs, rises with
+  jumps and juggles, and stops short of the walls. It shakes by weight
+  (small hits barely stir it), leans the way the blow travels, and pushes
+  in on enders, launches, wall splats, boosts and Technical Difficulties.
+- **The KO.** The game drops to 30% speed for half a second of game time
+  (about 1.7 seconds), then eases back, while the camera swings round and
+  in on the loser. Replays and results are untouched: only the pacing
+  changes.
+- **The fighters' own light:** a rim on their edges in the segment's rim
+  colour, so they stand out from busy sets, and a soft contact shadow
+  that shrinks as they leave the floor.
+- Reduce Motion drops the shake, lean, push-ins and KO swing; the framing
+  and the slow motion stay.
+
 ### The broadcast look
 
 - Health bars are channel-strength meters; the round timer is a broadcast

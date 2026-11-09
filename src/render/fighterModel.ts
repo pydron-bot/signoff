@@ -9,6 +9,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { STEPS_PER_SECOND } from '../sim/constants';
+import { addRim } from './fighterLight';
 import { HELD_STAND_INS, LOOPS, standIn } from './pose';
 
 const loader = new GLTFLoader();
@@ -106,6 +107,7 @@ export class FighterModel {
       let mat = swapped.get(src);
       if (!mat) {
         mat = lambert(src);
+        addRim(mat);
         swapped.set(src, mat);
         this.materials.push(mat);
       }

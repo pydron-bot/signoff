@@ -25,7 +25,13 @@ export const AIR_ATTACK_LAND_FRAMES = 4;
 export const START_X = fx(1.5);
 
 // Hits
+/** The freeze of a hit that has no weight of its own: projectiles (only the defender freezes), hazards, a crushed guard. */
 export const HITSTOP = 8;
+/** A strike's freeze by weight (light, medium, heavy, ender): both fighters freeze, so it changes no frame advantage. */
+export const HITSTOP_BY_WEIGHT: readonly [number, number, number, number] = [6, 8, 11, 14];
+/** Damage (before scaling) from which a hit is medium, and heavy. */
+export const WEIGHT_MEDIUM = 40;
+export const WEIGHT_HEAVY = 60;
 export const BLOCKSTOP = 6;
 export const COUNTER_HITSTUN = 4;
 export const COUNTER_HITSTOP = 4;

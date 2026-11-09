@@ -219,7 +219,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
   if (ko) f.koMove = grabMove;
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
-  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
+  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
 }
 
@@ -230,9 +230,10 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   f.victim = false;
   const ko = takeDamage(f, dmg);
   if (ko) f.koMove = 'td';
-  launch(f, f.x >= a.x ? 1 : -1, KNOCK_VY, false);
+  const dir = f.x >= a.x ? 1 : -1;
+  launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
-  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, x: f.x, y: f.y });
+  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
   if (ko) ev.push({ type: 'ko', player: i });
 }
 

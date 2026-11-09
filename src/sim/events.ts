@@ -4,12 +4,13 @@
  * them and never write back. Players are 0 and 1; -1 means nobody (a draw).
  */
 import type { Fx } from './fixed';
-import type { Censor, FinisherKind, Height } from './types';
+import type { Censor, FinisherKind, Height, HitWeight } from './types';
 
 export type SimEvent =
   | { type: 'roundStart'; round: number; segment: number }
   | { type: 'fight'; round: number }
-  | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; x: Fx; y: Fx }
+  /** `dir` is the way the blow travels (+1 toward +x); `weight` how hard it lands. */
+  | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; weight: HitWeight; dir: number; x: Fx; y: Fx }
   | { type: 'block'; attacker: number; defender: number; move: string; chip: number; x: Fx; y: Fx }
   /** The round's first hit: the attacker gets a bar. */
   | { type: 'firstHit'; player: number }

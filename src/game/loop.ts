@@ -10,10 +10,14 @@ export class FixedStep {
 
   constructor(private readonly maxSteps = 4) {}
 
-  /** Steps to run for a frame at time `now` (ms). A long stall drops time rather than fast-forwarding. */
-  advance(now: number): number {
+  /**
+   * Steps to run for a frame at time `now` (ms), with time running at
+   * `scale` (slow motion below 1). A long stall drops time rather than
+   * fast-forwarding.
+   */
+  advance(now: number, scale = 1): number {
     if (this.last < 0) this.last = now;
-    this.acc += Math.min(now - this.last, STEP_MS * this.maxSteps);
+    this.acc += Math.min(now - this.last, STEP_MS * this.maxSteps) * scale;
     this.last = now;
     let n = 0;
     while (this.acc >= STEP_MS - 0.01 && n < this.maxSteps) {
