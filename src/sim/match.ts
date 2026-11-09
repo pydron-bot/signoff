@@ -208,6 +208,7 @@ function nextRound(m: MatchState, ev: SimEvent[]): void {
     fresh.wins = f.wins;
     fresh.meter = f.meter;
     fresh.tdUsed = f.tdUsed;
+    fresh.tdCooldown = f.tdCooldown;
     Object.assign(f, fresh);
   });
   for (const p of m.projectiles) p.active = false;

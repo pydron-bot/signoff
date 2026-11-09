@@ -42,6 +42,8 @@ export type SimEvent =
   | { type: 'cutAway'; player: number }
   | { type: 'superStart'; player: number }
   | { type: 'superHit'; player: number }
+  /** Technical Difficulties has recharged after a miss or a block. */
+  | { type: 'superReady'; player: number }
   | { type: 'knockdown'; player: number }
   | { type: 'ko'; player: number }
   | { type: 'roundOver'; winner: number; reason: 'ko' | 'time' }

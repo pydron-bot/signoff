@@ -189,6 +189,7 @@ export class Session {
       for (const f of m.fighters) {
         f.health = f.maxHealth;
         f.tdUsed = false;
+        f.tdCooldown = 0;
         f.cutAwayUsed = false;
       }
       m.fighters[0].meter = METER_MAX;

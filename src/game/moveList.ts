@@ -4,7 +4,7 @@
  * normals, the system moves and the finishers. Directions are written for a
  * fighter facing right (→ is forward). No DOM here.
  */
-import { BOOST_TAP, DELAYED_GETUP, FLAWLESS_BLOCKSTUN_CUT, FLAWLESS_WINDOW, PUNISH_DAMAGE_PCT, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
+import { BOOST_TAP, DELAYED_GETUP, FLAWLESS_BLOCKSTUN_CUT, FLAWLESS_WINDOW, PUNISH_DAMAGE_PCT, TD_HEALTH_PCT, TD_RECHARGE_FRAMES, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
 import { guides, runGuide } from './comboGuides';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
@@ -157,7 +157,7 @@ export function moveList(fighter: string): MoveSection[] {
     { name: 'Jump Cancel', input: '↑ (or ↗) as a launcher hits', notes: 'a hop after them, into an air string and an air special', frames: '' },
     { name: 'Tape Skip', input: 'METER during any ground move', notes: 'cancels it into a dash: 1 bar', frames: '' },
     { name: 'Cut Away', input: 'METER while being hit', notes: 'breaks the combo: needs a full meter and spends all of it, once a round', frames: '' },
-    { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },
+    { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health; once it lands it's gone for the match, but missed or blocked it comes back after ${TD_RECHARGE_FRAMES / 60} seconds`, frames: '' },
     { name: 'Flawless Block', input: 'BLOCK just before the hit', notes: `pressed within ${FLAWLESS_WINDOW} frames of it landing: no chip, out of blockstun ${FLAWLESS_BLOCKSTUN_CUT} frames sooner (easier to punish), a little meter`, frames: '' },
     { name: 'Stay Down', input: '↓ while knocked down', notes: `get up ${DELAYED_GETUP} frames later, once a knockdown: their timed attack on your getup misses`, frames: '' },
     { name: 'Reversal', input: 'any attack while getting up', notes: 'comes out on the first frame you can move', frames: '' },

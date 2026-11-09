@@ -17,7 +17,7 @@ import { Arena } from './render/arena';
 import { powerOn } from './render/look';
 import { setOutlineSize } from './render/outline';
 import { Post } from './render/post';
-import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
+import { FIGHTERS, Input, STAGES, STAGE_IDS, canTD, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
@@ -627,7 +627,7 @@ renderer.setAnimationLoop((now) => {
   if (!demo) {
     hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : s.guideRun ? showcaseCaption(s) : '');
     const p1 = m.fighters[0];
-    touch.setTD(!p1.tdUsed && p1.health > 0 && p1.health * 100 < p1.maxHealth * TD_HEALTH_PCT);
+    touch.setTD(canTD(p1));
     touch.setInteract(propInReach(m, p1) >= 0);
   }
   inputSides(session);

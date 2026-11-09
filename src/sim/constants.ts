@@ -128,6 +128,8 @@ export const CUT_AWAY_FRAMES = 20;
 export const TD_HEALTH_PCT = 30;
 export const TD_DAMAGE_PCT = 30;
 export const TD_CINEMATIC_FRAMES = 150;
+/** Missed or blocked, it comes back after this long (only a hit spends it for the match). */
+export const TD_RECHARGE_FRAMES = 12 * STEPS_PER_SECOND;
 
 // Rounds
 export const ROUND_FRAMES = 60 * STEPS_PER_SECOND;

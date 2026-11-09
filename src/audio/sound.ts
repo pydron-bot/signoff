@@ -274,6 +274,13 @@ export class Sound {
         case 'reversal':
           this.tone(440, 0.2, 0.08, 'sawtooth', 880);
           break;
+        case 'superReady':
+          // The test tone coming back on: Technical Difficulties is there again.
+          this.tone(1000, 0.25, 0.06, 'sine');
+          break;
+        case 'jumpCancel':
+          this.noise(0.08, 2400, 0.08, 'highpass');
+          break;
         case 'special':
           if (e.move.startsWith('Knock-Knock')) {
             // Two knocks on a wooden door.

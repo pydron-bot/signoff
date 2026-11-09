@@ -90,6 +90,8 @@ export interface FighterState {
   /** The move that took the last of this fighter's health ('' if none), for cancellations. */
   koMove: string;
   tdUsed: boolean;
+  /** Frames until Technical Difficulties can be tried again after a miss or a block. */
+  tdCooldown: number;
   wins: number;
   input: InputState;
 }
@@ -210,6 +212,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     cutAwayUsed: false,
     koMove: '',
     tdUsed: false,
+    tdCooldown: 0,
     wins: 0,
     input: createInput(),
   };

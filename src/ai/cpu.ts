@@ -6,7 +6,7 @@
  * It has its own seeded random numbers, so a match against it replays
  * exactly from the same seed.
  */
-import { BAR, Input, METER_MAX, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
+import { BAR, Input, METER_MAX, canTD, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
 import { propInReach } from '../sim/stage';
@@ -290,7 +290,7 @@ export class Cpu {
     const back = me.facing > 0 ? LEFT : RIGHT;
     const r = nextInt(this.rng, 100);
 
-    if (!me.tdUsed && me.health * 100 < me.maxHealth * TD_HEALTH_PCT && dist < fx(1.3) && this.roll(25)) {
+    if (canTD(me) && dist < fx(1.3) && this.roll(25)) {
       this.start(tap(BLOCK | SPECIAL, BLOCK));
       return;
     }

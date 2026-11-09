@@ -30,6 +30,7 @@ import {
   TAPE_SKIP_SPEED,
   TD_DAMAGE_PCT,
   TD_HEALTH_PCT,
+  TD_RECHARGE_FRAMES,
   TECH_FRAMES,
   TECH_PUSH,
   THROW_HOLD,
@@ -140,6 +141,8 @@ export function takeDamage(f: FighterState, dmg: number): boolean {
 export function tick(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
   if (f.wakeup > 0 && f.mode !== 'getup') f.wakeup--;
+  // Recharging only while the fight is on (and not during its own attempt).
+  if (f.tdCooldown > 0 && m.phase === 'fight' && f.move !== fighterData(f.fighter).superMove && --f.tdCooldown === 0 && !f.tdUsed) ev.push({ type: 'superReady', player: i });
   switch (f.mode) {
     case 'move': {
       const mv = moveOf(f);
@@ -277,8 +280,9 @@ function scaled(v: Fx, pct: number): Fx {
   return pct === 100 ? v : Math.floor((v * pct) / 100);
 }
 
-function canTD(f: FighterState): boolean {
-  return !f.tdUsed && f.health > 0 && f.health * 100 < f.maxHealth * TD_HEALTH_PCT;
+/** Technical Difficulties is there to use: under 30% health, never landed this match, not recharging after a miss. */
+export function canTD(f: FighterState): boolean {
+  return !f.tdUsed && f.tdCooldown === 0 && f.health > 0 && f.health * 100 < f.maxHealth * TD_HEALTH_PCT;
 }
 
 function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
@@ -340,7 +344,8 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
   if (held & BLOCK) {
     if (pressed(inp, SPECIAL) && canTD(f)) {
       consume(inp, SPECIAL);
-      f.tdUsed = true;
+      // Spent only if it lands (combat.ts); a miss or a block leaves it recharging.
+      f.tdCooldown = TD_RECHARGE_FRAMES;
       startMove(f, d.superMove);
       ev.push({ type: 'superStart', player: i });
       return;

@@ -415,6 +415,9 @@ export function applyHit(
   }
 
   if (kind === 'super') {
+    // Landed: spent for the match.
+    a.tdUsed = true;
+    a.tdCooldown = 0;
     a.mode = 'cinematic';
     a.timer = TD_CINEMATIC_FRAMES;
     a.victim = false;

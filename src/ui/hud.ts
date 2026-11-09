@@ -276,6 +276,9 @@ export class Hud {
         case 'superHit':
           this.say('TECHNICAL DIFFICULTIES', 'PLEASE STAND BY', 150);
           break;
+        case 'superReady':
+          this.callout(e.player, 'SIGNAL RESTORED');
+          break;
         case 'firstHit': {
           const c = this.sides[e.player].combo;
           c.textContent = 'FIRST HIT';
