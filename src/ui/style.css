@@ -632,9 +632,41 @@ body[data-scene='title'] #app {
 
 .t-interact { right: 196px; top: 64px; border-color: #7affd8; font-size: 0.65rem; }
 
+/* The News stage's ticker: a crawl along the bottom, between the meters. */
+.hud-ticker {
+  position: absolute;
+  left: 27%;
+  right: 27%;
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  overflow: hidden;
+  white-space: nowrap;
+  background: rgba(150, 14, 20, 0.85);
+  border-top: 2px solid #f1ede0;
+  font-size: clamp(0.6rem, 1.6vw, 0.8rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 0;
+}
+
+.hud-ticker-crawl {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker 160s linear infinite;
+}
+
+@keyframes ticker {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hud-warning {
     animation: none;
+  }
+  .hud-ticker-crawl {
+    animation: none;
+    padding-left: 6px;
   }
 }
 

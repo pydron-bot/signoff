@@ -4,6 +4,7 @@ import { fx } from '../src/sim/fixed';
 import { setupRound } from '../src/sim/stage';
 import { DALE } from '../src/sim/fighters/dale';
 import { Input, STAGES, type MatchState, type SimEvent } from '../src/sim';
+import { homeStage } from '../src/sim/stages';
 import { count, place, presses, ready, run } from './sim-helpers';
 
 const { INTERACT, UP, RIGHT } = Input;
@@ -210,5 +211,61 @@ describe('Feel the Burn at Dawn', () => {
     expect(hz.period % 30).toBe(0);
     const ev = [...strike.ev, ...run(m, 20)];
     expect(ev.filter((e) => e.type === 'hazardHit')).toEqual([expect.objectContaining({ player: 0, damage: 60 })]);
+  });
+});
+
+describe("The Eleven O'Clock News", () => {
+  const news = (seg: number, p1 = 'dale', p2 = 'rox'): MatchState => {
+    const m = ready(p1, p2, { stage: 'news' });
+    m.segment = seg;
+    setupRound(m);
+    return m;
+  };
+
+  it('Headlines: the desk is shoved along the floor into the opponent, once', () => {
+    const m = news(0);
+    place(m, -0.6, 3);
+    const ev = run(m, 90, presses({ 0: INTERACT, 40: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(1);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, defender: 1, move: 'desk' });
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('Headlines: the desk can be jumped', () => {
+    const m = news(0);
+    place(m, -0.6, 3);
+    // Player 2 jumps as the desk arrives (it travels about 3 m at 0.1 m a step).
+    const ev = run(m, 70, presses({ 0: INTERACT }), presses({ 18: UP }));
+    expect(count(ev, 'hit')).toBe(0);
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('The Ticker: the riser throws whoever stands in the middle, not someone at the side', () => {
+    const m = news(1);
+    place(m, 0.2, 3);
+    const hz = STAGES.news.segments[1].hazards[0];
+    const warn = until(m, 'hazardWarn');
+    expect(warn.e).toMatchObject({ hazard: 'riser', caption: 'ANCHOR DESK RISING', all: true });
+    m.fighters[0].x = fx(0.2);
+    m.fighters[1].x = fx(3);
+    const ev = run(m, hz.warn + hz.active + 5);
+    const hits = ev.filter((e) => e.type === 'hazardHit');
+    expect(hits).toEqual([expect.objectContaining({ player: 0, damage: 40 })]);
+  });
+
+  it('Lights Out: a lamp falls on the announced spot', () => {
+    const m = news(2);
+    const warn = until(m, 'hazardWarn');
+    expect(warn.e).toMatchObject({ hazard: 'lamps', caption: 'LIGHTING FAILURE' });
+    const x = warn.e.type === 'hazardWarn' ? warn.e.x : 0;
+    m.fighters[0].x = x;
+    m.fighters[1].x = x > 0 ? x - fx(3) : x + fx(3);
+    const strike = until(m, 'hazardStrike');
+    const ev = [...strike.ev, ...run(m, 20)];
+    expect(ev.filter((e) => e.type === 'hazardHit')).toEqual([expect.objectContaining({ player: 0, damage: 70 })]);
+  });
+
+  it("is Margaret's home stage in Arcade", () => {
+    expect(homeStage("The Eleven O'Clock News")).toBe('news');
   });
 });

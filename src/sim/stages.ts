@@ -100,6 +100,19 @@ function boombox(): PropData {
   };
 }
 
+function desk(): PropData {
+  return {
+    id: 'desk',
+    name: 'News desk',
+    x: 0,
+    reach: fx(1.2),
+    // Shoved along the floor at waist height: heavy and slow, and low enough to jump.
+    box: box(-0.6, 0.6, 0, 0.8),
+    speed: fx(0.1),
+    effect: effect({ damage: 75, hitstun: 0, blockstun: 20, chip: 14, push: 0.07, knockdown: true }),
+  };
+}
+
 export const STAGES: Readonly<Record<string, StageData>> = {
   weather: {
     id: 'weather',
@@ -188,6 +201,60 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             halfW: 0.6,
             height: 6,
             effect: { damage: 60, hitstun: 30, blockstun: 1, push: 0.03 },
+          }),
+        ],
+        props: [],
+      },
+    ],
+  },
+  news: {
+    id: 'news',
+    name: "The Eleven O'Clock News",
+    segments: [
+      {
+        name: 'Headlines',
+        halfWidth: fx(6),
+        hazards: [],
+        props: [desk()],
+      },
+      {
+        name: 'The Ticker',
+        halfWidth: fx(6),
+        hazards: [
+          // The anchor desk rides up on its riser: anyone standing on the middle of the floor is thrown off.
+          hazard({
+            id: 'riser',
+            caption: 'ANCHOR DESK RISING',
+            spots: [0],
+            all: true,
+            first: 240,
+            period: 360,
+            warn: 75,
+            active: 12,
+            halfW: 1.0,
+            height: 0.3,
+            groundOnly: true,
+            effect: { damage: 40, hitstun: 0, blockstun: 1, launch: 0.17 },
+          }),
+        ],
+        props: [],
+      },
+      {
+        name: 'Lights Out',
+        halfWidth: fx(6),
+        hazards: [
+          // The rig fails one lamp at a time (the view dims with each).
+          hazard({
+            id: 'lamps',
+            caption: 'LIGHTING FAILURE',
+            spots: [-5, -3, -1, 1, 3, 5],
+            first: 180,
+            period: 300,
+            warn: 80,
+            active: 8,
+            halfW: 0.6,
+            height: 6,
+            effect: { damage: 70, hitstun: 0, blockstun: 1, knockdown: true },
           }),
         ],
         props: [],

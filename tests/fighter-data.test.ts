@@ -71,7 +71,8 @@ function measure(f: FighterData, seq: string[], next: number[], boost = false): 
     }
     if (lastBlockStep >= 0 && t > lastBlockStep) {
       if (attackerFree < 0 && m.fighters[0].mode !== 'move') attackerFree = t;
-      if (defenderFree < 0 && m.fighters[1].mode !== 'blockstun') defenderFree = t;
+      // A crushed guard reels in hitstun instead.
+      if (defenderFree < 0 && m.fighters[1].mode !== 'blockstun' && m.fighters[1].mode !== 'hitstun') defenderFree = t;
     }
     if (attackerFree >= 0 && defenderFree >= 0) break;
   }

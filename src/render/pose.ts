@@ -8,8 +8,13 @@
 import { INTRO_FRAMES } from '../sim/constants';
 import type { SimEvent } from '../sim/events';
 import type { FighterState, MatchState } from '../sim/state';
-import { segmentData } from '../sim/stages';
+import { segmentData, type PropData } from '../sim/stages';
 
+
+/** Top level, so the per-frame check makes no closure. */
+function isThrown(p: PropData): boolean {
+  return p.thrown === true;
+}
 export interface Pose {
   clip: string;
   /** 1-based, as in the move data. Past the clip's end: hold its last frame, or wrap if it loops. */
@@ -184,7 +189,7 @@ export class PoseTracker {
         return out;
       case 'move':
         // Interact throws a prop where the segment's prop is thrown, and kicks it otherwise.
-        out.clip = f.move === 'interact' && segmentData(m.stage, m.segment).props.some((p) => p.thrown) ? 'interact_throw' : f.move;
+        out.clip = f.move === 'interact' && segmentData(m.stage, m.segment).props.some(isThrown) ? 'interact_throw' : f.move;
         out.frame = f.moveFrame;
         return out;
       case 'throwing':

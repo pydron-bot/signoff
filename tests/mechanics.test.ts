@@ -172,3 +172,59 @@ describe('delayed projectile (Margaret: Live Feed)', () => {
     expect(out.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, move: 'Live Feed' });
   });
 });
+
+describe('guard crush (Gus: Tenderise)', () => {
+  const GUS = FIGHTERS.gus;
+
+  it('blocked, the last blow breaks the guard and a jab lands after it', () => {
+    const m = ready('gus', 'dale');
+    place(m, -0.5, 0.5);
+    // Gus: Tenderise, then a jab as soon as he can act.
+    const ev = run(m, 90, (mm, t) => (t === 0 ? SPECIAL : mm.fighters[0].mode !== 'move' ? FP : 0), BLOCK);
+    expect(count(ev, 'block')).toBe(3);
+    expect(ev.find((e) => e.type === 'guardCrush')).toMatchObject({ attacker: 0, defender: 1, move: 'Tenderise' });
+    const after = ev.slice(ev.findIndex((e) => e.type === 'guardCrush'));
+    expect(after.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, move: 's.FP' });
+  });
+
+  it('on hit, it knocks down instead', () => {
+    const m = ready('gus', 'dale');
+    place(m, -0.5, 0.5);
+    const ev = run(m, 60, presses({ 0: SPECIAL }));
+    expect(count(ev, 'hit')).toBe(3);
+    expect(count(ev, 'guardCrush')).toBe(0);
+    expect(['launched', 'down']).toContain(m.fighters[1].mode);
+    expect(GUS.moves.Tenderise.hits.at(-1)!.guardCrush).toBe(true);
+  });
+});
+
+describe('fire on the floor (Gus: Flambé)', () => {
+  it('burns whoever stands in it more than once, and a jump clears it', () => {
+    const m = ready('gus', 'dale');
+    place(m, -1, 0.6);
+    const ev = run(m, 120, presses({ 0: RIGHT | SPECIAL }));
+    expect(ev.filter((e) => e.type === 'hit' && e.move === 'Flambé').length).toBeGreaterThanOrEqual(2);
+
+    const j = ready('gus', 'dale');
+    place(j, -1, 0.6);
+    const ev2 = run(j, 60, presses({ 0: RIGHT | SPECIAL }), presses({ 10: UP | RIGHT }));
+    expect(ev2.filter((e) => e.type === 'hit' && e.move === 'Flambé')).toHaveLength(0);
+  });
+
+  it('is blocked low, not high', () => {
+    const m = ready('gus', 'dale');
+    place(m, -1, 0.6);
+    const ev = run(m, 60, presses({ 0: RIGHT | SPECIAL }), BLOCK);
+    expect(ev.find((e) => e.type === 'hit' && e.move === 'Flambé')).toBeDefined();
+  });
+});
+
+describe('a pan set up in the air (Gus: Mise en Place)', () => {
+  it('hangs, then drops on them as an overhead', () => {
+    const m = ready('gus', 'dale');
+    place(m, -1.2, 1.1);
+    const ev = run(m, 100, presses({ 0: LEFT | SPECIAL }), BLOCK | DOWN);
+    const hit = ev.find((e) => e.type === 'hit' && e.move === 'Mise en Place');
+    expect(hit).toMatchObject({ attacker: 0, defender: 1, height: 'overhead' });
+  });
+});

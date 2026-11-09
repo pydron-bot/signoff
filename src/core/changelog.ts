@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.18.0',
+    date: '2026-11-09',
+    title: 'Kitchen Live and the late news',
+    notes: [
+      "A sixth fighter: Chef Gus Lamarre, mid-range. The longest reach in the game and the slowest walk. Flambé leaves fire on the floor (block it low), Mise en Place tosses a pan that hangs and drops as an overhead, Chop Chop is a long low sweep, and Tenderise's last blow breaks a guard: block it and you reel, open to a jab.",
+      "A third stage: The Eleven O'Clock News. Shove the anchor desk across the floor in Headlines; in The Ticker the desk rides up on its riser and throws anyone in the middle; in Lights Out the studio lamps fall one by one and it gets darker with each. Margaret's Arcade fights are now on her own show.",
+      'The news ticker carries the local headlines from a city you may know.',
+      "Rox and Mister Mumbles hit a little softer with their heavy kicks and sweeps, to match their styles.",
+      'Smoother on phones: no garbage from reading pads and menus every frame.',
+    ],
+  },
+  {
     version: '0.17.0',
     date: '2026-11-09',
     title: 'Rise and shine',

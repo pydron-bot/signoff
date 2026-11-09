@@ -7,6 +7,18 @@ data. The combo results were measured in the simulation (each string and
 cancel played point blank against a standing opponent), not worked out on
 paper.
 
+## Done (0.17.0)
+
+Measured again with six fighters. Reach and plus frames now follow the
+style: Gus reaches furthest (`s.BK` 1.85 m), then Dale (1.75 m); Rox is
+the shortest and the most plus (jab +3, four normals plus on block).
+Damage now does too: Rox's `s.BK` is 72 over two hits (was 85) and her
+sweep 64 (was 72); Mumbles' sweep is 68 (was 87, the hardest in the game).
+No move's length changed, so no clip needs redoing. Still open: Dale's
+`c.BP` as a knockdown rather than a launcher (zoners don't juggle), and
+jumps that differ by weight (Mumbles floaty, Hollis heavy), which would
+change air time and so the jump clips.
+
 ## Done (0.11.0)
 
 Specials now cancel only out of a hit. Launchers that hit cancel into any

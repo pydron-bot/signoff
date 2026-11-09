@@ -6,6 +6,7 @@
 import {
   BLOCKSTOP,
   COUNTER_HITSTOP,
+  GUARD_CRUSH_STUN,
   COUNTER_READ_STOP,
   COUNTER_HITSTUN,
   HITSTOP,
@@ -339,6 +340,14 @@ export function applyHit(
     gainMeter(a, Math.floor(e.damage / 4));
     gainMeter(d, Math.floor(e.damage / 8));
     ev.push({ type: 'block', attacker: ai, defender: di, move: moveId, chip, x: d.x, y });
+    if (e.guardCrush) {
+      // The guard gives: they reel as if hit, and the next blow isn't blocked.
+      d.mode = 'hitstun';
+      d.timer = GUARD_CRUSH_STUN;
+      d.hitstop = HITSTOP;
+      if (!projectile) a.hitstop = HITSTOP;
+      ev.push({ type: 'guardCrush', attacker: ai, defender: di, move: moveId, x: d.x, y });
+    }
     return;
   }
 

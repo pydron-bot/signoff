@@ -23,7 +23,7 @@ const moves = table(
   normal('c.FP', { name: 'Knee Poke', stance: 'crouch', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.85], at: [0.4, 0.65], damage: 34, hitstun: 13, blockstun: 10 }),
   normal('c.BP', { name: 'Pop Up', stance: 'crouch', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.8, 1.8], damage: 78, hitstun: 0, blockstun: 10, launch: 0.18 }),
   normal('c.FK', { name: 'Ankle Biter', stance: 'crouch', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.15], at: [0, 0.25], height: 'low', damage: 43, hitstun: 14, blockstun: 10, chain: { BK: 'c.FK BK' } }),
-  normal('c.BK', { name: 'Leg Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.25], height: 'low', damage: 87, hitstun: 0, blockstun: 10, knockdown: true }),
+  normal('c.BK', { name: 'Leg Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.25], height: 'low', damage: 68, hitstun: 0, blockstun: 10, knockdown: true }),
   // Command normal: back + BP hops into an overhead.
   normal('b.BP', { name: 'Peekaboo', startup: 18, active: 2, recovery: 14, reach: [0.15, 1.0], at: [0.7, 1.4], height: 'overhead', damage: 87, hitstun: 18, blockstun: 14 }),
   // A string from his own control bar: long, weak, and it reels them in.

@@ -805,6 +805,43 @@ plain one), `interact` is kicking a stage prop.
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
+#### Chef Gus Lamarre (`gus`): 32 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Taste Test | normal | stand | 20 | 8–9: x 0.20…1.10, y 1.15…1.50 (mid) |
+| `s.BP` | Skillet | normal | stand | 31 | 12–14: x 0.20…1.60, y 0.95…1.50 (mid) |
+| `s.FK` | Oven Door | normal | stand | 26 | 10–12: x 0.20…1.45, y 0.50…0.90 (mid) |
+| `s.BK` | Cleaver | normal | stand | 38 | 15–17: x 0.30…1.85, y 0.90…1.50 (mid) |
+| `c.FP` | Paring Knife | normal | crouch | 19 | 8–9: x 0.20…1.00, y 0.60…0.90 (mid) |
+| `c.BP` | Rising Ladle | normal | crouch | 33 | 10–13: x 0.10…0.90, y 1.00…2.00 (mid) |
+| `c.FK` | Rolling Pin | normal | crouch | 25 | 9–11: x 0.20…1.50, y 0.00…0.30 (low) |
+| `c.BK` | Sweep the Floor | normal | crouch | 39 | 13–15: x 0.20…1.70, y 0.00…0.30 (low) |
+| `f.BP` | Meat Mallet | normal | stand | 40 | 21–22: x 0.20…1.25, y 1.00…1.70 (overhead) |
+| `b.BP` | Back of the Pan | normal | stand | 34 | 13–15: x 0.30…1.70, y 0.90…1.40 (mid) |
+| `j.FP` | Jumping Spoon | air | air | 17 | 6–11: x 0.10…0.85, y 0.60…1.10 (overhead) |
+| `j.BP` | Jumping Skillet | air | air | 20 | 9–13: x 0.10…1.10, y 0.70…1.30 (overhead) |
+| `j.FK` | Jumping Clog | air | air | 19 | 7–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Jumping Cleaver | air | air | 22 | 10–14: x 0.10…1.20, y 0.30…0.90 (overhead) |
+| `FP FP` | Season | normal | stand | 21 | 8–9: x 0.20…1.15, y 1.10…1.50 (mid) |
+| `FP FP BK` | Chef's Kiss | normal | stand | 36 | 14–16: x 0.30…1.75, y 0.90…1.50 (mid) |
+| `FP BP` | Sear | normal | stand | 32 | 12–14: x 0.20…1.50, y 0.90…1.50 (mid) |
+| `BP BK` | Fillet | normal | stand | 37 | 15–17: x 0.30…1.80, y 0.90…1.50 (mid) |
+| `FK FP` | Garnish | normal | stand | 22 | 9–10: x 0.20…1.20, y 1.10…1.50 (mid) |
+| `FK FP BP` | Plate Up | normal | stand | 34 | 13–15: x 0.20…1.40, y 0.90…1.70 (mid) |
+| `c.FP BK` | Julienne | normal | crouch | 36 | 12–14: x 0.20…1.65, y 0.00…0.30 (low) |
+| `Flambé` | Flambé | special | stand | 42 | 16: spawns projectile at x 1.60, y 0.00 |
+| `Flambé+` | Flambé (boosted) | special | stand | 42 | 16: spawns projectile at x 1.90, y 0.00 |
+| `Tenderise` | Tenderise | special | stand | 46 | 12–13: x 0.20…1.10, y 0.90…1.50 (mid); 20–21: x 0.20…1.10, y 0.90…1.50 (mid); 30–31: x 0.20…1.15, y 0.90…1.70 (mid) |
+| `Tenderise+` | Tenderise (boosted) | special | stand | 42 | 12–13: x 0.20…1.15, y 0.90…1.50 (mid); 19–20: x 0.20…1.15, y 0.90…1.50 (mid); … 4 hits to 27 |
+| `Mise en Place` | Mise en Place | special | stand | 40 | 14: spawns projectile at x 2.30, y 3.00 (waits 26 frames) |
+| `Mise en Place+` | Mise en Place (boosted) | special | stand | 40 | 14: spawns projectile at x 1.60, y 3.00 (waits 18 frames); 16: spawns projectile at x 2.90, y 3.00 (waits 26 frames) |
+| `Chop Chop` | Chop Chop | special | crouch | 48 | 14–16: x 0.20…2.00, y 0.00…0.35 (low) |
+| `Chop Chop+` | Chop Chop (boosted) | special | crouch | 48 | 12–13: x 0.20…2.00, y 0.00…0.35 (low); 20–22: x 0.20…2.10, y 0.00…0.35 (low) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
+
 <!-- clips:end -->
 
 ## Feedback

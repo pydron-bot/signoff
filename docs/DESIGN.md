@@ -206,8 +206,9 @@ cartoon mascot that's been off air since 1979, and the continuity announcer.
 ## Stages
 
 Version 1 ships 6 stages, each a show in Channel 0's schedule with three
-segments. Two are in: *Weather at Eleven* and *Feel the Burn at Dawn*
-(Warm-Up, Double Time, Burnout). Pick one on the title screen; in Arcade each
+segments. Three are in: *Weather at Eleven*, *Feel the Burn at Dawn*
+(Warm-Up, Double Time, Burnout) and *The Eleven O'Clock News* (Headlines,
+The Ticker, Lights Out). Pick one on the title screen; in Arcade each
 fight is on the opponent's own show where it has a stage.
 
 | Show | Segment 1 | Segment 2 | Segment 3 |
@@ -216,7 +217,7 @@ fight is on the opponent's own show where it has a stage.
 | Feel the Burn at Dawn (aerobics studio) | Mirrors and mats; a boombox can be thrown | The tape speeds up: the whole game runs 10% faster | The mirrors shatter and the arena opens wider into the dark; falling shards on a beat |
 | Mumbles' Toybox (children's show set) | A cardboard house and a toy chest that can be thrown | A giant puppet hand sweeps low across the floor (jump it) every 8 seconds | The set collapses into a bare stage with two trapdoors that open on a rhythm |
 | Kitchen Live (cooking show) | A counter with a pot and a knife block to throw | A grease fire takes one end of the kitchen: the arena narrows | The oven door opens: the heat makes meter fill 50% faster for both fighters |
-| The Eleven O'Clock News (news studio) | The news desk, which can be vaulted or thrown across | The ticker runs across the bottom of the screen and the anchor desk becomes a raised platform | The studio lights fail one by one and fall on marked spots |
+| The Eleven O'Clock News (news studio) | The news desk, shoved along the floor into the opponent (jump it) | The ticker runs across the bottom of the screen; the anchor desk rides up on its riser on a rhythm, throwing anyone in the middle of the floor | The studio lights fail one by one and fall on marked spots; the studio gets darker with each |
 | Master Control (the Programme Director's room, final boss) | Banks of monitors replaying the match | The monitors show both fighters' worst moments; screens burst on a rhythm | The roof of the transmitter mast in high wind, the city below |
 
 ## Sign-Offs and presentation
@@ -235,7 +236,8 @@ card: the loser's own show going off the air.
   camera in close, then the cut, more blows heard over it, and the card.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
-  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking). Straight after the K.O., the
+  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking; Gus:
+  Tenderise). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -251,6 +253,7 @@ often lets the moment pass. Finisher inputs:
 | Hollis Bey (*The Night Watch*) | Lights Out: close, back, down, BP | End of Shift: mid, forward, down, BK |
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
 | Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
+| Chef Gus Lamarre (*Kitchen Live*) | Order Up: close, down, back, BP | Last Service: mid, back, forward, BK |
 
 ### The broadcast look
 
@@ -362,10 +365,14 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** five fighters (Margaret Okafor joined in 0.15.0) and two
+      practice:** six fighters (Margaret Okafor joined in 0.15.0, Chef Gus
+      Lamarre in 0.17.0) and three
       stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.
-- [ ] Should SIGN-OFF reference Curbside's city? **Leaning towards a universe
-      crossover**; what form it takes (a news story, a TV cameo, a guest
-      fighter or stage) is still open.
+- [x] Should SIGN-OFF reference Curbside's city? **Yes, as news and a TV
+      cameo:** Channel 0 broadcasts to Curbside's city, years before
+      Curbside. The News stage's ticker carries its 1987 local news
+      (Cobble Row, Glass Heights, Councillor Lull's first call for a quieter
+      city), and Master Control's monitors will show Curbside footage. No
+      guest fighter or stage.

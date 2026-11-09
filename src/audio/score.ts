@@ -4,7 +4,9 @@
  * Audio, so there are no audio files. Weather at Eleven: a bright synth news
  * theme in the studio, a driving minor arpeggio in the storm, a slow,
  * detuned dirge for the flood. Feel the Burn at Dawn: aerobics pop, the same
- * tape run fast, then the tune in the dark.
+ * tape run fast, then the tune in the dark. The Eleven O'Clock News: a
+ * brass-stab news theme over a telex pluck, the same theme pushed harder
+ * under the ticker, then the theme in fragments as the lights fail.
  */
 
 export interface Part {
@@ -111,8 +113,37 @@ const BURNOUT: Cue = {
   ],
 };
 
+// Headlines: D major, I-IV-vi-V, the telex rattling in 16ths under the theme's stabs.
+const TELEX = [86, 0, 86, 86, 0, 86, 0, 86, 86, 0, 86, 0, 86, 86, 0, 0];
+const HEADLINES: Cue = {
+  name: 'Headlines',
+  bpm: 112,
+  drums: 'k..hs..hk.khs..h'.repeat(4),
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(eighths(38, 0, 38, 50, 38, 0, 45, 0), eighths(43, 0, 43, 55, 43, 0, 50, 0), eighths(35, 0, 35, 47, 35, 0, 42, 0), eighths(33, 0, 33, 45, 33, 0, 40, 45)) },
+    { voice: 'pluck', gain: 0.06, notes: bars(TELEX, TELEX, TELEX, TELEX) },
+    { voice: 'lead', gain: 0.16, hold: 2, notes: bars([74, 0, 0, 74, 0, 0, 78, 0, 81, 0, 0, 0, 0, 0, 0, 0], [79, 0, 0, 79, 0, 0, 83, 0, 86, 0, 0, 0, 83, 0, 0, 0], [78, 0, 0, 78, 0, 0, 81, 0, 83, 0, 81, 0, 78, 0, 0, 0], [76, 0, 0, 0, 79, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 0]) },
+    { voice: 'pad', gain: 0.13, hold: 16, notes: bars([66, ...Array(15).fill(0)], [67, ...Array(15).fill(0)], [66, ...Array(15).fill(0)], [64, ...Array(15).fill(0)]) },
+  ],
+};
+
+// The Ticker: the theme a tone up and faster, the kick on every beat.
+const TICKER: Cue = { ...transpose(HEADLINES, 2, 'The Ticker', 124), drums: 'k.hhs.hhk.hhs.hh'.repeat(3) + 'k.hhs.hhk.hhsSsS' };
+
+// Lights Out: F minor, the theme's stabs alone in the dark, a low drone, a ticking clock.
+const LIGHTS_OUT: Cue = {
+  name: 'Lights Out',
+  bpm: 96,
+  drums: 'k...h...h...h...s...h...h...h...',
+  parts: [
+    { voice: 'bass', gain: 0.55, hold: 16, notes: bars([29, ...Array(15).fill(0)], [29, ...Array(15).fill(0)], [25, ...Array(15).fill(0)], [24, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.13, hold: 16, notes: bars([60, ...Array(15).fill(0)], [65, ...Array(15).fill(0)], [61, ...Array(15).fill(0)], [64, ...Array(15).fill(0)]) },
+    { voice: 'lead', gain: 0.12, hold: 2, notes: bars([77, 0, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0], [73, 0, 0, 73, 0, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 76, 0, 0, 0, 72, 0, 0, 0]) },
+  ],
+};
+
 /** Music by stage, one cue per segment. */
-export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD], burn: [WARMUP, DOUBLE, BURNOUT] };
+export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD], burn: [WARMUP, DOUBLE, BURNOUT], news: [HEADLINES, TICKER, LIGHTS_OUT] };
 
 /** Steps in a cue's loop. */
 export function loopSteps(c: Cue): number {
