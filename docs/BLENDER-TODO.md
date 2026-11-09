@@ -156,7 +156,7 @@ effect meshes.
 - `<id>_body`: the skinned body (materials `body`, and `props` for
   accessories), each material with its PNG atlas, and morph targets
   `hurt`, `ko`, `win` and the held props (`umbrella` for Dale, `cuffs` for Hollis, `string` and
-  `puppet` for Mumbles, `glasses` for Margaret, `pan` and `mallet` for Gus), whose weights every clip animates.
+  `puppet` for Mumbles, `glasses` for Margaret, `pan` and `mallet` for Gus, `plate` for Gideon), whose weights every clip animates.
 - `<id>_<part>`: other skinned parts that shouldn't count toward the
   fighter's size (Mumbles' strings, `mumbles_strings`).
 - `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
@@ -247,7 +247,7 @@ are authored facing right with the left foot and left hand leading.
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
 > 5. ~~**Step 21 A, finger joints**~~ *done (Nov 9): the five built fighters rebuilt on the split fingers.*
-> 6. ~~**Step 17, Chef Gus Lamarre**~~ *done (Nov 9): `gus.glb`.* Then **step 18, Rev. Gideon Price** (Nov 9), on the step 21 A skeleton and to step 21 B–C's standard. He plays as a grey box until then.
+> 6. ~~**Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price**~~ *done (Nov 9): `gus.glb` and `gideon.glb`.*
 > 7. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 >
@@ -677,24 +677,38 @@ the paid-for versions (`Laying On of Hands (healing)`, `Fire and Brimstone
 0.64 m wide), module `blender/fighters/gideon.py`. Until his GLB exists he
 plays as a violet grey box.
 
-- [ ] **Model and textures**, in the approved style. A tall, lean preacher
+*Done (Nov 9): `blender/fighters/gideon.py`, 2,958 body triangles plus 644 in effects, 1.55 MB. Notes under* Rev. Gideon Price (Nov 9, art side) *in Feedback.*
+
+- [x] **Model and textures**, in the approved style. A tall, lean preacher
       in a powder-blue three-piece suit with wide lapels, a white shirt and a
       long gold tie, two-tone shoes, a gold pinky ring and a big wristwatch.
       Silver hair swept into a high, lacquered pompadour. **Signature
       expression:** wide eyes and a wider smile, eyebrows up, mid-sermon.
       Held props (`props`): a big leather-bound Bible in the rear hand, a
       gold collection plate for the plate moves, a corded microphone.
-- [ ] **Textures:** a sheen on the suit, gold leaf on the Bible's edges, a
+      *Done: powder-blue three-piece with a sheen, wide lapels, a darker
+      waistcoat with gold buttons, the long gold tie (lower half on
+      `x_tie`) with a rhinestone clip, two-tone shoes (white, brown toe
+      caps), a gold pinky ring and wristwatch on the lead hand, a lacquered
+      silver pompadour (one smooth roll on `x_pomp`), wide eyes, raised
+      brows and a big toothy grin. The Bible is always in his rear hand; the
+      plate is a held prop (`plate`) in the lead hand. The microphone is a
+      lapel mic whose cord loops to his hip on `x_cord`: a hand-held one
+      would need a hand, and both are taken.*
+- [x] **Textures:** a sheen on the suit, gold leaf on the Bible's edges, a
       *THE HOUR OF POWER* pin with a phone number, a rhinestone on the tie
-      clip.
-- [ ] **Secondary motion:** the tie, the pompadour's front, the
-      microphone cord.
-- [ ] **State clips:** everything in the state clips table. `idle` is a
+      clip. *Done (the phone number reads "1-800", too small for more).*
+- [x] **Secondary motion:** the tie, the pompadour's front, the
+      microphone cord. *Done: `x_tie`, `x_pomp`, `x_cord`.*
+- [x] **State clips:** everything in the state clips table. `idle` is a
       preacher's rock, heel to toe, the Bible held to his chest; walks are a
       confident stride. Intros: raises the Bible to the heavens; points at
       the camera ("Yes, YOU."). Wins: arms wide, eyes closed, basking; counts
-      a fan of banknotes and tucks them in his jacket.
-- [ ] **Move clips** (table below). Notes:
+      a fan of banknotes and tucks them in his jacket. *Done, but: `idle`
+      holds the Bible to his chest with the shared breath (no heel-to-toe
+      rock yet), and `win_2` counts and tucks invisible notes (no banknote
+      prop, to keep to five shape keys).*
+- [x] **Move clips** (table below). *Done: Collection Plate is a backhand frisbee throw with the lead hand (the Bible is in the rear), left held out; Laying On of Hands is an open lead palm (not the rear: the Bible again), and the healing version adds a rapture pose 20–31; Fire and Brimstone raises both arms and slams them down, the blessed one on his toes with a held beat at the top. These use two new per-move overrides in `lib/anim.py`: `palm` and `keys` (hand-keyed poses).* Notes:
   - `Collection Plate`, `Collection Plate+`: a sidearm frisbee throw of the
     plate on frame 14. It comes back: he doesn't need a catch pose (the
     move is over by then), but a hand held out at the end of the clip reads
@@ -708,10 +722,10 @@ plays as a violet grey box.
     box runs from −1.2 to +1.2 m). The `(blessed)` version is bigger in every
     way (−2.2 to +2.2 m, up to 2.4 m high, armoured on 4–17): rising onto his
     toes, arms higher, a held beat at the top.
-- [ ] **`fx_plate`** (`props`): a gold collection plate 0.6 m across, a few
+- [x] **`fx_plate`** (`props`): a gold collection plate 0.6 m across, a few
       bills and coins in it, flat, origin at its bottom centre. The game
       places it on the projectile, which flies flat at 0.95 m.
-- [ ] **`fx_brimstone`** (`props`): the blast, placed on him (like the
+- [x] **`fx_brimstone`** (`props`): the blast, placed on him (like the
       Isobar Lasso's `fighter` placement) during the active frames: a ring of
       fire on the floor 2.4 m across rising to a column of light 2 m high,
       origin at its bottom centre. The game scales nothing, so make it to the
@@ -1222,3 +1236,7 @@ worked into the move data, and the table above updates itself.
   - Two held props, `pan` and `mallet`: five shape keys in all (one over step 16's four), still well under 2 MB.
   - Mise en Place shows the generic "calling down from above" pose (hands up, watching), not a one-handed flick: worth a hand-keyed pose in 16 C.
   - `lib/anim.py` has a `chop` override: every hit of the move comes down from overhead like an overhead does, whatever its height. Gideon's Fire and Brimstone may want it.
+- **Rev. Gideon Price (Nov 9, art side).** Step 18 done; `npm run art -- --only gideon`. Notes for the game side:
+  - Every strike and height check passes; Fire and Brimstone is marked `prop` (the blast is the hit), so the hands aren't checked against its box.
+  - `fx_brimstone`'s column of light is ten thin beams round him, not a solid column: placed on him, a solid one would hide him for the whole blast.
+  - `lib/anim.py` has two new overrides: `palm` (an open hand on the strike) and `keys` (a function giving hand-keyed poses that replace the generated ones over their frames). `keys` is the way in for step 16 C's hand-keyed specials.

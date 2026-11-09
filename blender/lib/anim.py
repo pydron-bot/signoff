@@ -717,7 +717,10 @@ def move_clips(rig, st, data, overrides):
     makes the hit, so the limb only points at it), style (hop, spin,
     teleport, knock, grapevine, rising, braced, yank, prompter, live), chop (every
     hit comes down from overhead, like an overhead: a pound, a cleaver
-    chop), tx / ty (where to aim the strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
+    chop), palm (strikes with an open hand), keys (a function (st, base, mv)
+    giving [(frame, pose)] that replaces the generated keys over its frames:
+    hand-keyed poses for a move people watch), tx / ty (where to aim the
+    strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
     over frames show, whose tip, `reach` metres past the hand, makes the hit)."""
     fitter = Fitter(rig, st)
     strikes = {}
@@ -937,6 +940,9 @@ def move_clips(rig, st, data, overrides):
                 pose = end = fitter.fit(base, lb, hit["box"], over, label, report, ty=spec.get("ty"), **aim)
                 if report:
                     checks.append(((f0, f1), [lb], hit["box"], extra))
+            if spec.get("palm"):
+                side = lb[-1]
+                pose, end = (q.shaped(**{f"fist_{side}": 0.0, f"open_{side}": 0.5}) for q in (pose, end))
             if prev_end is None and style == "hop":
                 pass  # the hop is its own wind-up
             elif prev_end is None:
@@ -963,6 +969,13 @@ def move_clips(rig, st, data, overrides):
             elif rec > 3 and prev_end + max(1, round(rec * 0.35)) not in keys:
                 at(prev_end + max(1, round(rec * 0.35)), lerp_pose(keys[prev_end], base, 0.55))
         keys[total] = base
+        if spec.get("keys"):
+            custom = spec["keys"](st, base, mv)
+            lo, hi = min(f for f, _ in custom), max(f for f, _ in custom)
+            for f in [f for f in keys if lo <= f <= hi]:
+                del keys[f]
+            for f, pose in custom:
+                at(f, pose)
 
         if held:
             # The prop pops out (and away) over one frame.
