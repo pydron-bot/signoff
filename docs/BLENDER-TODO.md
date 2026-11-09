@@ -232,13 +232,13 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–14 and 16 A are done (11–13 in 0.13.0, 14 and 16 A on Nov 9).
+> **Start here (Nov 9).** Steps 1–16 A are done (11–13 in 0.13.0, 14, 15 and 16 A on Nov 9).
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
 > 1. ~~**Step 14, Feel the Burn at Dawn**~~ *done (Nov 9): `burn.glb` and `interact_throw` for the four built fighters.*
 > 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
-> 3. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
+> 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, `burn.glb` included.
@@ -488,17 +488,17 @@ the others: the shared rig at 1.75 m (crouch 1.05 m, hurtbox 0.6 m wide),
 `blender/build.py`). The asset test checks her GLB like the others once it
 exists.
 
-- [ ] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some.
-- [ ] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick).
-- [ ] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight."
-- [ ] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials:
+- [x] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some. *Done (Nov 9): 2,724 body triangles plus 40 in `fx_live_feed`, 1.56 MB. Burgundy pinstripe suit with square pads and a nipped waist, blouse and pussy-bow, a slim skirt (skirt-coloured thighs and a panel between them, so it stays put when she kicks), dark tights, court shoes, pearls, a bob parted on her left (side panels on `x_bob.L/R`), deep lipstick, her left brow 8 mm higher (`brow_lift`), and the script pages on `x_pages` in her lead hand.*
+- [x] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick). *Done.*
+- [x] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight." *Done: the intros square the pages and look up into the camera, and take off her reading glasses (a held prop, `glasses`); the wins shuffle the pages and set them down, and nod "Goodnight." to the camera. Not yet: squaring the pages once an idle loop (the idle is the shared breath).*
+- [x] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials: *Done: Breaking with the rear hand (+ adds the lead); Teleprompter is a new `prompter` style held over the counter window; Teleprompter Read is a `prop` hit with the pages (the + aims high); Live Feed a new `live` style, pointing at the camera; Lead Story slams the pages overhead.*
   - `Breaking`, `Breaking+`: a sharp, fast straight (the pages rolled into a baton is a nice touch); the boosted one adds a second strike with the other hand.
   - `Teleprompter`, `Teleprompter+`: the counter stance. She stands tall, the lead hand raised palm out, eyes reading something just off screen; held through the window (frames 8–26, or 8–34 boosted). Readable from across the screen: it's what the opponent must learn not to hit.
   - `Teleprompter Read`, `Teleprompter Read+`: the answer, played the moment a strike is read: a fast, wide backhand with the pages, hitting on 3–5 out to 1.8 m (an effect-sized reach: mark it `prop` like the Isobar Lasso if the arm can't reach), the boosted one sweeping upward (it launches).
   - `Live Feed`, `Live Feed+`: she points two fingers at the camera, "We go live", and the feed spawns on frame 14 in front of her.
   - `Lead Story`: steps in over frames 4–14 and slams the pages down overhead on 20–21. The boosted one walks through a hit (armour, the game tints it orange).
   - `f.FK` Field Report: steps forward while kicking (frames 1–10), foot out at mid height on 12–14.
-- [ ] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward.
+- [x] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward. *Done: TV static in blocks with a red LIVE bug and a tally light, 0.6 × 0.7 m on its bottom centre.*
 
 ### 16. More detail, better poses (Nov 9, game side)
 
@@ -904,3 +904,7 @@ worked into the move data, and the table above updates itself.
   - The fist and jaw shape keys are gone; the clips pose those bones instead, so playing a clip is still all the game does. Morph targets left: Dale `hurt`, `ko`, `umbrella`, `win`; Rox `hurt`, `ko`, `win`; Hollis `cuffs`, `hurt`, `ko`, `win`; Mumbles `hurt`, `ko`, `puppet`, `string`, `win`.
   - The `x_*` bones are keyed on every frame (the spring is baked). Loops wrap cleanly; one-shot clips start at rest and ease back to it over their last 8 frames, so switching clips doesn't make the tie or the hair jump.
   - GLBs: Dale 1.81 MB, Rox 1.64, Hollis 1.51, Mumbles 1.66. Dropping the fist keys saved less than the new channels cost (seven bones animated in every clip, the spring baked on every frame), so they grew 0.1–0.3 MB; step 16 D's shape pass should watch Dale's budget.
+- **Margaret Okafor (Nov 9, art side).** Step 15 done; `npm run art -- --only margaret`. Notes for the game side:
+  - 35 bones (the shared 29, `x_pages`, `x_bob.L/R`), morph targets `glasses`, `hurt`, `ko`, `win`; every strike and the juggle check pass, `idle` stands 1.748–1.754 m against her 1.75 m box.
+  - `fx_live_feed` is in her GLB as the projectile (`src/render/arena.ts` already places it). Teleprompter Read reaches 1.8 m with the pages' sweep, so its hit is marked `prop` (the hand points the way, like the Isobar Lasso).
+  - Two new move styles in `lib/anim.py`, for anyone's moves: `prompter` (a counter stance held over `counter.frames`) and `live` (pointing at the camera on a spawn). A counter window doesn't shout; the Read does.

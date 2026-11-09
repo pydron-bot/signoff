@@ -119,8 +119,9 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
     """Neck, head, ears and a face: a brow ridge and nose, eyes (whites and
     pupils as separate pieces) and brows, with shape keys for the
     expressions; the mouth and hair are up to each fighter. c may set eyes,
-    brows, whites, eye (white radii) and lids (0 open … 1 heavy-lidded).
-    The chin rides the `jaw` bone (`chin`: another bone keeps it still)."""
+    brows, whites, eye (white radii), lids (0 open … 1 heavy-lidded) and
+    brow_lift (extra height for the left and right brows). The chin rides
+    the `jaw` bone (`chin`: another bone keeps it still)."""
     hp, hr, _ = head_frame(b)
     n0, n1 = b.j["neck"]
     p.tube("neck", [(lerp(n0, n1, -0.4), b.r(0.052), {"chest": 1.0}, c["skin"]),
@@ -159,7 +160,8 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
             lc = hp(ec[0], ec[1] + 0.004, ec[2] + er[2] * 0.55)
             p.blob(f"lid{sd}", lc, hr(er[0] * 1.15, er[1] * 1.1, er[2] * 0.55 * lids), c["skin"], "head", paint=paint,
                    shapes={"ko": about(lc, (1, 1, 1.4), (0, 0, -0.004))})
-        bc = hp(sd * 0.04, 0.114, 1.716 + c.get("brow_raise", 0.0))
+        lift = c.get("brow_lift", (0.0, 0.0))[0 if sd > 0 else 1]  # one brow higher (L, R)
+        bc = hp(sd * 0.04, 0.114, 1.716 + c.get("brow_raise", 0.0) + lift)
         p.box(f"brow{sd}", bc, hr(0.038, 0.012, 0.009), c.get("brows", c["hair"]), "head",
               shapes={"hurt": about(bc, move=(0, 0, -0.005), slope=sd * 0.45), "ko": about(bc, move=(0, 0, -0.006), slope=sd * 0.15),
                       "win": about(bc, move=(0, 0, 0.008), slope=-sd * 0.1)})
