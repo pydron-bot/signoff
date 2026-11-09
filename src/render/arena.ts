@@ -9,6 +9,7 @@
  * one, the contact shadows two), plus 3 to 7 a model.
  */
 import * as THREE from 'three';
+import { FIGHTER_COLORS } from '../core/fighterLook';
 import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
 import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
@@ -25,7 +26,7 @@ import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a, gus: 0xe8e4d8, gideon: 0x6a4ab0 };
+const COLORS = FIGHTER_COLORS;
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
