@@ -259,6 +259,14 @@ export class Sound {
             // Glass: a bright smash as it lands.
             this.noise(0.4, 4000, 0.3, 'highpass', 0.15);
             this.tone(2200, 0.25, 0.06, 'triangle', 1400, 0.15);
+          } else if (e.hazard === 'lamps') {
+            // A lamp: the bulb pops, then the housing hits the floor.
+            this.noise(0.15, 5000, 0.2, 'highpass');
+            this.tone(90, 0.5, 0.3, 'square', 45, 0.12);
+            this.noise(0.4, 600, 0.25, 'lowpass', 1, 0.12);
+          } else if (e.hazard === 'riser') {
+            // Hydraulics.
+            this.tone(70, 0.6, 0.18, 'sawtooth', 140);
           } else this.tone(120, 0.35, 0.12, 'sawtooth');
           break;
         case 'hazardHit':
@@ -268,6 +276,8 @@ export class Sound {
         case 'propKick':
           // The boombox goes with a blast of its own tape.
           if (e.prop === 'boombox') this.tone(330, 0.3, 0.1, 'square', 660);
+          // The desk scrapes across the floor.
+          if (e.prop === 'desk') this.noise(0.7, 900, 0.12, 'bandpass');
           this.tone(160, 0.1, 0.3, 'sine', 80);
           this.noise(0.6, 250, 0.08, 'lowpass');
           break;

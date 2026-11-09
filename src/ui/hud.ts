@@ -7,6 +7,7 @@
 import { BAR, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
+import { tickerText } from './ticker';
 
 const SEGMENTS = 20;
 
@@ -22,7 +23,17 @@ const ADS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
     ['TURBO-TAPE VCR', 'Plays every tape faster. It only gets faster.'],
     ['GLASSWORKS MIRROR & PANE', 'Seven years bad luck? Call us in eight.'],
   ],
+  news: [
+    ['OKAFOR & SONS TYPEWRITERS', 'Every key strikes. Every word stays.'],
+    ['DOREEN\'S ICE CREAM', 'Listen for the chimes. Cobble Row, every evening.'],
+    ['NIGHT-LITE BULB CO.', 'Our lamps never fall. Almost never.'],
+  ],
 };
+
+/** The News stage's ticker runs from its second segment on. */
+function tickerOn(m: MatchState): boolean {
+  return m.stage === 'news' && m.segment >= 1;
+}
 
 interface Side {
   root: HTMLElement;
@@ -44,6 +55,7 @@ export class Hud {
   private readonly training: HTMLElement;
   private readonly warning: HTMLElement;
   private readonly counter: HTMLElement;
+  private readonly ticker: HTMLElement;
   private warningLeft = 0;
   private counterLeft = 0;
   private captionLeft = 0;
@@ -77,9 +89,14 @@ export class Hud {
     this.counter = div('hud-counter');
     this.counter.textContent = 'COUNTER';
     this.counter.hidden = true;
+    this.ticker = div('hud-ticker');
+    const crawl = div('hud-ticker-crawl');
+    crawl.textContent = tickerText();
+    this.ticker.append(crawl);
+    this.ticker.hidden = true;
     const meters = div('hud-meters');
     meters.append(this.sides[0].meter, this.sides[1].meter);
-    this.root.append(top, logo, cap, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo);
+    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo);
     parent.append(this.root);
   }
 
@@ -122,6 +139,7 @@ export class Hud {
     this.clock.classList.toggle('off', training);
     this.breakCard.hidden = true;
     this.breakCard.classList.remove('hud-signoff');
+    this.ticker.hidden = !tickerOn(m);
     this.captionLeft = 0;
     this.warningLeft = 0;
     this.counterLeft = 0;
@@ -276,6 +294,9 @@ export class Hud {
         }
       }
     }
+    // Read every frame so training's segment switch shows it too.
+    const ticker = tickerOn(m);
+    if (this.ticker.hidden === ticker) this.ticker.hidden = !ticker;
     const secs = Math.max(0, Math.ceil(m.timer / STEPS_PER_SECOND));
     if (secs !== this.lastSecs) {
       this.lastSecs = secs;

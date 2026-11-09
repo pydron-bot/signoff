@@ -251,6 +251,7 @@ export class Arena {
       else if (e.type === 'superHit') this.shake = 0.25;
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.shake = Math.max(this.shake, 0.15);
       else if (e.type === 'hazardStrike' && e.hazard === 'shards') this.shake = Math.max(this.shake, 0.08);
+      else if (e.type === 'hazardStrike' && e.hazard === 'lamps') this.shake = Math.max(this.shake, 0.12);
     }
   }
 

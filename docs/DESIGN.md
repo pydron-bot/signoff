@@ -206,8 +206,9 @@ cartoon mascot that's been off air since 1979, and the continuity announcer.
 ## Stages
 
 Version 1 ships 6 stages, each a show in Channel 0's schedule with three
-segments. Two are in: *Weather at Eleven* and *Feel the Burn at Dawn*
-(Warm-Up, Double Time, Burnout). Pick one on the title screen; in Arcade each
+segments. Three are in: *Weather at Eleven*, *Feel the Burn at Dawn*
+(Warm-Up, Double Time, Burnout) and *The Eleven O'Clock News* (Headlines,
+The Ticker, Lights Out). Pick one on the title screen; in Arcade each
 fight is on the opponent's own show where it has a stage.
 
 | Show | Segment 1 | Segment 2 | Segment 3 |
@@ -216,7 +217,7 @@ fight is on the opponent's own show where it has a stage.
 | Feel the Burn at Dawn (aerobics studio) | Mirrors and mats; a boombox can be thrown | The tape speeds up: the whole game runs 10% faster | The mirrors shatter and the arena opens wider into the dark; falling shards on a beat |
 | Mumbles' Toybox (children's show set) | A cardboard house and a toy chest that can be thrown | A giant puppet hand sweeps low across the floor (jump it) every 8 seconds | The set collapses into a bare stage with two trapdoors that open on a rhythm |
 | Kitchen Live (cooking show) | A counter with a pot and a knife block to throw | A grease fire takes one end of the kitchen: the arena narrows | The oven door opens: the heat makes meter fill 50% faster for both fighters |
-| The Eleven O'Clock News (news studio) | The news desk, which can be vaulted or thrown across | The ticker runs across the bottom of the screen and the anchor desk becomes a raised platform | The studio lights fail one by one and fall on marked spots |
+| The Eleven O'Clock News (news studio) | The news desk, shoved along the floor into the opponent (jump it) | The ticker runs across the bottom of the screen; the anchor desk rides up on its riser on a rhythm, throwing anyone in the middle of the floor | The studio lights fail one by one and fall on marked spots; the studio gets darker with each |
 | Master Control (the Programme Director's room, final boss) | Banks of monitors replaying the match | The monitors show both fighters' worst moments; screens burst on a rhythm | The roof of the transmitter mast in high wind, the city below |
 
 ## Sign-Offs and presentation
@@ -366,6 +367,9 @@ playable is the first build worth adding to the deeek.org hub.
       stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.
-- [ ] Should SIGN-OFF reference Curbside's city? **Leaning towards a universe
-      crossover**; what form it takes (a news story, a TV cameo, a guest
-      fighter or stage) is still open.
+- [x] Should SIGN-OFF reference Curbside's city? **Yes, as news and a TV
+      cameo:** Channel 0 broadcasts to Curbside's city, years before
+      Curbside. The News stage's ticker carries its 1987 local news
+      (Cobble Row, Glass Heights, Councillor Lull's first call for a quieter
+      city), and Master Control's monitors will show Curbside footage. No
+      guest fighter or stage.
