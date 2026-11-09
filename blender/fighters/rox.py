@@ -103,7 +103,7 @@ def costume(p, b):
     p.box("belt_buckle", b.p(0, 0.098, 0.99), (0.05, 0.012, 0.035), FLASH, "hips", paint=lit)
 
     hp, hr = head(p, b, c, paint=skin)
-    mouth(p, b, (0, 0.111, 1.626), 0.058, 0.016, LIPS, kind="grin", inner=(120, 30, 50), teeth=(250, 248, 240))
+    mouth(p, b, (0, 0.111, 1.626), 0.058, 0.016, LIPS, kind="grin", inner=(120, 30, 50), teeth=(250, 248, 240), lips=LIPS, skin=SKIN)
     # Big permed hair in clumps, nothing above the hurtbox's top (the build
     # sizes her to it).
     for i, (x, f, u, r) in enumerate((

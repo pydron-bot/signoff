@@ -155,7 +155,7 @@ def costume(p, b):
            TOWEL, "x_towel", paint=towel_paint)
 
     hp, hr = head(p, b, c, paint=skin, skull=(0.096, 0.106, 0.118))
-    mouth(p, b, (0, 0.112, 1.618), 0.07, 0.018, SKIN, kind="grin", inner=(110, 34, 38), teeth=TEETH)
+    mouth(p, b, (0, 0.112, 1.618), 0.07, 0.018, SKIN, kind="grin", inner=(110, 34, 38), teeth=TEETH, lips=(194, 116, 104), skin=SKIN)
     # The waxed moustache: a heavy bar under the nose, the ends curled up.
     p.hull("moustache", [hp(x, f, u) for x, f, u in ((-0.05, 0.11, 1.636), (0.05, 0.11, 1.636), (-0.055, 0.104, 1.622), (0.055, 0.104, 1.622),
                                                      (-0.02, 0.134, 1.646), (0.02, 0.134, 1.646), (0, 0.136, 1.638), (-0.03, 0.126, 1.626), (0.03, 0.126, 1.626))],
