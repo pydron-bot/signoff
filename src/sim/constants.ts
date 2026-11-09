@@ -23,6 +23,8 @@ export const PREJUMP_FRAMES = 3;
 export const JUMP_LAND_FRAMES = 2;
 export const AIR_ATTACK_LAND_FRAMES = 4;
 export const START_X = fx(1.5);
+/** The jump out of a launcher that hit (a jump cancel) is a hop: this % of the fighter's jump speed. */
+export const HOP_PCT = 75;
 
 // Hits
 /** The freeze of a hit that has no weight of its own: projectiles (only the defender freezes), hazards, a crushed guard. */

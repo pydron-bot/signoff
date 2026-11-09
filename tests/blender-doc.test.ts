@@ -21,6 +21,8 @@ function hits(mv: MoveData): string {
   if (mv.interactFrame) parts.push(`${mv.interactFrame}: kicks the prop`);
   if (mv.hidden) parts.push(`${mv.hidden[0]}–${mv.hidden[1]}: off screen`);
   if (mv.teleport) parts.push(`${mv.teleport.frame}: reappears ${mv.teleport.to === 'behind' ? 'behind the opponent' : 'far back'}`);
+  if (mv.hover) parts.push(`${mv.hover[0]}–${mv.hover[1]}: hangs in the air`);
+  if (mv.dive) parts.push(`${mv.dive.frame}: dives (forward ${m(mv.dive.vx)}, down ${m(-mv.dive.vy)} m a frame)`);
   if (mv.armor) parts.push(`${mv.armor[0]}–${mv.armor[1]}: armour (glows)`);
   if (parts.length > 3) return `${parts.slice(0, 2).join('; ')}; … ${parts.length} hits to ${mv.lastActive}`;
   return parts.join('; ') || 'no hit';

@@ -13,6 +13,10 @@ describe('move list', () => {
       expect(section('Specials').every((r) => r.input.endsWith('SP'))).toBe(true);
       expect(section('Strings').map((r) => r.name)).toEqual(f.strings.map((s) => s.name));
       for (const r of section('Strings')) expect(r.input).toMatch(/^(↓ |→ |← )?(FP|BP|FK|BK)( · (FP|BP|FK|BK))+$/);
+      // The air specials and air strings.
+      const air = section('In the air');
+      expect(air.map((r) => r.name)).toEqual([...new Set(Object.values(f.airSpecials))].map((id) => f.moves[id].name).concat(f.airStrings.map((s) => s.name)));
+      for (const r of air) expect(r.input).toMatch(/^in the air: ([←→↓] )?SP$|^in the air: (FP|BP|FK|BK)( · (FP|BP|FK|BK))+$/);
       expect(section('Finishers').map((r) => r.name).sort()).toEqual(f.finishers.map((x) => x.name).sort());
       for (const r of section('Finishers')) expect(r.input).toMatch(/^([←→↑↓] )+(FP|BP|FK|BK|BLOCK)$|^win with /);
       for (const s of list) for (const r of s.rows) expect(r.input.length).toBeGreaterThan(0);

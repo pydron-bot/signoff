@@ -120,6 +120,10 @@ export interface MoveSpec {
   hidden?: Window;
   tithe?: MoveData['tithe'];
   heal?: MoveData['heal'];
+  hover?: Window;
+  /** Metres a frame, forward and up (negative: down). */
+  dive?: { frame: number; vx: number; vy: number };
+  landing?: number;
 }
 
 export function move(id: string, s: MoveSpec): MoveData {
@@ -159,6 +163,9 @@ export function move(id: string, s: MoveSpec): MoveData {
     hidden: s.hidden,
     tithe: s.tithe,
     heal: s.heal,
+    hover: s.hover,
+    dive: s.dive && { frame: s.dive.frame, vx: fx(s.dive.vx), vy: fx(s.dive.vy) },
+    landing: s.landing,
     startup: starts.length ? Math.min(...starts) : 0,
     lastActive: ends.length ? Math.max(...ends) : 0,
   };
@@ -200,7 +207,8 @@ export function normal(id: string, s: NormalSpec): MoveData {
         ? [{ frames: [s.startup, last + Math.ceil(s.recovery / 2)], box: box(Math.max(0, s.reach[0]), limbEnd, s.at[0], s.at[1]) }]
         : [],
     chain: s.chain,
-    cancel: kind === 'normal' ? [last + 1, last + CANCEL_LATE] : undefined,
+    // Air normals cancel too: into the next step of an air string, or (on a hit) an air special.
+    cancel: kind === 'normal' ? [last + 1, last + CANCEL_LATE] : kind === 'air' ? [last + 1, last + Math.min(CANCEL_LATE, s.recovery)] : undefined,
     boost: s.boost,
     armor: s.armor,
     invuln: s.invuln,

@@ -49,6 +49,9 @@ export interface FighterState {
   crouching: boolean;
   jumpDir: -1 | 0 | 1;
   airAttackUsed: boolean;
+  airSpecialUsed: boolean;
+  /** The jump being taken off is a jump cancel's hop. */
+  hop: boolean;
   move: string;
   moveFrame: number;
   /** One bit per hit of the current move that has connected. */
@@ -177,6 +180,8 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     crouching: false,
     jumpDir: 0,
     airAttackUsed: false,
+    airSpecialUsed: false,
+    hop: false,
     move: '',
     moveFrame: 0,
     hitMask: 0,

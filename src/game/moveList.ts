@@ -122,6 +122,20 @@ export function moveList(fighter: string): MoveSection[] {
     return { name: s.name, input: [first, ...s.path.slice(1)].join(' · '), notes: [heights.join(', '), s.safe ? 'safe on block' : '', ...end].filter(Boolean).join(' · '), frames: frames(f.moves[ids[ids.length - 1]]) };
   });
 
+  // In the air: Special while jumping (once a jump), and the air strings.
+  const air: MoveRow[] = [];
+  for (const dir of ['n', 'f', 'b', 'd'] as const) {
+    const id = f.airSpecials[dir];
+    if (!id) continue;
+    const m = f.moves[id];
+    const boost = m.boost ? f.moves[m.boost] : null;
+    air.push({ name: m.name, input: `in the air: ${DIR[dir]}SP`, notes: [traits(m), boost ? `SP again: ${traits(boost) || 'stronger'}` : ''].filter(Boolean).join(' · '), frames: '' });
+  }
+  for (const s of f.airStrings) {
+    const ids = stringMoves(f, s) ?? [];
+    air.push({ name: s.name, input: `in the air: ${s.path.map((p, k) => (k === 0 ? p.replace(/^j\./, '') : p)).join(' · ')}`, notes: [ids.map((id) => f.moves[id].name).join(', '), 'chains on hit or block'].join(' · '), frames: '' });
+  }
+
   const command: MoveRow[] = [];
   for (const side of ['f', 'b'] as const) {
     for (const [btn, id] of Object.entries(f.normals[side])) {
@@ -140,7 +154,8 @@ export function moveList(fighter: string): MoveSection[] {
   const system: MoveRow[] = [
     { name: 'Throw', input: 'THROW (← THROW: throw backward)', notes: 'break it with THROW', frames: '' },
     { name: 'Boost', input: 'SP SP (or SP, METER)', notes: `a quick double tap (within ${BOOST_TAP} frames, keep the direction from the first): 1 bar; on a juggled opponent it relaunches them (as often as you have bars)`, frames: '' },
-    { name: 'Tape Skip', input: 'METER during any move', notes: 'cancels it into a dash: 1 bar', frames: '' },
+    { name: 'Jump Cancel', input: '↑ (or ↗) as a launcher hits', notes: 'a hop after them, into an air string and an air special', frames: '' },
+    { name: 'Tape Skip', input: 'METER during any ground move', notes: 'cancels it into a dash: 1 bar', frames: '' },
     { name: 'Cut Away', input: 'METER while being hit', notes: 'breaks the combo: needs a full meter and spends all of it, once a round', frames: '' },
     { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },
     { name: 'Flawless Block', input: 'BLOCK just before the hit', notes: `pressed within ${FLAWLESS_WINDOW} frames of it landing: no chip, out of blockstun ${FLAWLESS_BLOCKSTUN_CUT} frames sooner (easier to punish), a little meter`, frames: '' },
@@ -152,6 +167,7 @@ export function moveList(fighter: string): MoveSection[] {
   return [
     { title: 'Specials', rows: specials },
     { title: 'Strings', rows: strings },
+    { title: 'In the air', rows: air },
     { title: 'Combos (from point blank; wait = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },

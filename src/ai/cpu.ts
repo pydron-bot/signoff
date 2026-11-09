@@ -307,6 +307,11 @@ export class Cpu {
       this.start(this.special(me, back | SPECIAL));
       return;
     }
+    // Now and then it goes over the top: a jump-in, with an air attack or its air special.
+    if (dist > fx(1.3) && dist < fx(2.8) && this.roll(this.level === LEVELS.easy ? 4 : 8)) {
+      this.start(this.jumpIn(me, d));
+      return;
+    }
     switch (d.style) {
       case 'zoner':
         return this.zoner(me, d, dist, r, fwd, back);
@@ -497,6 +502,27 @@ export class Cpu {
       else if (r < 75) this.start(tap(fwd | FK));
       else this.start(hold(back, 8));
     }
+  }
+
+  /** A jump forward: an air special near the top (boosted when it can), or an attack on the way down. */
+  private jumpIn(me: FighterState, d: FighterData): Plan {
+    const fwd = me.facing > 0 ? RIGHT : LEFT;
+    const special = Object.keys(d.airSpecials).length > 0 && this.roll(45);
+    const boost = special && me.meter >= BAR && this.roll(this.level.boost);
+    const btn = this.roll(50) ? FK : BK;
+    let pressedAt = -1;
+    return (f, t) => {
+      if (t < 4) return UP | fwd;
+      if (f.mode === 'prejump') return 0;
+      if (f.mode !== 'air' && f.mode !== 'move') return t < 10 ? 0 : null;
+      if (special && f.mode === 'air' && f.vy <= fx(0.03) && pressedAt < 0) {
+        pressedAt = t;
+        return SPECIAL;
+      }
+      if (boost && pressedAt >= 0 && t === pressedAt + 3) return SPECIAL;
+      if (!special && f.mode === 'air' && f.vy < 0 && f.y < fx(1.3)) return btn;
+      return 0;
+    };
   }
 
   /** A special, boosted when it has the meter and the nerve. */

@@ -46,9 +46,9 @@ const moves = table(
     cancel: [15, 21],
   }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Cue', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Cue', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { FK: 'j.FK' } }),
   normal('j.BP', { name: 'Jumping Headline', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
+  normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BK', { name: 'Jumping Kick', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 12 }),
   // String steps
   normal('FP FP', { name: 'Top Story', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.1, 1.45], damage: 30, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
@@ -135,6 +135,37 @@ const moves = table(
     motion: [{ frames: [4, 14], vx: 0.06 }],
     hits: [strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.9, 1.7], height: 'overhead', damage: 85, hitstun: 0, blockstun: 16, knockdown: true })],
   }),
+  // In the air: straight across at the height she's at, cue cards first. An answer to a zoner.
+  move('On the Wire', {
+    name: 'On the Wire',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    boost: 'On the Wire+',
+    hover: [1, 20],
+    motion: [
+      { frames: [6, 16], vx: 0.12 },
+      { frames: [17, 32], vx: 0.02 },
+    ],
+    landing: 6,
+    hits: [strike({ frames: [8, 14], reach: [0.1, 0.9], at: [0.4, 1.2], height: 'overhead', damage: 55, hitstun: 20, blockstun: 13 })],
+  }),
+  move('On the Wire+', {
+    name: 'On the Wire (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    hover: [1, 20],
+    motion: [
+      { frames: [6, 16], vx: 0.12 },
+      { frames: [17, 32], vx: 0.02 },
+    ],
+    landing: 6,
+    hits: [
+      strike({ frames: [8, 10], reach: [0.1, 0.9], at: [0.4, 1.2], height: 'overhead', damage: 40, hitstun: 20, blockstun: 13 }),
+      strike({ frames: [13, 15], reach: [0.1, 0.9], at: [0.4, 1.2], height: 'overhead', damage: 45, hitstun: 0, blockstun: 13, knockdown: true, wallBounce: true }),
+    ],
+  }),
   throwMove(110),
   interactMove(),
   technicalDifficulties(1.5),
@@ -202,6 +233,8 @@ export const MARGARET: FighterData = {
     b: {},
   },
   specials: { n: 'Breaking', f: 'Live Feed', b: 'Teleprompter', d: 'Lead Story' },
+  airSpecials: { n: 'On the Wire' },
+  airStrings: [{ name: 'Top Story', path: ['j.FP', 'FK', 'BP'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

@@ -126,7 +126,7 @@ function throwable(f: FighterState, reeling = false): boolean {
       return true;
     case 'move': {
       const mv = moveOf(f);
-      return mv.kind !== 'air' && !inWindow(f.moveFrame, mv.invuln);
+      return mv.stance !== 'air' && !inWindow(f.moveFrame, mv.invuln);
     }
     default:
       return false;

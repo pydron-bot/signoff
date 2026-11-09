@@ -37,6 +37,8 @@ export type SimEvent =
   | { type: 'decoyPop'; player: number; x: Fx; y: Fx }
   | { type: 'throwTech'; player: number }
   | { type: 'tapeSkip'; player: number }
+  /** A launcher that hit, cancelled into a jump to follow them up. */
+  | { type: 'jumpCancel'; player: number }
   | { type: 'cutAway'; player: number }
   | { type: 'superStart'; player: number }
   | { type: 'superHit'; player: number }
