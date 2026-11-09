@@ -56,6 +56,8 @@ export interface SegmentData {
   readonly walkPct?: number;
   /** The whole game's speed, percent: above 100, an extra step every so often (the tape runs fast). */
   readonly tempoPct?: number;
+  /** Meter gained from hits and blocks, percent (both fighters). */
+  readonly meterPct?: number;
   readonly hazards: readonly HazardData[];
   readonly props: readonly PropData[];
 }
@@ -110,6 +112,34 @@ function desk(): PropData {
     box: box(-0.6, 0.6, 0, 0.8),
     speed: fx(0.1),
     effect: effect({ damage: 75, hitstun: 0, blockstun: 20, chip: 14, push: 0.07, knockdown: true }),
+  };
+}
+
+function pot(): PropData {
+  return {
+    id: 'pot',
+    name: 'Stockpot',
+    x: fx(-3),
+    reach: fx(1.0),
+    // Heavy, thrown at chest height like the boombox: a crouching Mumbles is under it.
+    box: box(-0.3, 0.3, 0.85, 1.3),
+    speed: fx(0.17),
+    thrown: true,
+    effect: effect({ damage: 65, hitstun: 0, blockstun: 16, chip: 10, push: 0.05, knockdown: true }),
+  };
+}
+
+function knives(): PropData {
+  return {
+    id: 'knives',
+    name: 'Knife block',
+    x: fx(3),
+    reach: fx(1.0),
+    // Hurled low and fast, at the knees: jump it or block low.
+    box: box(-0.25, 0.25, 0.15, 0.55),
+    speed: fx(0.24),
+    thrown: true,
+    effect: effect({ damage: 50, height: 'low', hitstun: 22, blockstun: 14, chip: 10, push: 0.04 }),
   };
 }
 
@@ -257,6 +287,45 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 70, hitstun: 0, blockstun: 1, knockdown: true },
           }),
         ],
+        props: [],
+      },
+    ],
+  },
+  kitchen: {
+    id: 'kitchen',
+    name: 'Kitchen Live',
+    segments: [
+      {
+        name: 'Prep',
+        halfWidth: fx(6),
+        hazards: [],
+        props: [pot(), knives()],
+      },
+      {
+        name: 'Grease Fire',
+        // The fire has taken the far ends of the kitchen: the walls close in.
+        halfWidth: fx(4.5),
+        hazards: [
+          hazard({
+            id: 'flare',
+            caption: 'GREASE FIRE',
+            spots: [-3.4, 3.4],
+            first: 210,
+            period: 330,
+            warn: 70,
+            active: 14,
+            halfW: 0.7,
+            height: 2.2,
+            effect: { damage: 55, hitstun: 0, blockstun: 1, knockdown: true },
+          }),
+        ],
+        props: [],
+      },
+      {
+        name: 'The Oven',
+        halfWidth: fx(6),
+        meterPct: 150,
+        hazards: [],
         props: [],
       },
     ],

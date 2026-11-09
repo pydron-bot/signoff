@@ -28,6 +28,11 @@ const ADS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
     ['DOREEN\'S ICE CREAM', 'Listen for the chimes. Cobble Row, every evening.'],
     ['NIGHT-LITE BULB CO.', 'Our lamps never fall. Almost never.'],
   ],
+  kitchen: [
+    ['LAMARRE NON-STICK', 'Nothing sticks. Nothing ever leaves.'],
+    ['FIRE-OUT BLANKETS', "Smother it. Don't think about it."],
+    ['THERMO-KING OVENS', 'Preheats in seconds. Never cools.'],
+  ],
 };
 
 /** The News stage's ticker runs from its second segment on. */

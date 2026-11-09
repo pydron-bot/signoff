@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.19.0',
+    date: '2026-11-09',
+    title: 'Live from the kitchen',
+    notes: [
+      "A fourth stage: Kitchen Live, Chef Gus's own show. In Prep, throw the stockpot (it flies at chest height) or the knife block (low and fast: block it crouching). In Grease Fire the flames take both ends of the kitchen, the walls close in and the fire flares up at one end. In The Oven the heat makes Signal fill half as fast again, for both of you.",
+      "Gus's Arcade fights are now on his own show.",
+    ],
+  },
+  {
     version: '0.18.0',
     date: '2026-11-09',
     title: 'Kitchen Live and the late news',

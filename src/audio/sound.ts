@@ -269,6 +269,10 @@ export class Sound {
             this.noise(0.15, 5000, 0.2, 'highpass');
             this.tone(90, 0.5, 0.3, 'square', 45, 0.12);
             this.noise(0.4, 600, 0.25, 'lowpass', 1, 0.12);
+          } else if (e.hazard === 'flare') {
+            // The fat catches: a whoomph.
+            this.noise(0.6, 400, 0.35, 'lowpass');
+            this.noise(0.4, 2500, 0.12, 'bandpass', 1, 0.05);
           } else if (e.hazard === 'riser') {
             // Hydraulics.
             this.tone(70, 0.6, 0.18, 'sawtooth', 140);
@@ -283,6 +287,9 @@ export class Sound {
           if (e.prop === 'boombox') this.tone(330, 0.3, 0.1, 'square', 660);
           // The desk scrapes across the floor.
           if (e.prop === 'desk') this.noise(0.7, 900, 0.12, 'bandpass');
+          // Pans clang; knives rattle.
+          if (e.prop === 'pot') this.tone(520, 0.5, 0.1, 'triangle', 480);
+          if (e.prop === 'knives') this.noise(0.25, 7000, 0.12, 'highpass');
           this.tone(160, 0.1, 0.3, 'sine', 80);
           this.noise(0.6, 250, 0.08, 'lowpass');
           break;

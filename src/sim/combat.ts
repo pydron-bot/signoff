@@ -30,6 +30,7 @@ import {
   THROW_HOLD,
 } from './constants';
 import type { SimEvent } from './events';
+import { segmentData } from './stages';
 import { airborne, firstHit, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
@@ -132,8 +133,10 @@ function isCounter(f: FighterState): boolean {
   return f.mode === 'move' && f.moveFrame <= moveOf(f).lastActive;
 }
 
-function gainMeter(f: FighterState, n: number): void {
-  f.meter = Math.min(METER_MAX, f.meter + n);
+/** Meter from hits and blocks, scaled by the segment's rule (the oven's heat). */
+function gainMeter(m: MatchState, f: FighterState, n: number): void {
+  const pct = segmentData(m.stage, m.segment).meterPct ?? 100;
+  f.meter = Math.min(METER_MAX, f.meter + Math.floor((n * pct) / 100));
 }
 
 export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly boolean[]): void {
@@ -337,8 +340,8 @@ export function applyHit(
     else setSlide(d, dir, e.push);
     d.hitstop = BLOCKSTOP;
     if (!projectile) a.hitstop = BLOCKSTOP;
-    gainMeter(a, Math.floor(e.damage / 4));
-    gainMeter(d, Math.floor(e.damage / 8));
+    gainMeter(m, a, Math.floor(e.damage / 4));
+    gainMeter(m, d, Math.floor(e.damage / 8));
     ev.push({ type: 'block', attacker: ai, defender: di, move: moveId, chip, x: d.x, y });
     if (e.guardCrush) {
       // The guard gives: they reel as if hit, and the next blow isn't blocked.
@@ -358,7 +361,7 @@ export function applyHit(
     if (ko) d.koMove = moveId;
     d.hitstop = stop;
     if (!projectile) a.hitstop = stop;
-    gainMeter(a, e.damage);
+    gainMeter(m, a, e.damage);
     ev.push({ type: 'armor', player: di, move: d.move });
     if (ko) {
       launch(d, dir, KNOCK_VY, false);
@@ -431,8 +434,8 @@ export function applyHit(
   if (e.pull !== undefined) pull(m, a, d, e.pull);
   d.hitstop = hitStop;
   if (!projectile) a.hitstop = hitStop;
-  gainMeter(a, dmg + (dmg >> 1));
-  gainMeter(d, dmg);
+  gainMeter(m, a, dmg + (dmg >> 1));
+  gainMeter(m, d, dmg);
   firstHit(m, ai, ev);
   ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, x: d.x, y });
   if (ko) ev.push({ type: 'ko', player: di });

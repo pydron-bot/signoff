@@ -6,7 +6,9 @@
  * detuned dirge for the flood. Feel the Burn at Dawn: aerobics pop, the same
  * tape run fast, then the tune in the dark. The Eleven O'Clock News: a
  * brass-stab news theme over a telex pluck, the same theme pushed harder
- * under the ticker, then the theme in fragments as the lights fail.
+ * under the ticker, then the theme in fragments as the lights fail. Kitchen
+ * Live: a jaunty cooking-show bounce, the same tune in a panic as the fire
+ * spreads, then a slow, heavy groove in the heat of the oven.
  */
 
 export interface Part {
@@ -142,8 +144,45 @@ const LIGHTS_OUT: Cue = {
   ],
 };
 
+// Prep: F major, I-vi-ii-V, a walking bass and a plucked melody: daytime television.
+const PREP: Cue = {
+  name: 'Prep',
+  bpm: 104,
+  drums: 'k.h.s.h.k.h.s.hh'.repeat(4),
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(beats(41, 45, 48, 45), beats(38, 41, 45, 41), beats(43, 46, 50, 46), beats(36, 40, 43, 40)) },
+    { voice: 'pluck', gain: 0.13, notes: bars(eighths(72, 0, 77, 76, 72, 0, 69, 0), eighths(69, 0, 74, 72, 69, 0, 65, 0), eighths(70, 0, 74, 72, 70, 0, 67, 0), eighths(67, 0, 72, 70, 67, 64, 67, 0)) },
+    { voice: 'pad', gain: 0.12, hold: 16, notes: bars([65, ...Array(15).fill(0)], [62, ...Array(15).fill(0)], [62, ...Array(15).fill(0)], [64, ...Array(15).fill(0)]) },
+  ],
+};
+
+// Grease Fire: the tune in D minor, fast, with alarm-like 16ths on top.
+const GREASE: Cue = {
+  name: 'Grease Fire',
+  bpm: 138,
+  drums: 'k.hhs.hhk.hhs.hh'.repeat(3) + 'kkhhs.hhkkhhsSsS',
+  parts: [
+    { voice: 'bass', gain: 0.5, notes: bars(eighths(38, 38, 50, 38, 38, 38, 50, 38), eighths(34, 34, 46, 34, 34, 34, 46, 34), eighths(36, 36, 48, 36, 36, 36, 48, 36), eighths(33, 33, 45, 33, 33, 33, 45, 45)) },
+    { voice: 'arp', gain: 0.1, notes: bars([86, 0, 85, 0].concat([86, 0, 85, 0, 86, 0, 85, 0, 86, 0, 85, 0]), [86, 0, 85, 0, 86, 0, 85, 0, 86, 0, 85, 0, 86, 0, 85, 0], [84, 0, 83, 0, 84, 0, 83, 0, 84, 0, 83, 0, 84, 0, 83, 0], [85, 0, 84, 0, 85, 0, 84, 0, 85, 0, 84, 0, 85, 0, 84, 0]) },
+    { voice: 'lead', gain: 0.14, hold: 2, notes: bars(eighths(74, 0, 77, 76, 74, 0, 69, 0), eighths(70, 0, 74, 72, 70, 0, 65, 0), eighths(72, 0, 76, 74, 72, 0, 67, 0), eighths(69, 0, 73, 72, 69, 0, 0, 0)) },
+  ],
+};
+
+// The Oven: Bb minor, slow and heavy, the pads swelling like heat haze.
+const OVEN: Cue = {
+  name: 'The Oven',
+  bpm: 88,
+  drums: 'k.......s..k....k.k.....s.......',
+  parts: [
+    { voice: 'bass', gain: 0.6, hold: 6, notes: bars(beats(34, 0, 34, 37), beats(32, 0, 32, 0), beats(30, 0, 30, 32), beats(29, 0, 29, 0)) },
+    { voice: 'pad', gain: 0.15, hold: 16, notes: bars([61, ...Array(15).fill(0)], [60, ...Array(15).fill(0)], [58, ...Array(15).fill(0)], [57, ...Array(15).fill(0)]) },
+    { voice: 'pad', gain: 0.11, hold: 16, notes: bars([65, ...Array(15).fill(0)], [63, ...Array(15).fill(0)], [61, ...Array(15).fill(0)], [60, ...Array(15).fill(0)]) },
+    { voice: 'lead', gain: 0.1, hold: 8, notes: bars(beats(77, 0, 0, 0), beats(75, 0, 73, 0), beats(73, 0, 0, 0), beats(72, 0, 0, 0)) },
+  ],
+};
+
 /** Music by stage, one cue per segment. */
-export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD], burn: [WARMUP, DOUBLE, BURNOUT], news: [HEADLINES, TICKER, LIGHTS_OUT] };
+export const SCORES: Readonly<Record<string, readonly Cue[]>> = { weather: [STUDIO, STORM, FLOOD], burn: [WARMUP, DOUBLE, BURNOUT], news: [HEADLINES, TICKER, LIGHTS_OUT], kitchen: [PREP, GREASE, OVEN] };
 
 /** Steps in a cue's loop. */
 export function loopSteps(c: Cue): number {
