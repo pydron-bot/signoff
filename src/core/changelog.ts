@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.19.0',
+    date: '2026-11-09',
+    title: 'Hands on',
+    notes: [
+      'The fighters have hands now: fists close to punch, fingers splay when they get hit, hands cup to grab, and Dale points at his map in the intro.',
+      'Faces talk: jaws move through intros and wins, open in a shout on every special, and hang slack when someone is dazed or out cold. Mister Mumbles\' jaw drops between its slots like a real dummy\'s.',
+      "Things swing: Dale's tie and quiff, Rox's perm and her headband's new tails, Hollis's key ring and Mister Mumbles' bow tie and strings all follow the fight with a little lag.",
+    ],
+  },
+  {
     version: '0.18.0',
     date: '2026-11-09',
     title: 'Kitchen Live and the late news',

@@ -8,11 +8,12 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, grip, head, legs, lerp, lit, mouth, ring, torso
+from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, ring, torso
 
 ID = "hollis"
 HEIGHT = 1.90
 GIRTH = 1.25
+HAND = 1.2  # bigger hands than the others
 
 SKIN = (122, 84, 62)
 SHIRT = (120, 140, 164)
@@ -71,7 +72,7 @@ def costume(p, b):
 
     skin = face_paint(b, SKIN, stubble=STUBBLE)
 
-    c = {"skin": SKIN, "top": SHIRT, "bottom": NAVY, "shoes": BOOTS, "hair": HAIR, "shoulders": 0.23, "lids": 0.8, "hand": 1.2,
+    c = {"skin": SKIN, "top": SHIRT, "bottom": NAVY, "shoes": BOOTS, "hair": HAIR, "shoulders": 0.23, "lids": 0.8, "hand": HAND,
          "eye": (0.02, 0.008, 0.015), "brows": HAIR, "sole": (12, 12, 12)}
     torso(p, b, c, paint=shirt)  # shirt tucked in at the belt
     # A slight gut, over the belt.
@@ -93,9 +94,10 @@ def costume(p, b):
         p.blob(f"epaulette_button{s}", b.p(s * 0.125, 0.0, 1.465), (0.008, 0.008, 0.006), GOLD, "chest", mat=1)
     p.seg("flashlight", b.p(-0.2, 0.02, 0.98), b.p(-0.2, 0.06, 0.74), 0.025, 0.03, BELT, "hips", mat=1, paint=lit)
     p.seg("lens", b.p(-0.2, 0.06, 0.75), b.p(-0.2, 0.065, 0.73), 0.034, 0.034, METAL, "hips", mat=1, paint=lit)
-    p.seg("key_ring", b.p(0.2, 0.0, 0.92), b.p(0.2, 0.0, 0.9), 0.03, 0.03, METAL, "hips", mat=1)
+    # The key ring swings from the belt (x_keys).
+    p.seg("key_ring", b.p(0.2, 0.0, 0.92), b.p(0.2, 0.0, 0.9), 0.03, 0.03, METAL, "x_keys", mat=1)
     for i, d in enumerate((-0.02, 0.0, 0.02)):
-        p.box(f"key{i}", b.p(0.2 + d, 0.01, 0.86), (0.008, 0.004, 0.05), GOLD, "hips", mat=1)
+        p.box(f"key{i}", b.p(0.2 + d, 0.01, 0.86), (0.008, 0.004, 0.05), GOLD, "x_keys", mat=1)
 
     hp, hr = head(p, b, c, paint=skin)
     mouth(p, b, (0, 0.112, 1.618), 0.05, 0.008, SKIN, kind="line", inner=(70, 40, 36))
@@ -108,7 +110,7 @@ def costume(p, b):
     p.seg("cap", hp(0, -0.005, 1.7), hp(0, 0.005, 1.775), b.k * b.head * 0.106, b.k * b.head * 0.12, NAVY, "head", verts=8, paint=lit)
     p.seg("cap_top", hp(0, 0.005, 1.775), hp(0, 0.005, 1.782), b.k * b.head * 0.12, b.k * b.head * 0.1, NAVY, "head", verts=8, paint=lit)
     p.seg("cap_band", hp(0, -0.005, 1.695), hp(0, -0.003, 1.725), b.k * b.head * 0.108, b.k * b.head * 0.109, BELT, "head", verts=12, paint=lit)
-    p.hull("visor", [hp(x, f, 1.69 + d) for d in (0, 0.008) for x, f in ((-0.09, 0.07), (0.09, 0.07), (-0.07, 0.17), (0.07, 0.17), (0, 0.185))], BELT, "head", mat=1, paint=lit)
+    p.hull("visor", [hp(x, f, 1.69 + d) for d in (0, 0.008) for x, f in ((-0.09, 0.07), (0.09, 0.07), (-0.07, 0.17), (0.07, 0.17), (0, 0.185))], BELT, "x_peak", mat=1, paint=lit)
     p.box("cap_badge", hp(0, 0.122, 1.742), hr(0.032, 0.01, 0.034), GOLD, "head", mat=1, paint=lit)
 
     arms(p, b, c, sleeve=0.45, paint=shirt, hand_paint=skin)
@@ -130,6 +132,15 @@ def costume(p, b):
         knee, ankle = b.j[f"shin.{s}"]
         # The boots' tops, a rim over the trousers.
         p.seg(f"boot_top.{s}", lerp(knee, ankle, 0.45), lerp(knee, ankle, 0.52), b.r(0.064), b.r(0.062), BOOTS, f"shin.{s}", verts=10, paint=boots)
+
+
+def xbones(b):
+    """Secondary motion: the key ring on his belt, and a little give in the cap's peak."""
+    hp, _, _ = head_frame(b)
+    return [
+        {"name": "x_keys", "parent": "hips", "head": b.p(0.2, 0.0, 0.925), "tail": b.p(0.2, 0.01, 0.84), "stiff": 0.14, "damp": 0.2, "max": 40},
+        {"name": "x_peak", "parent": "head", "head": hp(0, 0.08, 1.694), "tail": hp(0, 0.185, 1.694), "stiff": 0.45, "damp": 0.4, "max": 5},
+    ]
 
 
 class STANCE(Stance):

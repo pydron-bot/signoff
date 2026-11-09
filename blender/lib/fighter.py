@@ -14,7 +14,8 @@ import numpy as np
 from .anim import DATA, check, move_clips, state_clips
 from .body import Build, new_parts
 from .common import export_glb, reset_scene, shape_key_tracks, triangles
-from .rig import Clip, apply_pose, build_rig
+from .rig import JAW, Clip, add_bones, apply_pose, build_rig
+from .spring import bake
 from .texture import paint, unwrap, use_atlas
 
 # Seen most (round start, win, intro): twice the texel density.
@@ -113,8 +114,13 @@ def fit_crouch(rig, body, st, top):
 def make_body(mod, height):
     """A fresh scene with the rig and the skinned body at `height`."""
     reset_scene()
-    rig = build_rig(mod.ID, height)
-    b = Build(height, getattr(mod, "GIRTH", 1.0), getattr(mod, "HEAD", 1.0))
+    head = getattr(mod, "HEAD", 1.0)
+    rig = build_rig(mod.ID, height, head, getattr(mod, "HAND", 1.0))
+    rig["jaw_open"] = getattr(mod, "JAW_OPEN", JAW)
+    rig["jaw_slide"] = getattr(mod, "JAW_SLIDE", 0.0) * height / 1.80 * head
+    b = Build(height, getattr(mod, "GIRTH", 1.0), head)
+    if hasattr(mod, "xbones"):
+        add_bones(rig, mod.xbones(b))
     p = new_parts()
     mod.costume(p, b)
     body = p.join(f"{mod.ID}_body", rig)
@@ -191,6 +197,8 @@ def build(mod, out_dir, art_dir):
     fit_juggle(rig, body, st, hurt["juggle"])
     actions = state_clips(rig, st, data)
     moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
+    # Secondary motion on the fighter's own bones, before the checks (it moves the mesh).
+    bake(rig, actions + moves, mod.xbones(b) if hasattr(mod, "xbones") else [], skinned)
     problems = unreachable + check(rig, moves, strikes)
     tall, heights = check_heights(rig, body, actions, hurt)
     problems += tall
