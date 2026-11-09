@@ -46,8 +46,8 @@ const moves = table(
     kind: 'normal',
     total: 31,
     hits: [
-      strike({ frames: [11, 12], reach: [0.2, 1.15], at: [0.8, 1.2], damage: 45, hitstun: 14, blockstun: 10, push: 0.01 }),
-      strike({ frames: [15, 16], reach: [0.2, 1.15], at: [0.8, 1.2], damage: 40, hitstun: 20, blockstun: 14, push: 0.07 }),
+      strike({ frames: [11, 12], reach: [0.2, 1.15], at: [0.8, 1.2], damage: 38, hitstun: 14, blockstun: 10, push: 0.01 }),
+      strike({ frames: [15, 16], reach: [0.2, 1.15], at: [0.8, 1.2], damage: 34, hitstun: 20, blockstun: 14, push: 0.07 }),
     ],
     hurt: [{ frames: [11, 24], box: box(0.2, 1.05, 0.8, 1.2) }],
     cancel: [17, 23],
@@ -56,7 +56,7 @@ const moves = table(
   normal('c.FP', { name: 'Crunch Jab', stance: 'crouch', startup: 6, active: 2, recovery: 8, reach: [0.2, 0.8], at: [0.7, 0.95], damage: 32, hitstun: 13, blockstun: 10 }),
   normal('c.BP', { name: 'Star Jump Uppercut', stance: 'crouch', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.75], at: [1.0, 1.8], damage: 78, hitstun: 22, blockstun: 11, launch: 0.16 }),
   normal('c.FK', { name: 'Toe Tap', stance: 'crouch', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.1], at: [0, 0.3], height: 'low', damage: 39, hitstun: 14, blockstun: 10, chain: { FK: 'c.FK FK' } }),
-  normal('c.BK', { name: 'Splits Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 22, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 72, hitstun: 0, blockstun: 10, knockdown: true }),
+  normal('c.BK', { name: 'Splits Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 22, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 64, hitstun: 0, blockstun: 10, knockdown: true }),
   // Command normal
   normal('f.FK', { name: 'Step Touch', startup: 16, active: 2, recovery: 14, reach: [0.2, 1.0], at: [1.0, 1.5], height: 'overhead', damage: 78, hitstun: 18, blockstun: 13, chain: { BK: 'f.FK BK' } }),
   // Lunges in as it punches: plus on block, so the pressure keeps going.
