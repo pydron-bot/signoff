@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "art": "blender -b --factory-startup -P blender/build.py --",
+    "combos": "COMBOS=1 vitest run tests/combo-search.test.ts",
     "docs:clips": "UPDATE_DOCS=1 vitest run tests/blender-doc.test.ts tests/blender-data.test.ts"
   },
   "dependencies": {

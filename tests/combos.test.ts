@@ -240,18 +240,18 @@ describe("Rox's signature routes", () => {
     return { hits: h.length, pct: ((d.maxHealth - d.health) * 100) / d.maxHealth };
   }
 
-  it('meterless: 10 or more hits, strings and specials (no launcher loop), about a third', () => {
+  it('meterless: 10 or more hits, strings and specials (no launcher loop), about 30%', () => {
     const r = damage(meterless, 0);
     expect(r.hits).toBeGreaterThanOrEqual(10);
-    expect(r.pct).toBeGreaterThan(30);
-    expect(r.pct).toBeLessThan(40);
+    expect(r.pct).toBeGreaterThan(25);
+    expect(r.pct).toBeLessThan(36);
   });
 
   it('one bar: longer, and worth more than the meterless route', () => {
     const r = damage(oneBar, BAR);
     expect(r.hits).toBeGreaterThanOrEqual(11);
     expect(r.pct).toBeGreaterThan(damage(meterless, 0).pct + 4);
-    expect(r.pct).toBeLessThan(52);
+    expect(r.pct).toBeLessThan(45);
   });
 });
 

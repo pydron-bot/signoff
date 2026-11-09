@@ -63,7 +63,7 @@ const moves = table(
     name: 'Hand Puppet (boosted)',
     kind: 'special',
     total: 30,
-    hits: [strike({ frames: [8, 10], reach: [0.15, 1.2], at: [0.6, 1.3], damage: 75, hitstun: 0, blockstun: 14, launch: 0.15 })],
+    hits: [strike({ frames: [8, 10], reach: [0.15, 1.2], at: [0.6, 1.3], damage: 60, hitstun: 0, blockstun: 14, launch: 0.15 })],
     spawns: [{ frame: 12, projectile: decoy(2, 420) }],
   }),
   move('Strings Attached', {
@@ -82,7 +82,7 @@ const moves = table(
     invuln: [1, 26],
     hidden: [6, 22],
     teleport: { frame: 14, to: 'behind' },
-    hits: [strike({ frames: [24, 26], reach: [0.15, 1.0], at: [0.6, 1.3], damage: 94, hitstun: 0, blockstun: 12, knockdown: true })],
+    hits: [strike({ frames: [24, 26], reach: [0.15, 1.0], at: [0.6, 1.3], damage: 50, hitstun: 0, blockstun: 12, knockdown: true })],
   }),
   move('Exit Stage Left', {
     name: 'Exit Stage Left',
@@ -104,7 +104,7 @@ const moves = table(
     name: 'Knock-Knock (boosted)',
     kind: 'special',
     total: 50,
-    hits: [strike({ frames: [24, 27], reach: [0.15, 1.4], at: [0, 0.9], height: 'unblockable', damage: 152, hitstun: 0, blockstun: 1, knockdown: true })],
+    hits: [strike({ frames: [24, 27], reach: [0.15, 1.4], at: [0, 0.9], height: 'unblockable', damage: 95, hitstun: 0, blockstun: 1, knockdown: true })],
   }),
   throwMove(85),
   interactMove(),
