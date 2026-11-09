@@ -11,7 +11,7 @@ import { GUIDE_DUMMY } from './game/comboGuides';
 import { FixedStep } from './game/loop';
 import { SlowMo } from './game/slowMo';
 import { parseReplay, type Replay } from './game/replay';
-import { DUMMIES, Session, type Mode } from './game/session';
+import { DUMMIES, PRACTICES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
@@ -462,9 +462,11 @@ function pause(on: boolean): void {
   ];
   if (s.training) {
     rows.push(
-      { label: 'RESET POSITIONS (R)', run: () => (s.reset(), pause(false)) },
+      { label: 'RESET POSITIONS (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
       { label: 'SEGMENT', options: STAGES[s.match.stage].segments.map((g, k) => `${k + 1} ${g.name.toUpperCase()}`), value: s.match.segment, onChange: (v) => s.setSegment(v) },
       { label: 'DUMMY', options: ['STAND', 'BLOCK ALL', 'CROUCH BLOCK', 'CPU'], value: DUMMIES.indexOf(s.dummy), onChange: (v) => (s.dummy = DUMMIES[v]) },
+      // Finisher practice: one hit wins the match, then Stay tuned with no time limit (or a cancellation), and again.
+      { label: 'FINISHERS', options: ['OFF', 'PRACTISE', 'AT THE WALL'], value: PRACTICES.indexOf(s.practice), onChange: (v) => (s.setPractice(PRACTICES[v]), hud.start(s.match, true)) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );
   }
@@ -517,7 +519,10 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (!session?.training || paused) return;
-  if (e.code === 'KeyR') session.reset();
+  if (e.code === 'KeyR') {
+    session.reset();
+    hud.start(session.match, true);
+  }
   if (e.code === 'KeyB') arena.showBoxes = !arena.showBoxes;
 });
 document.addEventListener('visibilitychange', () => {
@@ -599,7 +604,10 @@ renderer.setAnimationLoop((now) => {
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
+      const resets = s.resets;
       s.tick(frame[0], frame[1], ev);
+      // Finisher practice started over: a clean picture for the next one.
+      if (s.resets !== resets) hud.start(s.match, true);
       arena.step(s.match, ev);
       inputSides(s);
       for (let i = 0; i < 2; i++) if (sides[i]) inputDisplays[i].log.push(s.inputs[i], s.match.fighters[i].facing);
@@ -630,7 +638,7 @@ renderer.setAnimationLoop((now) => {
   const m = session!.match;
   arena.render(m);
   if (!demo) {
-    hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : s.guideRun ? showcaseCaption(s) : '');
+    hud.update(m, s.adv.last, s.training ? (s.practice !== 'off' ? `Finishers: one hit wins, then take your time · R reset · Esc menu` : `Dummy: ${s.dummy} · R reset · B boxes · Esc menu`) : s.guideRun ? showcaseCaption(s) : '');
     const p1 = m.fighters[0];
     touch.setTD(canTD(p1));
     touch.setInteract(propInReach(m, p1) >= 0);

@@ -3,7 +3,9 @@ import { Cpu } from '../src/ai/cpu';
 import { FixedStep } from '../src/game/loop';
 import { Session } from '../src/game/session';
 import { DALE } from '../src/sim/fighters/dale';
-import { Input, ROUND_FRAMES, createMatch, frameData, step, type SimEvent } from '../src/sim';
+import { Input, ROUND_FRAMES, STAY_TUNED_FRAMES, createMatch, frameData, step, type SimEvent } from '../src/sim';
+import { backToWall, rangeOf } from '../src/sim/finisher';
+import { fx } from '../src/sim/fixed';
 import { place } from './sim-helpers';
 
 describe('CPU', () => {
@@ -70,5 +72,42 @@ describe('fixed step', () => {
     expect(n).toBeGreaterThanOrEqual(59);
     expect(n).toBeLessThanOrEqual(61);
     expect(f.advance(120 * (1000 / 120) + 5000)).toBe(4);
+  });
+});
+
+describe('training: finisher practice', () => {
+  it('one hit wins the match, Stay tuned waits as long as it takes, and a finisher starts it over', () => {
+    const s = new Session({ mode: 'training', p1: 'dale', p2: 'rox', level: 'normal', seed: 1 });
+    s.setPractice('centre');
+    const m = s.match;
+    expect(m.fighters[1].health).toBe(1);
+    expect(m.fighters[0].wins).toBe(1);
+    const ev: SimEvent[] = [];
+    // Walk in and jab.
+    for (let t = 0; t < 400 && m.phase === 'fight'; t++) s.tick(Math.abs(m.fighters[1].x - m.fighters[0].x) > fx(0.9) ? Input.RIGHT : t % 20 === 0 ? Input.FP : 0, 0, ev);
+    for (let t = 0; t < 400 && m.phase !== 'stayTuned'; t++) s.tick(0, 0, ev);
+    expect(m.phase).toBe('stayTuned');
+    // Far longer than the usual window: still waiting.
+    for (let t = 0; t < STAY_TUNED_FRAMES * 3; t++) s.tick(0, 0, ev);
+    expect(m.phase).toBe('stayTuned');
+    // The Rerun (any range): up, down, Block.
+    const seq = [Input.UP, Input.UP, 0, 0, Input.DOWN, Input.DOWN, 0, 0, Input.BLOCK];
+    for (const b of seq) s.tick(b, 0, ev);
+    expect(m.phase).toBe('finisher');
+    const resets = s.resets;
+    for (let t = 0; t < 600 && s.resets === resets; t++) s.tick(0, 0, ev);
+    expect(s.resets).toBe(resets + 1);
+    expect(ev.some((e) => e.type === 'matchOver')).toBe(false);
+    expect(m.phase).toBe('fight');
+    expect(m.fighters[1].health).toBe(1);
+  });
+
+  it('at the wall: the dummy starts with its back to it, close enough for the Stage Sign-Off', () => {
+    const s = new Session({ mode: 'training', p1: 'gus', p2: 'rox', level: 'normal', seed: 1 });
+    s.setPractice('wall');
+    expect(backToWall(s.match, 0)).toBe(true);
+    expect(rangeOf(s.match.fighters[1].x - s.match.fighters[0].x)).toBe('close');
+    s.setPractice('off');
+    expect(s.match.fighters[1].health).toBe(s.match.fighters[1].maxHealth);
   });
 });

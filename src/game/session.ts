@@ -4,7 +4,9 @@
  * clock, health and meter refills, reset, frame advantage). No DOM here.
  */
 import { Cpu, type CpuLevel } from '../ai/cpu';
-import { Input, METER_MAX, ROUND_FRAMES, createMatch, moveData, saveMatch, step, type MatchState, type SimEvent } from '../sim';
+import { Input, METER_MAX, ROUND_FRAMES, STAY_TUNED_FRAMES, createMatch, moveData, saveMatch, step, type MatchState, type SimEvent } from '../sim';
+import { fx } from '../sim/fixed';
+import { segmentData } from '../sim/stages';
 import { setupRound } from '../sim/stage';
 import { AdvantageTracker } from './advantage';
 import { GUIDE_REST, guideInput, guides, guideStart, runGuide, type ComboGuide, type GuideRun } from './comboGuides';
@@ -14,6 +16,15 @@ import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
 export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay' | 'showcase';
 export type Dummy = 'stand' | 'block' | 'crouch' | 'cpu';
 export const DUMMIES: readonly Dummy[] = ['stand', 'block', 'crouch', 'cpu'];
+/**
+ * Training's finisher practice: the dummy on its last point of health and
+ * the player a round up, so any hit ends the match: then a cancellation (if
+ * that blow earned one) or "Stay tuned" with no time limit, a finisher, and
+ * back to the start. 'wall' starts the dummy with its back to a wall, for
+ * the Stage Sign-Off.
+ */
+export type Practice = 'off' | 'centre' | 'wall';
+export const PRACTICES: readonly Practice[] = ['off', 'centre', 'wall'];
 
 export interface SessionOptions {
   mode: Mode;
@@ -40,9 +51,14 @@ export class Session {
   readonly match: MatchState;
   readonly adv = new AdvantageTracker();
   dummy: Dummy = 'stand';
+  practice: Practice = 'off';
+  /** Counts training's resets after a finished practice, so the presentation can start afresh. */
+  resets = 0;
   private readonly cpu: Cpu | null;
   private readonly cpu1: Cpu | null;
   private start: MatchState | null = null;
+  /** Training: the plain start (the segment chosen), before any practice set-up. */
+  private base: MatchState | null = null;
   private rest = 0;
   /** CPU and versus matches are recorded for replays. */
   private readonly recorder: ReplayRecorder | null;
@@ -72,6 +88,7 @@ export class Session {
       const ev: SimEvent[] = [];
       while (this.match.phase !== 'fight') step(this.match, 0, 0, ev);
       this.start = saveMatch(this.match);
+      this.base = saveMatch(this.match);
     }
   }
 
@@ -155,13 +172,55 @@ export class Session {
     this.reset();
     this.match.segment = segment;
     setupRound(this.match);
-    this.start = saveMatch(this.match);
+    this.base = saveMatch(this.match);
+    this.setPractice(this.practice);
+  }
+
+  /** Training: finisher practice on or off (and reset to it). */
+  setPractice(p: Practice): void {
+    if (!this.training || !this.base) return;
+    this.practice = p;
+    const s = saveMatch(this.base);
+    if (p !== 'off') {
+      const [a, d] = s.fighters;
+      a.wins = 1;
+      d.health = 1;
+      if (p === 'wall') {
+        // The dummy's back to the right-hand wall, the player close in front.
+        const w = segmentData(s.stage, s.segment).halfWidth;
+        d.x = w - fx(0.9);
+        a.x = d.x - fx(1.0);
+      }
+    }
+    this.start = s;
+    this.reset();
   }
 
   /** Training: back to the starting positions. */
   reset(): void {
     if (this.start) Object.assign(this.match, saveMatch(this.start));
     this.rest = 0;
+  }
+
+  /** Finisher practice: the window stays open, and once it's over (or the dummy won the round) it starts again. */
+  private practiceAfter(ev: SimEvent[], from: number): void {
+    const m = this.match;
+    if (m.phase === 'stayTuned') m.phaseTimer = STAY_TUNED_FRAMES;
+    let again = false;
+    for (let i = ev.length - 1; i >= from; i--) {
+      const e = ev[i];
+      // The match never ends here: no results screen.
+      if (e.type === 'matchOver') {
+        ev.splice(i, 1);
+        again = true;
+      } else if (e.type === 'roundOver' && e.winner !== 0) again = true;
+    }
+    if (again) {
+      this.reset();
+      this.resets++;
+      return;
+    }
+    if (m.phase === 'fight') m.fighters[0].meter = METER_MAX;
   }
 
   private dummyInput(): number {
@@ -177,6 +236,10 @@ export class Session {
   private trainingAfter(ev: SimEvent[], from: number): void {
     const m = this.match;
     m.timer = ROUND_FRAMES;
+    if (this.practice !== 'off') {
+      this.practiceAfter(ev, from);
+      return;
+    }
     for (let i = from; i < ev.length; i++) {
       if (ev[i].type === 'roundOver') {
         this.reset();
