@@ -17,7 +17,9 @@ import json
 
 import bpy
 
+from . import bake
 from .common import Parts, export_glb, fighter, reset_scene, triangles, vertex_colour_material
+from .glb import add_occlusion
 from .texture import paint, unwrap, use_atlas
 
 # Material sizes: the set is one big atlas (most of what's on screen), the
@@ -57,6 +59,9 @@ def build(mod, out_dir, art_dir):
             use_atlas(p.materials[mi], paint(objs, p.meta, mi, size, art_dir / "textures" / f"stage-{mod.ID}_{p.materials[mi].name}.png"))
     for obj, at in moves:
         obj.location = fighter(*at)
+    bpy.context.view_layer.update()
+    bake.unwrap(objs)
+    ao = bake.bake(mod, objs, p.materials, art_dir)
 
     # The light rig per segment, for the game (it uses fixed lights).
     lights = bpy.data.objects.new("lights", None)
@@ -67,3 +72,4 @@ def build(mod, out_dir, art_dir):
     art_dir.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(art_dir / f"stage-{mod.ID}.blend"), compress=True)
     export_glb(out_dir / "stages" / f"{mod.ID}.glb", [*objs, lights])
+    add_occlusion(out_dir / "stages" / f"{mod.ID}.glb", ao)

@@ -55,6 +55,9 @@ COUNTER_F, COUNTER_U = -1.6, 0.95
 OVEN_X, OVEN_U0, OVEN_U1, OVEN_W = 1.4, 1.15, 2.5, 1.7
 SIGN_X = 3.6
 
+# Segment 1's pieces: in place for the set's AO bake (lib/bake.py).
+FIRST = ("seg_prep",)
+
 LIGHTS = [
     {"segment": "Prep", "background": "#1a1208",
      "ambient": {"color": "#fff4e0", "intensity": 1.4},
