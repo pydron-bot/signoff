@@ -6,7 +6,7 @@
 // catches a stunned opponent (never one who blocked), and his Nightstick
 // links into the jab.
 import { describe, expect, it } from 'vitest';
-import { BAR, FIGHTERS, Input, MAX_JUGGLE, step, type MatchState, type SimEvent } from '../src/sim';
+import { BAR, FIGHTERS, Input, JUGGLE_POP, MAX_JUGGLE, METER_SCALE_MIN, METER_SCALE_STEP, REPEAT_KEEP, SCALE_STEP, step, type MatchState, type SimEvent } from '../src/sim';
 import { fx } from '../src/sim/fixed';
 import { count, place, ready } from './sim-helpers';
 
@@ -219,23 +219,20 @@ describe('MK-style juggles', () => {
 });
 
 describe("Rox's signature routes", () => {
-  // Launcher, jab, Lariat (ground bounce), launcher, jab string.
-  const meterless = [
-    ['now', DOWN | BP], ['c.BP@11', FP], ['s.FP@8', LEFT | SPECIAL],
-    ['Leg Warmer Lariat@28', DOWN | BP], ['c.BP@11', FP], ['s.FP@8', FP], ['FP FP@9', FK], ['FP FP FK@11', BK],
-  ] as const;
-  // The same with a jab string and a boosted Count of Eight (relaunch) in the middle.
-  const oneBar = [
-    ['now', DOWN | BP], ['c.BP@11', FP], ['s.FP@8', FP], ['FP FP@9', FK], ['FP FP FK@11', DOWN | SPECIAL], ['Count of Eight@2', SPECIAL],
-    ['free', BP], ['s.BP@12', BP], ['BP BP@14', LEFT | SPECIAL],
-    ['Leg Warmer Lariat@28', DOWN | BP], ['c.BP@11', FP], ['s.FP@8', FP], ['FP FP@9', FK], ['FP FP FK@11', BK],
-  ] as const;
+  // Pressed on exact frames from the start (found by searching the simulation for her best routes).
+  // Lariat (ground bounce), launcher, Step Touch string, Jazzercise, Count of Eight.
+  const meterless: [number, number][] = [[0, LEFT | SPECIAL], [50, DOWN | BP], [68, RIGHT | FK], [84, BK], [105, BP], [123, BP], [140, DOWN | SPECIAL]];
+  // Launcher, boosted Star Jump (relaunch), Step Touch string, Lariat, Count of Eight.
+  const oneBar: [number, number][] = [[0, DOWN | BP], [16, SPECIAL], [19, SPECIAL], [48, RIGHT | FK], [65, BK], [87, LEFT | SPECIAL], [126, BP], [142, DOWN | SPECIAL]];
 
-  function damage(script: readonly (readonly [string, number])[], meter: number): { hits: number; pct: number } {
+  function damage(script: [number, number][], meter: number): { hits: number; pct: number } {
     const m = ready('rox', 'rox');
     place(m, -0.4, 0.4);
+    m.firstHit = true;
     m.fighters[0].meter = meter;
-    const ev = route(m, script);
+    const at = new Map(script);
+    const ev: SimEvent[] = [];
+    for (let t = 0; t < 400; t++) step(m, at.get(t) ?? 0, 0, ev);
     const h = hits(ev);
     // One unbroken combo.
     h.forEach((e, k) => expect(e.combo, `${e.move} is hit ${k + 1}`).toBe(k + 1));
@@ -243,17 +240,91 @@ describe("Rox's signature routes", () => {
     return { hits: h.length, pct: ((d.maxHealth - d.health) * 100) / d.maxHealth };
   }
 
-  it('meterless: 9 or more hits, about 30%', () => {
+  it('meterless: 10 or more hits, strings and specials (no launcher loop), about a third', () => {
     const r = damage(meterless, 0);
-    expect(r.hits).toBeGreaterThanOrEqual(9);
-    expect(r.pct).toBeGreaterThan(25);
-    expect(r.pct).toBeLessThan(36);
+    expect(r.hits).toBeGreaterThanOrEqual(10);
+    expect(r.pct).toBeGreaterThan(30);
+    expect(r.pct).toBeLessThan(40);
   });
 
   it('one bar: longer, and worth more than the meterless route', () => {
     const r = damage(oneBar, BAR);
     expect(r.hits).toBeGreaterThanOrEqual(11);
     expect(r.pct).toBeGreaterThan(damage(meterless, 0).pct + 4);
-    expect(r.pct).toBeLessThan(45);
+    expect(r.pct).toBeLessThan(52);
+  });
+});
+
+describe('combo scaling', () => {
+  // Launcher, then the launcher again on the airborne body.
+  const twice = [['now', DOWN | BP], ['c.BP@11', DOWN | BP]] as const;
+
+  it('a launcher on a body already in the air is one more juggle hit, not a second launch', () => {
+    const m = ready('rox', 'rox');
+    place(m, -0.4, 0.4);
+    const ev: SimEvent[] = [];
+    let vy = 0;
+    let k = 0;
+    const script = twice;
+    for (let t = 0; t < 120; t++) {
+      const a = m.fighters[0];
+      let bits = 0;
+      if (k < script.length) {
+        const [when, b] = script[k];
+        if (when === 'now' || (a.mode === 'move' && `${a.move}@${a.moveFrame}` === when)) {
+          bits = b;
+          k++;
+        }
+      }
+      const from = ev.length;
+      step(m, bits, 0, ev);
+      if (ev.slice(from).some((e) => e.type === 'hit' && e.combo === 2)) vy = m.fighters[1].vy;
+    }
+    expect(hits(ev).map((e) => `${e.move}#${e.combo}`)).toEqual(['c.BP#1', 'c.BP#2']);
+    expect(vy).toBeGreaterThan(0);
+    expect(vy).toBeLessThanOrEqual(JUGGLE_POP);
+  });
+
+  it('the same move again in a combo keeps only REPEAT_KEEP % on top of the usual scaling', () => {
+    const m = ready('rox', 'rox');
+    place(m, -0.4, 0.4);
+    const h = hits(route(m, twice));
+    const base = FIGHTERS.rox.moves['c.BP'].hits[0].damage;
+    expect(h[0].damage).toBe(base);
+    // Hit 2: 10% combo scaling, then the repeat.
+    expect(h[1].damage).toBe(Math.floor((base * (100 - SCALE_STEP) * REPEAT_KEEP) / 10000));
+  });
+
+  it("later hits of a combo earn the attacker less meter; the defender's gain isn't scaled", () => {
+    const m = ready('rox', 'rox');
+    place(m, -0.4, 0.4);
+    m.firstHit = true;
+    const before: number[] = [];
+    const gains: { a: number; d: number; dmg: number; combo: number }[] = [];
+    const ev: SimEvent[] = [];
+    let k = 0;
+    for (let t = 0; t < 120; t++) {
+      const a = m.fighters[0];
+      let bits = 0;
+      if (k < twice.length) {
+        const [when, b] = twice[k];
+        if (when === 'now' || (a.mode === 'move' && `${a.move}@${a.moveFrame}` === when)) {
+          bits = b;
+          k++;
+        }
+      }
+      before[0] = m.fighters[0].meter;
+      before[1] = m.fighters[1].meter;
+      const from = ev.length;
+      step(m, bits, 0, ev);
+      for (const e of ev.slice(from)) if (e.type === 'hit') gains.push({ a: m.fighters[0].meter - before[0], d: m.fighters[1].meter - before[1], dmg: e.damage, combo: e.combo });
+    }
+    expect(gains).toHaveLength(2);
+    for (const g of gains) {
+      const pct = Math.max(METER_SCALE_MIN, 100 - METER_SCALE_STEP * (g.combo - 1));
+      expect(g.a).toBe(Math.floor(((g.dmg + (g.dmg >> 1)) * pct) / 100));
+      expect(g.d).toBe(g.dmg);
+    }
+    expect(gains[1].a).toBeLessThan(gains[1].dmg + (gains[1].dmg >> 1));
   });
 });

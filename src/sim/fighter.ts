@@ -74,6 +74,7 @@ export function toIdle(f: FighterState): void {
 export function endCombo(f: FighterState): void {
   f.combo = 0;
   f.juggle = 0;
+  f.comboMoves.length = 0;
   f.groundBounced = false;
   f.wallBounced = false;
   f.bounce = 'none';

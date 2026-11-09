@@ -19,11 +19,14 @@ import {
   RELAUNCH_DAMAGE,
   RELAUNCH_PULL,
   RELAUNCH_VY,
+  REPEAT_KEEP,
   SLAM_VY,
   WALL_BOUNCE_RANGE,
   WALL_BOUNCE_VX,
   WALL_BOUNCE_VY,
   METER_MAX,
+  METER_SCALE_MIN,
+  METER_SCALE_STEP,
   SCALE_MIN,
   SCALE_STEP,
   TD_CINEMATIC_FRAMES,
@@ -134,6 +137,22 @@ function isCounter(f: FighterState): boolean {
   return f.mode === 'move' && f.moveFrame <= moveOf(f).lastActive;
 }
 
+/**
+ * Repeat scaling: the % of damage a move keeps for its earlier uses in this
+ * combo (REPEAT_KEEP for each). A boosted special counts as its plain move.
+ * A move's first connecting hit records the use.
+ */
+function repeatKeep(d: FighterState, moveId: string, fresh: boolean): number {
+  const id = moveId.endsWith('+') ? moveId.slice(0, -1) : moveId;
+  let uses = 0;
+  for (let k = 0; k < d.comboMoves.length; k++) if (d.comboMoves[k] === id) uses++;
+  if (fresh) d.comboMoves.push(id);
+  else uses = Math.max(0, uses - 1);
+  let keep = 100;
+  for (let k = 0; k < uses; k++) keep = Math.floor((keep * REPEAT_KEEP) / 100);
+  return keep;
+}
+
 /** Meter from hits and blocks, scaled by the segment's rule (the oven's heat). */
 function gainMeter(m: MatchState, f: FighterState, n: number): void {
   const pct = segmentData(m.stage, m.segment).meterPct ?? 100;
@@ -226,14 +245,16 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     }
     a.contact = pendingBlocked[i] ? 'block' : 'hit';
     // Only a boosted special's first hit relaunches, so a multi-hit one can't spend them all.
-    const relaunch = mv.boosted === true && (a.hitMask & (a.hitMask - 1)) === 0;
-    applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev, relaunch);
+    const fresh = (a.hitMask & (a.hitMask - 1)) === 0;
+    const relaunch = mv.boosted === true && fresh;
+    applyHit(m, i, h, mv.id, mv.kind, a.facing, a.y + h.box.y + (h.box.h >> 1), false, pendingBlocked[i], pendingCounter[i], ev, relaunch, fresh);
   }
   for (let n = 0; n < projHits.length; n++) {
     const P = ps[projHits[n]];
     const pd = projData(m, projHits[n]);
-    const relaunch = moveData(fs[P.owner].fighter, P.move).boosted === true && P.hitsLeft === pd.hits;
-    applyHit(m, P.owner, pd.effect, P.move, 'special', P.dir, P.y + (pd.box.h >> 1), true, projBlocked[n], false, ev, relaunch);
+    const fresh = P.hitsLeft === pd.hits;
+    const relaunch = moveData(fs[P.owner].fighter, P.move).boosted === true && fresh;
+    applyHit(m, P.owner, pd.effect, P.move, 'special', P.dir, P.y + (pd.box.h >> 1), true, projBlocked[n], false, ev, relaunch, fresh);
     P.rehit = pd.rehit;
     if (--P.hitsLeft <= 0) P.active = false;
     // The collection plate: every connection is a donation.
@@ -327,6 +348,8 @@ export function applyHit(
   ev: SimEvent[],
   /** A boosted special's first hit: relaunches a juggled body (1 bar). */
   relaunch = false,
+  /** The move's first hit to connect (the later hits of a multi-hit move share its repeat scaling). */
+  fresh = true,
 ): void {
   const a = m.fighters[ai];
   const di = 1 - ai;
@@ -398,7 +421,8 @@ export function applyHit(
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
   const relaunching = relaunch && wasAir;
-  const dmg = Math.max(1, Math.floor((e.damage * scale) / 100)) + (relaunching ? RELAUNCH_DAMAGE : 0);
+  const keep = repeatKeep(d, moveId, fresh);
+  const dmg = Math.max(1, Math.floor((e.damage * scale * keep) / 10000) + (relaunching ? Math.floor((RELAUNCH_DAMAGE * scale * keep) / 10000) : 0));
   d.combo++;
   const juggle = wasAir ? d.juggle + 1 : 0;
   const ko = takeDamage(d, dmg);
@@ -427,7 +451,8 @@ export function applyHit(
     d.bounce = 'wall';
     d.juggle = juggle;
   } else if (wasAir || e.launch !== undefined || e.knockdown) {
-    let pop = e.launch ?? (e.knockdown ? KNOCK_VY : JUGGLE_POP);
+    // A launcher only launches from the ground: on a body already in the air it's one more juggle hit.
+    let pop = e.knockdown ? KNOCK_VY : wasAir ? JUGGLE_POP : (e.launch ?? JUGGLE_POP);
     // Each juggle hit pops them lower: juggles wind down on their own.
     if (wasAir && !e.knockdown) pop = Math.floor((pop * Math.max(JUGGLE_POP_MIN, 100 - JUGGLE_DECAY * juggle)) / 100);
     launch(d, dir, pop, !e.knockdown);
@@ -441,7 +466,9 @@ export function applyHit(
   if (e.pull !== undefined) pull(m, a, d, e.pull);
   d.hitstop = hitStop;
   if (!projectile) a.hitstop = hitStop;
-  gainMeter(m, a, dmg + (dmg >> 1));
+  // Later hits of a combo earn the attacker less; the defender's gain isn't scaled, so Cut Away stays in reach.
+  const meterPct = Math.max(METER_SCALE_MIN, 100 - METER_SCALE_STEP * (d.combo - 1));
+  gainMeter(m, a, Math.floor(((dmg + (dmg >> 1)) * meterPct) / 100));
   gainMeter(m, d, dmg);
   firstHit(m, ai, ev);
   ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, x: d.x, y });

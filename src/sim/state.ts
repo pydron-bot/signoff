@@ -71,6 +71,8 @@ export interface FighterState {
   combo: number;
   juggle: number;
   juggleable: boolean;
+  /** The moves that have hit this combo, one entry per use (a boosted special counts as its plain move), for repeat scaling. */
+  comboMoves: string[];
   /** Spent this combo: the one ground and wall bounce. */
   groundBounced: boolean;
   wallBounced: boolean;
@@ -188,6 +190,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     combo: 0,
     juggle: 0,
     juggleable: false,
+    comboMoves: [],
     groundBounced: false,
     wallBounced: false,
     bounce: 'none',

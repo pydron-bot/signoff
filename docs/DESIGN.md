@@ -132,10 +132,11 @@ meter. Every number below is a starting value to tune.
   - **Juggles wind down on their own.** No hard limit: each juggle hit pops
     the body 7% lower and it falls 6% faster, so a juggle ends by itself
     (a cap of 16 is only a safety net). Strings and specials work on a
-    falling body.
+    falling body. A launcher only launches from the ground: on a body
+    already in the air it's one more juggle hit, so it can't be looped.
   - **Relaunch (1 bar).** A boosted special whose first hit lands on a
     juggled opponent pops them straight back up just in front of the
-    attacker, for 70 extra damage (not scaled), and the special stops there
+    attacker, for 70 extra damage (scaled like the hit), and the special stops there
     so the attacker can follow up. As many times as there are bars to
     spend: each relaunch falls faster than the last, so it still ends.
   - **Bounces.** A ground bounce slams them into the floor; a wall bounce,
@@ -144,6 +145,14 @@ meter. Every number below is a starting value to tune.
     down. Each fighter gets a bounce or two as signature combo tools.
   - **Damage scaling** stays at 10% less per hit, down to 30%, so the
     extra hits are worth having without letting combos run away.
+  - **Repeats scale harder** (as in MK1, where a move used again in a
+    combo takes more scaling): each earlier use of the same move in the
+    combo keeps only 60% of its damage again (60%, 36%, 22%...), on top of
+    the usual scaling. A boosted special counts as its plain move. A
+    multi-hit move counts once.
+  - **Meter scaling.** The attacker earns 15% less Signal for each hit of
+    a combo (down to 10%), so a combo can't pay for its own relaunches.
+    The defender's gain isn't scaled, which keeps Cut Away in reach.
   - **First hit.** The first hit of each round (strike, throw or super) is
     worth a bar of Signal.
   - **Breaking out.** The defender's answer to a long combo is Cut Away,
