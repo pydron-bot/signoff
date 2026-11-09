@@ -22,6 +22,7 @@ import { ArcadeCard } from './ui/arcadeCard';
 import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
 import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
+import { InputDisplay } from './ui/inputDisplay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
@@ -44,6 +45,7 @@ const settings = loadSettings();
 const sound = new Sound();
 const glitch = new Glitch(document.body, reducedMotion(settings, systemReduceMotion));
 const hud = new Hud(document.body);
+const inputDisplays = [new InputDisplay(document.body, 0), new InputDisplay(document.body, 1)] as const;
 const touch = new TouchControls(document.body);
 touch.bindHold(hud.p1Meter, Input.METER);
 const titleMenu = new Menu(title, 'menu-title-screen');
@@ -182,7 +184,18 @@ function newSession(mode: Mode, p1: string, p2: string, stage: string, level: Cp
   return begin(s);
 }
 
+/** Which sides' inputs the input display shows now (the setting, and what's on screen), into a shared pair. */
+const sides = [false, false];
+function inputSides(s: Session | null): boolean[] {
+  const on = !!s && !demo && settings.inputs > 0;
+  const mode = s?.options.mode;
+  sides[0] = on && (settings.inputs === 2 || !!s?.training || mode === 'showcase');
+  sides[1] = on && settings.inputs === 2 && (mode === 'versus' || mode === 'replay');
+  return sides;
+}
+
 function begin(s: Session): Session {
+  for (const d of inputDisplays) d.clear();
   // Compile the models' shaders as they arrive, not on their first frame.
   void arena.setFighters(s.match).then(() => renderer.compile(arena.scene, arena.camera));
   clock.reset();
@@ -545,6 +558,8 @@ renderer.setAnimationLoop((now) => {
       else readInputs();
       s.tick(frame[0], frame[1], ev);
       arena.step(s.match, ev);
+      inputSides(s);
+      for (let i = 0; i < 2; i++) if (sides[i]) inputDisplays[i].log.push(s.inputs[i], s.match.fighters[i].facing);
       if (!demo) {
         hud.onEvents(s.match, ev);
         hud.step();
@@ -573,6 +588,11 @@ renderer.setAnimationLoop((now) => {
     const p1 = m.fighters[0];
     touch.setTD(!p1.tdUsed && p1.health > 0 && p1.health * 100 < p1.maxHealth * TD_HEALTH_PCT);
     touch.setInteract(propInReach(m, p1) >= 0);
+  }
+  inputSides(session);
+  for (let i = 0; i < 2; i++) {
+    inputDisplays[i].show(sides[i]);
+    inputDisplays[i].update();
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
   renderer.render(arena.scene, arena.camera);

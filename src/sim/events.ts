@@ -23,6 +23,11 @@ export type SimEvent =
   | { type: 'guardCrush'; attacker: number; defender: number; move: string; x: Fx; y: Fx }
   /** A counter read the opponent's strike (`move`) and answers it. */
   | { type: 'counter'; player: number; move: string }
+  /** Defence: a block timed just before the hit; a move straight off the floor that hit; a hit on a move's recovery; staying down longer. */
+  | { type: 'flawless'; player: number }
+  | { type: 'reversal'; player: number }
+  | { type: 'punish'; player: number }
+  | { type: 'delayedGetup'; player: number }
   | { type: 'special'; player: number; move: string }
   | { type: 'boost'; player: number; move: string }
   | { type: 'projectileClash'; x: Fx; y: Fx }

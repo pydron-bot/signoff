@@ -8,10 +8,12 @@ import {
   AIR_ATTACK_LAND_FRAMES,
   BAR,
   BOOST_TAP,
+  REVERSAL_WINDOW,
   BOOST_WINDOW,
   CUT_AWAY_FRAMES,
   DOWN_FRAMES,
   FIRST_HIT_METER,
+  DELAYED_GETUP,
   GETUP_FRAMES,
   GRAVITY,
   GROUND_BOUNCE_VY,
@@ -98,6 +100,9 @@ export function startMove(f: FighterState, id: string): void {
   f.hitMask = 0;
   f.contact = 'none';
   f.armorUsed = false;
+  // Straight off the floor: a reversal (said when it hits).
+  f.reversal = f.wakeup > 0;
+  f.wakeup = 0;
   f.crouching = mv.stance === 'crouch';
   if (mv.kind !== 'air') f.vx = 0;
 }
@@ -133,6 +138,7 @@ export function takeDamage(f: FighterState, dmg: number): boolean {
 
 export function tick(m: MatchState, i: number, ev: SimEvent[]): void {
   const f = m.fighters[i];
+  if (f.wakeup > 0 && f.mode !== 'getup') f.wakeup--;
   switch (f.mode) {
     case 'move': {
       const mv = moveOf(f);
@@ -172,8 +178,19 @@ function endTimed(m: MatchState, i: number, ev: SimEvent[]): void {
       f.airAttackUsed = false;
       return;
     case 'down':
+      // Down held: stay down a little longer (once a knockdown), so a timed attack on the getup misses.
+      if (!f.getupDelayed && (f.input.held & DOWN) !== 0) {
+        f.getupDelayed = true;
+        f.timer = DELAYED_GETUP - 1;
+        ev.push({ type: 'delayedGetup', player: i });
+        return;
+      }
       f.mode = 'getup';
       f.timer = GETUP_FRAMES - 1;
+      return;
+    case 'getup':
+      toIdle(f);
+      f.wakeup = REVERSAL_WINDOW;
       return;
     case 'thrown':
       landThrow(m, i, ev);
@@ -404,10 +421,9 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
   const inp = f.input;
   // Only presses made during this move count, so a held or early press can't fire twice.
   const since = f.moveFrame;
-  // Special again, or METER (the touch meter), early in a special boosts it: within BOOST_WINDOW,
-  // or up to BOOST_TAP while nothing has come out yet (so a double tap works the same everywhere).
-  const early = f.moveFrame <= BOOST_WINDOW || (f.moveFrame <= BOOST_TAP && f.moveFrame < mv.startup);
-  if (mv.boost && early && f.meter >= BAR) {
+  // Special again, or METER (the touch meter), early in a special boosts it: a strike even after its
+  // first hit (the rest come out boosted), a projectile only until it's thrown.
+  if (mv.boost && f.moveFrame <= BOOST_WINDOW && (!mv.spawns.length || f.moveFrame < mv.startup) && f.meter >= BAR) {
     const bit = pressed(inp, SPECIAL, since) ? SPECIAL : pressed(inp, METER, since) ? METER : 0;
     if (bit && boost(f, i, ev)) {
       consume(inp, bit);
@@ -614,6 +630,7 @@ function land(f: FighterState, i: number, ev: SimEvent[]): void {
       else {
         f.mode = 'down';
         f.timer = DOWN_FRAMES - 1;
+        f.getupDelayed = false;
       }
       ev.push({ type: 'knockdown', player: i });
       return;

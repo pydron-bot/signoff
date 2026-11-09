@@ -243,6 +243,18 @@ export class Hud {
         case 'counter':
           this.say('OFF THE SCRIPT', '', 40);
           break;
+        case 'flawless':
+          this.callout(e.player, 'FLAWLESS BLOCK');
+          break;
+        case 'punish':
+          this.callout(e.player, 'PUNISH');
+          break;
+        case 'reversal':
+          this.callout(e.player, 'REVERSAL');
+          break;
+        case 'delayedGetup':
+          this.callout(e.player, 'STAYED DOWN');
+          break;
         case 'guardCrush':
           this.say('GUARD CRUSHED', '', 40);
           break;
@@ -257,11 +269,7 @@ export class Hud {
           this.warningLeft = 0;
           break;
         case 'hit':
-          if (e.counter) {
-            this.counter.style.left = e.attacker === 0 ? '20px' : '';
-            this.counter.style.right = e.attacker === 1 ? '20px' : '';
-            this.counterLeft = 45;
-          }
+          if (e.counter) this.callout(e.attacker, 'COUNTER');
           this.comboDamage[e.attacker] = e.combo === 1 ? e.damage : this.comboDamage[e.attacker] + e.damage;
           if (e.combo >= 2) {
             const c = this.sides[e.attacker].combo;
@@ -272,6 +280,14 @@ export class Hud {
           break;
       }
     }
+  }
+
+  /** A word on one player's side for a moment: COUNTER, PUNISH, REVERSAL, FLAWLESS BLOCK. */
+  private callout(player: number, text: string): void {
+    this.counter.textContent = text;
+    this.counter.style.left = player === 0 ? '20px' : '';
+    this.counter.style.right = player === 1 ? '20px' : '';
+    this.counterLeft = 45;
   }
 
   /** The end of a finisher: the loser's show goes off the air, or (a Rerun) they wake up at home. */

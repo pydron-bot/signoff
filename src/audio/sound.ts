@@ -185,6 +185,16 @@ export class Sound {
           this.tone(1320, 0.4, 0.12, 'sine');
           this.tone(1980, 0.3, 0.06, 'sine', undefined, 0.02);
           break;
+        case 'flawless':
+          // A clean, high ping: the timing was right.
+          this.tone(2400, 0.12, 0.08, 'triangle');
+          break;
+        case 'punish':
+          this.tone(330, 0.18, 0.12, 'square', 165);
+          break;
+        case 'reversal':
+          this.tone(440, 0.2, 0.08, 'sawtooth', 880);
+          break;
         case 'special':
           if (e.move.startsWith('Knock-Knock')) {
             // Two knocks on a wooden door.

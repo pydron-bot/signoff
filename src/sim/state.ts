@@ -76,6 +76,10 @@ export interface FighterState {
   /** Spent this combo: the one ground and wall bounce. */
   groundBounced: boolean;
   wallBounced: boolean;
+  /** Defence: the delayed getup is used this knockdown; frames left in which a move is a reversal; the move under way is one. */
+  getupDelayed: boolean;
+  wakeup: number;
+  reversal: boolean;
   /** A bounce on its way: off the floor when they land, off the wall when they reach it. */
   bounce: 'none' | 'ground' | 'wall';
   ko: boolean;
@@ -191,6 +195,9 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     juggle: 0,
     juggleable: false,
     comboMoves: [],
+    getupDelayed: false,
+    wakeup: 0,
+    reversal: false,
     groundBounced: false,
     wallBounced: false,
     bounce: 'none',

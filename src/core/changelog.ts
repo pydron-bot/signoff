@@ -14,6 +14,20 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.30.0',
+    date: '2026-11-09',
+    title: 'Standing Your Ground',
+    notes: [
+      'Flawless Block: press Block just before a hit lands (within 4 frames) and you take no chip, get out of blockstun 6 frames sooner (so more of their moves can be punished) and earn a little meter.',
+      'Stay Down: hold ↓ while knocked down to get up a moment later, once a knockdown, so an attack timed on your getup misses.',
+      'Reversal: an attack pressed while getting up comes out on the first frame you can move. The CPU stays down sometimes too.',
+      'Punish: hitting someone while their move recovers, after a whiff or a block, does 20% more on that first hit and earns meter.',
+      'Each of these is called out on screen with its own sound, and the move list explains them under System.',
+      'Input display: your inputs scroll down the side of the screen, newest on top, with how many frames each was held, like a training-mode input list. Settings → Input Display: Off, Training (also the combo showcases), or Always (versus and replays show both players).',
+      'Boosting is easier again, especially on touch: the second Special tap (or the meter tap) now has a third of a second, from neutral as well as in a combo, and a quick second tap on the touchscreen is never lost.',
+    ],
+  },
+  {
     version: '0.29.0',
     date: '2026-11-09',
     title: 'Live from the Studio',

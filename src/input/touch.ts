@@ -20,6 +20,8 @@ export class TouchControls {
   private holdBits = new Map<number, number>();
   /** Buttons touched since the last read, so a very quick tap still counts once. */
   private tapped = 0;
+  /** What the last step read, so a quick re-tap can be shown as a release first. */
+  private last = 0;
   private readonly base: HTMLElement;
   private readonly knob: HTMLElement;
   private readonly td: HTMLElement;
@@ -114,8 +116,13 @@ export class TouchControls {
 
   input(): number {
     let bits = this.stickBits | this.tapped;
-    this.tapped = 0;
     for (const b of this.holdBits.values()) bits |= b;
+    // A tap on a button that still read as held (lifted and touched again within one frame) would never
+    // register as a press: show it released for this step and pressed on the next.
+    const again = this.tapped & this.last;
+    bits &= ~again;
+    this.tapped = again;
+    this.last = bits;
     return bits;
   }
 
@@ -138,6 +145,7 @@ export class TouchControls {
     this.holdBits.clear();
     this.stickBits = 0;
     this.tapped = 0;
+    this.last = 0;
     this.base.classList.remove('on');
     for (const b of this.root.querySelectorAll('.down')) b.classList.remove('down');
   }
