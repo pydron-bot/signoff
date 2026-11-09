@@ -22,11 +22,18 @@ export class ColdOpen {
   private ex: Exchange | null = null;
   private t = 0;
   private typed = [0, 0];
+  /** Each line's time up, in seconds (a recorded line holds until it's said). */
+  private dur = [0, 0];
+  /** Each line's recording started (no babble under it). */
+  private voiced = [false, false];
+  private spoken = [false, false];
 
   constructor(
     parent: HTMLElement,
     /** A syllable from this side. */
     private readonly babble: (side: number, fighter: string) => void,
+    /** Plays a line's recording if there is one; true if it's playing. */
+    private readonly speak: (side: number, clip: string) => boolean,
     onSkip: () => void,
   ) {
     this.root = document.createElement('div');
@@ -59,11 +66,15 @@ export class ColdOpen {
     return this.ex !== null;
   }
 
-  begin(p1: string, p2: string, ex: Exchange): void {
+  /** `recorded`: each line's recording's length in seconds (0 for none). */
+  begin(p1: string, p2: string, ex: Exchange, recorded: readonly [number, number] = [0, 0]): void {
     this.fighters = [p1, p2];
     this.ex = ex;
     this.t = 0;
     this.typed = [0, 0];
+    this.voiced = [false, false];
+    this.spoken = [false, false];
+    for (let k = 0; k < 2; k++) this.dur[k] = Math.max(lineSeconds(ex.lines[k]), recorded[k] + 0.4);
     for (let i = 0; i < 2; i++) {
       const f = this.fighters[i];
       this.plates[i].style.setProperty('--accent', `#${(FIGHTER_COLORS[f] ?? 0xcccccc).toString(16).padStart(6, '0')}`);
@@ -84,8 +95,8 @@ export class ColdOpen {
     const ex = this.ex;
     if (!ex) return false;
     this.t += dt;
-    const first = lineSeconds(ex.lines[0]);
-    const second = lineSeconds(ex.lines[1]);
+    const first = this.dur[0];
+    const second = this.dur[1];
     const at = [LEAD, LEAD + first];
     for (let k = 0; k < 2; k++) {
       const side = k === 0 ? ex.first : 1 - ex.first;
@@ -94,10 +105,15 @@ export class ColdOpen {
       const shown = since >= 0 && since < (k === 0 ? first + second : second) + TAIL;
       this.plates[side].classList.toggle('in', shown);
       if (since < 0) continue;
+      // The line's recording, if there is one, as it starts to type on.
+      if (!this.spoken[k]) {
+        this.spoken[k] = true;
+        this.voiced[k] = this.speak(side, ex.clips[k]);
+      }
       const n = Math.min(line.length, Math.floor(since * TYPE_RATE));
       if (n > this.typed[k]) {
-        // A syllable for every few letters typed (not for spaces and punctuation).
-        for (let c = this.typed[k]; c < n; c++) if (c % SYLLABLE === 0 && /\w/.test(line[c])) this.babble(side, this.fighters[side]);
+        // Without a recording, a syllable for every few letters typed (not for spaces and punctuation).
+        if (!this.voiced[k]) for (let c = this.typed[k]; c < n; c++) if (c % SYLLABLE === 0 && /\w/.test(line[c])) this.babble(side, this.fighters[side]);
         this.typed[k] = n;
         this.texts[side].textContent = line.slice(0, n);
       }

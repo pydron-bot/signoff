@@ -428,6 +428,12 @@ more it reacts to a big one than a small one.
 
 ### Audio
 
+- **Recordings take over from the synth** (`docs/AUDIO-TODO.md`): every
+  fighter's voice (efforts, shouts, pain, the K.O., win lines, the cold
+  open's lines) and the hits' layers (snap, thud, crunch, boom; props;
+  blocks, bodyfalls, whooshes) have slots for recorded takes. A slot with
+  none keeps its synthesised sound, so recordings can arrive one at a time;
+  takes never repeat back to back. About 2 MB for the lot, as AAC.
 - An announcer for the channel (round calls, fighter names, "Stay tuned"),
   a laugh track and applause that react at the wrong moments.
 - Music per show in the style of its era: synth news themes, aerobics pop, a
@@ -470,7 +476,9 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
 - 8-frame input buffer; a special entered during a string's cancel window
   comes out on the first allowed frame.
 - Touch buttons are 56 points or larger, inside the safe areas, and can be
-  moved and resized in Settings.
+  moved and resized in Settings. They hide while a gamepad plays player 1
+  (SCREEN BUTTONS: NOT WITH A PAD, or ALWAYS); in VS PLAYER a single pad is
+  player 2's, so player 1 keeps the screen.
 - Every control can be rebound on keyboard and gamepad; a button-mash guard
   stops held buttons repeating attacks.
 

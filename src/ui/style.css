@@ -130,6 +130,14 @@ body {
   background: rgba(8, 10, 30, 0.92);
   border: 2px solid #1b2fa8;
   z-index: 20;
+  /* Taller than a phone held sideways (Settings): it scrolls inside itself. The page blocks touch scrolling, so allow it here. */
+  box-sizing: border-box;
+  max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .menu-title {
@@ -927,6 +935,8 @@ body {
 
 .movelist-body {
   overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   padding: 0.3rem 0.8rem 0.8rem;
   font-size: clamp(0.65rem, 1.8vw, 0.85rem);
@@ -946,9 +956,14 @@ body {
   border-bottom: 1px solid rgba(241, 237, 224, 0.08);
 }
 
+/* Each column wraps inside itself, so a long input never runs into the notes. */
+.movelist-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .movelist-input {
   color: #ffd75e;
-  white-space: nowrap;
 }
 
 .movelist-notes {
