@@ -20,7 +20,7 @@ import bpy
 from . import bake
 from .common import Parts, export_glb, fighter, reset_scene, triangles, vertex_colour_material
 from .glb import add_occlusion
-from .texture import paint, unwrap, use_atlas
+from .texture import paint, unwrap, use_atlas, use_glow
 
 # Material sizes: the set is one big atlas (most of what's on screen), the
 # props and effects a small one; water is a flat translucent colour.
@@ -56,7 +56,11 @@ def build(mod, out_dir, art_dir):
     unwrap(objs, dense, p.meta)
     for mi, size in ATLAS.items():
         if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
-            use_atlas(p.materials[mi], paint(objs, p.meta, mi, size, art_dir / "textures" / f"stage-{mod.ID}_{p.materials[mi].name}.png"))
+            atlas, glow, strength = paint(objs, p.meta, mi, size, art_dir / "textures" / f"stage-{mod.ID}_{p.materials[mi].name}.png",
+                                          glow=getattr(mod, "EMISSION", {}))
+            use_atlas(p.materials[mi], atlas)
+            if glow is not None:
+                use_glow(p.materials[mi], glow, strength)
     for obj, at in moves:
         obj.location = fighter(*at)
     bpy.context.view_layer.update()

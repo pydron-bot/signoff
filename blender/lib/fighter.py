@@ -16,7 +16,7 @@ from .body import Build, new_parts
 from .common import export_glb, reset_scene, shape_key_tracks, triangles
 from .rig import JAW, Clip, add_bones, apply_pose, build_rig
 from .spring import bake
-from .texture import paint, unwrap, use_atlas
+from .texture import paint, unwrap, use_atlas, use_glow
 
 # Seen most (round start, win, intro): twice the texel density.
 DENSE = ("head", "face", "torso", "shirt", "tie", "lapel", "brow", "eye", "pupil", "nose", "mouth", "grin", "teeth", "lip",
@@ -398,7 +398,11 @@ def build(mod, out_dir, art_dir):
     unwrap(objs, {m["name"] for m in p.meta if m["name"].startswith(DENSE)}, p.meta)
     for mi, size in ((0, 1024), (1, 512)):
         if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
-            use_atlas(p.materials[mi], paint(objs, p.meta, mi, size, art_dir / "textures" / f"{mod.ID}_{p.materials[mi].name}.png"))
+            atlas, glow, strength = paint(objs, p.meta, mi, size, art_dir / "textures" / f"{mod.ID}_{p.materials[mi].name}.png",
+                                          glow=getattr(mod, "EMISSION", {}))
+            use_atlas(p.materials[mi], atlas)
+            if glow is not None:
+                use_glow(p.materials[mi], glow, strength)
     p.collapse(body)  # held props hide in the fist until their key
 
     Clip.shape_keys = body.data.shape_keys

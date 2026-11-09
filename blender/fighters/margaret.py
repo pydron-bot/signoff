@@ -14,6 +14,8 @@ from lib.anim import Stance
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "margaret"
+# What gives off light (step 23 C), on the effect meshes only.
+EMISSION = {"feed": 1.5, "feed_tally": 2}
 HEIGHT = 1.75
 GIRTH = 0.92
 

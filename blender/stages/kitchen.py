@@ -24,6 +24,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.texture import bright
 
 ID = "kitchen"
 DENSE = ("sign", "oven")
@@ -72,6 +73,16 @@ LIGHTS = [
      "key": {"color": "#ff8040", "intensity": 2.0, "position": [0, 5, 7]},
      "rim": {"color": "#ff3000", "intensity": 1.0, "position": [0, 2, -5]}},
 ]
+
+# What gives off light (step 23 C): part name → strength, or a rule.
+EMISSION = {
+    "sign": bright(2.5, 150, 200),
+    "hood_light": 2,
+    r"wall-?1_.*|embers.*": 3,
+    r"flare.*": 4,
+    "oven_glow": 3,
+    "oven_halo": 1.5,
+}
 
 
 def lit(t, **k):
@@ -241,6 +252,8 @@ def build(make):
                                           (-0.4, -2.95, 3.0), (0.4, -2.95, 3.0), (-0.4, -2.5, 3.0), (0.4, -2.5, 3.0))]
         p.hull("hood", [(x - 1.2, f, u) for x, f, u in hood], STEEL, "set", paint=metal)
         p.box("hood_flue", (-1.2, -2.75, 4.6), (0.6, 0.4, 3.2), STEEL, "set", paint=metal)
+        # The light under the hood, over the hob.
+        p.box("hood_light", (-1.2, -2.2, 2.29), (1.4, 0.6, 0.02), (255, 238, 204), "set")
 
     def prep(p):
         rng = np.random.default_rng(3)

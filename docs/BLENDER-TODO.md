@@ -254,7 +254,7 @@ are authored facing right with the left foot and left hand leading.
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
-> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
+> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
@@ -1057,16 +1057,18 @@ light over the hob, the oven pouring orange across the floor.
 
 **C. What glows**
 
+*Done (Nov 9) for the four stages and the effect meshes; Hollis's lens waits on the game side. Notes under* What glows (Nov 9, art side) *in Feedback.*
+
 The game's new glow (0.34.0) takes anything brighter than white and lets it
 bloom, so whatever gives off light needs to say so: give it an emission in
 Blender (the Principled BSDF's emission colour and strength export as glTF
 `emissiveFactor`/`emissiveTexture` and `KHR_materials_emissive_strength`).
 
-- [ ] Paint emission into an emissive texture on the existing UVs (black
+- [x] Paint emission into an emissive texture on the existing UVs (black
   everywhere that doesn't glow; it compresses to almost nothing), so there
   are still two materials. Strength 1.5 to 4: about 1.5 for a lit screen, 3
   for a neon tube or a lamp lens, 4 for lightning and flame.
-- [ ] Stages: Weather: the monitor's colour bars, the lamp's lens, the
+- [x] Stages: Weather: the monitor's colour bars, the lamp's lens, the
   cameras' red tally lights, `fx_lightning` (4), `fx_spark` (3),
   `fx_puddle`'s rings (1.5; the game swells them on the warning). Burn: the
   neon sign (3), the chase lights (2), the dawn sky in the windows (1.2),
@@ -1074,7 +1076,7 @@ Blender (the Principled BSDF's emission colour and strength export as glTF
   clock's face, the lamp lenses (3), the *BREAKING* panel (2), the tally
   lights. Kitchen: the *KITCHEN LIVE* sign (2.5), the hood light, the fire
   walls (3), `fx_flare` (4), the oven's mouth (3).
-- [ ] Fighters: only what really glows: Hollis's flashlight lens, and the
+- [x] *(The effects; Hollis's lens is left: see Feedback.)* Fighters: only what really glows: Hollis's flashlight lens, and the
   `fx_*` meshes that are light or energy (Cold Front, Heat Lightning, Live
   Feed, Tape Skip's flash, Fire and Brimstone; 1.5 to 3). Bodies and
   clothes stay unlit.
@@ -1582,3 +1584,10 @@ worked into the move data, and the table above updates itself.
   - The curve: raw AO is taken to the 4th power, then lifted so 0 lands at 35%. Raw AO in the corners players see is only 0.75–0.9 (a few texels a metre, and the contact line is thin), so without the power it barely showed; faces hidden in contact reach the 35%, open floor stays white. Under the game's key light it reads as soft corners (the side walls' feet, under the hood, the mirrors' base), not dirt. Seen on a throwaway page from about the game camera, not yet in a match.
   - GLBs: Kitchen 1.60 MB, Weather 1.11, Burn 0.98, News 0.74 (all under 2 MB; Kitchen leaves about 0.4 MB for 23 B's light map).
   - The light maps (23 B) can use the same `TEXCOORD_1` layout as is.
+- **What glows (Nov 9, art side).** Step 23 C done for the four stages and the fighters' effects; `npm test` passing. Notes for the game side:
+  - Each stage and fighter module has an `EMISSION` table (part name pattern → strength, or a rule on the painted texels: `bright()` for letters, tubes and bulbs on a dark or red ground; Burn's windows glow sky and sun but not the muntins or rooftops). `lib/texture.py` paints it into an emission atlas per material on the existing UVs, each texel's colour scaled by its strength over the material's strongest; the material's emission strength is that strongest. glTF: `emissiveTexture`, `emissiveFactor` [1, 1, 1], `KHR_materials_emissive_strength`. The atlas is at most 1024² (Kitchen's 2048² of flames was half a megabyte), in `art/textures/*_glow.png` for review.
+  - Strengths as the table above, but two came down after a look with a bloom: Burn's morning sky (Double Time) 0.7, since it's pale and washed the panes out at 1.2, and the News clock face 1.0, since a white face at 1.5 blooms into a ball. The cameras' tally lights (Weather, News) and Margaret's feed tally 2; the kitchen sign's letters and bulbs 2.5 on an unlit red ground; Kitchen has a new `hood_light` panel under the hood (2), and `oven_halo` 1.5 round the oven's mouth (3).
+  - `glowFallback` in `src/render/look.ts` steps aside on its own now: `fx_lightning`, `fx_spark` and `fx_flare` carry their emission.
+  - `fx_puddle`'s rings glow at 1.5 in the file, but `weatherSet.ts` sets the puddles' `emissive` colour (0 at rest), and with an emissive map that colour multiplies the map: at rest the rings don't glow, on the shock they glow in its colour. Probably what you want; say if not.
+  - **Fighters:** emission is only on the effect meshes (Cold Front, Heat Lightning, Tape Skip's streaks, Live Feed and its tally, Fire and Brimstone's fire and glory). The `props` material is shared with the body's accessories, and `setTint` sets the body's `emissive` colour, which with an emissive map would only flash the glowing texels. So `fighterModel.ts` now clears the body materials' emission (the fx meshes keep theirs: they get their own materials). **Hollis's lens is not lit** for the same reason: it needs `setTint` to add its tint on top of the glow (a uniform in `addRim`'s shader, say) rather than replace `emissive`. Once that's in, add `"lens": 3` to Hollis's `EMISSION`.
+  - GLBs: Kitchen 1.90 MB, which leaves about 0.1 MB for its 23 B light map (one 1024² PNG is more): 23 B may need the set atlas's flames or the light map at 512² there.

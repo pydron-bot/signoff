@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.38.0',
+    date: '2026-11-09',
+    title: 'Lit Up',
+    notes: [
+      'Signs, screens and lamps on every stage glow now: the neon over the mirrors, the dawn sun through the windows, the CH 0 NEWS header and the globe, the KITCHEN LIVE sign, the grease fire and the oven, the lightning and the sparking cables.',
+      "Energy specials glow too: Dale's Cold Front and Heat Lightning, Margaret's Live Feed and Gideon's Fire and Brimstone.",
+    ],
+  },
+  {
     version: '0.37.0',
     date: '2026-11-09',
     title: 'Corners',

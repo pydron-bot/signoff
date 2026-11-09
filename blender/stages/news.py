@@ -77,6 +77,16 @@ LIGHTS = [
      "rim": {"color": "#3050a0", "intensity": 0.5, "position": [0, 3, -6]}},
 ]
 
+# What gives off light (step 23 C): part name → strength, or a rule.
+EMISSION = {
+    "globe": lambda t: np.where(np.hypot(t.side, t.up - GLOBE_U) < GLOBE_R, 1.5, 0.0),
+    "header": 2,
+    "clock": 1.0,  # a white face: any more and it blooms into a ball
+    r"lamp\d_lens|fresnel_lens": 3,
+    "breaking": 2,
+    r"tally-?\d+": 2,
+}
+
 
 def lit(t, **k):
     return P.light(t, **k)
