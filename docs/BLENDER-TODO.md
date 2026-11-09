@@ -52,6 +52,7 @@ Size each fighter to their hurtboxes, the grey boxes you see in the game
 | Rox Vega (`rox`) | 1.75 m | 1.05 m | Aerobics host, 1983 forever: leotard, leg warmers, headband, sweatband |
 | Hollis Bey (`hollis`) | 1.90 m | 1.20 m | Night security guard of the transmitter building: broad, heavy, uniform, cap, flashlight and key ring on the belt. Hurtbox 0.7 m wide |
 | Mister Mumbles (`mumbles`) | 1.30 m | 0.80 m | A ventriloquist's dummy with no ventriloquist: painted wooden head with a hinged jaw, little suit, visible puppet strings that go up out of frame. Hurtbox 0.5 m wide |
+| Margaret Okafor (`margaret`) | 1.75 m | 1.05 m | The evening news anchor, 1987: a power suit with shoulder pads, a blouse with a pussy-bow, pearl earrings, a sharp bob, a sheaf of script pages. Step 15 |
 
 The broadcast look censors gore with static and stand-by cards, so no gore
 assets are needed.
@@ -195,6 +196,9 @@ checked by `tests/assets.test.ts`). `.L` is the character's left (Blender
 | `shoulder.L` → `upper_arm.L` → `forearm.L` → `hand.L` (and `.R`) | `chest` |
 | `thigh.L` → `shin.L` → `foot.L` → `toe.L` (and `.R`) | `hips` |
 
+Step 16 adds shared bones for the hands and jaw, and lets each fighter
+have its own `x_*` bones for secondary motion (hair, a tie): see step 16 A.
+
 Controls, not exported (the exporter bakes what they do into the bones
 above): `ik_hand.L/R` and `ik_foot.L/R` (IK targets; the hand and foot copy
 their rotation), `pole_elbow.L/R` and `pole_knee.L/R`. Rest pose is an A-pose
@@ -220,6 +224,17 @@ would show the camera their back. The viewer's FACING button does this. Clips
 are authored facing right with the left foot and left hand leading.
 
 ## TODO
+
+> **Start here (Nov 9).** Steps 1–13 are done (11–13 in 0.13.0).
+> Work the open steps in this order; the game side is building the next
+> fighters and stages, and will add their contracts here as their data lands.
+>
+> 1. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is in: 0.14.0), and `interact_throw` for the four built fighters.
+> 2. **Step 16 A, the skeleton** (hands, jaw, secondary bones) on the four built fighters, so Margaret is built once, on the new rig.
+> 3. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
+> 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
+>
+> Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, and will check `burn.glb` once it exists.
 
 ### 1. Rig and blockout (first)
 
@@ -402,6 +417,156 @@ shows a stand-in (in brackets).
 - [x] **Mumbles `s.FK` Shin Kick**: he now ducks as he kicks (crouching hurtbox), so lower the body. *Done: it plays from the crouch now that the data marks it crouching.*
 - [x] **Mumbles `Hand Puppet`**: the puppet jabs out first (a hit on 8–10), then is set down as the decoy on 12. *Done: a glove puppet of him sits up on his rear fist from frame 2 and jabs on 8–10; on 12 he bends to set it down and it vanishes as the decoy appears.*
 
+### 14. Feel the Burn at Dawn (stage, Nov 8, game side)
+
+Rox's show, the second stage: a 1987 aerobics studio at sunrise. Built like
+Weather at Eleven: `blender/stages/burn.py`, `npm run art -- --only burn`,
+writing `art/stage-burn.blend`, `art/textures/stage-burn_*.png` and
+`public/assets/stages/burn.glb`. Same stage space (x along the stage, y up,
+z toward the camera, origin at the arena's centre on the floor; fighters on
+z = 0), the same materials (`set` 2048², `props` 512²; no `water` needed) and
+a `lights` node with one rig per segment, named exactly as below. The game
+side is in (0.14.0: `src/sim/stages.ts`, `src/render/burnSet.ts`); until
+the GLB exists it plays on flat stand-ins in these colours and places.
+
+| Segment | The game | The set |
+| --- | --- | --- |
+| 1. Warm-Up | Arena ±6 m. One boombox at x = 0 that either fighter can pick up and throw (Interact) | Sprung wooden floor with a row of blue exercise mats; a mirror wall behind (z = −3.9, about 16 × 3 m in panels with frames, a ballet barre in front at 1 m); a dawn sky in tall windows above it; a neon *FEEL THE BURN AT DAWN* sign; side walls at ±6.4 m with big speaker stacks |
+| 2. Double Time | The tape runs fast: the whole game is 10% quicker. No hazards | The same set, louder: the sun fully up, a strip of chase lights along the top of the mirrors, the sign switched to *DOUBLE TIME* |
+| 3. Burnout | The mirrors shatter and the arena opens to ±8 m into the dark; mirror shards fall on marked spots on the beat | Mirror frames empty and jagged, glass on the floor, the windows black; the side walls gone, the floor running on into darkness to black drapes at ±8.4 m |
+
+Mirrors are painted, not reflective (no render-to-texture on a phone): a
+pale blue-grey with a soft painted streak and a faint, dark suggestion of the
+room. Keep it a fifth of the triangles of a fighter or so per piece; the
+whole stage about as heavy as Weather (under 4,000 triangles, about 10 draw
+calls with everything showing).
+
+| Object | What | The game |
+| --- | --- | --- |
+| `set` | Everything that stays all three segments: the floor (running out to ±9 m), the mats, the window wall above the mirrors, the ceiling rig | Always shown |
+| `seg_warmup` | The intact mirrors and barre, the side walls with speakers at ±6.4, the neon sign (*FEEL THE BURN AT DAWN*), the dawn in the windows | Segments 1 and 2 |
+| `seg_double` | Over `seg_warmup`: the chase lights, the sign's *DOUBLE TIME* panel in front of the old lettering, the risen sun | Segment 2 |
+| `seg_burnout` | The broken mirror frames, glass across the floor, black windows, black drapes at ±8.4 m (3 m tall, z −4 … +1) | Segment 3 (`seg_warmup` is hidden) |
+| `prop_boombox` | A big 1980s twin-deck boombox, 0.6 × 0.35 × 0.2 m, handle on top, speakers to the camera; origin at the bottom centre, placed at x = 0, z = −0.3 | Moved to the prop's x and height; spun end over end while thrown |
+| `fx_shard` | A falling mirror shard, a long jagged triangle about 0.4 × 1.2 m, point down; origin at the point | Drops from 6 m to the floor at the struck spot during the strike |
+| `fx_shatter` | Broken glass on the floor, 1.2 m across, flat | Left on each struck spot for a second |
+| `fx_mark` | A strip of white gaffer tape in a cross, 1.0 m across, on the floor | On the spot a shard will hit, during the warning |
+| `lights` (no mesh) | `extras.segments`, as for Weather | Set on each segment change |
+
+The light rig per segment (suggested; tune by eye):
+
+| Segment | Background | Ambient | Key | Rim |
+| --- | --- | --- | --- | --- |
+| Warm-Up | `#1a0c14` | `#ffe6d8` × 1.3 | `#ffc890` × 2.0 from (−4, 5, 8), a low sun | `#ff7ab0` × 0.7 from (3, 4, −4) |
+| Double Time | `#140a10` | `#fff0e0` × 1.5 | `#ffffff` × 2.4 from (3, 7, 7) | `#40e0ff` × 0.9 from (−3, 5, −4); the game pulses it on the beat |
+| Burnout | `#020206` | `#6a5a9a` × 0.6 | `#c8b8ff` × 1.4 from (0, 8, 6), a single top light | `#ff4a8a` × 0.6 from (0, 3, −6) |
+
+- [ ] `set`, `seg_warmup`, `seg_double`, `seg_burnout` and the light rigs
+- [ ] `prop_boombox` at the size above
+- [ ] `fx_shard`, `fx_shatter`, `fx_mark`
+- [ ] `interact_throw` (22 frames) for every fighter, in the state clips table below: picking up the boombox and hurling it
+- [ ] Pass `tests/assets.test.ts`'s `burn.glb` checks (already written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place, the shard's length)
+
+### 15. Margaret Okafor (Nov 8, game side)
+
+The evening news anchor of *The Eleven O'Clock News*: calm, precise, never
+off-script. Footsies: the best all-round normals in the game. Her data is
+in `src/sim/fighters/margaret.ts` and `blender/data/fighters.json`; her
+move clips are in the generated table below. New fighter, same contracts as
+the others: the shared rig at 1.75 m (crouch 1.05 m, hurtbox 0.6 m wide),
+`body` and `props` materials, every state clip, and a module
+`blender/fighters/margaret.py` (add `margaret` to `TARGETS` in
+`blender/build.py`). The asset test checks her GLB like the others once it
+exists.
+
+- [ ] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some.
+- [ ] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick).
+- [ ] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight."
+- [ ] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials:
+  - `Breaking`, `Breaking+`: a sharp, fast straight (the pages rolled into a baton is a nice touch); the boosted one adds a second strike with the other hand.
+  - `Teleprompter`, `Teleprompter+`: the counter stance. She stands tall, the lead hand raised palm out, eyes reading something just off screen; held through the window (frames 8–26, or 8–34 boosted). Readable from across the screen: it's what the opponent must learn not to hit.
+  - `Teleprompter Read`, `Teleprompter Read+`: the answer, played the moment a strike is read: a fast, wide backhand with the pages, hitting on 3–5 out to 1.8 m (an effect-sized reach: mark it `prop` like the Isobar Lasso if the arm can't reach), the boosted one sweeping upward (it launches).
+  - `Live Feed`, `Live Feed+`: she points two fingers at the camera, "We go live", and the feed spawns on frame 14 in front of her.
+  - `Lead Story`: steps in over frames 4–14 and slams the pages down overhead on 20–21. The boosted one walks through a hit (armour, the game tints it orange).
+  - `f.FK` Field Report: steps forward while kicking (frames 1–10), foot out at mid height on 12–14.
+- [ ] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward.
+
+### 16. More detail, better poses (Nov 9, game side)
+
+Measured on Nov 9 (0.16.0): the four fighters are well inside every budget
+except the skeleton, which is what limits their poses.
+
+| | Dale | Rox | Hollis | Mumbles | Budget |
+| --- | --- | --- | --- | --- | --- |
+| Body triangles | 2,574 | 2,474 | 2,666 | 2,206 | 20,000 (this step: about 8,000) |
+| Effect triangles | 1,932 | 240 | 364 | 428 | — |
+| Bones | 22 | 22 | 22 | 22 | 48 (asset test) |
+| Shape keys | 6 | 5 | 6 | 8 | keep to about 4 (below) |
+| Clips | 60 | 62 | 61 | 60 | — |
+| GLB | 1.59 MB | 1.37 MB | 1.30 MB | 1.36 MB | 2 MB (asset test) |
+
+In a match on the iPhone profile the whole scene draws 6 to 13 draw calls and
+at most about 6,700 triangles a frame (limits: 100 calls, and the phone could
+draw many times the triangles). A fighter is about a quarter of the screen
+height in play, roughly 300 pixels on the phone, so extra triangles show in
+silhouettes and close-ups (intros, wins, Sign-Offs), not in surface detail.
+Each GLB is about a quarter animation (about 6 KB a clip), a fifth
+textures, a quarter to a third shape keys and the rest geometry. **Each
+shape key is a full copy of the mesh's vertices** (the two fist keys alone
+are 8–10% of a GLB), so more detail times more keys grows fast. Prefer bones (fists,
+the jaw) and texture swaps (faces) over new shape keys.
+
+Game side, done: the new reaction clips are picked by `src/render/pose.ts`
+(until a GLB has them they hold the last frame of `launched`, so nothing
+jumps); `tests/assets.test.ts` accepts the step 16 bones (all or none), any
+number of `x_*` bones up to 48 in all, the five new clips at their exact
+lengths, and fails a GLB over 2 MB.
+
+**A. The skeleton** (first: Margaret should be built on it)
+
+- [ ] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`.
+- [ ] Hands posed by the bones in every clip, generated from the move data like the rest: a fist on strikes (replacing the `fist_L`/`fist_R` shape keys: drop them, it saves about a tenth of each GLB), open on blocks, `hit_*`, `launched` and `dazed` (fingers splayed), grabbing on throws and `Clocking In`/`Cuff 'Em`, pointing where it's in character (Dale at the map in `intro`, Margaret at the camera).
+- [ ] The jaw on its bone: gritted on strikes, a shout on specials, slack in `ko` and `dazed`, talking in intros and wins. Mumbles' `jaw` shape key becomes the bone (his clacking and `Knock-Knock` knocks).
+- [ ] Secondary motion on each fighter's own `x_*` bones, baked as a seeded spring (lag and overshoot) from the bone it hangs from, so every clip gets it without hand keys: Dale's tie (2 bones) and quiff, Rox's perm (2–3) and headband tails, Hollis's key ring and cap peak, Mumbles' bow tie and the slack of his strings, Margaret's pages and bob. Keep it small: nothing may push the mesh outside the hurtbox checks.
+
+**B. Juggle reactions** (the combo system, 0.16.0)
+
+Juggles are long now (a launcher, strings and specials on a falling body,
+relaunches for a bar, a bounce off the floor or the wall), and every one of
+those beats shows the same held `launched` pose. Five new state clips, for
+every fighter. Each starts from and ends on `launched`'s held pose (its last
+frame), keeps the mesh in the `juggle` box like step 12 (the same build
+check), and has no `root` translation (the game moves the body). The game
+holds the last frame when the clip ends.
+
+| Clip | Frames | When the game plays it, and what it shows |
+| --- | --- | --- |
+| `juggle_hit` | 12 | Each hit on a body already in the air. A jolt: snapped further back and folded at the waist by frame 3, limbs flung, easing back to the held pose by 12. The most-seen clip in a long combo, so it should read at phone size |
+| `relaunch` | 20 | A boosted special (1 bar) pops them back up in front of the attacker. A full backward tumble (one turn in the screen plane) by frame 14, then settling into the held pose |
+| `slam` | 8 | A ground-bounce hit drives them into the floor (Rox's Lariat). Spread flat, back arched, falling fast; they hit the floor around frame 8–10 |
+| `floor_bounce` | 16 | Off the floor: crumpled on impact (frame 1–2), then bent up off it, knees and arms up, back into the held pose by 16 |
+| `wall_splat` | 20 | Off the wall (Feel the Burn near a wall): flattened against it on 1–4 (back to the wall, arms out), peeling forward off it by 10, into the held pose by 20 |
+
+- [ ] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model).
+
+**C. Hand-keyed poses where they count**
+
+Every clip today is generated from the move data as a few key poses (base,
+chamber, strike, recover). That's right for most normals; the moves people
+watch deserve more. Add per-move pose overrides (a file per fighter under
+`blender/data/`, read by `lib/anim.py`), keeping the strike frames on the
+hitbox (the build's check still applies):
+
+- [ ] Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
+- [ ] The launchers (`c.BP` for everyone) and the string enders: they start and end combos, and the camera is on them most.
+- [ ] `intro`, `intro_2`, `win`, `win_2`, using the new hands and jaw (talking to camera, pointing, waving).
+- [ ] `dazed`: with the jaw slack and the hands open it can be much more pitiful.
+
+**D. Shape detail**
+
+- [ ] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
+- [ ] Keep each GLB under 2 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -429,6 +594,12 @@ Loop where noted; lengths are suggestions unless given.
 | `win` | 120 | Victory pose |
 | `intro` | 90 | Round intro |
 | `win_2`, `intro_2` | 120, 90 | Second versions. Dale: "…and that's the forecast", clicking the map / straightens the tie and the quiff. Rox: hands on hips, high knees / an overhead side stretch. Hollis: checks his watch and yawns / touches his cap, cracks his knuckles. Mumbles: laughs, jaw clacking / slumped until the strings snap him up |
+| `interact_throw` | 22 | Picking up the stage's prop and hurling it forward (Feel the Burn's boombox, step 14): crouch and grab low on 1–5, lift it overhead by 6, release forward on frame 8 (when the game launches it), follow through. Until it exists the game plays `interact` (the kick) |
+| `juggle_hit` | 12 | Hit again in the air: a jolt, ending on `launched`'s held pose (step 16 B) |
+| `relaunch` | 20 | Relaunched by a boosted special: a backward tumble into the held pose (step 16 B) |
+| `slam` | 8 | Driven into the floor by a ground-bounce hit (step 16 B) |
+| `floor_bounce` | 16 | Off the floor into the held pose (step 16 B) |
+| `wall_splat` | 20 | Against the wall, then off it into the held pose (step 16 B) |
 | `td_cinematic` | 150 | Technical Difficulties: plays under a "PLEASE STAND BY" card, so only the first and last 20 frames are really seen |
 
 ### Move clips
@@ -591,6 +762,46 @@ plain one), `interact` is kicking a stage prop.
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.30, y 0.30…1.60 (mid) |
+
+#### Margaret Okafor (`margaret`): 35 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Cue Card | normal | stand | 16 | 6–7: x 0.20…1.00, y 1.15…1.45 (mid) |
+| `s.BP` | Lead Paragraph | normal | stand | 25 | 9–11: x 0.20…1.15, y 1.00…1.50 (mid) |
+| `s.FK` | Pointed Shoe | normal | stand | 24 | 9–11: x 0.20…1.40, y 0.55…0.90 (mid) |
+| `s.BK` | Anchor Kick | normal | stand | 32 | 13–15: x 0.20…1.55, y 0.90…1.40 (mid) |
+| `c.FP` | Footnote | normal | crouch | 17 | 7–8: x 0.20…0.95, y 0.60…0.90 (mid) |
+| `c.BP` | Rising Headline | normal | crouch | 31 | 9–12: x 0.10…0.80, y 1.00…1.90 (mid) |
+| `c.FK` | Low Bulletin | normal | crouch | 22 | 8–9: x 0.20…1.30, y 0.00…0.30 (low) |
+| `c.BK` | Cut the Wires | normal | crouch | 36 | 12–14: x 0.20…1.40, y 0.00…0.30 (low) |
+| `f.BP` | Paperweight | normal | stand | 37 | 19–20: x 0.20…1.00, y 1.00…1.60 (overhead) |
+| `f.FK` | Field Report | normal | stand | 29 | 12–14: x 0.20…1.30, y 0.60…1.00 (mid) |
+| `j.FP` | Jumping Cue | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
+| `j.BP` | Jumping Headline | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
+| `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Jumping Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `FP FP` | Top Story | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.10…1.45 (mid) |
+| `FP FP BP` | And Finally | normal | stand | 31 | 11–13: x 0.20…1.25, y 0.90…1.40 (mid) |
+| `FP FK` | Correspondent | normal | stand | 25 | 9–10: x 0.20…1.35, y 0.00…0.35 (low) |
+| `BP BP` | Developing Story | normal | stand | 28 | 10–12: x 0.20…1.20, y 1.00…1.45 (mid) |
+| `BP BP BK` | We Go Live | normal | stand | 33 | 12–14: x 0.20…1.30, y 0.80…1.60 (mid) |
+| `FK BK` | Weather and Sport | normal | stand | 32 | 12–14: x 0.20…1.45, y 0.90…1.40 (mid) |
+| `c.FP FK` | Small Print | normal | crouch | 28 | 9–10: x 0.20…1.35, y 0.00…0.30 (low) |
+| `f.BP BP` | Exclusive | normal | stand | 31 | 11–13: x 0.20…1.20, y 0.90…1.40 (mid) |
+| `Breaking` | Breaking | special | stand | 32 | 8–9: x 0.20…1.15, y 0.90…1.40 (mid) |
+| `Breaking+` | Breaking (boosted) | special | stand | 40 | 8–9: x 0.20…1.15, y 0.90…1.40 (mid); 16–17: x 0.20…1.20, y 0.90…1.40 (mid) |
+| `Teleprompter` | Teleprompter | special | stand | 44 | 8–26: counter stance; a strike read here plays `Teleprompter Read` |
+| `Teleprompter+` | Teleprompter (boosted) | special | stand | 44 | 8–34: counter stance; a strike read here plays `Teleprompter Read+` |
+| `Teleprompter Read` | Teleprompter: Read | special | stand | 30 | 3–5: x 0.10…1.80, y 0.30…1.80 (mid) |
+| `Teleprompter Read+` | Teleprompter: Read (boosted) | special | stand | 34 | 3–5: x 0.10…1.80, y 0.30…1.80 (mid) |
+| `Live Feed` | Live Feed | special | stand | 40 | 14: spawns projectile at x 0.70, y 0.00 (waits 30 frames) |
+| `Live Feed+` | Live Feed (boosted) | special | stand | 40 | 14: spawns projectile at x 0.70, y 0.00 (waits 12 frames) |
+| `Lead Story` | Lead Story | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead) |
+| `Lead Story+` | Lead Story (boosted) | special | stand | 46 | 20–21: x 0.20…1.10, y 0.90…1.70 (overhead); 4–19: armour (glows) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
 <!-- clips:end -->
 

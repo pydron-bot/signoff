@@ -9,7 +9,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { STEPS_PER_SECOND } from '../sim/constants';
-import { LOOPS, standIn } from './pose';
+import { HELD_STAND_INS, LOOPS, standIn } from './pose';
 
 const loader = new GLTFLoader();
 const files = new Map<string, Promise<FighterArt>>();
@@ -149,7 +149,13 @@ export class FighterModel {
   /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */
   pose(clip: string, frame: number, loop: boolean): void {
     if (clip === this.clip && frame === this.frame) return;
-    const a = this.actions.get(clip) ?? this.actions.get(standIn(this.art.id, clip) ?? 'idle') ?? this.actions.get('idle');
+    let a = this.actions.get(clip);
+    let fr = frame;
+    if (!a) {
+      a = this.actions.get(standIn(this.art.id, clip) ?? 'idle') ?? this.actions.get('idle');
+      // A held stand-in shows its last frame (Infinity clamps to it below).
+      if (a && HELD_STAND_INS.has(clip)) fr = Infinity;
+    }
     if (!a) return;
     if (a.action !== this.current) {
       this.current?.stop();
@@ -158,7 +164,7 @@ export class FighterModel {
       this.current = a.action;
     }
     const n = a.frames;
-    const f = loop ? (frame - 1) % n : Math.min(Math.max(frame, 1), n) - 1;
+    const f = loop ? (fr - 1) % n : Math.min(Math.max(fr, 1), n) - 1;
     a.action.time = f / STEPS_PER_SECOND;
     this.mixer.update(0);
     this.clip = clip;

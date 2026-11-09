@@ -29,6 +29,8 @@ export interface EffectSpec {
   pullOnBlock?: boolean;
   hitstop?: number;
   armorBreak?: boolean;
+  groundBounce?: boolean;
+  wallBounce?: boolean;
 }
 
 export interface StrikeSpec extends EffectSpec {
@@ -51,6 +53,8 @@ export function effect(s: EffectSpec): HitEffect {
     pullOnBlock: s.pullOnBlock,
     hitstop: s.hitstop,
     armorBreak: s.armorBreak,
+    groundBounce: s.groundBounce,
+    wallBounce: s.wallBounce,
   };
 }
 
@@ -67,6 +71,7 @@ export interface ProjectileSpec {
   rehit?: number;
   groundEnds?: boolean;
   decoy?: boolean;
+  delay?: number;
   effect: EffectSpec;
 }
 
@@ -82,6 +87,7 @@ export function projectile(s: ProjectileSpec): ProjectileData {
     rehit: s.rehit ?? 0,
     groundEnds: s.groundEnds,
     decoy: s.decoy,
+    delay: s.delay,
     effect: effect(s.effect),
   };
 }
@@ -98,6 +104,7 @@ export interface MoveSpec {
   passThrough?: Window;
   invuln?: Window;
   armor?: Window;
+  counter?: MoveData['counter'];
   chain?: Partial<Record<Attack, string>>;
   cancel?: Window;
   boost?: string;
@@ -116,6 +123,11 @@ export function move(id: string, s: MoveSpec): MoveData {
     starts.push(s.throwData.frames[0]);
     ends.push(s.throwData.frames[1]);
   }
+  // A counter is "active" while it reads.
+  if (s.counter) {
+    starts.push(s.counter.frames[0]);
+    ends.push(s.counter.frames[1]);
+  }
   return {
     id,
     name: s.name,
@@ -129,6 +141,7 @@ export function move(id: string, s: MoveSpec): MoveData {
     passThrough: s.passThrough,
     invuln: s.invuln,
     armor: s.armor,
+    counter: s.counter,
     chain: s.chain ?? {},
     cancel: s.cancel,
     boost: s.boost,
@@ -213,6 +226,8 @@ export function table(...moves: MoveData[]): Record<string, MoveData> {
     if (t[m.id]) throw new Error(`duplicate move id ${m.id}`);
     t[m.id] = m;
   }
+  // A boost target is a boosted special: it relaunches a juggled body.
+  for (const m of moves) if (m.boost && t[m.boost]) t[m.boost] = { ...t[m.boost], boosted: true };
   return t;
 }
 

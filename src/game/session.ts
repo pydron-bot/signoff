@@ -18,6 +18,8 @@ export interface SessionOptions {
   mode: Mode;
   p1: string;
   p2: string;
+  /** Weather at Eleven if not given. */
+  stage?: string;
   level: CpuLevel;
   seed: number;
   /** Studio rules: one segment, hazards off. */
@@ -46,9 +48,9 @@ export class Session {
   constructor(readonly options: SessionOptions) {
     const o = options;
     this.player = o.mode === 'replay' && o.replay ? new ReplayPlayer(o.replay) : null;
-    this.match = this.player?.match ?? createMatch({ p1: o.p1, p2: o.p2, seed: o.seed, studio: o.studio });
+    this.match = this.player?.match ?? createMatch({ p1: o.p1, p2: o.p2, stage: o.stage, seed: o.seed, studio: o.studio });
     const studio = o.studio === true;
-    this.recorder = o.mode === 'cpu' || o.mode === 'versus' ? new ReplayRecorder(o.version ?? '', { p1: o.p1, p2: o.p2, seed: o.seed, studio }) : null;
+    this.recorder = o.mode === 'cpu' || o.mode === 'versus' ? new ReplayRecorder(o.version ?? '', { p1: o.p1, p2: o.p2, stage: this.match.stage, seed: o.seed, studio }) : null;
     this.cpu = options.mode === 'versus' || this.player ? null : new Cpu(1, options.level, options.seed);
     this.cpu1 = options.mode === 'demo' ? new Cpu(0, options.level, options.seed * 7 + 1) : null;
     if (options.mode === 'training') {

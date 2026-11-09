@@ -5,12 +5,14 @@
  * inputs to a fresh match, with snapshots every few seconds so seeking back
  * only re-simulates from the nearest one. No DOM here.
  */
-import { createMatch, saveMatch, step, type MatchState, type SimEvent } from '../sim';
+import { STAGES, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../sim';
 import { INPUT_BITS } from '../sim/input';
 
 export interface ReplayOptions {
   p1: string;
   p2: string;
+  /** The stage (recordings from before 0.13.0 have none: Weather at Eleven). */
+  stage?: string;
   seed: number;
   studio: boolean;
 }
@@ -64,7 +66,7 @@ export function parseReplay(data: unknown): Replay | null {
   let total = 0;
   for (let i = 1; i < r.runs.length; i += 2) total += r.runs[i];
   if (total !== r.frames) return null;
-  return { version: r.version, options: { p1: o.p1, p2: o.p2, seed: o.seed, studio: o.studio === true }, frames: r.frames, runs: r.runs };
+  return { version: r.version, options: { p1: o.p1, p2: o.p2, stage: typeof o.stage === 'string' && o.stage in STAGES ? o.stage : 'weather', seed: o.seed, studio: o.studio === true }, frames: r.frames, runs: r.runs };
 }
 
 /** Plays a replay into its own match. */

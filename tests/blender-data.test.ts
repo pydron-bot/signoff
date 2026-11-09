@@ -29,6 +29,7 @@ function move(m: MoveData) {
     teleport: m.teleport,
     hidden: m.hidden,
     armor: m.armor,
+    counter: m.counter,
     invuln: m.invuln,
     decoy: m.spawns.some((s) => s.projectile.decoy) || undefined,
   };

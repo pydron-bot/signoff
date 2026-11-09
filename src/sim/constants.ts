@@ -29,11 +29,34 @@ export const HITSTOP = 8;
 export const BLOCKSTOP = 6;
 export const COUNTER_HITSTUN = 4;
 export const COUNTER_HITSTOP = 4;
+/** The freeze when a counter (Teleprompter) reads a strike, so it reads on screen too. */
+export const COUNTER_READ_STOP = 12;
 /** Each further hit in a combo does 10% less, down to 30%. */
 export const SCALE_STEP = 10;
 export const SCALE_MIN = 30;
-export const MAX_JUGGLE = 4;
+/** A safety net: juggles end on their own long before this (see JUGGLE_DECAY). */
+export const MAX_JUGGLE = 16;
 export const JUGGLE_POP = fx(0.1);
+/** Each juggle hit pops the body this % lower than the first, down to JUGGLE_POP_MIN %... */
+export const JUGGLE_DECAY = 7;
+export const JUGGLE_POP_MIN = 30;
+/** ...and it falls this % faster: juggles get lower and quicker until they drop. */
+export const JUGGLE_GRAVITY = 6;
+/** A boosted special that hits a juggled body pops it back up (no decay), as often as there's meter for; the faster fall still ends it. */
+export const RELAUNCH_VY = fx(0.15);
+/** The bar is worth it: a relaunch adds this much damage, unscaled. */
+export const RELAUNCH_DAMAGE = 70;
+/** Relaunched, the body goes straight up this far in front of the attacker, so a follow-up reaches. */
+export const RELAUNCH_PULL = fx(0.7);
+/** Ground bounce: slammed down, the body comes back up off the floor once a combo. */
+export const SLAM_VY = fx(-0.12);
+export const GROUND_BOUNCE_VY = fx(0.17);
+/** Wall bounce: hit within WALL_BOUNCE_RANGE of the wall, the body flies into it and comes back off towards the attacker, once a combo. */
+export const WALL_BOUNCE_RANGE = fx(1.6);
+export const WALL_BOUNCE_VX = fx(0.16);
+export const WALL_BOUNCE_VY = fx(0.08);
+export const WALL_BOUNCE_BACK_VX = fx(0.035);
+export const WALL_REBOUND_VY = fx(0.16);
 export const KNOCK_VY = fx(0.12);
 export const KNOCK_VX = fx(0.04);
 /** Sideways drift of a juggled body: small, so a normal can reach it. */
@@ -52,13 +75,13 @@ export const TECH_PUSH = fx(0.07);
 
 // Signal meter
 export const BAR = 1000;
+/** The first hit of a round is worth a bar. */
+export const FIRST_HIT_METER = BAR;
 export const METER_MAX = 3 * BAR;
 /** Boosting must come within this many frames of the special starting. */
 export const BOOST_WINDOW = 8;
 export const TAPE_SKIP_FRAMES = 10;
 export const TAPE_SKIP_SPEED = fx(0.11);
-export const CUT_AWAY_BARS = 2;
-export const CUT_AWAY_HEALTH_PCT = 5;
 export const CUT_AWAY_FRAMES = 20;
 
 // Technical Difficulties

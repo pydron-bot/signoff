@@ -1,8 +1,8 @@
 // Arcade: everyone else in turn, harder each fight, continues on a loss,
 // and an ending for every fighter.
 import { describe, expect, it } from 'vitest';
-import { CONTINUES, ENDINGS, afterMatch, createLadder, levelFor, opponent, schedule } from '../src/game/arcade';
-import { FIGHTERS } from '../src/sim';
+import { CONTINUES, ENDINGS, afterMatch, createLadder, levelFor, opponent, schedule, stageFor } from '../src/game/arcade';
+import { FIGHTERS, STAGES } from '../src/sim';
 
 describe('arcade', () => {
   it('runs through everyone else once, getting harder', () => {
@@ -42,6 +42,14 @@ describe('arcade', () => {
     expect(s[0].done).toBe(true);
     expect(s[1].next).toBe(true);
     expect(s.filter((x) => x.next).length).toBe(1);
+  });
+
+  it('each fight is on the opponent\'s own show where it has a stage', () => {
+    const l = createLadder('dale');
+    const stages = l.opponents.map((_, at) => stageFor({ ...l, at }));
+    expect(stages[l.opponents.indexOf('rox')]).toBe('burn');
+    for (const s of stages) expect(STAGES[s]).toBeDefined();
+    expect(stageFor({ ...createLadder('rox'), at: 0 })).toBe('weather');
   });
 
   it('every fighter has an ending', () => {

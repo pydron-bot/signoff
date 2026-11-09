@@ -69,6 +69,11 @@ export interface FighterState {
   combo: number;
   juggle: number;
   juggleable: boolean;
+  /** Spent this combo: the one ground and wall bounce. */
+  groundBounced: boolean;
+  wallBounced: boolean;
+  /** A bounce on its way: off the floor when they land, off the wall when they reach it. */
+  bounce: 'none' | 'ground' | 'wall';
   ko: boolean;
   cutAwayUsed: boolean;
   /** The move that took the last of this fighter's health ('' if none), for cancellations. */
@@ -125,6 +130,8 @@ export interface MatchState {
   timer: number;
   /** Frames of fighting this round: stage hazards keep time by it. */
   roundFrame: number;
+  /** The round's first hit has landed (it's worth a bar). */
+  firstHit: boolean;
   /** This round's wind push per frame (signed), 0 for none. */
   wind: Fx;
   hazards: HazardState[];
@@ -176,6 +183,9 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     combo: 0,
     juggle: 0,
     juggleable: false,
+    groundBounced: false,
+    wallBounced: false,
+    bounce: 'none',
     ko: false,
     cutAwayUsed: false,
     koMove: '',

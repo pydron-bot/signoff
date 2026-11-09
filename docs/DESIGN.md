@@ -123,28 +123,53 @@ meter. Every number below is a starting value to tune.
   punished. A string carries on whether it hits, is blocked or whiffs, and
   every string is a true combo on hit.
 - Cancels: a normal or string step that **hits** can be cancelled into any
-  special (not on block or whiff: confirm it first). A **launcher** that hits
-  can be cancelled into any normal, to follow them into the air (up to 4
-  juggle hits). Tape Skip (1 bar) cancels anything into a dash, which is how
-  strings join up.
+  special (not on block or whiff: confirm it first; never special into
+  special). A **launcher** or a **bounce** that hits can be cancelled into any
+  normal, to follow them into the air. Tape Skip (1 bar) cancels anything into
+  a dash, which is how strings join up.
+- Combos aim at the length of a modern Mortal Kombat combo, 10 or more hits
+  and about 30% without meter, 35 to 40% with a bar, without assists:
+  - **Juggles wind down on their own.** No hard limit: each juggle hit pops
+    the body 7% lower and it falls 6% faster, so a juggle ends by itself
+    (a cap of 16 is only a safety net). Strings and specials work on a
+    falling body.
+  - **Relaunch (1 bar).** A boosted special whose first hit lands on a
+    juggled opponent pops them straight back up just in front of the
+    attacker, for 70 extra damage (not scaled), and the special stops there
+    so the attacker can follow up. As many times as there are bars to
+    spend: each relaunch falls faster than the last, so it still ends.
+  - **Bounces.** A ground bounce slams them into the floor; a wall bounce,
+    only within 1.6 m of the wall, throws them into it. Either way they come
+    back up into a juggle, each once a combo; otherwise the move knocks
+    down. Each fighter gets a bounce or two as signature combo tools.
+  - **Damage scaling** stays at 10% less per hit, down to 30%, so the
+    extra hits are worth having without letting combos run away.
+  - **First hit.** The first hit of each round (strike, throw or super) is
+    worth a bar of Signal.
+  - **Breaking out.** The defender's answer to a long combo is Cut Away,
+    which takes a full meter and spends all of it: the attacker has to
+    weigh spending bars to extend against the bars the defender is holding.
 - Each fighter's normals do their own job: Dale has the longest pokes and a
   step-back kick; Rox is short-ranged but plus on block, with a lunge and
   double kicks; Hollis has an armoured kick, the only link in the game
   (Nightstick into jab) and a string that ends in a grab (Cuff 'Em);
   Mumbles ducks under high attacks, reels people in on a string, and ends
-  combos with his Hand Puppet.
+  combos with his Hand Puppet; Margaret has the best all-round normals
+  (fast, long enough, safe), a step-in kick, and a stagger (Breaking) that
+  leaves time for a normal after it.
 - Specials: 4 to 6 per fighter, entered as direction + Special (or classic
   motions on keyboard and gamepad, see Controls).
 
 ### Signal meter
 
-3 bars, fills from dealing and taking damage.
+3 bars, fills from dealing and taking damage; the first hit of a round is
+worth a bar.
 
 | Spend | Cost | Effect |
 | --- | --- | --- |
-| Boosted special | 1 bar | A stronger version of a special: more hits, armour or a new follow-up |
+| Boosted special | 1 bar | A stronger version of a special: more hits, armour or a new follow-up; on a juggled opponent, a relaunch |
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
-| Cut Away | 2 bars + 5% health | Combo breaker: knocks the opponent away mid-combo; once per round |
+| Cut Away | All 3 bars (a full meter) | Combo breaker: knocks the opponent away mid-combo; once per round |
 
 **Technical Difficulties.** Once per match, below 30% health, a fighter can
 launch their comeback super. If it connects, the screen tears, the broadcast
@@ -181,7 +206,9 @@ cartoon mascot that's been off air since 1979, and the continuity announcer.
 ## Stages
 
 Version 1 ships 6 stages, each a show in Channel 0's schedule with three
-segments; the first playable has one, *Weather at Eleven*.
+segments. Two are in: *Weather at Eleven* and *Feel the Burn at Dawn*
+(Warm-Up, Double Time, Burnout). Pick one on the title screen; in Arcade each
+fight is on the opponent's own show where it has a stage.
 
 | Show | Segment 1 | Segment 2 | Segment 3 |
 | --- | --- | --- | --- |
@@ -208,7 +235,7 @@ card: the loser's own show going off the air.
   camera in close, then the cut, more blows heard over it, and the card.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
-  Hollis: Clocking In; Mumbles: Knock-Knock). Straight after the K.O., the
+  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -223,6 +250,7 @@ often lets the moment pass. Finisher inputs:
 | Rox Vega (*Feel the Burn at Dawn*) | Cool-Down: close, forward, back, FK | Feel the Burn: mid, down, forward, BK |
 | Hollis Bey (*The Night Watch*) | Lights Out: close, back, down, BP | End of Shift: mid, forward, down, BK |
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
+| Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
 
 ### The broadcast look
 
@@ -334,7 +362,8 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** four fighters and Weather at Eleven are in.
+      practice:** five fighters (Margaret Okafor joined in 0.15.0) and two
+      stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.
 - [ ] Should SIGN-OFF reference Curbside's city? **Leaning towards a universe

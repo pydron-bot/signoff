@@ -14,6 +14,49 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.16.1',
+    date: '2026-11-09',
+    title: 'Juggle reactions, cued up',
+    notes: [
+      'Ready for new juggle animations: a body hit in the air, relaunched, slammed, bounced off the floor or splatted on the wall will get its own reaction once the models have them. Until then it holds the launched pose, so nothing jumps.',
+    ],
+  },
+  {
+    version: '0.16.0',
+    date: '2026-11-09',
+    title: 'Extended coverage',
+    notes: [
+      'Longer combos: the four-hit juggle limit is gone. Each juggle hit pops them a little lower and they fall a little faster, so juggles wind down on their own, and strings and specials keep working on a falling opponent.',
+      'Relaunch: a boosted special (1 bar) that hits a juggled opponent pops them straight back up in front of you, with extra damage, and ends the special so you can follow up. Spend as many bars as you have: each relaunch falls a little faster, so even a three-bar combo ends.',
+      'Cut Away, the combo breaker, now takes a full meter and spends all of it (no longer 2 bars and 5% health). Still once a round. Holding three bars is the answer to a long combo.',
+      "Bounces: some moves slam the opponent into the floor or (near it) the wall, and they come back up into a juggle, once each a combo. Rox's Leg Warmer Lariat ground-bounces and Feel the Burn wall-bounces.",
+      'First hit: the first hit of each round is worth a bar of Signal.',
+      'The combo counter shows the damage too (8 HITS 29%).',
+      'Specials no longer cancel into other specials.',
+    ],
+  },
+  {
+    version: '0.15.0',
+    date: '2026-11-08',
+    title: 'Good evening',
+    notes: [
+      "A fifth fighter: Margaret Okafor, the anchor of The Eleven O'Clock News. Footsies: the best all-round normals in the game, Breaking (a fast strike that staggers, time for a normal after it), Teleprompter (reads the next strike and answers it: OFF THE SCRIPT), Live Feed (a signal that waits on standby, then goes out) and Lead Story (a stepping overhead).",
+      'Her Sign-Offs: Breaking News (close: ↓ → BP) and And That Was the News (mid: ← ↓ BK). Win with Breaking to stop the presses.',
+      'She plays as a grey box until her model is made.',
+    ],
+  },
+  {
+    version: '0.14.0',
+    date: '2026-11-08',
+    title: 'Feel the Burn at Dawn',
+    notes: [
+      "A second stage: Rox's aerobics show. Warm-Up has a boombox to pick up and throw; in Double Time the tape runs fast and the whole fight with it, 10% quicker; in Burnout the mirrors shatter, the studio opens out into the dark and glass falls on the beat.",
+      'Pick the stage on the title screen. In ARCADE each fight is on the opponent\'s own show where it has a stage.',
+      'Aerobics music for every segment, and new commercial breaks.',
+      'Replays remember the stage.',
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-11-08',
     title: 'Props department',

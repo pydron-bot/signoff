@@ -38,6 +38,10 @@ export interface HitEffect {
   readonly knockdown?: boolean;
   /** Pops the opponent up at this vertical speed, open to juggles. */
   readonly launch?: Fx;
+  /** Slams them to the floor and they bounce back up into a juggle (once a combo). Set knockdown too: it's what happens after. */
+  readonly groundBounce?: boolean;
+  /** Near the wall, sends them into it and they bounce back off into a juggle (once a combo). Set knockdown too: it's what happens elsewhere. */
+  readonly wallBounce?: boolean;
   /** Pulls the opponent to this distance in front of the attacker. */
   readonly pull?: Fx;
   readonly pullOnBlock?: boolean;
@@ -66,6 +70,8 @@ export interface ProjectileData {
   readonly groundEnds?: boolean;
   /** A decoy: hits nobody, but soaks one attack or projectile meant for its owner. */
   readonly decoy?: boolean;
+  /** Frames it waits where it appeared before it moves or can hit (it can still be shot down). */
+  readonly delay?: number;
   readonly effect: HitEffect;
 }
 
@@ -97,12 +103,16 @@ export interface MoveData {
   readonly invuln?: Window;
   /** Absorbs one hit (takes the damage, ignores the stun). */
   readonly armor?: Window;
+  /** A counter: a strike landing in these frames is read and stopped, and the fighter answers with `into`. */
+  readonly counter?: { readonly frames: Window; readonly into: string };
   /** Strings: the next step for each button, inside the cancel window. */
   readonly chain: Readonly<Partial<Record<Attack, string>>>;
   /** When chains and special cancels are allowed. */
   readonly cancel?: Window;
   /** The boosted version (Special again, 1 bar). */
   readonly boost?: string;
+  /** Set on boosted versions: hitting a juggled body relaunches it. */
+  readonly boosted?: boolean;
   readonly throwData?: ThrowData;
   /** On this frame the fighter reappears behind the opponent, or well back from them. */
   readonly teleport?: { readonly frame: number; readonly to: 'behind' | 'away' };
@@ -174,7 +184,7 @@ export interface FinisherData {
 }
 
 /** How the fighter plays; the CPU plays to it. */
-export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster';
+export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies';
 
 export interface FighterData {
   readonly id: string;

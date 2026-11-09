@@ -138,3 +138,77 @@ describe('rounds bring the next segment', () => {
     expect(m.wind).not.toBe(0);
   });
 });
+
+describe('Feel the Burn at Dawn', () => {
+  const burn = (seg: number, p1 = 'dale', p2 = 'rox'): MatchState => {
+    const m = ready(p1, p2, { stage: 'burn' });
+    m.segment = seg;
+    setupRound(m);
+    return m;
+  };
+
+  it('Warm-Up: the boombox is picked up and thrown at chest height, once', () => {
+    const m = burn(0);
+    place(m, -0.5, 3);
+    const ev = run(m, 60, presses({ 0: INTERACT, 30: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(1);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, defender: 1, move: 'boombox' });
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('Warm-Up: a crouching Mumbles is under the boombox', () => {
+    const m = burn(0, 'dale', 'mumbles');
+    place(m, -0.5, 3);
+    const ev = run(m, 60, presses({ 0: INTERACT }), Input.DOWN);
+    expect(count(ev, 'hit')).toBe(0);
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('Double Time: the game runs 10% faster, clock and all, the same on every run', () => {
+    const a = burn(1);
+    const b = burn(1);
+    const t0 = a.timer;
+    const evA = run(a, 600, RIGHT);
+    const evB = run(b, 600, RIGHT);
+    expect(t0 - a.timer).toBe(660);
+    expect(a.roundFrame).toBe(660);
+    expect(a).toEqual(b);
+    expect(evA).toEqual(evB);
+  });
+
+  it('Warm-Up and Burnout run at the normal speed', () => {
+    for (const seg of [0, 2]) {
+      const m = burn(seg);
+      const t0 = m.timer;
+      run(m, 600);
+      expect(t0 - m.timer).toBe(600);
+    }
+  });
+
+  it('Burnout: the arena opens out to ±8 m', () => {
+    const m = burn(2);
+    place(m, 0, 2);
+    run(m, 600, presses({}, Input.LEFT));
+    expect(m.fighters[0].x).toBeLessThan(fx(-7));
+    const weather = onSegment(2);
+    place(weather, 0, 2);
+    run(weather, 600, presses({}, Input.LEFT));
+    expect(weather.fighters[0].x).toBeGreaterThan(fx(-6));
+  });
+
+  it('Burnout: a shard falls on the announced spot, on the beat', () => {
+    const m = burn(2);
+    const hz = STAGES.burn.segments[2].hazards[0];
+    const warn = until(m, 'hazardWarn');
+    expect(warn.e).toMatchObject({ hazard: 'shards', caption: 'MIND THE GLASS' });
+    const x = warn.e.type === 'hazardWarn' ? warn.e.x : 0;
+    m.fighters[0].x = x;
+    m.fighters[1].x = x > 0 ? x - fx(3) : x + fx(3);
+    const strike = until(m, 'hazardStrike');
+    // The music's beat is every 30 steps from the start of the fight.
+    expect(m.roundFrame % 30).toBe(0);
+    expect(hz.period % 30).toBe(0);
+    const ev = [...strike.ev, ...run(m, 20)];
+    expect(ev.filter((e) => e.type === 'hazardHit')).toEqual([expect.objectContaining({ player: 0, damage: 60 })]);
+  });
+});

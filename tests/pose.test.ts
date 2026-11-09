@@ -4,8 +4,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Cpu } from '../src/ai/cpu';
-import { PoseTracker, standIn, type Pose } from '../src/render/pose';
-import { FIGHTERS, INTRO_FRAMES, Input, createMatch, step, type MatchState, type SimEvent } from '../src/sim';
+import { HELD_STAND_INS, PoseTracker, standIn, type Pose } from '../src/render/pose';
+import { BAR, FIGHTERS, INTRO_FRAMES, Input, createMatch, step, type MatchState, type SimEvent } from '../src/sim';
 import { place, ready } from './sim-helpers';
 
 const { RIGHT, DOWN, UP, FP, FK, BLOCK, METER } = Input;
@@ -165,6 +165,63 @@ describe('poses', () => {
       expect(used).toContain('intro_2');
       expect(used).toContain('win_2');
       expect(used).toContain('ko');
+    }
+  });
+});
+
+describe('juggle reactions (step 16)', () => {
+  const { LEFT, SPECIAL, BK } = Input;
+  /** Plays P1's script (as tests/combos.test.ts does) and returns every clip P2 showed, in order, without repeats. */
+  function clipsSeen(script: readonly (readonly [string, number])[], meter = 0, x = 0.4, off = 0): string[] {
+    const m = ready('rox', 'dale');
+    place(m, off - x, off + x);
+    m.fighters[0].meter = meter;
+    const t = new PoseTracker();
+    const ev: SimEvent[] = [];
+    const seen: string[] = [];
+    let k = 0;
+    for (let n = 0; n < 300; n++) {
+      const a = m.fighters[0];
+      let in0 = 0;
+      if (k < script.length) {
+        const [when, bits] = script[k];
+        const free = a.mode === 'idle' || a.mode === 'walk' || a.mode === 'crouch';
+        if (when === 'now' || (when === 'free' && free) || (a.mode === 'move' && `${a.move}@${a.moveFrame}` === when)) {
+          in0 = bits;
+          k++;
+        }
+      }
+      ev.length = 0;
+      step(m, in0, 0, ev);
+      t.step(m, ev);
+      const c = t.pose(m, 1, { clip: '', frame: 0, loop: false }).clip;
+      if (seen.at(-1) !== c) seen.push(c);
+    }
+    return seen;
+  }
+  const launcher = [['now', DOWN | Input.BP], ['c.BP@11', FP]] as const;
+
+  it('a hit on a juggled body plays juggle_hit; a launch from the ground is still launched', () => {
+    const seen = clipsSeen(launcher);
+    expect(seen).toContain('launched');
+    expect(seen.indexOf('juggle_hit')).toBeGreaterThan(seen.indexOf('launched'));
+  });
+
+  it('the Lariat slams them (slam), then floor_bounce off the floor', () => {
+    const seen = clipsSeen([...launcher, ['s.FP@8', LEFT | SPECIAL]]);
+    expect(seen.indexOf('floor_bounce')).toBeGreaterThan(seen.indexOf('slam'));
+    expect(seen.indexOf('slam')).toBeGreaterThan(0);
+  });
+
+  it('a boosted special plays relaunch; Feel the Burn by the wall plays wall_splat', () => {
+    expect(clipsSeen([...launcher, ['s.FP@8', DOWN | SPECIAL], ['Count of Eight@2', SPECIAL]], BAR)).toContain('relaunch');
+    expect(clipsSeen([...launcher, ['s.FP@8', FP], ['FP FP@9', FK], ['FP FP FK@11', BK]], 0, 0.4, 4.2)).toContain('wall_splat');
+  });
+
+  it('until the art has them, they hold the end of launched', () => {
+    for (const c of ['juggle_hit', 'relaunch', 'slam', 'floor_bounce', 'wall_splat']) {
+      expect(standIn('rox', c)).toBe('launched');
+      expect(HELD_STAND_INS.has(c)).toBe(true);
     }
   });
 });

@@ -6,7 +6,7 @@
  * synthesis where there is one. Presentation only: it listens to events.
  */
 import type { MatchState, SimEvent } from '../sim';
-import { fighterData } from '../sim';
+import { INTRO_FRAMES, STEPS_PER_SECOND, fighterData } from '../sim';
 import { Music } from './music';
 import { SCORES } from './score';
 
@@ -145,7 +145,8 @@ export class Sound {
     for (const e of ev) {
       switch (e.type) {
         case 'roundStart':
-          this.playMusic(m.stage, e.segment, 1.3);
+          // The music starts with the fight, so its beat keeps time with the round clock (Burnout's shards fall on it).
+          this.playMusic(m.stage, e.segment, INTRO_FRAMES / STEPS_PER_SECOND);
           this.ident();
           this.say(`Round ${e.round}`);
           break;
@@ -165,6 +166,11 @@ export class Sound {
           break;
         case 'armor':
           this.tone(300, 0.15, 0.2, 'sawtooth', 200);
+          break;
+        case 'counter':
+          // The teleprompter's bell: she saw it coming.
+          this.tone(1320, 0.4, 0.12, 'sine');
+          this.tone(1980, 0.3, 0.06, 'sine', undefined, 0.02);
           break;
         case 'special':
           if (e.move.startsWith('Knock-Knock')) {
@@ -214,6 +220,19 @@ export class Sound {
           this.noise(2.4, 5000, 0.18, 'highpass', 0.5);
           this.tone(1000, 2.4, 0.06, 'sine');
           break;
+        case 'relaunch':
+          // A thud off the floor or wall; a relaunch rings like the boost.
+          if (e.how === 'special') this.tone(440, 0.15, 0.1, 'square', 1320);
+          else {
+            this.tone(80, 0.2, 0.4, 'sine', 50);
+            this.noise(0.15, 400, 0.25, 'lowpass');
+          }
+          break;
+        case 'firstHit':
+          // The station's ident chime: the first hit is worth a bar.
+          this.tone(880, 0.12, 0.08, 'sine');
+          this.tone(1320, 0.2, 0.08, 'sine', undefined, 0.08);
+          break;
         case 'knockdown':
           this.tone(70, 0.3, 0.4, 'sine', 40);
           this.noise(0.2, 300, 0.25, 'lowpass');
@@ -236,6 +255,10 @@ export class Sound {
           if (e.hazard === 'lightning') {
             this.noise(0.35, 6000, 0.35, 'highpass', 0.5);
             this.tone(60, 0.8, 0.3, 'sine', 35, 0.05);
+          } else if (e.hazard === 'shards') {
+            // Glass: a bright smash as it lands.
+            this.noise(0.4, 4000, 0.3, 'highpass', 0.15);
+            this.tone(2200, 0.25, 0.06, 'triangle', 1400, 0.15);
           } else this.tone(120, 0.35, 0.12, 'sawtooth');
           break;
         case 'hazardHit':
@@ -243,6 +266,8 @@ export class Sound {
           if (Math.random() < 0.5) this.laugh(0.2);
           break;
         case 'propKick':
+          // The boombox goes with a blast of its own tape.
+          if (e.prop === 'boombox') this.tone(330, 0.3, 0.1, 'square', 660);
           this.tone(160, 0.1, 0.3, 'sine', 80);
           this.noise(0.6, 250, 0.08, 'lowpass');
           break;

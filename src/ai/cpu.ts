@@ -6,7 +6,7 @@
  * It has its own seeded random numbers, so a match against it replays
  * exactly from the same seed.
  */
-import { BAR, Input, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
+import { BAR, Input, METER_MAX, TD_HEALTH_PCT, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
 import { propInReach } from '../sim/stage';
@@ -149,7 +149,7 @@ export class Cpu {
       return 0;
     }
     this.techTried = false;
-    if ((me.mode === 'hitstun' || me.mode === 'launched') && me.meter >= 2 * BAR && !me.cutAwayUsed && this.roll(2)) return METER;
+    if ((me.mode === 'hitstun' || me.mode === 'launched') && me.meter >= METER_MAX && !me.cutAwayUsed && this.roll(2)) return METER;
 
     if (this.plan) {
       const out = this.plan(me, this.planT++);
@@ -172,6 +172,11 @@ export class Cpu {
     if (s.threat && style === 'zoner' && Math.abs(s.x - me.x) < fx(1.2) && this.roll(this.level.block / 4)) {
       // Heat Lightning goes through the attack.
       this.start(tap(SPECIAL));
+      return this.next0(me);
+    }
+    // Footsies reads the attack coming with the teleprompter.
+    if (s.threat && !s.projectile && style === 'footsies' && Math.abs(s.x - me.x) < fx(1.8) && this.roll(this.level.block / 4)) {
+      this.start(this.special(me, (me.facing > 0 ? LEFT : RIGHT) | SPECIAL));
       return this.next0(me);
     }
     // Rushdown jumps over projectiles from range.
@@ -303,6 +308,8 @@ export class Cpu {
         return this.grappler(me, d, s, dist, r, fwd, back);
       case 'trickster':
         return this.trickster(me, d, s, dist, r, fwd, back);
+      case 'footsies':
+        return this.footsies(me, d, dist, r, fwd, back);
     }
   }
 
@@ -392,6 +399,34 @@ export class Cpu {
       else if (r < 70) this.start(taps([fwd, 0, fwd]));
       else if (r < 85) this.start(this.special(me, fwd | SPECIAL));
       else this.start(hold(fwd, 24));
+    }
+  }
+
+  /** Lives at the tip of her normals: pokes, steps in and out to bait a whiff, the live feed from range. */
+  private footsies(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+    if (dist < fx(1.05)) {
+      if (r < 45) this.start(this.string(d, me));
+      else if (r < 57) this.start(tap(THROW));
+      else if (r < 67) this.start(this.special(me, SPECIAL));
+      else if (r < 77) this.start(tap(DOWN | FK));
+      else this.start(taps([back, 0, back]));
+    } else if (dist < fx(1.6)) {
+      if (r < 25) this.start(tap(BK));
+      else if (r < 42) this.start(tap(FK));
+      else if (r < 55) this.start(tap(DOWN | FK));
+      else if (r < 65) this.start(tap(fwd | FK));
+      else if (r < 72) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 86) this.start(hold(back, 10));
+      else this.start(hold(fwd, 8));
+    } else if (dist > fx(2.6)) {
+      if (r < 35) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 80) this.start(hold(fwd, 20));
+      else this.start(hold(0, 10));
+    } else {
+      if (r < 20) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 60) this.start(hold(fwd, 10));
+      else if (r < 75) this.start(tap(fwd | FK));
+      else this.start(hold(back, 8));
     }
   }
 

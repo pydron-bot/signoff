@@ -8,6 +8,7 @@
 import { INTRO_FRAMES } from '../sim/constants';
 import type { SimEvent } from '../sim/events';
 import type { FighterState, MatchState } from '../sim/state';
+import { segmentData } from '../sim/stages';
 
 export interface Pose {
   clip: string;
@@ -23,9 +24,17 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
 export const STAND_INS: Readonly<Record<string, string>> = {
-  // None outstanding: every clip asked for is in the GLBs. Add new ones as
-  // `clip` or `fighter:clip` (a new move) until the art catches up.
+  // Picking up and throwing a prop (the boombox, step 14).
+  interact_throw: 'interact',
+  // Juggle reactions (step 16): the held end of `launched`.
+  juggle_hit: 'launched',
+  relaunch: 'launched',
+  slam: 'launched',
+  floor_bounce: 'launched',
+  wall_splat: 'launched',
 };
+/** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */
+export const HELD_STAND_INS: ReadonlySet<string> = new Set(['juggle_hit', 'relaunch', 'slam', 'floor_bounce', 'wall_splat']);
 
 /** The clip to show for a fighter's clip that isn't in the GLB yet, if there is one. */
 export function standIn(fighter: string, clip: string): string | undefined {
@@ -124,10 +133,28 @@ export class PoseTracker {
       if (e.type !== 'hit' && e.type !== 'hazardHit') continue;
       const i = e.type === 'hit' ? e.defender : e.player;
       const t = this.tracks[i];
+      const f = m.fighters[i];
+      if (t.state === 'launched' && !f.ko && e.type === 'hit') {
+        // Hit again in the air: a slam into the floor, or a jolt that ends back in the juggle pose.
+        if (f.bounce === 'ground') this.react(t, 'slam');
+        else if (f.juggle > 0 && f.juggleable) this.react(t, 'juggle_hit');
+        continue;
+      }
       if (t.state !== 'hitstun') continue;
       t.since = 0;
-      t.clip = (e.type === 'hit' && e.height === 'low') || m.fighters[i].crouching ? 'hit_low' : 'hit_high';
+      t.clip = (e.type === 'hit' && e.height === 'low') || f.crouching ? 'hit_low' : 'hit_high';
     }
+    // Popped back up: by a boosted special, off the floor or off the wall (after the hit that caused it, so it wins).
+    for (const e of ev) {
+      if (e.type !== 'relaunch') continue;
+      const t = this.tracks[e.player];
+      if (t.state === 'launched') this.react(t, e.how === 'special' ? 'relaunch' : e.how === 'ground' ? 'floor_bounce' : 'wall_splat');
+    }
+  }
+
+  private react(t: Track, clip: string): void {
+    t.clip = clip;
+    t.since = 0;
   }
 
   private enter(t: Track, f: FighterState, s: string): void {
@@ -156,7 +183,8 @@ export class PoseTracker {
         out.frame = Math.min(INTRO_FRAMES, Math.max(1, INTRO_FRAMES - m.phaseTimer + 1));
         return out;
       case 'move':
-        out.clip = f.move;
+        // Interact throws a prop where the segment's prop is thrown, and kicks it otherwise.
+        out.clip = f.move === 'interact' && segmentData(m.stage, m.segment).props.some((p) => p.thrown) ? 'interact_throw' : f.move;
         out.frame = f.moveFrame;
         return out;
       case 'throwing':
