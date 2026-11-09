@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.33.0',
+    date: '2026-11-09',
+    title: 'Face Time',
+    notes: [
+      'Sharper faces for the whole cast: a proper nose, cheekbones, a line over each eye that squints with it, and real lips on Dale, Rox, Margaret, Gus and Gideon. The intros, wins and Sign-Off close-ups show it most. Mister Mumbles keeps his painted-on face.',
+      'Sharper hands up close: they get as much texture detail as the faces now.',
+    ],
+  },
+  {
     version: '0.32.0',
     date: '2026-11-09',
     title: 'Say Something',
