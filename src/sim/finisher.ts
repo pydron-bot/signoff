@@ -131,7 +131,9 @@ export function earnedCancellation(m: MatchState, winner: number): FinisherData 
   if (!l.ko || !l.koMove) return null;
   for (const fin of fighterData(w.fighter).finishers) {
     if (fin.kind !== 'cancellation' || !fin.trigger) continue;
-    if (l.koMove === fin.trigger || l.koMove === moveData(w.fighter, fin.trigger).boost) return fin;
+    const t = moveData(w.fighter, fin.trigger);
+    // The special itself, its boost, or its paid-for version.
+    if (l.koMove === fin.trigger || l.koMove === t.boost || l.koMove === t.tithe?.into) return fin;
   }
   return null;
 }

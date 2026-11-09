@@ -197,7 +197,7 @@ the final boss and not playable at launch.
 | Hollis Bey | Night security guard of the transmitter building | Grappler: slow, high health, huge throws | Clocking In (command grab) · Flashlight (blinds, breaks armour) · Key Ring (a short chain whip) |
 | Chef Gus Lamarre | Host of a cooking show filmed in one take, every night, forever | Mid-range: long reach with cleaver and pans | Flambé (fire on the floor) · Tenderise (a guard-crushing combo) · Mise en Place (sets up a thrown pan) |
 | Margaret Okafor | The evening news anchor; calm, precise, never off-script | Footsies: the best normal moves in the game | Breaking (a fast stagger strike) · Teleprompter (reads the opponent's next attack: a counter) · Live Feed (a projectile on a delay) |
-| Rev. Gideon Price | A late-night televangelist who promises miracles for a donation | All-rounder with a resource: collects "donations" | Collection Plate (a returning projectile) · Laying On of Hands (heals by spending donations) · Fire and Brimstone (boosted area attack) |
+| Rev. Gideon Price | A late-night televangelist who promises miracles for a donation; host of *The Hour of Power* | All-rounder with a resource: collects "donations" (up to 5, each time the plate connects); his heal and big blast spend them automatically | Collection Plate (a returning projectile) · Laying On of Hands (heals by spending donations) · Fire and Brimstone (boosted area attack) |
 
 Later fighters (ideas for after version 1): the Shopping Channel host, a
 soap-opera twin pair who tag in and out, the station's night janitor, a
@@ -237,7 +237,7 @@ card: the loser's own show going off the air.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
   Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking; Gus:
-  Tenderise). Straight after the K.O., the
+  Tenderise; Gideon: Fire and Brimstone). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -254,6 +254,7 @@ often lets the moment pass. Finisher inputs:
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
 | Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
 | Chef Gus Lamarre (*Kitchen Live*) | Order Up: close, down, back, BP | Last Service: mid, back, forward, BK |
+| Rev. Gideon Price (*The Hour of Power*) | Faith Healing: close, forward, down, BP | Last Rites: mid, down, back, BK |
 
 ### The broadcast look
 
@@ -365,8 +366,8 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** six fighters (Margaret Okafor joined in 0.15.0, Chef Gus
-      Lamarre in 0.18.0) and four
+      practice:** seven fighters (Margaret Okafor joined in 0.15.0, Chef Gus
+      Lamarre in 0.18.0, Rev. Gideon Price in 0.19.0) and four
       stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.

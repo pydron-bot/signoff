@@ -16,6 +16,9 @@ export type SimEvent =
   /** A juggled body popped back up: a boosted special (relaunch), the floor or the wall. */
   | { type: 'relaunch'; player: number; how: 'special' | 'ground' | 'wall'; x: Fx; y: Fx }
   | { type: 'armor'; player: number; move: string }
+  /** Gideon's donations changed: collected by the plate, or spent on a tithed special. */
+  | { type: 'donation'; player: number; total: number; spent: number }
+  | { type: 'heal'; player: number; amount: number }
   /** A blocked hit broke the guard: the defender reels, open to a follow-up. */
   | { type: 'guardCrush'; attacker: number; defender: number; move: string; x: Fx; y: Fx }
   /** A counter read the opponent's strike (`move`) and answers it. */

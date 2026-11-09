@@ -4,7 +4,7 @@
  * card, and training mode's readout. DOM only; it reads the match and the
  * step's events.
  */
-import { BAR, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
+import { BAR, DONATIONS_MAX, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
 import { tickerText } from './ticker';
@@ -48,6 +48,9 @@ interface Side {
   meter: HTMLElement;
   meterFill: HTMLElement[];
   combo: HTMLElement;
+  /** Gideon's donations: a row of coins under the health bar. */
+  coins: HTMLElement;
+  coin: HTMLElement[];
 }
 
 export class Hud {
@@ -71,6 +74,7 @@ export class Hud {
   private lastMeter = [-1, -1];
   private lastWins = [-1, -1];
   private lastSecs = -1;
+  private lastCoins = [-1, -1];
   private lastAdv: Advantage | null | undefined = undefined;
   private lastLine = '';
 
@@ -125,7 +129,14 @@ export class Hud {
     const pipRow = div('hud-pips');
     const pips = [div('hud-pip'), div('hud-pip')];
     pipRow.append(...pips);
-    root.append(name, health, pipRow);
+    const coins = div('hud-coins');
+    const coin: HTMLElement[] = [];
+    for (let k = 0; k < DONATIONS_MAX; k++) {
+      const c = div('hud-coin');
+      coin.push(c);
+      coins.append(c);
+    }
+    root.append(name, health, pipRow, coins);
     const meter = div(`hud-meter hud-meter-${i}`);
     const meterFill: HTMLElement[] = [];
     for (let k = 0; k < 3; k++) {
@@ -136,12 +147,15 @@ export class Hud {
       meterFill.push(fill);
     }
     const combo = div(`hud-combo hud-combo-${i}`);
-    return { root, name, bars, pips, meter, meterFill, combo };
+    return { root, name, bars, pips, meter, meterFill, combo, coins, coin };
   }
 
   start(m: MatchState, training: boolean): void {
     this.root.hidden = false;
-    m.fighters.forEach((f, i) => (this.sides[i].name.textContent = fighterData(f.fighter).name.toUpperCase()));
+    m.fighters.forEach((f, i) => {
+      this.sides[i].name.textContent = fighterData(f.fighter).name.toUpperCase();
+      this.sides[i].coins.hidden = fighterData(f.fighter).resource !== 'donations';
+    });
     this.training.hidden = !training;
     this.clock.classList.toggle('off', training);
     this.breakCard.hidden = true;
@@ -155,6 +169,7 @@ export class Hud {
     this.lastHealth = [-1, -1];
     this.lastMeter = [-1, -1];
     this.lastWins = [-1, -1];
+    this.lastCoins = [-1, -1];
     this.lastSecs = -1;
     this.lastAdv = undefined;
   }
@@ -224,6 +239,9 @@ export class Hud {
           break;
         case 'guardCrush':
           this.say('GUARD CRUSHED', '', 40);
+          break;
+        case 'heal':
+          if (e.amount > 0) this.say('A MIRACLE', '', 40);
           break;
         case 'hazardWarn':
           this.warning.textContent = `⚠ ${e.caption} ⚠`;
@@ -295,6 +313,10 @@ export class Hud {
       if (f.wins !== this.lastWins[i]) {
         this.lastWins[i] = f.wins;
         for (let k = 0; k < s.pips.length; k++) s.pips[k].classList.toggle('on', k < f.wins);
+      }
+      if (f.donations !== this.lastCoins[i]) {
+        this.lastCoins[i] = f.donations;
+        for (let k = 0; k < s.coin.length; k++) s.coin[k].classList.toggle('on', k < f.donations);
       }
       if (f.meter !== this.lastMeter[i]) {
         this.lastMeter[i] = f.meter;

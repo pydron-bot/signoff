@@ -5416,5 +5416,728 @@
     ]
    }
   }
+ },
+ "gideon": {
+  "name": "Rev. Gideon Price",
+  "style": "allrounder",
+  "hurt": {
+   "stand": [
+    -0.32,
+    0.32,
+    0,
+    1.8
+   ],
+   "crouch": [
+    -0.32,
+    0.36,
+    0,
+    1.1
+   ],
+   "air": [
+    -0.32,
+    0.32,
+    0.2,
+    1.6
+   ],
+   "juggle": [
+    -0.8,
+    0.6,
+    0.2,
+    0.9
+   ]
+  },
+  "walk": {
+   "fwd": 2.52,
+   "back": 2.22
+  },
+  "dash": {
+   "frames": 15,
+   "speed": 0.085
+  },
+  "backdash": {
+   "frames": 18,
+   "speed": 0.08
+  },
+  "tapeSkip": {
+   "frames": 10,
+   "speed": 0.11
+  },
+  "moves": {
+   "s.FP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 18,
+    "startup": 7,
+    "lastActive": 8,
+    "hits": [
+     {
+      "frames": [
+       7,
+       8
+      ],
+      "box": [
+       0.2,
+       1,
+       1.2,
+       1.5
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "s.BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 29,
+    "startup": 11,
+    "lastActive": 13,
+    "hits": [
+     {
+      "frames": [
+       11,
+       13
+      ],
+      "box": [
+       0.2,
+       1.2,
+       1,
+       1.55
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "s.FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 24,
+    "startup": 9,
+    "lastActive": 11,
+    "hits": [
+     {
+      "frames": [
+       9,
+       11
+      ],
+      "box": [
+       0.2,
+       1.3,
+       0.5,
+       0.9
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "s.BK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 34,
+    "startup": 13,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       13,
+       15
+      ],
+      "box": [
+       0.2,
+       1.45,
+       0.8,
+       1.35
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "c.FP": {
+    "kind": "normal",
+    "stance": "crouch",
+    "total": 17,
+    "startup": 7,
+    "lastActive": 8,
+    "hits": [
+     {
+      "frames": [
+       7,
+       8
+      ],
+      "box": [
+       0.2,
+       0.9,
+       0.6,
+       0.9
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "c.BP": {
+    "kind": "normal",
+    "stance": "crouch",
+    "total": 31,
+    "startup": 9,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       9,
+       12
+      ],
+      "box": [
+       0.1,
+       0.8,
+       1,
+       2
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "c.FK": {
+    "kind": "normal",
+    "stance": "crouch",
+    "total": 22,
+    "startup": 8,
+    "lastActive": 9,
+    "hits": [
+     {
+      "frames": [
+       8,
+       9
+      ],
+      "box": [
+       0.2,
+       1.2,
+       0,
+       0.3
+      ],
+      "height": "low"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "c.BK": {
+    "kind": "normal",
+    "stance": "crouch",
+    "total": 36,
+    "startup": 12,
+    "lastActive": 14,
+    "hits": [
+     {
+      "frames": [
+       12,
+       14
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0,
+       0.3
+      ],
+      "height": "low"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "f.BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 38,
+    "startup": 20,
+    "lastActive": 21,
+    "hits": [
+     {
+      "frames": [
+       20,
+       21
+      ],
+      "box": [
+       0.2,
+       1.05,
+       1,
+       1.7
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "j.FP": {
+    "kind": "air",
+    "stance": "air",
+    "total": 16,
+    "startup": 5,
+    "lastActive": 10,
+    "hits": [
+     {
+      "frames": [
+       5,
+       10
+      ],
+      "box": [
+       0.1,
+       0.8,
+       0.6,
+       1.1
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "j.BP": {
+    "kind": "air",
+    "stance": "air",
+    "total": 19,
+    "startup": 8,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       8,
+       12
+      ],
+      "box": [
+       0.1,
+       0.95,
+       0.6,
+       1.2
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "j.FK": {
+    "kind": "air",
+    "stance": "air",
+    "total": 19,
+    "startup": 6,
+    "lastActive": 13,
+    "hits": [
+     {
+      "frames": [
+       6,
+       13
+      ],
+      "box": [
+       0.1,
+       0.9,
+       0.1,
+       0.6
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "j.BK": {
+    "kind": "air",
+    "stance": "air",
+    "total": 22,
+    "startup": 9,
+    "lastActive": 14,
+    "hits": [
+     {
+      "frames": [
+       9,
+       14
+      ],
+      "box": [
+       0.1,
+       1,
+       0.1,
+       0.6
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "FP FP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 19,
+    "startup": 7,
+    "lastActive": 8,
+    "hits": [
+     {
+      "frames": [
+       7,
+       8
+      ],
+      "box": [
+       0.2,
+       1.05,
+       1.15,
+       1.5
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "FP FP BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 32,
+    "startup": 12,
+    "lastActive": 14,
+    "hits": [
+     {
+      "frames": [
+       12,
+       14
+      ],
+      "box": [
+       0.2,
+       1.25,
+       0.9,
+       1.6
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "FP FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 25,
+    "startup": 9,
+    "lastActive": 10,
+    "hits": [
+     {
+      "frames": [
+       9,
+       10
+      ],
+      "box": [
+       0.2,
+       1.3,
+       0,
+       0.35
+      ],
+      "height": "low"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "BP BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 29,
+    "startup": 11,
+    "lastActive": 13,
+    "hits": [
+     {
+      "frames": [
+       11,
+       13
+      ],
+      "box": [
+       0.2,
+       1.25,
+       1,
+       1.5
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "BP BP BK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 34,
+    "startup": 13,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       13,
+       15
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0.8,
+       1.6
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "FK BK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 32,
+    "startup": 12,
+    "lastActive": 14,
+    "hits": [
+     {
+      "frames": [
+       12,
+       14
+      ],
+      "box": [
+       0.2,
+       1.45,
+       0.9,
+       1.4
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "c.FP FK": {
+    "kind": "normal",
+    "stance": "crouch",
+    "total": 30,
+    "startup": 10,
+    "lastActive": 11,
+    "hits": [
+     {
+      "frames": [
+       10,
+       11
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0,
+       0.3
+      ],
+      "height": "low"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "Collection Plate": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 40,
+    "startup": 14,
+    "lastActive": 14,
+    "hits": [],
+    "spawns": [
+     {
+      "frame": 14,
+      "at": [
+       0.6,
+       0.95
+      ]
+     }
+    ],
+    "motion": [],
+    "returns": true
+   },
+   "Collection Plate+": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 40,
+    "startup": 14,
+    "lastActive": 14,
+    "hits": [],
+    "spawns": [
+     {
+      "frame": 14,
+      "at": [
+       0.6,
+       0.95
+      ]
+     }
+    ],
+    "motion": [],
+    "returns": true
+   },
+   "Laying On of Hands": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 36,
+    "startup": 10,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       10,
+       12
+      ],
+      "box": [
+       0.2,
+       1,
+       1.2,
+       1.7
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "Laying On of Hands (healing)": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 46,
+    "startup": 10,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       10,
+       12
+      ],
+      "box": [
+       0.2,
+       1,
+       1.2,
+       1.7
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "heal": 24
+   },
+   "Fire and Brimstone": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 50,
+    "startup": 18,
+    "lastActive": 21,
+    "hits": [
+     {
+      "frames": [
+       18,
+       21
+      ],
+      "box": [
+       -1.2,
+       1.2,
+       0,
+       1.8
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "Fire and Brimstone (blessed)": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 54,
+    "startup": 18,
+    "lastActive": 22,
+    "hits": [
+     {
+      "frames": [
+       18,
+       22
+      ],
+      "box": [
+       -2.2,
+       2.2,
+       0,
+       2.4
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "armor": [
+     4,
+     17
+    ]
+   },
+   "throw": {
+    "kind": "throw",
+    "stance": "stand",
+    "total": 28,
+    "startup": 5,
+    "lastActive": 6,
+    "hits": [],
+    "spawns": [],
+    "throw": {
+     "frames": [
+      5,
+      6
+     ],
+     "range": 1
+    },
+    "motion": []
+   },
+   "interact": {
+    "kind": "interact",
+    "stance": "stand",
+    "total": 22,
+    "startup": 0,
+    "lastActive": 0,
+    "hits": [],
+    "spawns": [],
+    "interact": 8,
+    "motion": []
+   },
+   "td": {
+    "kind": "super",
+    "stance": "stand",
+    "total": 45,
+    "startup": 12,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       12,
+       15
+      ],
+      "box": [
+       0.1,
+       1.6,
+       0.3,
+       1.6
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "invuln": [
+     1,
+     15
+    ]
+   }
+  }
  }
 }

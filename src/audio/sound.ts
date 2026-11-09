@@ -167,6 +167,14 @@ export class Sound {
         case 'armor':
           this.tone(300, 0.15, 0.2, 'sawtooth', 200);
           break;
+        case 'donation':
+          // Coins in the plate, or the organ when they're spent.
+          if (e.spent) [262, 330, 392].forEach((f, k) => this.tone(f, 0.6, 0.06, 'sine', undefined, k * 0.02));
+          else this.tone(1760, 0.12, 0.05, 'triangle', 2200);
+          break;
+        case 'heal':
+          [523, 659, 784, 1047].forEach((f, k) => this.tone(f, 0.25, 0.05, 'sine', undefined, k * 0.08));
+          break;
         case 'guardCrush':
           // The guard gives: a dull crack and a cymbal.
           this.tone(140, 0.25, 0.25, 'square', 70);

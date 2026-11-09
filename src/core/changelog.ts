@@ -16,8 +16,9 @@ export const CHANGELOG: readonly Release[] = [
   {
     version: '0.19.0',
     date: '2026-11-09',
-    title: 'Live from the kitchen',
+    title: 'Live from the kitchen, and a word from our sponsor',
     notes: [
+      "A seventh fighter: Rev. Gideon Price, an all-rounder with a second resource. His Collection Plate goes out and comes back, hitting on both passes, and every time it connects he collects a donation (up to five, shown as coins under his health). Laying On of Hands heals him when he has a donation to spend; Fire and Brimstone hits all round him, and with two donations it becomes a far bigger blast with armour.",
       "A fourth stage: Kitchen Live, Chef Gus's own show. In Prep, throw the stockpot (it flies at chest height) or the knife block (low and fast: block it crouching). In Grease Fire the flames take both ends of the kitchen, the walls close in and the fire flares up at one end. In The Oven the heat makes Signal fill half as fast again, for both of you.",
       "Gus's Arcade fights are now on his own show.",
     ],

@@ -842,6 +842,40 @@ plain one), `interact` is kicking a stage prop.
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
 
+#### Rev. Gideon Price (`gideon`): 29 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Hand Raised | normal | stand | 18 | 7–8: x 0.20…1.00, y 1.20…1.50 (mid) |
+| `s.BP` | Good Book | normal | stand | 29 | 11–13: x 0.20…1.20, y 1.00…1.55 (mid) |
+| `s.FK` | Testify | normal | stand | 24 | 9–11: x 0.20…1.30, y 0.50…0.90 (mid) |
+| `s.BK` | Pulpit Kick | normal | stand | 34 | 13–15: x 0.20…1.45, y 0.80…1.35 (mid) |
+| `c.FP` | Kneel | normal | crouch | 17 | 7–8: x 0.20…0.90, y 0.60…0.90 (mid) |
+| `c.BP` | Rapture | normal | crouch | 31 | 9–12: x 0.10…0.80, y 1.00…2.00 (mid) |
+| `c.FK` | Low Offering | normal | crouch | 22 | 8–9: x 0.20…1.20, y 0.00…0.30 (low) |
+| `c.BK` | Bow Down | normal | crouch | 36 | 12–14: x 0.20…1.35, y 0.00…0.30 (low) |
+| `f.BP` | Smite | normal | stand | 38 | 20–21: x 0.20…1.05, y 1.00…1.70 (overhead) |
+| `j.FP` | Jumping Blessing | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
+| `j.BP` | Descending Book | air | air | 19 | 8–12: x 0.10…0.95, y 0.60…1.20 (overhead) |
+| `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Ascension Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `FP FP` | Amen | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.15…1.50 (mid) |
+| `FP FP BP` | Hallelujah | normal | stand | 32 | 12–14: x 0.20…1.25, y 0.90…1.60 (mid) |
+| `FP FK` | Sermon | normal | stand | 25 | 9–10: x 0.20…1.30, y 0.00…0.35 (low) |
+| `BP BP` | Chapter and Verse | normal | stand | 29 | 11–13: x 0.20…1.25, y 1.00…1.50 (mid) |
+| `BP BP BK` | Born Again | normal | stand | 34 | 13–15: x 0.20…1.35, y 0.80…1.60 (mid) |
+| `FK BK` | Altar Call | normal | stand | 32 | 12–14: x 0.20…1.45, y 0.90…1.40 (mid) |
+| `c.FP FK` | Humble Sweep | normal | crouch | 30 | 10–11: x 0.20…1.35, y 0.00…0.30 (low) |
+| `Collection Plate` | Collection Plate | special | stand | 40 | 14: spawns projectile at x 0.60, y 0.95 (comes back after 26 frames; caught) |
+| `Collection Plate+` | Collection Plate (boosted) | special | stand | 40 | 14: spawns projectile at x 0.60, y 0.95 (comes back after 24 frames; caught) |
+| `Laying On of Hands` | Laying On of Hands | special | stand | 36 | 10–12: x 0.20…1.00, y 1.20…1.70 (mid) |
+| `Laying On of Hands (healing)` | Laying On of Hands (healing) | special | stand | 46 | 10–12: x 0.20…1.00, y 1.20…1.70 (mid); 24: heals (glows) |
+| `Fire and Brimstone` | Fire and Brimstone | special | stand | 50 | 18–21: x -1.20…1.20, y 0.00…1.80 (mid) |
+| `Fire and Brimstone (blessed)` | Fire and Brimstone (blessed) | special | stand | 54 | 18–22: x -2.20…2.20, y 0.00…2.40 (mid); 4–17: armour (glows) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
+
 <!-- clips:end -->
 
 ## Feedback

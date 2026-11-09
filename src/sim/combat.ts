@@ -6,6 +6,7 @@
 import {
   BLOCKSTOP,
   COUNTER_HITSTOP,
+  DONATIONS_MAX,
   GUARD_CRUSH_STUN,
   COUNTER_READ_STOP,
   COUNTER_HITSTUN,
@@ -235,6 +236,12 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     applyHit(m, P.owner, pd.effect, P.move, 'special', P.dir, P.y + (pd.box.h >> 1), true, projBlocked[n], false, ev, relaunch);
     P.rehit = pd.rehit;
     if (--P.hitsLeft <= 0) P.active = false;
+    // The collection plate: every connection is a donation.
+    const o = fs[P.owner];
+    if (pd.collects && o.donations < DONATIONS_MAX) {
+      o.donations++;
+      ev.push({ type: 'donation', player: P.owner, total: o.donations, spent: 0 });
+    }
   }
 
   // Throws lose to strikes: a thrower who was just hit is no longer throwing.

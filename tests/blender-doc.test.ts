@@ -14,7 +14,8 @@ const m = (v: number) => toFloat(v).toFixed(2);
 
 function hits(mv: MoveData): string {
   const parts = mv.hits.map((h) => `${h.frames[0]}–${h.frames[1]}: x ${m(h.box.x)}…${m(h.box.x + h.box.w)}, y ${m(h.box.y)}…${m(h.box.y + h.box.h)} (${h.height})`);
-  for (const s of mv.spawns) parts.push(`${s.frame}: spawns projectile at x ${m(s.projectile.x)}, y ${m(s.projectile.y)}${s.projectile.delay ? ` (waits ${s.projectile.delay} frames)` : ''}`);
+  for (const s of mv.spawns) parts.push(`${s.frame}: spawns projectile at x ${m(s.projectile.x)}, y ${m(s.projectile.y)}${s.projectile.delay ? ` (waits ${s.projectile.delay} frames)` : ''}${s.projectile.returnAfter ? ` (comes back after ${s.projectile.returnAfter} frames; caught)` : ''}`);
+  if (mv.heal) parts.push(`${mv.heal.frame}: heals (glows)`);
   if (mv.counter) parts.push(`${mv.counter.frames[0]}–${mv.counter.frames[1]}: counter stance; a strike read here plays \`${mv.counter.into}\``);
   if (mv.throwData) parts.push(`${mv.throwData.frames[0]}–${mv.throwData.frames[1]}: grab (reach ${m(mv.throwData.range)})`);
   if (mv.interactFrame) parts.push(`${mv.interactFrame}: kicks the prop`);

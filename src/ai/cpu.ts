@@ -312,6 +312,35 @@ export class Cpu {
         return this.footsies(me, d, dist, r, fwd, back);
       case 'midrange':
         return this.midrange(me, d, dist, r, fwd, back);
+      case 'allrounder':
+        return this.allrounder(me, d, dist, r, fwd, back);
+    }
+  }
+
+  /** A bit of everything: the plate from range to collect, the blast when it's paid for, a heal when hurt and holding a donation. */
+  private allrounder(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+    const blessed = me.donations >= 2;
+    if (me.donations >= 1 && me.health * 3 < me.maxHealth && dist > fx(2.2) && r < 50) {
+      this.start(this.special(me, DOWN | SPECIAL));
+      return;
+    }
+    if (dist < fx(1.1)) {
+      if (blessed && r < 30) this.start(this.special(me, SPECIAL));
+      else if (r < 45) this.start(this.string(d, me));
+      else if (r < 57) this.start(tap(THROW));
+      else if (r < 67) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 77) this.start(tap(DOWN | BK));
+      else this.start(taps([back, 0, back]));
+    } else if (dist < fx(1.8)) {
+      if (r < 25) this.start(tap(BK));
+      else if (r < 40) this.start(tap(DOWN | FK));
+      else if (r < 55) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 75) this.start(hold(fwd, 10));
+      else this.start(hold(back, 10));
+    } else {
+      if (r < 45) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 80) this.start(hold(fwd, 16));
+      else this.start(hold(0, 10));
     }
   }
 
