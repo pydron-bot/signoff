@@ -197,7 +197,7 @@ the final boss and not playable at launch.
 | Hollis Bey | Night security guard of the transmitter building | Grappler: slow, high health, huge throws | Clocking In (command grab) · Flashlight (blinds, breaks armour) · Key Ring (a short chain whip) |
 | Chef Gus Lamarre | Host of a cooking show filmed in one take, every night, forever | Mid-range: long reach with cleaver and pans | Flambé (fire on the floor) · Tenderise (a guard-crushing combo) · Mise en Place (sets up a thrown pan) |
 | Margaret Okafor | The evening news anchor; calm, precise, never off-script | Footsies: the best normal moves in the game | Breaking (a fast stagger strike) · Teleprompter (reads the opponent's next attack: a counter) · Live Feed (a projectile on a delay) |
-| Rev. Gideon Price | A late-night televangelist who promises miracles for a donation | All-rounder with a resource: collects "donations" | Collection Plate (a returning projectile) · Laying On of Hands (heals by spending donations) · Fire and Brimstone (boosted area attack) |
+| Rev. Gideon Price | A late-night televangelist who promises miracles for a donation; host of *The Hour of Power* | All-rounder with a resource: collects "donations" (up to 5, each time the plate connects); his heal and big blast spend them automatically | Collection Plate (a returning projectile) · Laying On of Hands (heals by spending donations) · Fire and Brimstone (boosted area attack) |
 
 Later fighters (ideas for after version 1): the Shopping Channel host, a
 soap-opera twin pair who tag in and out, the station's night janitor, a
@@ -206,9 +206,9 @@ cartoon mascot that's been off air since 1979, and the continuity announcer.
 ## Stages
 
 Version 1 ships 6 stages, each a show in Channel 0's schedule with three
-segments. Three are in: *Weather at Eleven*, *Feel the Burn at Dawn*
-(Warm-Up, Double Time, Burnout) and *The Eleven O'Clock News* (Headlines,
-The Ticker, Lights Out). Pick one on the title screen; in Arcade each
+segments. Four are in: *Weather at Eleven*, *Feel the Burn at Dawn*
+(Warm-Up, Double Time, Burnout), *The Eleven O'Clock News* (Headlines,
+The Ticker, Lights Out) and *Kitchen Live* (Prep, Grease Fire, The Oven). Pick one on the title screen; in Arcade each
 fight is on the opponent's own show where it has a stage.
 
 | Show | Segment 1 | Segment 2 | Segment 3 |
@@ -216,7 +216,7 @@ fight is on the opponent's own show where it has a stage.
 | Weather at Eleven (green-screen studio) | A calm studio with the map behind; the camera dolly can be kicked | The forecast comes true: a steady wind pushes both fighters toward one side; lightning strikes marked spots | The studio floods knee-deep: walking is slower, live puddles shock anyone standing in them when the caption flashes |
 | Feel the Burn at Dawn (aerobics studio) | Mirrors and mats; a boombox can be thrown | The tape speeds up: the whole game runs 10% faster | The mirrors shatter and the arena opens wider into the dark; falling shards on a beat |
 | Mumbles' Toybox (children's show set) | A cardboard house and a toy chest that can be thrown | A giant puppet hand sweeps low across the floor (jump it) every 8 seconds | The set collapses into a bare stage with two trapdoors that open on a rhythm |
-| Kitchen Live (cooking show) | A counter with a pot and a knife block to throw | A grease fire takes one end of the kitchen: the arena narrows | The oven door opens: the heat makes meter fill 50% faster for both fighters |
+| Kitchen Live (cooking show) | A counter with a pot (thrown at chest height) and a knife block (thrown low) | A grease fire takes the ends of the kitchen: the arena narrows to ±4.5 m and the fire flares at one end on a rhythm | The oven door opens: the heat makes meter fill 50% faster for both fighters |
 | The Eleven O'Clock News (news studio) | The news desk, shoved along the floor into the opponent (jump it) | The ticker runs across the bottom of the screen; the anchor desk rides up on its riser on a rhythm, throwing anyone in the middle of the floor | The studio lights fail one by one and fall on marked spots; the studio gets darker with each |
 | Master Control (the Programme Director's room, final boss) | Banks of monitors replaying the match | The monitors show both fighters' worst moments; screens burst on a rhythm | The roof of the transmitter mast in high wind, the city below |
 
@@ -237,7 +237,7 @@ card: the loser's own show going off the air.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
   Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking; Gus:
-  Tenderise). Straight after the K.O., the
+  Tenderise; Gideon: Fire and Brimstone). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -254,6 +254,7 @@ often lets the moment pass. Finisher inputs:
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
 | Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
 | Chef Gus Lamarre (*Kitchen Live*) | Order Up: close, down, back, BP | Last Service: mid, back, forward, BK |
+| Rev. Gideon Price (*The Hour of Power*) | Faith Healing: close, forward, down, BP | Last Rites: mid, down, back, BK |
 
 ### The broadcast look
 
@@ -365,8 +366,8 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** six fighters (Margaret Okafor joined in 0.15.0, Chef Gus
-      Lamarre in 0.17.0) and three
+      practice:** seven fighters (Margaret Okafor joined in 0.15.0, Chef Gus
+      Lamarre in 0.18.0, Rev. Gideon Price in 0.19.0) and four
       stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.

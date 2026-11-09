@@ -1,12 +1,13 @@
 /**
  * The living stage, drawn: one set per stage (src/render/weatherSet.ts,
- * src/render/burnSet.ts, src/render/newsSet.ts), each built once and shown when a match is on it.
+ * src/render/burnSet.ts, src/render/newsSet.ts, src/render/kitchenSet.ts), each built once and shown when a match is on it.
  * Each reads the match's stage state and sets the arena's fixed lights per
  * segment; its GLB replaces its flat stand-ins once loaded.
  */
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { BurnSet } from './burnSet';
+import { KitchenSet } from './kitchenSet';
 import { NewsSet } from './newsSet';
 import type { SegmentLights } from './stageModel';
 import { WeatherSet } from './weatherSet';
@@ -44,7 +45,7 @@ export class StageView {
   private active = '';
 
   constructor(scene: THREE.Scene, lights: StageLights) {
-    this.sets = { weather: new WeatherSet(scene, lights), burn: new BurnSet(scene, lights), news: new NewsSet(scene, lights) };
+    this.sets = { weather: new WeatherSet(scene, lights), burn: new BurnSet(scene, lights), news: new NewsSet(scene, lights), kitchen: new KitchenSet(scene, lights) };
     for (const s of Object.values(this.sets)) s.show(false);
   }
 

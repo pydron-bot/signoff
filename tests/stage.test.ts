@@ -269,3 +269,65 @@ describe("The Eleven O'Clock News", () => {
     expect(homeStage("The Eleven O'Clock News")).toBe('news');
   });
 });
+
+describe('Kitchen Live', () => {
+  const kitchen = (seg: number, p1 = 'dale', p2 = 'rox'): MatchState => {
+    const m = ready(p1, p2, { stage: 'kitchen' });
+    m.segment = seg;
+    setupRound(m);
+    return m;
+  };
+
+  it('Prep: the stockpot is thrown at chest height, once', () => {
+    const m = kitchen(0);
+    place(m, -3.5, 0);
+    const ev = run(m, 60, presses({ 0: INTERACT, 30: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(1);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, defender: 1, move: 'pot' });
+    expect(m.props[0].mode).toBe('spent');
+  });
+
+  it('Prep: the knife block goes in low: blocked crouching, not standing', () => {
+    const stand = kitchen(0);
+    place(stand, 3.5, 0);
+    const ev = run(stand, 60, presses({ 0: INTERACT }), Input.BLOCK);
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ move: 'knives' });
+    const crouch = kitchen(0);
+    place(crouch, 3.5, 0);
+    const ev2 = run(crouch, 60, presses({ 0: INTERACT }), Input.BLOCK | Input.DOWN);
+    expect(count(ev2, 'hit')).toBe(0);
+    expect(ev2.find((e) => e.type === 'block')).toMatchObject({ move: 'knives' });
+  });
+
+  it('Grease Fire: the walls close in to ±4.5 m and the fire flares at one end', () => {
+    const m = kitchen(1);
+    place(m, 0, 2);
+    run(m, 400, presses({}, Input.LEFT));
+    expect(m.fighters[0].x).toBeGreaterThan(fx(-4.5));
+    const f = kitchen(1);
+    const warn = until(f, 'hazardWarn');
+    expect(warn.e).toMatchObject({ hazard: 'flare', caption: 'GREASE FIRE' });
+    const x = warn.e.type === 'hazardWarn' ? warn.e.x : 0;
+    f.fighters[0].x = x;
+    f.fighters[1].x = 0;
+    const strike = until(f, 'hazardStrike');
+    const ev = [...strike.ev, ...run(f, 20)];
+    expect(ev.filter((e) => e.type === 'hazardHit')).toEqual([expect.objectContaining({ player: 0, damage: 55 })]);
+  });
+
+  it('The Oven: meter fills half as fast again, for both', () => {
+    const gain = (seg: number) => {
+      const m = kitchen(seg);
+      place(m, -0.3, 0.3);
+      run(m, 30, presses({ 0: Input.FP }));
+      return [m.fighters[0].meter, m.fighters[1].meter];
+    };
+    const [a, d] = gain(0);
+    const [a2, d2] = gain(2);
+    expect(a).toBeGreaterThan(0);
+    expect(d).toBeGreaterThan(0);
+    // The first hit's bonus bar isn't scaled; the hit's own meter is.
+    expect(a2).toBeGreaterThan(a);
+    expect(d2).toBe(Math.floor((d * 150) / 100));
+  });
+});

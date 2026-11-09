@@ -632,6 +632,29 @@ body[data-scene='title'] #app {
 
 .t-interact { right: 196px; top: 64px; border-color: #7affd8; font-size: 0.65rem; }
 
+/* Gideon's donations: coins under his health bar. */
+.hud-coins {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.hud-side-1 .hud-coins {
+  justify-content: flex-end;
+}
+
+.hud-coin {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(241, 237, 224, 0.5);
+}
+
+.hud-coin.on {
+  background: #ffd040;
+  border-color: #ffd040;
+}
+
 /* The News stage's ticker: a crawl along the bottom, between the meters. */
 .hud-ticker {
   position: absolute;

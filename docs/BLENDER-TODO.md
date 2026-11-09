@@ -232,7 +232,7 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9).
+> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9); 17–20 are new.
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
@@ -240,6 +240,10 @@ are authored facing right with the left foot and left hand leading.
 > 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
+> 5. **Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price** (Nov 9): the two new fighters, on the step 16 skeleton. They play as grey boxes until then.
+> 6. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
+>
+> Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, `burn.glb` included.
 
@@ -578,6 +582,194 @@ hitbox (the build's check still applies):
 - [ ] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
 - [ ] Keep each GLB under 2 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
 
+### 17. Chef Gus Lamarre (Nov 9, game side)
+
+The host of *Kitchen Live*, a cooking show filmed in one take, every night,
+forever. Mid-range: the longest reach in the game (his `s.BK` cleaver hits
+out to 1.85 m) and the slowest walk. His data is in
+`src/sim/fighters/gus.ts` and `blender/data/fighters.json`; his move clips
+are in the generated table below. Same contracts as Margaret (step 15): the
+shared rig and step 16's skeleton, built a little bigger (1.85 m tall,
+crouch 1.15 m, hurtbox 0.7 m wide: he's broad), `body` and `props`
+materials, every state clip, a module `blender/fighters/gus.py` (add `gus`
+to `TARGETS` in `blender/build.py`). The asset test checks his GLB once it
+exists. Until then he plays as a white grey box.
+
+- [ ] **Model and textures**, in the approved style. A big, round-shouldered
+      chef in whites gone grey at the cuffs: a double-breasted jacket with two
+      rows of buttons, a tall pleated toque that has seen things, a
+      neckerchief, a striped apron tied high, check trousers and clogs. A
+      waxed moustache and heavy brows. **Signature expression:** the warm,
+      fixed grin of a man who has said "and now we let that rest" ten
+      thousand times. Held props (`props`): a meat cleaver in the lead hand,
+      a heavy frying pan in the rear hand for the pan moves (a held-prop
+      shape key or `x_*` bone, like Dale's umbrella), a meat mallet for
+      Tenderise.
+- [ ] **Textures:** grease spots and a scorch on the apron, the *Kitchen
+      Live* logo embroidered on the breast, a towel tucked in the apron
+      string, nicks on the cleaver's blade.
+- [ ] **Secondary motion** (`x_*`, step 16 A's spring): the toque's tip, the
+      apron's hem, the towel.
+- [ ] **State clips:** everything in the state clips table. `idle` is
+      heavy and patient, weight on the back foot, the cleaver resting on the
+      shoulder; walks are a slow, rolling waddle (0.036 m a frame, the
+      slowest in the game). Intros: tastes from a spoon and nods ("Mm.
+      Perfect."); sharpens the cleaver on a steel. Wins: wipes his hands on
+      the towel and presents an invisible plate to camera; a chef's kiss.
+- [ ] **Move clips** (table below), fitted to their hitboxes. Notes:
+  - Normals swing the cleaver and the pan wide and late: big wind-ups
+    (startups of 10–15 frames) and long reach. Mark the cleaver hits `prop`
+    where the arm can't reach the box.
+  - `b.BP` Back of the Pan: steps back over frames 1–8 while swinging the
+    pan round, hitting on 13–15 at full stretch.
+  - `Flambé`, `Flambé+`: a pan tossed forward on frame 16, the fire landing
+    ahead of him. The game places `fx_flambe` on the floor at the
+    projectile.
+  - `Tenderise`, `Tenderise+`: steps in (frames 3–10) and pounds three times
+    with the mallet, overhand, on 12–13, 20–21 and 30–31 (the boosted one
+    faster: 12, 19, 26, and armoured on 3–11). The last blow is the big one:
+    it breaks a guard, so it should look like it would.
+  - `Mise en Place`, `Mise en Place+`: flips a pan high into the air on
+    frame 14 (two on the boosted one, the second on 16) with a flick of the
+    wrist, and watches it go. The game places `fx_pan` falling at the spot.
+  - `Chop Chop`, `Chop Chop+`: a crouching, two-handed chop along the floor,
+    the blade out to 2.0 m on 14–16 (the boosted one chops twice, 12–13 and
+    20–22). Low and flat.
+- [ ] **`fx_flambe`** (`props`): a patch of fire on the floor, about 0.9 m
+      across and 0.5 m high, standing on its bottom centre: low blue flames
+      with orange tips, and a pan on its side in the middle.
+- [ ] **`fx_pan`** (`props`): a frying pan 0.6 m long with its handle,
+      flat side down, origin at its bottom centre.
+
+### 18. Rev. Gideon Price (Nov 9, game side)
+
+The host of *The Hour of Power*, a late-night televangelist who promises
+miracles for a donation. An all-rounder with a second resource: his
+Collection Plate collects a donation each time it connects (up to five,
+shown as coins on the HUD), and two of his specials spend them
+automatically for a bigger version. His data is in
+`src/sim/fighters/gideon.ts`; his clips are in the table below, including
+the paid-for versions (`Laying On of Hands (healing)`, `Fire and Brimstone
+(blessed)`). Same contracts as step 17: 1.8 m tall (crouch 1.1 m, hurtbox
+0.64 m wide), module `blender/fighters/gideon.py`. Until his GLB exists he
+plays as a violet grey box.
+
+- [ ] **Model and textures**, in the approved style. A tall, lean preacher
+      in a powder-blue three-piece suit with wide lapels, a white shirt and a
+      long gold tie, two-tone shoes, a gold pinky ring and a big wristwatch.
+      Silver hair swept into a high, lacquered pompadour. **Signature
+      expression:** wide eyes and a wider smile, eyebrows up, mid-sermon.
+      Held props (`props`): a big leather-bound Bible in the rear hand, a
+      gold collection plate for the plate moves, a corded microphone.
+- [ ] **Textures:** a sheen on the suit, gold leaf on the Bible's edges, a
+      *THE HOUR OF POWER* pin with a phone number, a rhinestone on the tie
+      clip.
+- [ ] **Secondary motion:** the tie, the pompadour's front, the
+      microphone cord.
+- [ ] **State clips:** everything in the state clips table. `idle` is a
+      preacher's rock, heel to toe, the Bible held to his chest; walks are a
+      confident stride. Intros: raises the Bible to the heavens; points at
+      the camera ("Yes, YOU."). Wins: arms wide, eyes closed, basking; counts
+      a fan of banknotes and tucks them in his jacket.
+- [ ] **Move clips** (table below). Notes:
+  - `Collection Plate`, `Collection Plate+`: a sidearm frisbee throw of the
+    plate on frame 14. It comes back: he doesn't need a catch pose (the
+    move is over by then), but a hand held out at the end of the clip reads
+    well.
+  - `Laying On of Hands`: a palm to the forehead, rear hand, on 10–12. `(healing)`
+    is the same strike (it's 46 frames, not 36), then he throws his head back,
+    arms up, and glows on frame 24 (the game shows the heal there): give it a
+    clear rapture pose from about 20 to 30.
+  - `Fire and Brimstone`: he raises both arms on startup (1–17) and brings
+    them down on 18–21; the blast hits all round him, front and back (the
+    box runs from −1.2 to +1.2 m). The `(blessed)` version is bigger in every
+    way (−2.2 to +2.2 m, up to 2.4 m high, armoured on 4–17): rising onto his
+    toes, arms higher, a held beat at the top.
+- [ ] **`fx_plate`** (`props`): a gold collection plate 0.6 m across, a few
+      bills and coins in it, flat, origin at its bottom centre. The game
+      places it on the projectile, which flies flat at 0.95 m.
+- [ ] **`fx_brimstone`** (`props`): the blast, placed on him (like the
+      Isobar Lasso's `fighter` placement) during the active frames: a ring of
+      fire on the floor 2.4 m across rising to a column of light 2 m high,
+      origin at its bottom centre. The game scales nothing, so make it to the
+      plain move's size; the blessed one plays the same mesh.
+
+### 19. The Eleven O'Clock News (stage, Nov 9, game side)
+
+Margaret's show, the third stage: a 1987 local news studio. Built like
+Feel the Burn (step 14): `blender/stages/news.py`, `npm run art -- --only
+news`, writing `art/stage-news.blend`, `art/textures/stage-news_*.png` and
+`public/assets/stages/news.glb`. Same stage space, materials and `lights`
+node. The game side is in (0.18.0: `src/sim/stages.ts`,
+`src/render/newsSet.ts`); until the GLB exists it plays on flat stand-ins in
+these colours and places, and `tests/assets.test.ts` checks the GLB once it
+does.
+
+| Segment | The game | The set |
+| --- | --- | --- |
+| 1. Headlines | Arena ±6 m. The anchor desk at x = 0 that either fighter can shove along the floor into the other (Interact); it can be jumped | The news set: a dark blue back wall with a big globe graphic, the *CH 0 NEWS* header above it, a station clock; studio cameras on pedestals at x = ±5.6; the lighting grid overhead |
+| 2. The Ticker | Arena ±6 m. A ticker crawls along the bottom of the screen (the HUD does it). Every 6 seconds the anchor desk rides up on its hydraulic riser in the middle of the floor (x = 0, ±1 m), throwing anyone standing there | The same set, now on a breaking story: a red band across the back wall, *BREAKING* on the backdrop; the riser's plate in the floor at the centre |
+| 3. Lights Out | Arena ±6 m. The studio lights fail one by one and fall on marked spots (x = −5, −3, −1, 1, 3, 5); the game dims the lights a step with each | The backdrop dead and dark, cables hanging from the grid where lamps were, two fallen lamps at the sides; no desk |
+
+| Object | What | The game |
+| --- | --- | --- |
+| `set` | The floor, the back wall, the lighting grid with its lamps, the cameras at the sides | Always shown |
+| `seg_headlines` | The globe and header, the clock | Segments 1 and 2 |
+| `seg_ticker` | Over `seg_headlines`: the red band and the *BREAKING* panel, the riser plate | Segment 2 |
+| `seg_lightsout` | The dead backdrop in front of the wall (z = −4.05), the hanging cables, the fallen lamps | Segment 3 |
+| `prop_desk` | The anchor desk, 1.2 × 0.8 × 0.7 m, curved front with the station logo; origin at its bottom centre, placed at x = 0, z = −0.4 | Segment 1: moved to the prop's x, turned a little once it stops. Segment 2: at x = 0, raised up to 0.9 m by the riser with each strike. Hidden in segment 3 |
+| `fx_lamp` | A studio fresnel lamp on its yoke, about 0.5 m, hanging lens down; origin at its bottom | Drops from 6 m to the floor at the struck spot during the strike |
+| `fx_wreck` | The lamp smashed on its side, glass around it, 1.1 m across | Left on the spot for a second and a half |
+| `fx_mark` | Yellow gaffer tape in a cross, 1.0 m across | On the spot a lamp will hit, during the warning |
+| `lights` (no mesh) | `extras.segments`, as for Weather | Set on each segment change |
+
+| Segment | Background | Ambient | Key | Rim |
+| --- | --- | --- | --- | --- |
+| Headlines | `#06101e` | `#dfe8ff` × 1.3 | `#ffffff` × 2.2 from (0, 6, 8) | `#4a7aff` × 0.8 from (3, 4, −4) |
+| The Ticker | `#081428` | `#d8e4ff` × 1.2 | `#fff4e0` × 2.2 from (−3, 6, 7) | `#ff3a3a` × 0.9 from (−3, 4, −4) |
+| Lights Out | `#020308` | `#8090b0` × 0.8 | `#fff0d0` × 2.0 from (0, 8, 6); the game dims it with each lamp down | `#3050a0` × 0.5 from (0, 3, −6) |
+
+- [ ] `set`, the three `seg_*` and the light rigs
+- [ ] `prop_desk` at the size above
+- [ ] `fx_lamp`, `fx_wreck`, `fx_mark`
+- [ ] Pass `tests/assets.test.ts`'s `news.glb` checks (written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.news`, the desk's size and place)
+
+### 20. Kitchen Live (stage, Nov 9, game side)
+
+Gus's show, the fourth stage: a daytime cooking-show kitchen gone very
+wrong. `blender/stages/kitchen.py`, writing `public/assets/stages/kitchen.glb`
+and the rest as above. The game side is in (0.22.0: `src/sim/stages.ts`,
+`src/render/kitchenSet.ts`).
+
+| Segment | The game | The set |
+| --- | --- | --- |
+| 1. Prep | Arena ±6 m. A stockpot (x = −3) and a knife block (x = +3) on the counter; either fighter can throw them (Interact): the pot at chest height, the knife block low | A long stainless counter behind the fighters (z = −1.6, top at 0.95 m), a tiled back wall, shelves of jars, the extractor hood, the *KITCHEN LIVE* sign, a chequered floor |
+| 2. Grease Fire | The fire takes both ends of the kitchen: the walls close in to ±4.5 m, and the fire flares at one end (x = ±3.4) every 5½ seconds | The same kitchen, burning: walls of flame at x = ±4.8 (0.6 m deep, 3.2 m tall, z −3 … +1), smoke under the ceiling, the counter's ends scorched |
+| 3. The Oven | Arena ±6 m. The heat makes meter fill 50% faster (no hazard) | The fire out, everything blackened; the big oven at the back with its door hanging open and an orange glow pouring out |
+
+| Object | What | The game |
+| --- | --- | --- |
+| `set` | Floor, back wall, counter, hood | Always shown |
+| `seg_prep` | Shelves, jars, the sign | Segment 1 |
+| `seg_grease` | The two fire walls (at x = ±4.8), the smoke | Segment 2 |
+| `seg_oven` | The scorching, the open oven and its glow | Segment 3 |
+| `prop_pot` | A big stockpot, about 0.55 m across and 0.45 m tall, lid on; origin at its bottom centre | On the counter top (y = 0.95, z = −1.6) at x = −3 until thrown; flies at 0.85 m, then lies where it stopped |
+| `prop_knives` | A wooden knife block with handles, about 0.3 × 0.5 × 0.2 m; origin at its bottom centre | On the counter at x = +3; flies at 0.15 m (low) |
+| `fx_flare` | A gout of flame from the floor, 1.4 m across at the base, 2.2 m tall; origin at its bottom centre | At the struck end during the strike, flickering |
+| `fx_mark` | Yellow tape cross, 1.2 m across | On the end about to flare, during the warning |
+| `lights` (no mesh) | As above | |
+
+| Segment | Background | Ambient | Key | Rim |
+| --- | --- | --- | --- | --- |
+| Prep | `#1a1208` | `#fff4e0` × 1.4 | `#fff0d8` × 2.2 from (−3, 6, 8) | `#80c0ff` × 0.6 from (3, 4, −4) |
+| Grease Fire | `#1c0800` | `#ffc890` × 1.2 | `#ffb060` × 2.0 from (0, 6, 7) | `#ff5010` × 1.2 from (0, 3, −4); the game flickers it |
+| The Oven | `#200400` | `#ff9a60` × 1.1; the game swells it slowly | `#ff8040` × 2.0 from (0, 5, 7) | `#ff3000` × 1.0 from (0, 2, −5) |
+
+- [ ] `set`, the three `seg_*` and the light rigs
+- [ ] `prop_pot` and `prop_knives` at the sizes above
+- [ ] `fx_flare`, `fx_mark`
+- [ ] Pass `tests/assets.test.ts`'s `kitchen.glb` checks
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -850,6 +1042,40 @@ plain one), `interact` is kicking a stage prop.
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
+
+#### Rev. Gideon Price (`gideon`): 29 move clips
+
+| Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
+| --- | --- | --- | --- | --- | --- |
+| `s.FP` | Hand Raised | normal | stand | 18 | 7–8: x 0.20…1.00, y 1.20…1.50 (mid) |
+| `s.BP` | Good Book | normal | stand | 29 | 11–13: x 0.20…1.20, y 1.00…1.55 (mid) |
+| `s.FK` | Testify | normal | stand | 24 | 9–11: x 0.20…1.30, y 0.50…0.90 (mid) |
+| `s.BK` | Pulpit Kick | normal | stand | 34 | 13–15: x 0.20…1.45, y 0.80…1.35 (mid) |
+| `c.FP` | Kneel | normal | crouch | 17 | 7–8: x 0.20…0.90, y 0.60…0.90 (mid) |
+| `c.BP` | Rapture | normal | crouch | 31 | 9–12: x 0.10…0.80, y 1.00…2.00 (mid) |
+| `c.FK` | Low Offering | normal | crouch | 22 | 8–9: x 0.20…1.20, y 0.00…0.30 (low) |
+| `c.BK` | Bow Down | normal | crouch | 36 | 12–14: x 0.20…1.35, y 0.00…0.30 (low) |
+| `f.BP` | Smite | normal | stand | 38 | 20–21: x 0.20…1.05, y 1.00…1.70 (overhead) |
+| `j.FP` | Jumping Blessing | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
+| `j.BP` | Descending Book | air | air | 19 | 8–12: x 0.10…0.95, y 0.60…1.20 (overhead) |
+| `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
+| `j.BK` | Ascension Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `FP FP` | Amen | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.15…1.50 (mid) |
+| `FP FP BP` | Hallelujah | normal | stand | 32 | 12–14: x 0.20…1.25, y 0.90…1.60 (mid) |
+| `FP FK` | Sermon | normal | stand | 25 | 9–10: x 0.20…1.30, y 0.00…0.35 (low) |
+| `BP BP` | Chapter and Verse | normal | stand | 29 | 11–13: x 0.20…1.25, y 1.00…1.50 (mid) |
+| `BP BP BK` | Born Again | normal | stand | 34 | 13–15: x 0.20…1.35, y 0.80…1.60 (mid) |
+| `FK BK` | Altar Call | normal | stand | 32 | 12–14: x 0.20…1.45, y 0.90…1.40 (mid) |
+| `c.FP FK` | Humble Sweep | normal | crouch | 30 | 10–11: x 0.20…1.35, y 0.00…0.30 (low) |
+| `Collection Plate` | Collection Plate | special | stand | 40 | 14: spawns projectile at x 0.60, y 0.95 (comes back after 26 frames; caught) |
+| `Collection Plate+` | Collection Plate (boosted) | special | stand | 40 | 14: spawns projectile at x 0.60, y 0.95 (comes back after 24 frames; caught) |
+| `Laying On of Hands` | Laying On of Hands | special | stand | 36 | 10–12: x 0.20…1.00, y 1.20…1.70 (mid) |
+| `Laying On of Hands (healing)` | Laying On of Hands (healing) | special | stand | 46 | 10–12: x 0.20…1.00, y 1.20…1.70 (mid); 24: heals (glows) |
+| `Fire and Brimstone` | Fire and Brimstone | special | stand | 50 | 18–21: x -1.20…1.20, y 0.00…1.80 (mid) |
+| `Fire and Brimstone (blessed)` | Fire and Brimstone (blessed) | special | stand | 54 | 18–22: x -2.20…2.20, y 0.00…2.40 (mid); 4–17: armour (glows) |
+| `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
+| `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
+| `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
 <!-- clips:end -->
 

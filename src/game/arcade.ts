@@ -104,6 +104,15 @@ export const ENDINGS: Readonly<Record<string, { title: string; lines: readonly s
       'THE PROGRAMME DIRECTOR: "Stay on script, Margaret. Mine."',
     ],
   },
+  gideon: {
+    title: 'THE HOUR OF POWER, EVERY HOUR',
+    lines: [
+      'Rev. Gideon Price is on every channel now. The phone lines are always open.',
+      'Every viewer has given everything. He thanks them by name, one by one.',
+      'The miracles are real. Nobody asks what they cost any more.',
+      'THE PROGRAMME DIRECTOR: "Keep them giving, Reverend. I take my cut."',
+    ],
+  },
   gus: {
     title: 'KITCHEN LIVE: THE FINAL COURSE',
     lines: [

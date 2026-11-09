@@ -64,6 +64,8 @@ export interface FighterState {
   health: number;
   maxHealth: number;
   meter: number;
+  /** Gideon's donations (0 to DONATIONS_MAX); 0 for everyone else. */
+  donations: number;
   hitstop: number;
   /** Hits taken in the current combo (for scaling) and juggle hits. */
   combo: number;
@@ -95,6 +97,8 @@ export interface ProjectileState {
   life: number;
   hitsLeft: number;
   rehit: number;
+  /** On its way back to its owner. */
+  back: boolean;
 }
 
 /** A stage hazard this round: which spot it picked and whom it has hit this strike. */
@@ -179,6 +183,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     health: d.health,
     maxHealth: d.health,
     meter: 0,
+    donations: 0,
     hitstop: 0,
     combo: 0,
     juggle: 0,
@@ -196,7 +201,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
 }
 
 export function createProjectile(): ProjectileState {
-  return { active: false, owner: 0, move: '', spawn: 0, dir: 1, x: 0, y: 0, life: 0, hitsLeft: 0, rehit: 0 };
+  return { active: false, owner: 0, move: '', spawn: 0, dir: 1, x: 0, y: 0, life: 0, hitsLeft: 0, rehit: 0, back: false };
 }
 
 export function saveMatch(m: MatchState): MatchState {

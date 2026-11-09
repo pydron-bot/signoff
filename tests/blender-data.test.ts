@@ -30,6 +30,8 @@ function move(m: MoveData) {
     hidden: m.hidden,
     armor: m.armor,
     counter: m.counter,
+    heal: m.heal?.frame,
+    returns: m.spawns.some((s) => s.projectile.returnAfter !== undefined) || undefined,
     invuln: m.invuln,
     decoy: m.spawns.some((s) => s.projectile.decoy) || undefined,
   };

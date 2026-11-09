@@ -46,6 +46,10 @@ function traits(m: MoveData): string {
   else if (m.spawns.length) t.push('projectile');
   if (m.counter) t.push('counters strikes');
   if (m.hits.some((h) => h.guardCrush)) t.push('crushes guard');
+  if (m.spawns.some((s) => s.projectile.returnAfter !== undefined)) t.push('comes back');
+  if (m.spawns.some((s) => s.projectile.collects)) t.push('collects a donation');
+  if (m.tithe) t.push(`${m.tithe.cost} donation${m.tithe.cost > 1 ? 's' : ''}: ${m.tithe.into.replace(/^.*\((.*)\)$/, '$1')}`);
+  if (m.heal) t.push(`heals ${m.heal.amount}`);
   if (m.hits.some((h) => h.hitstun >= 30)) t.push('staggers');
   if (m.throwData) t.push(m.throwData.untechable ? 'grab, unbreakable' : 'grab');
   const last = m.hits.at(-1);

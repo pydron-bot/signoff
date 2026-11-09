@@ -31,6 +31,10 @@ export const COUNTER_HITSTUN = 4;
 export const COUNTER_HITSTOP = 4;
 /** Frames a crushed guard reels: long enough for a normal to land after it, not a slow one. */
 export const GUARD_CRUSH_STUN = 26;
+/** The most donations Gideon can hold. */
+export const DONATIONS_MAX = 5;
+/** A returning projectile is caught when it's this close to its owner. */
+export const CATCH_RANGE = fx(0.4);
 /** The freeze when a counter (Teleprompter) reads a strike, so it reads on screen too. */
 export const COUNTER_READ_STOP = 12;
 /** Each further hit in a combo does 10% less, down to 30%. */

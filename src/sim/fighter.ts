@@ -32,6 +32,7 @@ import {
   THROW_TECH,
   WALL_BOUNCE_BACK_VX,
   WALL_REBOUND_VY,
+  CATCH_RANGE,
 } from './constants';
 import type { SimEvent } from './events';
 import { fighterData, moveData } from './fighters';
@@ -258,9 +259,16 @@ function canTD(f: FighterState): boolean {
 
 function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
   const d = fighterData(f.fighter);
-  const id = d.specials[f.input.specialDir] ?? d.specials.f;
+  let id = d.specials[f.input.specialDir] ?? d.specials.f;
   // Only Throw (held back) throws backwards.
   f.throwBack = false;
+  // Paid in donations when there are enough: the bigger version, automatically.
+  const tithe = d.moves[id].tithe;
+  if (tithe && f.donations >= tithe.cost) {
+    f.donations -= tithe.cost;
+    id = tithe.into;
+    ev.push({ type: 'donation', player: i, total: f.donations, spent: tithe.cost });
+  }
   startMove(f, id);
   ev.push({ type: 'special', player: i, move: id });
 }
@@ -480,6 +488,11 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     for (let k = 0; k < mv.spawns.length; k++) if (mv.spawns[k].frame === f.moveFrame) spawnProjectile(m, i, mv, k);
     if (mv.interactFrame === f.moveFrame) kickProp(m, i, ev);
     if (mv.teleport && mv.teleport.frame === f.moveFrame) teleport(m, i, mv.teleport.to, ev);
+    if (mv.heal && mv.heal.frame === f.moveFrame && f.health > 0) {
+      const amount = Math.min(mv.heal.amount, f.maxHealth - f.health);
+      f.health += amount;
+      ev.push({ type: 'heal', player: i, amount });
+    }
     if (mv.kind !== 'air') {
       f.vx = 0;
       for (const mo of mv.motion) if (inWindow(f.moveFrame, mo.frames)) f.vx = f.facing * mo.vx;
@@ -604,6 +617,7 @@ function spawnProjectile(m: MatchState, i: number, mv: MoveData, k: number): voi
   p.hitsLeft = pd.hits;
   // A delayed projectile can't hit until it sets off.
   p.rehit = pd.delay ?? 0;
+  p.back = false;
 }
 
 /** Pushboxes keep the fighters apart, except where a move passes through. */
@@ -650,6 +664,19 @@ export function updateProjectiles(m: MatchState): void {
     p.life--;
     if (p.rehit > 0) p.rehit--;
     const edge = stageData(m.stage).segments[m.segment].halfWidth + fx(1);
+    if (pd.returnAfter !== undefined) {
+      const owner = m.fighters[p.owner];
+      // Turns for home (off the wall, too) and can hit on the way back.
+      if (!p.back && (pd.life - p.life >= pd.returnAfter || Math.abs(p.x) > edge - fx(1))) {
+        p.back = true;
+        p.dir = p.x > owner.x ? -1 : 1;
+        p.rehit = 0;
+      }
+      // Caught.
+      if (p.back && Math.abs(p.x - owner.x) <= CATCH_RANGE) p.active = false;
+      if (p.life <= 0) p.active = false;
+      continue;
+    }
     if (p.life <= 0 || (pd.groundEnds && p.y <= 0) || Math.abs(p.x) > edge) p.active = false;
   }
 }

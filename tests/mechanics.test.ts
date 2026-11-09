@@ -228,3 +228,68 @@ describe('a pan set up in the air (Gus: Mise en Place)', () => {
     expect(hit).toMatchObject({ attacker: 0, defender: 1, height: 'overhead' });
   });
 });
+
+describe('donations (Gideon)', () => {
+  it('the collection plate goes out, comes back, hits on both passes and collects a donation each time', () => {
+    const m = ready('gideon', 'dale');
+    place(m, -1.5, 0.3);
+    const ev = run(m, 140, presses({ 0: RIGHT | SPECIAL }), BLOCK);
+    expect(ev.filter((e) => e.type === 'block' && e.move === 'Collection Plate')).toHaveLength(2);
+    expect(m.fighters[0].donations).toBe(2);
+    // Caught on the way back: no plate left out.
+    expect(m.projectiles.some((p) => p.active)).toBe(false);
+  });
+
+  it('a whiffed plate comes back empty', () => {
+    const m = ready('gideon', 'dale');
+    place(m, -5, 5);
+    run(m, 140, presses({ 0: RIGHT | SPECIAL }));
+    expect(m.fighters[0].donations).toBe(0);
+    expect(m.projectiles.some((p) => p.active)).toBe(false);
+  });
+
+  it('Laying On of Hands heals only when there is a donation to spend', () => {
+    const m = ready('gideon', 'dale');
+    place(m, -3, 3);
+    m.fighters[0].health = 500;
+    run(m, 60, presses({ 0: DOWN | SPECIAL }));
+    expect(m.fighters[0].health).toBe(500);
+    m.fighters[0].donations = 1;
+    const ev = run(m, 60, presses({ 0: DOWN | SPECIAL }));
+    expect(m.fighters[0].health).toBe(590);
+    expect(m.fighters[0].donations).toBe(0);
+    expect(ev.find((e) => e.type === 'donation')).toMatchObject({ player: 0, spent: 1, total: 0 });
+  });
+
+  it('healing never goes past full health', () => {
+    const m = ready('gideon', 'dale');
+    place(m, -3, 3);
+    m.fighters[0].health = m.fighters[0].maxHealth - 10;
+    m.fighters[0].donations = 1;
+    run(m, 60, presses({ 0: DOWN | SPECIAL }));
+    expect(m.fighters[0].health).toBe(m.fighters[0].maxHealth);
+  });
+
+  it('Fire and Brimstone hits behind him too, and with two donations it is the blessed version', () => {
+    const m = ready('gideon', 'dale');
+    // Dale behind Gideon's back, close.
+    place(m, 0, -0.9);
+    m.fighters[0].facing = 1;
+    const ev = run(m, 40, presses({ 2: SPECIAL }));
+    expect(ev.find((e) => e.type === 'hit')).toMatchObject({ attacker: 0, move: 'Fire and Brimstone' });
+
+    const b = ready('gideon', 'dale');
+    place(b, -1.0, 1.0);
+    b.fighters[0].donations = 3;
+    const ev2 = run(b, 40, presses({ 0: SPECIAL }));
+    expect(ev2.find((e) => e.type === 'hit')).toMatchObject({ move: 'Fire and Brimstone (blessed)' });
+    expect(b.fighters[0].donations).toBe(1);
+  });
+
+  it('only Gideon collects: donations stay in the match state, so they save and restore with it', () => {
+    const m = ready('gideon', 'dale');
+    m.fighters[0].donations = 4;
+    expect(structuredClone(m).fighters[0].donations).toBe(4);
+    expect(m.fighters[1].donations).toBe(0);
+  });
+});

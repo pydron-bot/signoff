@@ -144,6 +144,16 @@ describe('cancellations', () => {
     expect(m.phase).toBe('over');
   });
 
+  it("the paid-for version of a trigger special counts too (Gideon's blessed Fire and Brimstone)", () => {
+    const m = ready('gideon', 'rox');
+    m.fighters[0].wins = 1;
+    m.fighters[0].donations = 2;
+    m.fighters[1].health = 1;
+    place(m, -0.3, 0.3);
+    const ev = run(m, 600, presses({ 0: SPECIAL }));
+    expect(ev.find((e) => e.type === 'finisher')).toMatchObject({ id: 'Final Collection', kind: 'cancellation' });
+  });
+
   it('any other finishing blow goes to Stay tuned', () => {
     const m = winMatch('dale', 'rox');
     expect(m.phase).toBe('stayTuned');

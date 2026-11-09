@@ -74,6 +74,8 @@ export interface ProjectileSpec {
   groundEnds?: boolean;
   decoy?: boolean;
   delay?: number;
+  returnAfter?: number;
+  collects?: boolean;
   effect: EffectSpec;
 }
 
@@ -90,6 +92,8 @@ export function projectile(s: ProjectileSpec): ProjectileData {
     groundEnds: s.groundEnds,
     decoy: s.decoy,
     delay: s.delay,
+    returnAfter: s.returnAfter,
+    collects: s.collects,
     effect: effect(s.effect),
   };
 }
@@ -114,6 +118,8 @@ export interface MoveSpec {
   interactFrame?: number;
   teleport?: MoveData['teleport'];
   hidden?: Window;
+  tithe?: MoveData['tithe'];
+  heal?: MoveData['heal'];
 }
 
 export function move(id: string, s: MoveSpec): MoveData {
@@ -151,6 +157,8 @@ export function move(id: string, s: MoveSpec): MoveData {
     interactFrame: s.interactFrame,
     teleport: s.teleport,
     hidden: s.hidden,
+    tithe: s.tithe,
+    heal: s.heal,
     startup: starts.length ? Math.min(...starts) : 0,
     lastActive: ends.length ? Math.max(...ends) : 0,
   };

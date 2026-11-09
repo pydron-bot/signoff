@@ -74,6 +74,10 @@ export interface ProjectileData {
   readonly decoy?: boolean;
   /** Frames it waits where it appeared before it moves or can hit (it can still be shot down). */
   readonly delay?: number;
+  /** Turns back toward its owner after this many frames (and can hit again); gone once it's back. */
+  readonly returnAfter?: number;
+  /** Each time it connects (hit or block), its owner gains a donation. */
+  readonly collects?: boolean;
   readonly effect: HitEffect;
 }
 
@@ -122,6 +126,10 @@ export interface MoveData {
   readonly hidden?: Window;
   /** Interact: the frame the stage object is used. */
   readonly interactFrame?: number;
+  /** Paid in donations: started with at least `cost` of them, it spends them and plays `into` instead. */
+  readonly tithe?: { readonly cost: number; readonly into: string };
+  /** Heals its owner this much on this frame. */
+  readonly heal?: { readonly frame: number; readonly amount: number };
   /** First and last frames that can hit (0 when the move never hits). */
   readonly startup: number;
   readonly lastActive: number;
@@ -186,7 +194,7 @@ export interface FinisherData {
 }
 
 /** How the fighter plays; the CPU plays to it. */
-export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies' | 'midrange';
+export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies' | 'midrange' | 'allrounder';
 
 export interface FighterData {
   readonly id: string;
@@ -224,4 +232,6 @@ export interface FighterData {
   readonly show: string;
   /** Two Sign-Offs, a Rerun and a Cancellation. */
   readonly finishers: readonly FinisherData[];
+  /** A second resource beside Signal (Gideon's donations), shown on the HUD. */
+  readonly resource?: 'donations';
 }

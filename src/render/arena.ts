@@ -18,7 +18,7 @@ import { PoseTracker, type Pose } from './pose';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a, gus: 0xe8e4d8 };
+const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a, gus: 0xe8e4d8, gideon: 0x6a4ab0 };
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
@@ -63,6 +63,12 @@ const EFFECTS: Readonly<Record<string, Readonly<Record<string, Effect>>>> = {
   margaret: {
     'Live Feed': fx('fx_live_feed', 'projectile'),
     'Live Feed+': fx('fx_live_feed', 'projectile'),
+  },
+  gideon: {
+    'Collection Plate': fx('fx_plate', 'projectile'),
+    'Collection Plate+': fx('fx_plate', 'projectile'),
+    'Fire and Brimstone': fx('fx_brimstone', 'fighter'),
+    'Fire and Brimstone (blessed)': fx('fx_brimstone', 'fighter'),
   },
   gus: {
     'Flambé': fx('fx_flambe', 'projectile'),
@@ -258,6 +264,7 @@ export class Arena {
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.shake = Math.max(this.shake, 0.15);
       else if (e.type === 'hazardStrike' && e.hazard === 'shards') this.shake = Math.max(this.shake, 0.08);
       else if (e.type === 'hazardStrike' && e.hazard === 'lamps') this.shake = Math.max(this.shake, 0.12);
+      else if (e.type === 'hazardStrike' && e.hazard === 'flare') this.shake = Math.max(this.shake, 0.06);
     }
   }
 
