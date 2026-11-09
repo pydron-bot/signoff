@@ -192,6 +192,16 @@ class STANCE(Stance):
     rear_aim = (0.7, 0.3, 0.6)
     guard_fist = 0.6
 
+    def hit_flavour(self, name, pose, base):
+        """The Bible goes up as if for protection on hits to the head;
+        theatrical on stagger, an arm thrown out."""
+        bible = {"pos": self.s((-0.02, 0.3, 1.66)), "aim": (0.6, 0.2, 0.8), "hint": (0, 1, 0)}
+        if name in ("hit_head", "hit_head_heavy"):
+            return pose.but(hand_R=bible).shaped(fist_R=0.6, open_R=0.0)
+        if name == "stagger" and pose.parts["shapes"].get("ko"):
+            return pose.but(hand_L={"pos": self.s((0.3, -0.42, 1.62)), "aim": (0.3, -0.8, 0.5)}).shaped(open_L=1.0)
+        return pose.shaped(fist_R=0.6, open_R=0.0)
+
     def intro(self, t=0):
         """Raises the Bible to the heavens, head back."""
         return self.base(drop=0.02).but(

@@ -175,6 +175,81 @@ def fit_crouch(rig, body, st, top):
     raise RuntimeError(f"can't crouch to {top} m")
 
 
+def fit_hit_crouch(rig, body, st, top):
+    """Sink hit_crouch just enough that its lean back keeps the head under
+    the crouching hurtbox. Its keys (an overshoot goes past the peak) are
+    fitted a centimetre under it: the frames between run a few millimetres
+    higher."""
+    top -= 0.01
+
+    def peak_top():
+        _, keys = st.hit_reactions(st.base(), st.crouch())["hit_crouch"]
+        return max(top_in(rig, body, st, pose) for _, pose in keys[1:])
+
+    st.hit_crouch_drop = 0.0
+    if peak_top() <= top:
+        return
+    lo, hi = 0.0, 0.3
+    for _ in range(12):
+        st.hit_crouch_drop = (lo + hi) / 2
+        if peak_top() > top:
+            lo = st.hit_crouch_drop
+        else:
+            hi = st.hit_crouch_drop
+    st.hit_crouch_drop = hi
+
+
+# The standing hit reactions lean back, not up: the head no higher than this
+# over the standing hurtbox.
+HIT_OVER = 0.1
+HITS = ("hit_head", "hit_head_2", "hit_head_heavy", "hit_body", "hit_body_2", "hit_body_heavy", "hit_legs", "stagger")
+
+
+def head_top(body, mask):
+    """The highest of the head's vertices (mask) as posed now."""
+    ev = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    m = ev.to_mesh()
+    co = np.empty(len(m.vertices) * 3)
+    m.vertices.foreach_get("co", co)
+    ev.to_mesh_clear()
+    return float(co[2::3][mask].max()) + body.matrix_world.translation.z
+
+
+def head_mask(rig, body):
+    """The vertices mostly weighted to the head or a bone under it (the jaw,
+    hair, a hat), so a hand or a prop raised overhead doesn't count."""
+    names = {b.name for b in rig.data.bones if b.name == "head" or any(p.name == "head" for p in b.parent_recursive)}
+    groups = {g.index for g in body.vertex_groups if g.name in names}
+    mask = np.zeros(len(body.data.vertices), dtype=bool)
+    for v in body.data.vertices:
+        if v.groups:
+            g = max(v.groups, key=lambda e: e.weight)
+            mask[v.index] = g.group in groups
+    return mask
+
+
+def check_hits(rig, body, actions, hurt):
+    """The hit reactions' heads: hit_crouch's whole body in the crouching
+    hurtbox on every frame, the standing ones' heads at most HIT_OVER above
+    theirs (they lean back, not up; a hand thrown up doesn't count)."""
+    caps = {n: hurt["stand"][3] + HIT_OVER for n in HITS}
+    caps["hit_crouch"] = hurt["crouch"][3] + OVER
+    mask = head_mask(rig, body)
+    problems, seen = [], {}
+    for a in actions:
+        if a.name not in caps:
+            continue
+        rig.animation_data.action = a
+        tops = []
+        for f in range(int(a.frame_start), int(a.frame_end) + 1):
+            bpy.context.scene.frame_set(f)
+            tops.append(mesh_top(body) if a.name == "hit_crouch" else head_top(body, mask))
+        seen[a.name] = max(tops)
+        if max(tops) > caps[a.name]:
+            problems.append(f"{a.name}: head up to {max(tops):.3f} m (frame {tops.index(max(tops)) + 1}), over {caps[a.name]:.3f} m")
+    return problems, seen
+
+
 def make_body(mod, height):
     """A fresh scene with the rig and the skinned body at `height`."""
     reset_scene()
@@ -260,6 +335,7 @@ def build(mod, out_dir, art_dir):
     fit_crouch(rig, body, st, hurt["crouch"][3])
     fit_juggle(rig, body, st, hurt["juggle"])
     fit_reactions(rig, body, st, hurt["juggle"])
+    fit_hit_crouch(rig, body, st, hurt["crouch"][3])
     actions = state_clips(rig, st, data)
     moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
     # Secondary motion on the fighter's own bones, before the checks (it moves the mesh).
@@ -269,6 +345,8 @@ def build(mod, out_dir, art_dir):
     problems += tall
     flat, juggle = check_juggle(rig, body, actions, hurt["juggle"])
     problems += flat
+    hits_over, hit_tops = check_hits(rig, body, actions, hurt)
+    problems += hits_over
 
     rig.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -277,7 +355,8 @@ def build(mod, out_dir, art_dir):
     print(f"[{mod.ID}] {sum(triangles(o) for o in skinned)} body triangles + {sum(triangles(o) for o in fx)} fx, rig {height:.3f} m, rest {rest:.3f} m; "
           + ", ".join(f"{n} {lo:.3f}…{hi:.3f}" for n, (lo, hi) in heights.items())
           + f" (hurtboxes {hurt['stand'][3]}, {hurt['crouch'][3]}); launched x {juggle[0]:.2f}…{juggle[1]:.2f}, y {juggle[2]:.2f}…{juggle[3]:.2f}"
-          + f" (box {hurt['juggle']}); {len(actions)} state + {len(moves)} move clips")
+          + f" (box {hurt['juggle']}); hits' heads up to " + ", ".join(f"{n} {v:.3f}" for n, v in hit_tops.items())
+          + f" (hit_crouch sinks {st.hit_crouch_drop * st.k:.3f}); {len(actions)} state + {len(moves)} move clips")
     rig.animation_data.action = actions[0]
     bpy.context.scene.frame_set(1)
     if problems:

@@ -146,6 +146,40 @@ def off_floor(pose, k):
     return pose.parts.get("root", {}).get("offset", (0, 0, 0))[2] > 0.03 * k
 
 
+def added(pose, hips=None, **turns):
+    """The pose with turns (pitch, yaw, roll) added to its own; hips take
+    {"offset": …, "turn": …} to add. A chest turn carries the shoulders
+    unless they're given."""
+    parts = {}
+    if "chest" in turns:
+        for s in ("shoulder_L", "shoulder_R"):
+            turns.setdefault(s, turns["chest"])
+    for name, d in turns.items():
+        parts[name] = tuple(a + b for a, b in zip(pose.parts.get(name, (0, 0, 0)), d))
+    if hips:
+        h = pose.parts.get("hips", {})
+        parts["hips"] = {key: tuple(a + b for a, b in zip(h.get(key, (0, 0, 0)), hips.get(key, (0, 0, 0)))) for key in ("offset", "turn")}
+    return pose.but(**parts)
+
+
+def moved(foot, d, turn=None):
+    """A foot part moved by d (side, fwd, up), optionally turned."""
+    out = {**foot, "pos": tuple(a + b for a, b in zip(foot["pos"], d))}
+    if turn is not None:
+        out["turn"] = turn
+    return out
+
+
+def toward(peak, base, back, keep=("hurt", "ko", "win")):
+    """A hit pose eased `back` of the way to `base` (negative overshoots past
+    the peak); the expression is kept and the hand and jaw values clamped."""
+    p = lerp_pose(peak, base, back)
+    ps = peak.parts.get("shapes", {})
+    s = {n: min(1.0, max(0.0, v)) for n, v in p.parts.get("shapes", {}).items()}
+    s.update({n: ps[n] for n in keep if n in ps})
+    return p.but(shapes=s)
+
+
 class Stance:
     """A fighter's fighting stance and body language, in 1.80 m reference
     metres (scaled by height). Override fields per fighter."""
@@ -395,6 +429,122 @@ class Stance:
             "wall_splat": (20, [(1, R["splat"]), (4, R["splat"]), (10, R["peel"]), (15, lerp_pose(R["peel"], held, 0.6)), (20, held)]),
         }
 
+    # Hit reactions (step 22): how far they go (a multiplier on the angles
+    # and reaches), how they ease ((frame, how far back toward the stance);
+    # negative overshoots past the peak), how far the head turns on light
+    # hits, and shape values kept on through them.
+    hit_amount = 1.0
+    hit_ease = ((3, 0.0), (6, 0.2), (12, 0.5))
+    hit_ease_heavy = ((4, 0.0), (8, 0.0), (18, 0.4))
+    hit_ease_gut = ((4, 0.0), (10, 0.0), (18, 0.45))
+    hit_turn = 1.0
+    hit_shapes = {}
+    # hit_crouch sinks this much more than the crouch (reference metres), so
+    # leaning back keeps the head in the crouching box (fighter.fit_hit_crouch).
+    hit_crouch_drop = 0.0
+
+    def hit_flavour(self, name, pose, base):
+        """A fighter's touch on a hit pose (a prop held, a hand thrown out)."""
+        return pose
+
+    def hit_raw(self, base, crouch):
+        """{name: [key poses]} for the hit reactions at full strength, before
+        the fighter's amount: one peak, or stagger's five."""
+        k, t = self.k, self.hit_turn
+        jolt = {"hurt": 1.0, "jaw": 0.6, "fist_L": 0.0, "fist_R": 0.0, "open_L": 1.0, "open_R": 1.0}
+        lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+        out = {}
+        # The jab to the face: head back and away from the camera, the lead
+        # hand flung up open, the rear one dropping.
+        out["hit_head"] = added(base, hips={"offset": self.s((0, -0.03, -0.01)), "turn": (-4, 4 * t, 0)},
+                                spine=(-5, 5 * t, 0), chest=(-10, 10 * t, 0), neck=(-15, 8 * t, 0), head=(-35, 20 * t, 0)).but(
+            hand_L={"pos": self.s((0.24, 0.2, 1.56)), "aim": (0.4, 0.3, 1)},
+            hand_R={"pos": self.s((-0.2, 0.06, 1.06)), "aim": (-0.2, 0.2, -1)})
+        # The other hook: head toward the camera, the chest the other way, the rear hand up.
+        out["hit_head_2"] = added(base, hips={"offset": self.s((0, -0.03, -0.01)), "turn": (-4, -4 * t, 0)},
+                                  spine=(-4, -6 * t, 3), chest=(-8, -12 * t, 5), neck=(-12, -8 * t, 0), head=(-30, -20 * t, 6)).but(
+            hand_R={"pos": self.s((-0.26, 0.14, 1.58)), "aim": (-0.4, 0.3, 1)},
+            hand_L={"pos": self.s((0.22, 0.16, 1.06)), "aim": (0.2, 0.3, -1)})
+        # The big one: whipped back, the hips pushed forward under an arched
+        # back, the arms flung back and wide (back reads from the camera; the
+        # side is its depth), the rear foot sliding back, the lead heel up.
+        out["hit_head_heavy"] = added(base, hips={"offset": self.s((0, 0.04, -0.03)), "turn": (-8, 10, 0)},
+                                      spine=(-12, 12, 0), chest=(-25, 25, 0), neck=(-25, 10, 0), head=(-50, 30, 0)).but(
+            hand_L={"pos": self.s((0.36, -0.34, 1.5)), "aim": (0.4, -0.7, 0.5)},
+            hand_R={"pos": self.s((-0.36, -0.4, 1.36)), "aim": (-0.4, -0.7, 0.3)},
+            foot_R=moved(rf, self.s((0, -0.15, 0))),
+            foot_L=moved(lf, self.s((0, 0, 0.05)), (28, self.lead_foot_yaw, 0))).shaped(jaw=0.8)
+        # To the ribs (the lead side): rocked back at the pelvis, folded over
+        # it, the lead hand in to the ribs, the knees giving.
+        out["hit_body"] = added(base, hips={"offset": self.s((0, -0.05, -0.04)), "turn": (-8, 4 * t, 0)},
+                                spine=(4, 8 * t, -4), chest=(10, 12 * t, -6), neck=(6, 4 * t, 0), head=(10, 4 * t, 0)).but(
+            hand_L={"pos": self.s((0.2, 0.12, 1.14)), "aim": (-0.5, 0.3, -0.5)},
+            hand_R={"pos": self.s((-0.08, 0.24, 1.22)), "aim": (0.3, 0.4, 0.6)})
+        out["hit_body_2"] = added(base, hips={"offset": self.s((0, -0.05, -0.04)), "turn": (-8, -4 * t, 0)},
+                                  spine=(4, -8 * t, 4), chest=(10, -12 * t, 6), neck=(6, -4 * t, 0), head=(10, -4 * t, 0)).but(
+            hand_R={"pos": self.s((-0.2, 0.1, 1.12)), "aim": (0.5, 0.3, -0.5)},
+            hand_L={"pos": self.s((0.1, 0.32, 1.2)), "aim": (-0.2, 0.5, 0.6)})
+        # Doubled over: both arms clutched to the gut, knees bent, jaw wide.
+        out["hit_body_heavy"] = added(base, hips={"offset": self.s((0, -0.07, -0.12)), "turn": (-4, 0, 0)},
+                                      spine=(20, 0, 0), chest=(30, 6, 0), neck=(10, 0, 0), head=(20, 0, 0)).but(
+            hand_L={"pos": self.s((0.12, 0.24, 0.98)), "aim": (-0.7, 0.3, -0.3)},
+            hand_R={"pos": self.s((-0.1, 0.26, 0.96)), "aim": (0.7, 0.3, -0.3)}).shaped(jaw=0.9)
+        # The lead leg taken out: the knee buckles, heel up, the hips drop and
+        # tip to the lead side, the arms swing out for balance.
+        out["hit_legs"] = added(base, hips={"offset": self.s((0.03, -0.02, -0.08)), "turn": (6, 0, -8)},
+                                spine=(8, 0, -4), chest=(15, 0, 2), neck=(4, 0, 0), head=(-6, 0, 4)).but(
+            foot_L=moved(lf, self.s((0, 0.02, 0.05)), (35, self.lead_foot_yaw, 0)),
+            knee_L=self.s((self.lead_foot[0] + 0.05, self.lead_foot[1] + 0.8, 0.6)),
+            hand_L={"pos": self.s((0.46, 0.18, 1.2)), "aim": (0.8, 0.3, 0.2)},
+            hand_R={"pos": self.s((-0.46, -0.04, 1.28)), "aim": (-0.8, 0.0, 0.3)})
+        # Hit crouching: stays down, head and shoulders knocked back, the rear
+        # hand dropping to the floor behind to catch the weight.
+        cd = self.crouch_drop + self.hit_crouch_drop
+        out["hit_crouch"] = added(crouch, hips={"offset": self.s((0, -0.04, -self.hit_crouch_drop)), "turn": (-6, 0, 0)},
+                                  spine=(-8, 4, 0), chest=(-20, 8, 0), neck=(-10, 0, 0), head=(-20, 10, 0)).but(
+            hand_R={"pos": self.s((-0.24, -0.12, 0.1)), "aim": (0, -0.1, -1)},
+            hand_L={"pos": self.s((0.2, 0.3, 1.3 - cd)), "aim": (0.2, 0.3, 0.9)})
+        # Reeling: a heavy jolt, two steps back (rear foot, lead foot), torso
+        # half turned away, arms loose, head lolling, then wobbling.
+        loose = {"hand_L": {"pos": self.s((0.26, 0.06, 0.96)), "aim": (0.3, 0.2, -1)},
+                 "hand_R": {"pos": self.s((-0.26, -0.06, 0.92)), "aim": (-0.3, 0.1, -1)}}
+        jolted = lerp_pose(base, out["hit_head_heavy"], 0.8)
+        back = self.s((0, -0.14, 0))
+        reel = added(base, hips={"offset": self.s((0, -0.07, -0.06)), "turn": (-4, 16, 4)},
+                     spine=(2, 14, 4), chest=(4, 34, 6), neck=(8, 10, 0), head=(14, 20, -16)).but(**loose)
+        r1 = reel.but(foot_R=moved(rf, back))
+        r2 = added(reel, hips={"offset": self.s((0, -0.06, 0.0)), "turn": (0, 0, -8)}, chest=(0, 0, -10), head=(4, -4, 30)).but(
+            foot_R=moved(rf, back), foot_L=moved(lf, self.s((0, -0.12, 0))))
+        sway = added(r2, hips={"offset": self.s((0.03, 0, 0)), "turn": (0, 0, 12)}, chest=(0, 0, 14), head=(0, 0, -36))
+        end = added(r2, hips={"offset": self.s((0.0, -0.01, -0.01)), "turn": (-2, 0, 6)}, chest=(4, 0, 6), head=(6, 0, -20))
+        reeling = {**jolt, "jaw": 0.5, "ko": 0.3, "open_L": 0.6, "open_R": 0.6}
+        out = {n: [p.shaped(**{**jolt, **p.parts.get("shapes", {})})] for n, p in out.items()}
+        out["stagger"] = [jolted.shaped(**{**jolt, "jaw": 0.8})] + [p.shaped(**reeling) for p in (r1, r2, sway, end)]
+        return {n: [self.hit_flavour(n, p.shaped(**self.hit_shapes), crouch if n == "hit_crouch" else base) for p in poses]
+                for n, poses in out.items()}
+
+    def hit_peaks(self, base, crouch):
+        """The hit reactions' key poses ({name: [poses]}) at this fighter's amount."""
+        return {n: [toward(p, crouch if n == "hit_crouch" else base, 1 - self.hit_amount) for p in poses]
+                for n, poses in self.hit_raw(base, crouch).items()}
+
+    def hit_reactions(self, base, crouch):
+        """{clip: (frames, [(frame, pose)])}: the nine hit reactions."""
+        P = self.hit_peaks(base, crouch)
+        out = {}
+        for name, frames, ease in (("hit_head", 12, self.hit_ease), ("hit_head_2", 12, self.hit_ease), ("hit_head_heavy", 18, self.hit_ease_heavy),
+                                   ("hit_body", 12, self.hit_ease), ("hit_body_2", 12, self.hit_ease), ("hit_body_heavy", 18, self.hit_ease_gut),
+                                   ("hit_legs", 12, self.hit_ease), ("hit_crouch", 12, self.hit_ease)):
+            b = crouch if name == "hit_crouch" else base
+            out[name] = (frames, [(1, b)] + [(f, toward(P[name][0], b, back)) for f, back in ease])
+        jolted, r1, r2, sway, end = P["stagger"]
+        lift = self.s((0, 0, 0.06))
+        out["stagger"] = (30, [(1, base), (4, jolted),
+                               (7, lerp_pose(jolted, r1, 0.5).but(foot_R=moved(lerp_pose(jolted, r1, 0.5).parts["foot_R"], lift))),
+                               (10, r1), (14, lerp_pose(r1, r2, 0.5).but(foot_L=moved(lerp_pose(r1, r2, 0.5).parts["foot_L"], lift))),
+                               (18, r2), (22, sway), (26, lerp_pose(sway, end, 0.6)), (30, end)])
+        return out
+
     def block(self, crouching=False):
         """Forearms up in front of the face (or the body, crouching)."""
         base = self.crouch() if crouching else self.base()
@@ -507,6 +657,9 @@ def state_clips(rig, st, data):
     for name, pose in (("hit_high", hit_high), ("hit_low", hit_low)):
         clip(name, 12, [(1, base), (3, pose), (6, lerp_pose(pose, base, 0.15).shaped(**{**jolt, "jaw": 0.4})),
                         (12, lerp_pose(pose, base, 0.45).shaped(**{**jolt, "jaw": 0.2, "open_L": 0.6, "open_R": 0.6}))])
+    # By where and how hard (step 22); the game falls back to the two above.
+    for name, (frames, keys) in st.hit_reactions(base, st.crouch()).items():
+        clip(name, frames, keys)
 
     # Lying on the back, head away from the opponent. The body frame is turned
     # by the root, so the limbs below are as if standing.
