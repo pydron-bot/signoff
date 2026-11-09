@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.20.0',
+    date: '2026-11-09',
+    title: 'Good evening, in 3D',
+    notes: [
+      "Margaret Okafor has her model: a burgundy pinstripe power suit with 1987's shoulder pads, pearls, a sharp bob and her script in hand. No more grey box.",
+      'Teleprompter reads as a counter stance (tall, palm out, eyes on the prompter), the Read sweeps the pages across, Live Feed points right down the camera, and Lead Story slams the script down overhead.',
+      'Her intros square the pages and take off her reading glasses; her wins set the script down and say goodnight.',
+    ],
+  },
+  {
     version: '0.19.0',
     date: '2026-11-09',
     title: 'Hands on',

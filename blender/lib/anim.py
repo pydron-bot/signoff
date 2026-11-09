@@ -616,7 +616,7 @@ def move_clips(rig, st, data, overrides):
     """One clip per move in the data. overrides[move id] tunes a move: limb,
     alt (limbs taking turns on multi-hit moves), prop (a weapon or effect
     makes the hit, so the limb only points at it), style (hop, spin,
-    teleport, knock, grapevine, rising, braced), tx / ty (where to aim the
+    teleport, knock, grapevine, rising, braced, yank, prompter, live), tx / ty (where to aim the
     strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
     over frames show, whose tip, `reach` metres past the hand, makes the hit)."""
     fitter = Fitter(rig, st)
@@ -708,6 +708,15 @@ def move_clips(rig, st, data, overrides):
                 at(f, pose)
                 at(min(total - 1, f + 5), pose)
                 continue
+            if style == "live":
+                # "We go live": turned to the camera (her right), the rear hand
+                # pointing at it, two fingers out.
+                pose = base.but(chest=(-2, -60, 0), shoulder_L=(-2, -60, 0), shoulder_R=(-2, -60, 0), head=(-4, -50, 0),
+                                hand_R={"pos": st.s((-0.34, 0.26, 1.48)), "aim": (-0.85, 0.45, 0.2), "hint": (0, 0, 1)}).shaped(fist_R=1.0, point_R=1.0, jaw=0.7)
+                at(max(2, f - 8), lerp_pose(base, pose, 0.5).shaped(fist_R=1.0, point_R=1.0))
+                at(f, pose)
+                at(min(total - 1, f + 10), pose.shaped(jaw=0.0))
+                continue
             if y > 1.5:  # calling something down from above
                 pose = base.but(hand_L={"pos": st.s((0.15, 0.15, 1.95)), "aim": (0.1, 0.2, 1)}, hand_R={"pos": st.s((-0.12, 0.05, 1.9)), "aim": (-0.1, 0.2, 1)}, chest=(-8, st.chest_yaw, 0), head=(-25, 0, 0))
             else:  # pushing it out in front
@@ -776,6 +785,18 @@ def move_clips(rig, st, data, overrides):
             at(7, reach.shaped(fist_L=1.0))
             at(10, base.but(hips={"offset": (0, -0.05 * k, -(st.drop + 0.06) * k), "turn": (4, st.hips_yaw + 10, 0)},
                             hand_L={"pos": st.s((0.06, -0.1, 1.42)), "aim": (0, -0.3, 1), "hint": (0, 1, 0)}).shaped(fist_L=1.0))
+        if style == "prompter":
+            # A counter stance: standing tall and still, the lead hand raised
+            # palm out, eyes on something just off screen (toward the
+            # camera), held through the counter window.
+            c0, c1 = mv["counter"]["frames"]
+            tall = base.but(hips={"offset": (0, -0.02 * k, -st.drop * 0.3 * k), "turn": (-4, st.hips_yaw * 0.6, 0)}, spine=(-2, -14, 0),
+                            chest=(-6, -16, 0), shoulder_L=(-6, -16, 0), shoulder_R=(-6, -16, 0), neck=(0, -10, 0), head=(-6, -34, 0),
+                            hand_L={"pos": st.s((0.12, 0.34, 1.56)), "aim": (0, 0.3, 1), "hint": (0, 1, 0)},
+                            hand_R={"pos": st.s((-0.12, 0.12, 1.12)), "aim": (-0.2, 0.3, -1)}).shaped(fist_L=0.0, open_L=0.5, fist_R=0.4)
+            at(max(2, c0 - 4), lerp_pose(base, tall, 0.6).shaped(**tall.parts["shapes"]))
+            at(c0, tall)
+            at(c1, tall.but(head=(-4, -26, 0)))
         if style == "rising":
             # A rising uppercut: coil low, then drive up through the box onto
             # the toes; the arm stays high through the recovery.
@@ -877,9 +898,10 @@ def move_clips(rig, st, data, overrides):
 
 def shout(keys, mv, total):
     """A special's shout: the jaw open over the move's business (its hits,
-    spawns, throw or counter window), from a couple of frames before."""
+    spawns or throw), from a couple of frames before. A counter stance
+    waits in silence."""
     frames = [f for h in mv["hits"] for f in h["frames"]] + [sp["frame"] for sp in mv["spawns"]]
-    for key in ("throw", "counter"):
+    for key in ("throw",):
         if mv.get(key) and mv[key].get("frames"):
             frames += list(mv[key]["frames"])
     if not frames:
