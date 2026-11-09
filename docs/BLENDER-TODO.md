@@ -855,16 +855,18 @@ reference: `git show origin/art/dale-hd-experiment:blender/experiments/dale_hd/<
 
 **B. Faces** (with 16 D's shape pass)
 
-- [ ] Planes that read at a distance: brow ridge, cheekbones, the nose as a wedge with nostrils, the jaw as its own piece on its bone.
-- [ ] No holes or tunnels: the experiment had one behind the nose bridge. Port `topology.py`'s genus check into the build checks (`lib/fighter.py`): the head and each hand must be genus 0.
-- [ ] Lips set into the face with tucked corners, painted from their outline with a soft edge instead of a flat shape.
-- [ ] Keep the stylised eyes (they read at play size); add a lid line.
+*Done (Nov 9): all seven fighters (Mumbles' painted wooden face opts out of the planes and lips). Notes under* Faces (Nov 9, art side) *in Feedback.*
+
+- [x] Planes that read at a distance: brow ridge, cheekbones, the nose as a wedge with nostrils, the jaw as its own piece on its bone.
+- [x] No holes or tunnels: the experiment had one behind the nose bridge. Port `topology.py`'s genus check into the build checks (`lib/fighter.py`): the head and each hand must be genus 0.
+- [x] Lips set into the face with tucked corners, painted from their outline with a soft edge instead of a flat shape.
+- [x] Keep the stylised eyes (they read at play size); add a lid line. *Heavy lids (Hollis) are their own line.*
 
 **C. Stay faceted, stay cheap**
 
-- [ ] Flat shading, one PNG atlas per material at today's sizes, Lambert-friendly colour (no normal, roughness or ORM maps). Give the face and hands more of the atlas than the body.
+- [x] Flat shading, one PNG atlas per material at today's sizes, Lambert-friendly colour (no normal, roughness or ORM maps). Give the face and hands more of the atlas than the body. *The hands joined the face's doubled texel density (`DENSE` in `lib/fighter.py`).*
 - [ ] Body up to about 8,000 triangles (16 D), effects as now. Keep every shape key and `fx_*` mesh, the heights against the hurtboxes, every strike in its hitbox and the juggle-box checks.
-- [ ] Dale first: compare him with the experiment in the viewer's FACE view, then the rest. Gus and Gideon are built to this standard from the start.
+- [x] Dale first: compare him with the experiment in the viewer's FACE view, then the rest. *Compared with his old face (the experiment's GLB isn't one the viewer loads); Derek approved Dale, then the rest.* Gus and Gideon are built to this standard from the start.
 
 ### 22. Hit reactions (Nov 9, game side)
 
@@ -1555,3 +1557,7 @@ worked into the move data, and the table above updates itself.
   - The build checks the standing reactions' **heads** (the vertices on `head` and the bones under it) against the hurtbox plus 0.1 m, not the whole body: Mumbles' flung hand and Gideon's raised Bible go over it, and they're hands, not heads. `hit_crouch` checks the whole body against the crouching box; each fighter sinks it 6–12 cm deeper than `crouch_idle` (solved per build, `fit_hit_crouch`) so the lean back stays inside.
   - Flavour: Dale keeps `win` at 0.6 under `hurt`; Rox 1.1 and half back by 9; Hollis 0.7 with the head turning a third as far on light hits; Mumbles 1.4, swinging past the pose and back (an overshoot on frame 5) with the jaw wide; Margaret 0.9, the script to her chest and the shoulders square; Gus 0.85, the cleaver hand flung back; Gideon raises the Bible on the head hits and throws his lead arm out on `stagger`. The quiff, tie, keys, toque and the rest swing on their springs.
   - `hit_body` and `hit_body_2` are subtle at play size (the spec's 10–12° fold); worth a look in the game before 16 C.
+- **Faces (Nov 9, art side).** Step 21 B, and 21 C's atlas item, done for all seven; every build check and `tests/assets.test.ts` passing. Notes for the game side:
+  - The shared head (`lib/body.py`) has a wedge nose with two nostrils, a cheekbone plane under each eye and a lid line over each eye that squints with it. `mouth(…, lips=, skin=)` rolls lips along a grin or a closed mouth, upper on `head`, lower on `jaw`, painted from their outline and fading into the skin, with a dark tuck at each corner. Dale, Rox, Gus, Gideon and Margaret have lips; Hollis's mouth is under his moustache and Mumbles' is painted on.
+  - The build fails if any piece on the head, a hand or a bone under them isn't genus 0 (`check_genus`); every piece is closed today, so it guards future modelling.
+  - Body triangles: Dale 3,458, Rox 3,418, Margaret 3,448, Gus 3,476, Gideon 3,378, Hollis 3,182, Mumbles 2,760. GLBs: Dale 2.05 MB, Gus 1.89, Rox 1.87, Mumbles 1.85, Margaret 1.80, Gideon 1.74, Hollis 1.66.

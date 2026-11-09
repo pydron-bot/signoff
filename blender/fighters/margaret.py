@@ -104,7 +104,7 @@ def costume(p, b):
         p.blob(f"pearl{i}", b.p(x, f, u), (0.009 * k,) * 3, PEARL, "chest", mat=1, paint=glossy)
 
     hp, hr = head(p, b, c, paint=skin)
-    mouth(p, b, (0, 0.111, 1.626), 0.052, 0.01, LIPS, kind="lips", inner=(70, 24, 34))
+    mouth(p, b, (0, 0.111, 1.626), 0.052, 0.01, LIPS, kind="lips", inner=(70, 24, 34), lips=LIPS, skin=SKIN)
     for sd in (1, -1):
         p.blob(f"earring{sd}", hp(sd * 0.098, 0.01, 1.632), hr(0.011, 0.011, 0.011), PEARL, "head", mat=1, paint=glossy)
     # The bob: a glossy cap parted on her left, the fringe swept across, and

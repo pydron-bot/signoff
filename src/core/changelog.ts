@@ -27,15 +27,17 @@ export const CHANGELOG: readonly Release[] = [
       'A broadcast HUD: names on caption plates with their shows, health bars that leave a red chunk where the last hits landed before it drains, and a blinking LIVE beside the station logo (no longer on top of Gideon\'s donations).',
       'The title is a TV in a dark room at 3:33 a.m.; starting a match pushes in through the glass.',
       'Reduce Motion drops the negative flashes, the ghosts and the push-in; the VHS LOOK setting turns the tape effects down or off.',
+      'Hits look different by where they land: a snap of the head, a punch to the ribs, doubled over by a heavy one, a knee buckling, reeling from a long stun.',
+      'Performance overlay: Settings → PERFORMANCE (or the ` key on a keyboard) shows the frame rate, how long frames take (and the worst in the last second), simulation steps a second, draw calls and triangles, in the top left.',
     ],
   },
   {
     version: '0.33.0',
     date: '2026-11-09',
-    title: 'Behind the Scenes',
+    title: 'Face Time',
     notes: [
-      'Performance overlay: Settings → PERFORMANCE (or the ` key on a keyboard) shows the frame rate, how long frames take (and the worst in the last second), simulation steps a second, draw calls and triangles, in the top left.',
-      'Hits are ready to look different by where they land: a snap of the head, a punch to the ribs, doubled over by a heavy one, a knee buckling, reeling from a long stun. The game already picks the right one; the new animations are on their way, and until then the fighters react as before.',
+      'Sharper faces for the whole cast: a proper nose, cheekbones, a line over each eye that squints with it, and real lips on Dale, Rox, Margaret, Gus and Gideon. The intros, wins and Sign-Off close-ups show it most. Mister Mumbles keeps his painted-on face.',
+      'Sharper hands up close: they get as much texture detail as the faces now.',
     ],
   },
   {

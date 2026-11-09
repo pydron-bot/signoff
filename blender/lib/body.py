@@ -140,8 +140,23 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
     # The brow ridge over the eye sockets, and the nose.
     p.hull("brow_ridge", [hp(x, f, u) for x, f, u in ((-0.075, 0.09, 1.712), (0.075, 0.09, 1.712), (-0.06, 0.112, 1.706), (0.06, 0.112, 1.706),
                                                        (0, 0.124, 1.706), (-0.06, 0.104, 1.722), (0.06, 0.104, 1.722), (0, 0.116, 1.724))], c["skin"], "head", paint=paint)
-    p.hull("nose", [hp(-0.012, 0.112, 1.69), hp(0.012, 0.112, 1.69), hp(0, 0.122, 1.695),
-                    hp(-0.017, 0.112, 1.645), hp(0.017, 0.112, 1.645), hp(0, 0.142, 1.648), hp(0, 0.122, 1.64)], c["skin"], "head", paint=paint)
+    planes = c.get("planes", True)  # Mumbles' painted wooden face has none of these
+    if planes:
+        # The nose as a wedge: a narrow bridge, a sharp ridge out to the tip,
+        # flared wings and a flat underside with two nostrils set into it.
+        p.hull("nose", [hp(x, f, u) for x, f, u in ((-0.008, 0.11, 1.697), (0.008, 0.11, 1.697), (0, 0.123, 1.697), (0, 0.147, 1.649),
+                                                    (-0.021, 0.11, 1.643), (0.021, 0.11, 1.643), (-0.016, 0.122, 1.635), (0.016, 0.122, 1.635),
+                                                    (0, 0.135, 1.634))], c["skin"], "head", paint=paint)
+        dark = tuple(int(v * 0.45) for v in c["skin"])
+        for sd in (1, -1):
+            p.blob(f"nostril{sd}", hp(sd * 0.0085, 0.1285, 1.6355), hr(0.0048, 0.0042, 0.0018), dark, "head")
+            # Cheekbones: a plane under each eye, angled out to the side.
+            p.hull(f"cheek{sd}", [hp(sd * x, f, u) for x, f, u in ((0.047, 0.109, 1.664), (0.074, 0.084, 1.668), (0.071, 0.08, 1.634), (0.047, 0.105, 1.638),
+                                                                    (0.047, 0.082, 1.664), (0.07, 0.06, 1.666), (0.068, 0.058, 1.636), (0.047, 0.08, 1.638))],
+                   c["skin"], "head", paint=paint)
+    else:
+        p.hull("nose", [hp(-0.012, 0.112, 1.69), hp(0.012, 0.112, 1.69), hp(0, 0.122, 1.695),
+                        hp(-0.017, 0.112, 1.645), hp(0.017, 0.112, 1.645), hp(0, 0.142, 1.648), hp(0, 0.122, 1.64)], c["skin"], "head", paint=paint)
     er = c.get("eye", (0.021, 0.008, 0.015))
     lids = c.get("lids", 0.0)
     for sd in (1, -1):
@@ -151,6 +166,13 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
         wc = hp(ec[0], ec[1], ec[2] - er[2] * 0.3 * lids)
         squint = {"hurt": about(wc, (1.05, 1, 0.45)), "ko": about(wc, (1.05, 1, 0.12), (0, 0, -0.002)), "win": about(wc, (1, 1, 0.75))}
         p.blob(f"eye{sd}", wc, white, c.get("whites", (240, 236, 226)), "head", shapes=squint, paint=c.get("eye_paint"))
+        if planes and lids < 0.5:
+            # A lid line over the top of the eye (heavy lids are their own line);
+            # it squints with the eye.
+            import math
+            arc = [(hp(ec[0] + math.cos(a) * er[0] * 1.06, ec[1] + er[1] * 0.75, ec[2] - er[2] * 0.3 * lids + math.sin(a) * er[2] * (1 - 0.35 * lids) * 1.08), 0.0019 * b.k * b.head)
+                   for a in (math.radians(d) for d in (170, 140, 115, 90, 65, 40, 10))]
+            p.tube(f"lid_line{sd}", [(q, r, {"head": 1.0}, c.get("lid_line", tuple(int(v * 0.5) for v in c["skin"]))) for q, r in arc], verts=4, shapes=squint)
         pc = hp(ec[0] - sd * c.get("pupil_in", 0.004), ec[1] + er[1] * 0.85, ec[2] - er[2] * 0.3 * lids - 0.001)
         pr = hr(er[0] * 0.42, er[1] * 0.45, er[2] * 0.62 * (1 - 0.3 * lids))
         p.blob(f"pupil{sd}", pc, pr, c.get("eyes", (34, 28, 28)), "head", paint=c.get("eye_paint"),
@@ -168,10 +190,12 @@ def head(p, b, c, face=True, paint=None, skull=None, chin="jaw"):
     return hp, hr
 
 
-def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), teeth=None, paint=None):
+def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), teeth=None, paint=None, lips=None, skin=None):
     """A mouth (reference head coordinates): `grin` is a D-shaped open smile
     (with a row of teeth), `line` a closed mouth, `lips` lips over a line.
-    Shape keys: a grimace when hurt, slack when KO'd, wider when winning."""
+    Shape keys: a grimace when hurt, slack when KO'd, wider when winning.
+    `lips` (a colour, with the `skin` they fade into) rolls lips round a
+    grin or a `lips` mouth, set into the face with tucked corners."""
     hp, hr, _ = head_frame(b)
     cx, cf, cu = centre
     c0 = hp(*centre)
@@ -180,6 +204,13 @@ def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), 
     def lower(q):
         # The mouth's lower half rides the jaw, so it opens when the jaw drops.
         return {"jaw": 1.0} if q[2] < c0[2] - 1e-4 else {"head": 1.0}
+
+    if lips is not None and kind in ("grin", "lips"):
+        _lips(p, b, centre, width, height, kind, lips, skin or colour, inner, shapes)
+        if kind == "lips":
+            # The lips are the mouth now: a dark line between them.
+            p.box("mouth", c0, hr(width * 0.9, 0.01, height * 0.3), inner, "head", shapes=shapes, weigh=lower)
+            return
 
     if kind == "grin":
         w, h = width / 2, height
@@ -201,6 +232,48 @@ def mouth(p, b, centre, width, height, colour, kind="grin", inner=(60, 24, 28), 
                 lc = hp(cx, cf + 0.002, cu + du)
                 p.box(name, lc, hr(width * (1.05 if du > 0 else 0.95), 0.014, height * hh), colour, "head" if du > 0 else "jaw",
                       shapes={"hurt": about(c0, (0.85, 1, 2.0), (0, 0, -0.004)), "ko": about(c0, (0.6, 1, 1.7), (0, 0, -0.004)), "win": about(c0, (1.2, 1, 1.5))})
+
+
+def _lips(p, b, centre, width, height, kind, colour, skin, inner, shapes):
+    """Upper and lower lips rolled along the mouth's outline (the upper on
+    the head, the lower on the jaw), painted from that outline with a soft
+    edge into the skin, and a small dark tuck at each corner."""
+    from . import paint as P
+
+    hp, hr, ref = head_frame(b)
+    cx, cf, cu = centre
+    w, h = width / 2, height
+    k = b.k * b.head
+    if kind == "grin":
+        # Along the grin's straight top and round its D-shaped bottom.
+        top = lambda x: cu + h * 0.35 + 0.0025
+        bottom = lambda x: cu + h * 0.35 - h * (1 - x * x) * 0.95 - 0.003
+        r_top, r_bottom = 0.0032, 0.0042
+    else:
+        # A closed mouth: a cupid's bow on top, a fuller lower lip.
+        top = lambda x: cu + h * 0.55 + 0.0012 * abs(x) - 0.0015 * (1 - abs(x)) * (abs(x) < 0.35)
+        bottom = lambda x: cu - h * 0.6 + 0.002 * x * x
+        r_top, r_bottom = 0.0034, 0.0044
+    xs = (-1.0, -0.8, -0.5, -0.2, 0.0, 0.2, 0.5, 0.8, 1.0)
+    for name, line, r0, bone in (("lip_top", top, r_top, "head"), ("lip_bottom", bottom, r_bottom, "jaw")):
+        def radius(x, r0=r0):
+            return r0 * (1 - 0.55 * x * x)
+
+        def lip_paint(t, line=line, radius=radius):
+            # The lip's colour across the middle of its roll, fading into the
+            # skin at its edges, so it reads as set into the face.
+            x, _, u = ref(t)
+            rx = np.clip((x - cx) / w, -1, 1)
+            d = np.abs(u - np.array([line(v) for v in rx])) / np.maximum(1e-4, np.array([radius(v) for v in rx]))
+            a = np.clip(1.6 - 1.1 * d, 0, 1)
+            t.c = np.array(colour, float) * a[:, None] + np.array(skin, float) * (1 - a[:, None])
+            return P.light(t)
+
+        rings = [(hp(cx + x * w * 1.02, cf + 0.003 - 0.004 * x * x, line(x)), radius(x) * k, {bone: 1.0}, colour) for x in xs]
+        p.tube(name, rings, verts=6, paint=lip_paint, shapes=shapes)
+    for sd in (1, -1):
+        corner = (top(1.0) + bottom(1.0)) / 2
+        p.blob(f"mouth_corner{sd}", hp(cx + sd * w * 1.04, cf - 0.002, corner), hr(0.0035, 0.004, 0.0035), tuple(int(v * 0.6) for v in inner), "head", shapes=shapes)
 
 
 def face_paint(b, skin, eyes_shadow=None, blush=None, stubble=None, tan=None, extra=None):
