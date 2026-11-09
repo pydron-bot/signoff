@@ -218,6 +218,12 @@ export class Sound {
     } else if (t === 'wood') this.tone(420, 0.06, 0.2, 'triangle', 300);
   }
 
+  /** One syllable of a fighter talking (the cold open's lines). */
+  babble(player: number, fighter: string): void {
+    if (!this.live) return;
+    this.voices?.say(player, fighter, 'talk', Math.random());
+  }
+
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     if (!this.live) return;
     for (const c of this.vocals.step(m, ev, this.cues)) this.voices?.say(c.player, m.fighters[c.player].fighter, c.kind, c.size);

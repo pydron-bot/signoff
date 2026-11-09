@@ -66,11 +66,16 @@ try {
     await page.screenshot({ path: `smoke-out/${name}.png` });
     // Into a fight: the HUD shows and the clock runs.
     await page.click('#play-cpu');
+    // The cold open: the two fighters' lines, then a tap skips the rest.
+    await page.waitForTimeout(2500);
+    const opened = await page.isVisible('.cold-open');
+    await page.screenshot({ path: `smoke-out/${name}-cold-open.png` });
+    if (opened) await page.click('.cold-open');
     await page.waitForTimeout(4000);
     const hud = await page.isVisible('.hud');
     const clock = await page.textContent('.hud-clock');
     await page.screenshot({ path: `smoke-out/${name}-fight.png` });
-    const fought = hud && /^0:\d\d$/.test(clock ?? '');
+    const fought = opened && hud && /^0:\d\d$/.test(clock ?? '');
     const ok = errors.length === 0 && drew && fought && /^v\d/.test(version ?? '');
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : '  (no fight)'}`);
     for (const e of errors) console.log(`     ${e}`);

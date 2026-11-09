@@ -64,6 +64,8 @@ const SHAPES: Readonly<Record<VocalKind, Shape>> = {
   pain: { vowels: [[UH, UH], [OH, UH], [AH, UH]], dur: [0.12, 0.28], pitch: [1.55, 1.6, 0.8], h: 0.4, gain: 0.65, grit: 0.25 },
   oof: { vowels: [[OO, UH]], dur: [0.16, 0.06], pitch: [0.95, 0.95, 0.7], h: 1, gain: 0.55, grit: 0.1 },
   scream: { vowels: [[AH, AH], [EH, AH]], dur: [0.75, 0.2], pitch: [1.6, 1.85, 0.7], h: 0.3, gain: 0.75, grit: 0.45 },
+  // A syllable of speech: short, near the speaking pitch, any vowel to any other.
+  talk: { vowels: [[AH, EH], [OH, AH], [EH, OO], [UH, AH], [OO, EH]], dur: [0.07, 0.08], pitch: [1.0, 1.12, 0.92], h: 0.2, gain: 0.32, grit: 0 },
 };
 
 /** The three formants: sharpness, and how loud each is. */

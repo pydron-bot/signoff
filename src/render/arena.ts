@@ -169,6 +169,8 @@ export class Arena {
     this.rig.reduceMotion = on;
   }
   showBoxes = false;
+  /** The cold open: the match isn't running yet, so the fighters idle on display time. */
+  idling = false;
   private readonly hurtOverlays: THREE.LineSegments[] = [];
   private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
   /** The hurtbox of a body nothing can hit right now. */
@@ -415,6 +417,11 @@ export class Arena {
       model.root.position.set(x, y, 0);
       model.root.scale.x = f.facing;
       const p = this.poses.pose(m, i, this.pose);
+      if (this.idling) {
+        p.clip = 'idle';
+        p.frame = this.frame + 1;
+        p.loop = true;
+      }
       model.pose(p.clip, p.frame, p.loop);
       model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
       v.echoes?.update(f, p, x, y, shown, !this.reduceMotion);
