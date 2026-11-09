@@ -66,6 +66,8 @@ export class Hud {
   private lastMeter = [-1, -1];
   private lastWins = [-1, -1];
   private lastSecs = -1;
+  private lastAdv: Advantage | null | undefined = undefined;
+  private lastLine = '';
 
   constructor(parent: HTMLElement) {
     this.root = div('hud');
@@ -149,6 +151,7 @@ export class Hud {
     this.lastMeter = [-1, -1];
     this.lastWins = [-1, -1];
     this.lastSecs = -1;
+    this.lastAdv = undefined;
   }
 
   hide(): void {
@@ -305,7 +308,10 @@ export class Hud {
       this.lastSecs = secs;
       this.clock.textContent = `0:${String(secs).padStart(2, '0')}`;
     }
-    if (!this.training.hidden) {
+    // Rebuilt only when it changes: no string or DOM write per frame.
+    if (!this.training.hidden && (adv !== this.lastAdv || trainingLine !== this.lastLine)) {
+      this.lastAdv = adv;
+      this.lastLine = trainingLine;
       const a = adv ? `${adv.move} on ${adv.kind}: ${adv.frames > 0 ? '+' : ''}${adv.frames}` : 'Hit or block for frame advantage';
       this.training.textContent = `${a}\n${trainingLine}`;
     }

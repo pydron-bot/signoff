@@ -6,6 +6,7 @@
  * (docs/BLENDER-TODO.md, step 14) loads.
  */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
@@ -167,9 +168,10 @@ export class BurnSet implements StageSet {
 
     // Double Time: chase lights along the mirrors, the sign switched over.
     const double = named('seg_double');
-    const bulb = new THREE.BoxGeometry(0.12, 0.12, 0.12);
-    const bulbMat = basic(0xfff27a);
-    for (let x = -7.8; x <= 7.8; x += 0.6) add(double, bulb, bulbMat, x, 3.1, -3.8);
+    // One mesh for the whole row: 27 bulbs as one draw call.
+    const bulbs: THREE.BufferGeometry[] = [];
+    for (let x = -7.8; x <= 7.8; x += 0.6) bulbs.push(new THREE.BoxGeometry(0.12, 0.12, 0.12).translate(x, 0, 0));
+    add(double, mergeGeometries(bulbs), basic(0xfff27a), 0, 3.1, -3.8);
     add(double, new THREE.BoxGeometry(4.4, 0.7, 0.1), basic(0x40e0ff), 0, 3.4, -3.75);
     add(double, new THREE.PlaneGeometry(16, 2.6), basic(0xffd890), 0, 4.6, -3.98);
 

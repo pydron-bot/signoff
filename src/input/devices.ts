@@ -36,11 +36,17 @@ export function keyboardInput(): number {
   return cleanDirections(applyChords(kbChords, bits));
 }
 
+// Read several times a frame: refilled in place, so polling allocates nothing of ours.
+const connected: Gamepad[] = [];
+
 function pads(): Gamepad[] {
-  const list = navigator.getGamepads?.() ?? [];
-  const out: Gamepad[] = [];
-  for (const p of list) if (p && p.connected) out.push(p);
-  return out;
+  connected.length = 0;
+  const list = navigator.getGamepads?.();
+  if (list) for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    if (p && p.connected) connected.push(p);
+  }
+  return connected;
 }
 
 export function padCount(): number {
@@ -58,17 +64,20 @@ export function padInput(n: number): number {
 export type MenuKey = 'up' | 'down' | 'left' | 'right' | 'ok' | 'back' | 'pause';
 const padPrev = new Map<number, number>();
 
-export function menuPresses(): MenuKey[] {
-  const out: MenuKey[] = [];
-  for (const code of pressedOnce.splice(0)) {
-    const k = KEY_MENU[code];
+/** Reused every call: read it before the next. */
+const menuOut: MenuKey[] = [];
+
+export function menuPresses(): readonly MenuKey[] {
+  const out = menuOut;
+  out.length = 0;
+  for (let i = 0; i < pressedOnce.length; i++) {
+    const k = KEY_MENU[pressedOnce[i]];
     if (k) out.push(k);
   }
+  pressedOnce.length = 0;
   for (const p of pads()) {
     let now = 0;
-    p.buttons.forEach((b, i) => {
-      if (b.pressed) now |= 1 << i;
-    });
+    for (let i = 0; i < p.buttons.length; i++) if (p.buttons[i].pressed) now |= 1 << i;
     const x = p.axes[0] ?? 0;
     const y = p.axes[1] ?? 0;
     if (y < -0.6) now |= 1 << 12;
