@@ -18,6 +18,12 @@ export const RIG_BONES = [
   'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R', 'thumb.R', 'index.R', 'fingers.R',
   'thigh.L', 'shin.L', 'foot.L', 'toe.L', 'thigh.R', 'shin.R', 'foot.R', 'toe.R',
 ];
+/**
+ * Step 21's finger joints: each finger group's bone split at the knuckles,
+ * so a fist curls at three joints. Accepted all or none while the fighters
+ * are rebuilt; once every GLB has them they move into RIG_BONES.
+ */
+export const FINGER_JOINTS = ['L', 'R'].flatMap((s) => [`thumb_2.${s}`, `index_2.${s}`, `index_3.${s}`, `fingers_2.${s}`, `fingers_3.${s}`]);
 /** Bones past that are the fighter's own, for secondary motion (hair, a tie, a coat tail), named x_*. */
 const MAX_BONES = 48;
 /** Each fighter's GLB, so a full roster still loads quickly on a phone. */
@@ -103,7 +109,9 @@ for (const f of Object.values(FIGHTERS)) {
       expect(g.skins?.length).toBe(1);
       const bones = g.skins![0].joints.map((j) => g.nodes[j].name);
       for (const b of RIG_BONES) expect(bones, b).toContain(b);
-      for (const b of bones) if (!RIG_BONES.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
+      const joints = FINGER_JOINTS.filter((b) => bones.includes(b));
+      expect(joints.length === 0 || joints.length === FINGER_JOINTS.length, 'all the finger joints or none').toBe(true);
+      for (const b of bones) if (!RIG_BONES.includes(b) && !FINGER_JOINTS.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
       expect(bones.length).toBeLessThanOrEqual(MAX_BONES);
     });
 
