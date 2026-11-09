@@ -17,7 +17,7 @@ describe('move list', () => {
       const air = section('In the air');
       expect(air.map((r) => r.name)).toEqual([...new Set(Object.values(f.airSpecials))].map((id) => f.moves[id].name).concat(f.airStrings.map((s) => s.name)));
       for (const r of air) expect(r.input).toMatch(/^in the air: ([←→↓] )?SP$|^in the air: (FP|BP|FK|BK)( · (FP|BP|FK|BK))+$/);
-      expect(section('Finishers').map((r) => r.name).sort()).toEqual(f.finishers.map((x) => x.name).sort());
+      expect(section('Finishers').map((r) => r.name).sort()).toEqual([...f.finishers.map((x) => x.name), 'Stage Sign-Off'].sort());
       for (const r of section('Finishers')) expect(r.input).toMatch(/^([←→↑↓] )+(FP|BP|FK|BK|BLOCK)$|^win with /);
       // Until found, the cancellations beyond the first are ???, with a hint that doesn't give them away.
       const hidden = moveList(f.id, () => false);

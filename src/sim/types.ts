@@ -183,6 +183,8 @@ export interface FinishBeat {
   readonly at: number;
   readonly move?: string;
   readonly blow?: FinishBlow;
+  /** A Stage Sign-Off: the set takes over here (the lightning, the lamp, the mirrors, the fire). */
+  readonly cue?: boolean;
 }
 
 /** A scripted finisher. Steps count from 1 when it starts. */
@@ -198,6 +200,8 @@ export interface FinisherData {
   readonly trigger?: string;
   /** A cancellation: the direction the winner must be holding as it lands. */
   readonly hold?: FinishDir;
+  /** A Stage Sign-Off: the stage whose set does it (anyone can, near a wall). */
+  readonly stage?: string;
   readonly beats: readonly FinishBeat[];
   /** The step the picture cuts away, and to what. */
   readonly cut: number;

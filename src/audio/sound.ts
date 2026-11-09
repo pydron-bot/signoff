@@ -382,6 +382,23 @@ export class Sound {
             this.tone(70, 0.6, 0.18, 'sawtooth', 140);
           } else this.tone(120, 0.35, 0.12, 'sawtooth');
           break;
+        case 'stageCue':
+          // A Stage Sign-Off: the set's own hazard, louder, on the loser.
+          if (e.stage === 'weather') {
+            this.noise(0.5, 6000, 0.45, 'highpass', 0.5);
+            this.tone(55, 1.4, 0.4, 'sine', 30, 0.05);
+          } else if (e.stage === 'burn') {
+            this.noise(0.7, 4000, 0.4, 'highpass', 0.2);
+            this.tone(2200, 0.4, 0.08, 'triangle', 1200, 0.1);
+          } else if (e.stage === 'news') {
+            this.noise(0.2, 5000, 0.25, 'highpass');
+            this.tone(80, 0.7, 0.4, 'square', 40, 0.08);
+            this.noise(0.6, 600, 0.35, 'lowpass', 1, 0.08);
+          } else {
+            this.noise(1.2, 400, 0.45, 'lowpass');
+            this.noise(0.8, 2500, 0.15, 'bandpass', 1, 0.05);
+          }
+          break;
         case 'hazardHit':
           this.tone(110, 0.3, 0.15, 'square', 90);
           if (Math.random() < 0.5) this.laugh(0.2);

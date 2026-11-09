@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { stageCueAge } from '../sim/finisher';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
 import { relight } from './look';
@@ -22,6 +23,8 @@ const BOOMBOX_Z = -0.3;
 /** Where a shard falls from, and how long the broken glass stays. */
 const SHARD_TOP = 6;
 const SHATTER_FRAMES = 60;
+/** Frames the Stage Sign-Off's shard takes to land. */
+const CUE_DROP = 5;
 /** Double Time's beat in steps (132 bpm at the fast tape's 66 steps a second). */
 const DOUBLE_BEAT = 30;
 
@@ -125,6 +128,16 @@ export class BurnSet implements StageSet {
     if (shatter.visible) {
       shatter.position.set(at, 0.01, 0);
       shatter.rotation.y = st.spot * 1.3;
+    }
+    // Mirror, Mirror: thrown into the mirrors, and the glass comes down on them (the Stage Sign-Off).
+    const cue = stageCueAge(m);
+    if (cue >= 0) {
+      const x = toFloat(m.fighters[1 - m.finish.player].x);
+      shard.visible = cue < CUE_DROP;
+      if (shard.visible) shard.position.set(x, SHARD_TOP * (1 - (cue + 1) / CUE_DROP), 0);
+      shatter.visible = cue >= CUE_DROP - 1;
+      if (shatter.visible) shatter.position.set(x, 0.01, 0);
+      this.lights.rim.intensity = this.rimBase * (cue < 10 ? 2.5 : 1);
     }
   }
 

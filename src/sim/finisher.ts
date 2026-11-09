@@ -7,11 +7,13 @@
  * and scripted blows land on the loser as ordinary hit events. The picture
  * cuts away at the worst moment; the sound carries on under it.
  */
-import { BUFFER, FINISH_CLOSE, FINISH_FAR, FINISH_INPUT_WINDOW, GETUP_FRAMES } from './constants';
+import { BUFFER, FINISH_CLOSE, FINISH_FAR, FINISH_INPUT_WINDOW, GETUP_FRAMES, STAGE_FINISH_WALL } from './constants';
 import type { SimEvent } from './events';
 import { hitWeight } from './combat';
 import { footwork, launch, moveOf, startMove, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
+import { Script } from './fighters/build';
+import { stageData } from './stages';
 import { clamp, type Fx } from './fixed';
 import { ATTACK_BITS, BLOCK, DOWN, UP, backBit, bitIndex, consume, forwardBit, type InputState } from './input';
 import type { FighterState, MatchState } from './state';
@@ -21,9 +23,61 @@ import type { FinishBlow, FinishDir, FinishRange, FinisherData } from './types';
 const HELD = 600;
 
 export function finisherData(fighter: string, id: string): FinisherData {
+  if (id.startsWith(STAGE_PREFIX)) return stageFinisher(id.slice(STAGE_PREFIX.length), fighter);
   const f = fighterData(fighter).finishers.find((x) => x.id === id);
   if (!f) throw new Error(`unknown finisher ${fighter}/${id}`);
   return f;
+}
+
+const STAGE_PREFIX = 'stage:';
+const stageFinishers = new Map<string, FinisherData>();
+
+/**
+ * The Stage Sign-Off, the same for every fighter on a stage (their own
+ * moves, then the set takes over): close up, the loser's back to a wall,
+ * forward, down, Block. Two blows, a throw into the set, and the cue: the
+ * stage's piece comes down on them (the lightning, the lamp, the mirrors,
+ * the fire), and the broadcast cuts away.
+ */
+export function stageFinisher(stage: string, fighter: string): FinisherData {
+  const key = `${stage}/${fighter}`;
+  let fin = stageFinishers.get(key);
+  if (fin) return fin;
+  const st = stageData(stage);
+  const d = fighterData(fighter);
+  fin = new Script(d.moves)
+    .strike(d.normals.s.FP, { react: 'high', damage: 30, pull: 0.85 })
+    .strike(d.normals.s.BP, { react: 'high', damage: 60 })
+    .strike(d.throwMove, { react: 'knockdown', damage: 100, pop: 0.13, carry: 0.09 }, 26)
+    .cue()
+    .blow(0, { react: 'none', damage: 150 })
+    .blow(12, { react: 'none', damage: 90 })
+    .wait(22)
+    .cut(st.finisher.censor)
+    .blow(10, { react: 'none', damage: 120 })
+    .blow(26, { react: 'none', damage: 140 })
+    .done({ id: `${STAGE_PREFIX}${stage}`, name: st.finisher.name, kind: 'signoff', range: 'close', input: [...STAGE_INPUT], button: 'block', stage }, 90);
+  stageFinishers.set(key, fin);
+  return fin;
+}
+
+/** The Stage Sign-Off's taps (then Block). */
+export const STAGE_INPUT: readonly FinishDir[] = ['f', 'd'];
+
+/** The loser has a wall close behind them (on the far side from the winner). */
+export function backToWall(m: MatchState, winner: number): boolean {
+  const w = m.fighters[winner];
+  const l = m.fighters[1 - winner];
+  const away = l.x >= w.x ? 1 : -1;
+  return wallX(m, l) - away * l.x <= STAGE_FINISH_WALL;
+}
+
+/** Frames since a playing Stage Sign-Off's cue (the set's moment), or -1: what the set shows reads it. */
+export function stageCueAge(m: MatchState): number {
+  if (m.phase !== 'finisher' || !m.finish.id.startsWith(STAGE_PREFIX)) return -1;
+  const fin = finisherData(m.fighters[m.finish.player].fighter, m.finish.id);
+  const cue = fin.beats.find((b) => b.cue);
+  return cue && m.finish.frame >= cue.at ? m.finish.frame - cue.at : -1;
 }
 
 export function rangeOf(dist: Fx): Exclude<FinishRange, 'any'> {
@@ -116,6 +170,13 @@ export function stayTunedControl(m: MatchState, i: number, ev: SimEvent[]): void
       startFinisher(m, i, fin.id, ev);
       return;
     }
+    // The stage's own, close up with their back to a wall.
+    const st = stageFinisher(m.stage, f.fighter);
+    if (range === 'close' && backToWall(m, i) && enteredFinisher(f.input, f.facing, st)) {
+      consume(f.input, buttonBit(st.button));
+      startFinisher(m, i, st.id, ev);
+      return;
+    }
   }
   if (free) footwork(m, i, false);
 }
@@ -183,6 +244,7 @@ export function stepFinisher(m: MatchState, ev: SimEvent[]): boolean {
       if (l.x !== w.x && !moveOf(w).teleport) w.facing = l.x > w.x ? 1 : -1;
     }
     if (b.blow) blow(m, i, b.blow, fin.id, ev);
+    if (b.cue) ev.push({ type: 'stageCue', player: i, stage: fin.stage!, x: l.x });
   }
   if (t === fin.cut) ev.push({ type: 'finisherCut', player: i, censor: fin.censor, frames: fin.card - fin.cut });
   if (t === fin.card) ev.push({ type: 'finisherCard', player: i, id: fin.id, kind: fin.kind });

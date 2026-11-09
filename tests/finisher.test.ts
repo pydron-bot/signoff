@@ -3,10 +3,11 @@
 // script playing through to the end of the match for every pairing.
 import { describe, expect, it } from 'vitest';
 import { Cpu } from '../src/ai/cpu';
-import { FIGHTERS, Input, STAY_TUNED_FRAMES, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
-import { finisherData, rangeOf } from '../src/sim/finisher';
+import { FIGHTERS, Input, STAGE_IDS, STAY_TUNED_FRAMES, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
+import { STAGE_INPUT, finisherData, rangeOf, stageCueAge, stageFinisher } from '../src/sim/finisher';
 import { fx } from '../src/sim/fixed';
 import { count, place, presses, ready, run } from './sim-helpers';
+import { stageData } from '../src/sim/stages';
 
 const { LEFT, RIGHT, UP, DOWN, BLOCK, SPECIAL, FK, ATTACK_BITS } = Input;
 const roster = Object.values(FIGHTERS);
@@ -261,5 +262,77 @@ describe('the CPU', () => {
       signOffs += started.filter((e) => e.type === 'finisher' && e.kind === 'signoff').length;
     }
     expect(signOffs).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('Stage Sign-Offs', () => {
+  /** P1 wins on this stage and walks the loser's back to the right-hand wall: close up, the wall within reach behind them. */
+  function atWall(p1: string, stage: string, loserFromWall = 0.6): MatchState {
+    const m = createMatch({ p1, p2: 'rox', stage });
+    while (m.phase !== 'fight') step(m, 0, 0, []);
+    m.fighters[0].wins = 1;
+    m.fighters[1].health = 1;
+    place(m, -0.4, 0.4);
+    run(m, 300, (mm, t) => (mm.phase === 'fight' && t === 0 ? FK : 0));
+    expect(m.phase).toBe('stayTuned');
+    run(m, 25);
+    const wall = stageData(stage).segments[m.segment].halfWidth / 65536 - 0.3;
+    place(m, wall - loserFromWall - 1.0, wall - loserFromWall);
+    return m;
+  }
+
+  const enter = (m: MatchState) => {
+    const at: Record<number, number> = {};
+    let t = 0;
+    for (const d of STAGE_INPUT) {
+      at[t] = at[t + 1] = DIR[d];
+      t += 4;
+    }
+    at[t] = BLOCK;
+    const ev: SimEvent[] = [];
+    const inputs = presses(at);
+    for (let k = 0; k < 20 && m.phase === 'stayTuned'; k++) step(m, inputs(m, k), 0, ev);
+    return ev;
+  };
+
+  for (const stage of STAGE_IDS) {
+    it(`${stageData(stage).name}: ${stageData(stage).finisher.name}, for anyone, close up with the loser's back to the wall`, () => {
+      for (const f of roster) {
+        const m = atWall(f.id, stage);
+        const ev = enter(m);
+        expect(ev.find((e) => e.type === 'finisher'), f.id).toMatchObject({ id: `stage:${stage}`, kind: 'signoff' });
+        const rest = run(m, stageFinisher(stage, f.id).total + 10);
+        const cue = rest.find((e) => e.type === 'stageCue');
+        expect(cue, f.id).toMatchObject({ stage });
+        expect(count(rest, 'finisherCut')).toBe(1);
+        expect(rest.find((e) => e.type === 'finisherCard')).toMatchObject({ id: `stage:${stage}` });
+        expect(m.phase).toBe('over');
+      }
+    });
+  }
+
+  it('not away from the wall: the same input does nothing', () => {
+    const m = atWall('dale', 'weather', 2.5);
+    expect(count(enter(m), 'finisher')).toBe(0);
+    expect(m.phase).toBe('stayTuned');
+  });
+
+  it('the set reads how long since its cue, and the loser is thrown into it first', () => {
+    const m = atWall('gus', 'kitchen');
+    enter(m);
+    const fin = stageFinisher('kitchen', 'gus');
+    const at = fin.beats.find((b) => b.cue)!.at;
+    expect(stageCueAge(m)).toBe(-1);
+    while (m.finish.frame < at) run(m, 1);
+    expect(stageCueAge(m)).toBe(0);
+    // Thrown back against the wall they had behind them.
+    const wall = stageData('kitchen').segments[m.segment].halfWidth / 65536 - 0.3;
+    expect(m.fighters[1].x / 65536).toBeGreaterThan(wall - 0.5);
+    run(m, 10);
+    expect(stageCueAge(m)).toBe(10);
+  });
+
+  it('finisherData finds it by id, like any other', () => {
+    expect(finisherData('hollis', 'stage:news').name).toBe('Lights Down');
   });
 });

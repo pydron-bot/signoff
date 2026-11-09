@@ -143,6 +143,8 @@ export const STAY_TUNED_FRAMES = 4 * STEPS_PER_SECOND;
 export const FINISH_CLOSE = fx(1.3);
 /** ...far from here. */
 export const FINISH_FAR = fx(2.4);
+/** A Stage Sign-Off: close up, with the loser's back to a wall at most this far behind them. */
+export const STAGE_FINISH_WALL = fx(1.5);
 /** A finisher's taps and button must all come within this many frames. */
 export const FINISH_INPUT_WINDOW = 40;
 /** How long the closing card stays up. */

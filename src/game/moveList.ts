@@ -6,6 +6,7 @@
  */
 import { BOOST_TAP, DELAYED_GETUP, FLAWLESS_BLOCKSTUN_CUT, FLAWLESS_WINDOW, PUNISH_DAMAGE_PCT, TD_HEALTH_PCT, TD_RECHARGE_FRAMES, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
 import { guides, runGuide } from './comboGuides';
+import { STAGE_INPUT } from '../sim/finisher';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
 export interface MoveRow {
@@ -190,6 +191,9 @@ export function moveList(fighter: string, found: (id: string) => boolean = () =>
     { title: 'Combos (from point blank; wait = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },
-    { title: 'Finishers (after the deciding round)', rows: f.finishers.map((fin) => finisherRow(f, fin, found)) },
+    { title: 'Finishers (after the deciding round)', rows: [
+        ...f.finishers.map((fin) => finisherRow(f, fin, found)),
+        { name: 'Stage Sign-Off', input: `${STAGE_INPUT.map((d) => TAP[d]).join(' ')} BLOCK`, notes: 'Sign-Off · close, their back to a wall: every stage has its own', frames: '' },
+      ] },
   ];
 }

@@ -56,6 +56,10 @@ export class Glitch {
       // The tracking wobble on heavy hits and counters, longer on an ender.
       if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, e.weight === 3 ? 16 : 10);
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
+      else if (e.type === 'stageCue') {
+        this.wobble = Math.max(this.wobble, 20);
+        this.impactLeft = IMPACT_STEPS;
+      }
       else if (e.type === 'ko') this.staticLeft = 24;
       else if (e.type === 'superHit') this.standbyLeft = TD_CINEMATIC_FRAMES;
       else if (e.type === 'finisherCut') {

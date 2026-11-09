@@ -9,6 +9,7 @@
 import { BAR, Input, METER_MAX, canTD, fighterData, moveData, stringMoves, type FighterData, type FighterState, type FinisherData, type MatchState, type MoveData } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
 import { createRng, nextInt, type RngState } from '../sim/rng';
+import { backToWall, stageFinisher } from '../sim/finisher';
 import { propInReach } from '../sim/stage';
 import { segmentData } from '../sim/stages';
 
@@ -93,13 +94,14 @@ export class Cpu {
   }
 
   /** "Stay tuned" after it won: pick a finisher, walk into its range, enter it like a player would. */
-  private finish(me: FighterState, them: FighterState): number {
+  private finish(m: MatchState, me: FighterState, them: FighterState): number {
     if (!this.finishing) {
       const all = fighterData(me.fighter).finishers;
       const signOffs = all.filter((f) => f.kind === 'signoff');
       const pass = this.level === LEVELS.easy ? 50 : 10;
-      // Mostly a Sign-Off; now and then it shows mercy.
-      const fin = this.roll(pass) ? null : this.roll(10) ? (all.find((f) => f.kind === 'rerun') ?? null) : signOffs[nextInt(this.rng, signOffs.length)];
+      // Mostly a Sign-Off (the stage's own if they're against a wall); now and then it shows mercy.
+      const wall = backToWall(m, this.player) && this.roll(40);
+      const fin = this.roll(pass) ? null : this.roll(10) ? (all.find((f) => f.kind === 'rerun') ?? null) : wall ? stageFinisher(m.stage, me.fighter) : signOffs[nextInt(this.rng, signOffs.length)];
       this.finishing = { fin, t: 0 };
     }
     const f = this.finishing.fin;
@@ -135,7 +137,7 @@ export class Cpu {
     const me = m.fighters[this.player];
     const them = m.fighters[1 - this.player];
     this.observe(m, me, them);
-    if (m.phase === 'stayTuned' && m.matchWinner === this.player) return this.finish(me, them);
+    if (m.phase === 'stayTuned' && m.matchWinner === this.player) return this.finish(m, me, them);
     if (m.phase !== 'fight') {
       this.plan = null;
       if (m.phase === 'intro') this.finishing = null;
