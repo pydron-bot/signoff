@@ -3,7 +3,9 @@
  * the segment's rim colour, so they stand out from busy backdrops, and a
  * soft contact shadow under each that shrinks and fades as they leave the
  * floor. The rim is a few lines added to the Lambert shader with shared
- * uniforms, so changing its colour never recompiles anything.
+ * uniforms, so changing its colour never recompiles anything; the same
+ * shader bands the key light into lit, half-lit and shade, which suits the
+ * faceted models and reads at play size.
  */
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
@@ -13,7 +15,19 @@ import { toFloat } from '../sim/fixed';
 const RIM = {
   color: { value: new THREE.Color(0xbfd8ff) },
   strength: { value: 0.5 },
+  /** 0 smooth Lambert, 1 hard bands: in between keeps a little of the gradient. */
+  band: { value: 0.7 },
 };
+
+/** The key light's falloff over the surface, banded: shade, a half-lit step, lit. */
+const BANDED_LAMBERT = THREE.ShaderChunk.lights_lambert_pars_fragment.replace(
+  'float dotNL = saturate( dot( geometryNormal, directLight.direction ) );',
+  [
+    'float dotNL = saturate( dot( geometryNormal, directLight.direction ) );',
+    'float bands = 0.55 * smoothstep(0.08, 0.14, dotNL) + 0.45 * smoothstep(0.5, 0.56, dotNL);',
+    'dotNL = mix(dotNL, bands, uBand);',
+  ].join('\n'),
+);
 /** When the segment's rim light is off, a cool studio white. */
 const DEFAULT_RIM = new THREE.Color(0xbfd8ff);
 const WHITE = new THREE.Color(0xffffff);
@@ -23,8 +37,10 @@ export function addRim(mat: THREE.MeshLambertMaterial): void {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uRimColor = RIM.color;
     shader.uniforms.uRimStrength = RIM.strength;
+    shader.uniforms.uBand = RIM.band;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;\nuniform float uBand;')
+      .replace('#include <lights_lambert_pars_fragment>', BANDED_LAMBERT)
       .replace(
         '#include <opaque_fragment>',
         'float rimF = 1.0 - saturate(dot(normalize(normal), normalize(vViewPosition)));\noutgoingLight += uRimColor * (rimF * rimF * rimF * uRimStrength);\n#include <opaque_fragment>',

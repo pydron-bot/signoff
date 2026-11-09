@@ -9,6 +9,7 @@
  * fighter for the floor, as many again for the mirror.
  */
 import * as THREE from 'three';
+import { copyMeshes } from './meshCopies';
 
 /** A plane's reflection, shared by every fighter's copies of it. */
 interface Plane {
@@ -103,43 +104,7 @@ export function reflectionMaterial(src: THREE.MeshLambertMaterial, p: ReflectPla
   return m;
 }
 
-/**
- * Copies of each mesh in a fighter for one plane, sharing geometry and
- * skeleton: added beside the originals, so they move with them.
- */
-export function addReflection(model: THREE.Object3D, p: ReflectPlane, materials: Map<THREE.Material, THREE.MeshLambertMaterial>): THREE.Mesh[] {
-  const sources: THREE.Mesh[] = [];
-  model.traverse((o) => {
-    const m = o as THREE.Mesh;
-    if (m.isMesh && !m.userData.reflection) sources.push(m);
-  });
-  const copies: THREE.Mesh[] = [];
-  for (const m of sources) {
-    const src = m.material as THREE.MeshLambertMaterial;
-    let mat = materials.get(src);
-    if (!mat) {
-      mat = reflectionMaterial(src, p);
-      materials.set(src, mat);
-    }
-    let r: THREE.Mesh;
-    if ((m as THREE.SkinnedMesh).isSkinnedMesh) {
-      const s = m as THREE.SkinnedMesh;
-      const sr = new THREE.SkinnedMesh(s.geometry, mat);
-      sr.bindMode = s.bindMode;
-      sr.bind(s.skeleton, s.bindMatrix);
-      r = sr;
-    } else r = new THREE.Mesh(m.geometry, mat);
-    r.position.copy(m.position);
-    r.quaternion.copy(m.quaternion);
-    r.scale.copy(m.scale);
-    r.frustumCulled = false;
-    // After the set and the contact shadows.
-    r.renderOrder = 2;
-    r.userData.reflection = true;
-    // Until the arena shows them (the art viewer never does).
-    r.visible = false;
-    m.parent!.add(r);
-    copies.push(r);
-  }
-  return copies;
+/** Copies of each mesh in a fighter for one plane, drawn after the set and the contact shadows. */
+export function addReflection(model: THREE.Object3D, p: ReflectPlane): THREE.Mesh[] {
+  return copyMeshes(model, (src) => reflectionMaterial(src as THREE.MeshLambertMaterial, p), 2);
 }

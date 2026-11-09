@@ -14,6 +14,7 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
+import { setOutlineSize } from './render/outline';
 import { Post } from './render/post';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
@@ -559,6 +560,7 @@ function resize(): void {
   // A phone's 2x screen is drawn at 1.5x: the tape's softness hides it, and the fill it saves pays for the glow.
   const pr = renderer.getPixelRatio();
   post.setSize(w * pr, h * pr, pr >= 2 ? 0.75 : 1);
+  setOutlineSize(h * pr * post.drawScale);
   arena.resize(w, h);
 }
 window.addEventListener('resize', resize);
