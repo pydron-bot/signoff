@@ -48,6 +48,8 @@ export interface HitEffect {
   readonly hitstop?: number;
   /** Goes through armour instead of being soaked by it. */
   readonly armorBreak?: boolean;
+  /** Blocked, it breaks the guard: the defender reels (GUARD_CRUSH_STUN) instead of blocking it out. */
+  readonly guardCrush?: boolean;
 }
 
 export interface HitData extends HitEffect {
@@ -184,7 +186,7 @@ export interface FinisherData {
 }
 
 /** How the fighter plays; the CPU plays to it. */
-export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies';
+export type Style = 'zoner' | 'rushdown' | 'grappler' | 'trickster' | 'footsies' | 'midrange';
 
 export interface FighterData {
   readonly id: string;

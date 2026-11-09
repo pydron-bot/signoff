@@ -236,7 +236,8 @@ card: the loser's own show going off the air.
   camera in close, then the cut, more blows heard over it, and the card.
 - **Cancellation** (the quick finish): ending the deciding round with the
   winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
-  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking). Straight after the K.O., the
+  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking; Gus:
+  Tenderise). Straight after the K.O., the
   set switches off and the card reads CANCELLED, about 3 seconds in all.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
@@ -252,6 +253,7 @@ often lets the moment pass. Finisher inputs:
 | Hollis Bey (*The Night Watch*) | Lights Out: close, back, down, BP | End of Shift: mid, forward, down, BK |
 | Mister Mumbles (*Mumbles' Toybox*) | Peekaboo: close, back, up, FP | Exit Stage Left: far, back, forward, BK |
 | Margaret Okafor (*The Eleven O'Clock News*) | Breaking News: close, down, forward, BP | And That Was the News: mid, back, down, BK |
+| Chef Gus Lamarre (*Kitchen Live*) | Order Up: close, down, back, BP | Last Service: mid, back, forward, BK |
 
 ### The broadcast look
 
@@ -363,7 +365,8 @@ playable is the first build worth adding to the deeek.org hub.
 - [x] Is online play wanted for version 1? **Not yet:** local two-player and
       CPU. The deterministic sim keeps rollback possible later.
 - [x] Are the first two fighters right, and the first stage? **Settled in
-      practice:** five fighters (Margaret Okafor joined in 0.15.0) and two
+      practice:** six fighters (Margaret Okafor joined in 0.15.0, Chef Gus
+      Lamarre in 0.17.0) and three
       stages are in.
 - [x] Who makes the character art? **Blender**, scripted headless
       (docs/BLENDER-TODO.md), in a stylised low-poly look.

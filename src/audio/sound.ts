@@ -167,6 +167,11 @@ export class Sound {
         case 'armor':
           this.tone(300, 0.15, 0.2, 'sawtooth', 200);
           break;
+        case 'guardCrush':
+          // The guard gives: a dull crack and a cymbal.
+          this.tone(140, 0.25, 0.25, 'square', 70);
+          this.noise(0.5, 6000, 0.15, 'highpass');
+          break;
         case 'counter':
           // The teleprompter's bell: she saw it coming.
           this.tone(1320, 0.4, 0.12, 'sine');

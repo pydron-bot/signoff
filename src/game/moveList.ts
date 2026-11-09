@@ -45,6 +45,7 @@ function traits(m: MoveData): string {
   else if (m.spawns.some((s) => s.projectile.delay)) t.push('delayed projectile');
   else if (m.spawns.length) t.push('projectile');
   if (m.counter) t.push('counters strikes');
+  if (m.hits.some((h) => h.guardCrush)) t.push('crushes guard');
   if (m.hits.some((h) => h.hitstun >= 30)) t.push('staggers');
   if (m.throwData) t.push(m.throwData.untechable ? 'grab, unbreakable' : 'grab');
   const last = m.hits.at(-1);

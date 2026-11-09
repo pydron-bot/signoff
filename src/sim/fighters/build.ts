@@ -31,6 +31,7 @@ export interface EffectSpec {
   armorBreak?: boolean;
   groundBounce?: boolean;
   wallBounce?: boolean;
+  guardCrush?: boolean;
 }
 
 export interface StrikeSpec extends EffectSpec {
@@ -55,6 +56,7 @@ export function effect(s: EffectSpec): HitEffect {
     armorBreak: s.armorBreak,
     groundBounce: s.groundBounce,
     wallBounce: s.wallBounce,
+    guardCrush: s.guardCrush,
   };
 }
 

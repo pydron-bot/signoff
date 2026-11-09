@@ -3,7 +3,7 @@
  * Advantage assumes the hit connects on its first active frame: the
  * defender's stun minus the attacker's frames left after that frame.
  */
-import { SAFE_ON_BLOCK } from './constants';
+import { GUARD_CRUSH_STUN, SAFE_ON_BLOCK } from './constants';
 import type { FighterData, MoveData, StringData } from './types';
 
 export interface FrameData {
@@ -22,7 +22,8 @@ export function frameData(m: MoveData): FrameData {
     startup: m.startup,
     active: m.startup ? m.lastActive - m.startup + 1 : 0,
     recovery: m.total - m.lastActive,
-    onBlock: last && !m.spawns.length ? last.blockstun - left : null,
+    // A guard crush leaves them reeling instead of blocking.
+    onBlock: last && !m.spawns.length ? (last.guardCrush ? GUARD_CRUSH_STUN : last.blockstun) - left : null,
     onHit: last && !m.spawns.length && !last.knockdown && last.launch === undefined ? last.hitstun - left : null,
   };
 }

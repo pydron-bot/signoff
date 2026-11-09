@@ -18,7 +18,7 @@ import { PoseTracker, type Pose } from './pose';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
-const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a };
+const COLORS: Readonly<Record<string, number>> = { dale: 0x6f8fb8, rox: 0xe0559a, hollis: 0x4d5d3a, mumbles: 0xc9a06b, margaret: 0x8a3a4a, gus: 0xe8e4d8 };
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
@@ -63,6 +63,12 @@ const EFFECTS: Readonly<Record<string, Readonly<Record<string, Effect>>>> = {
   margaret: {
     'Live Feed': fx('fx_live_feed', 'projectile'),
     'Live Feed+': fx('fx_live_feed', 'projectile'),
+  },
+  gus: {
+    'Flambé': fx('fx_flambe', 'projectile'),
+    'Flambé+': fx('fx_flambe', 'projectile'),
+    'Mise en Place': fx('fx_pan', 'projectile'),
+    'Mise en Place+': fx('fx_pan', 'projectile'),
   },
 };
 /** Tape Skip's smear, shared by every fighter; it lives in Dale's GLB. */

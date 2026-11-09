@@ -310,6 +310,36 @@ export class Cpu {
         return this.trickster(me, d, s, dist, r, fwd, back);
       case 'footsies':
         return this.footsies(me, d, dist, r, fwd, back);
+      case 'midrange':
+        return this.midrange(me, d, dist, r, fwd, back);
+    }
+  }
+
+  /** Holds the space at the tip of the cleaver: long pokes, fire on the floor as they come in, pans from range, the mallet up close. */
+  private midrange(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+    if (dist < fx(1.05)) {
+      if (r < 35) this.start(this.string(d, me));
+      else if (r < 50) this.start(this.special(me, SPECIAL));
+      else if (r < 60) this.start(tap(THROW));
+      else if (r < 75) this.start(tap(back | BP));
+      else this.start(hold(back, 14));
+    } else if (dist < fx(1.9)) {
+      if (r < 22) this.start(tap(BK));
+      else if (r < 38) this.start(tap(BP));
+      else if (r < 50) this.start(tap(DOWN | FK));
+      else if (r < 60) this.start(this.special(me, DOWN | SPECIAL));
+      else if (r < 72) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 82) this.start(tap(back | BP));
+      else this.start(hold(back, 10));
+    } else if (dist > fx(2.6)) {
+      if (r < 40) this.start(this.special(me, back | SPECIAL));
+      else if (r < 75) this.start(hold(fwd, 16));
+      else this.start(hold(0, 10));
+    } else {
+      if (r < 30) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 50) this.start(this.special(me, back | SPECIAL));
+      else if (r < 80) this.start(hold(fwd, 8));
+      else this.start(hold(back, 8));
     }
   }
 

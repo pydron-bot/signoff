@@ -104,6 +104,15 @@ export const ENDINGS: Readonly<Record<string, { title: string; lines: readonly s
       'THE PROGRAMME DIRECTOR: "Stay on script, Margaret. Mine."',
     ],
   },
+  gus: {
+    title: 'KITCHEN LIVE: THE FINAL COURSE',
+    lines: [
+      'Chef Gus Lamarre cooks for the whole city now, every night, in one take.',
+      'Nobody remembers ordering. Everybody finishes their plate.',
+      'The kitchen never closes. The oven is never turned off. Neither is the camera.',
+      'THE PROGRAMME DIRECTOR: "Another course, Gus. They\'re still hungry."',
+    ],
+  },
   mumbles: {
     title: 'MISTER MUMBLES\' VERY OWN HOUR',
     lines: [

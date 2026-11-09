@@ -16,6 +16,8 @@ export type SimEvent =
   /** A juggled body popped back up: a boosted special (relaunch), the floor or the wall. */
   | { type: 'relaunch'; player: number; how: 'special' | 'ground' | 'wall'; x: Fx; y: Fx }
   | { type: 'armor'; player: number; move: string }
+  /** A blocked hit broke the guard: the defender reels, open to a follow-up. */
+  | { type: 'guardCrush'; attacker: number; defender: number; move: string; x: Fx; y: Fx }
   /** A counter read the opponent's strike (`move`) and answers it. */
   | { type: 'counter'; player: number; move: string }
   | { type: 'special'; player: number; move: string }
