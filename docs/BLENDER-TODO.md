@@ -252,6 +252,7 @@ are authored facing right with the left foot and left hand leading.
 > 6. ~~**Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price**~~ *done (Nov 9): `gus.glb` and `gideon.glb`.*
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
+> 9. **Step 22, hit reactions (Nov 9, new; do this first).** Nine new state clips for all seven fighters, so a jab to the face, a heavy gut punch and a sweep stop looking the same. Generated in `lib/anim.py` like `hit_high` and `hit_low`.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -862,6 +863,120 @@ reference: `git show origin/art/dale-hd-experiment:blender/experiments/dale_hd/<
 - [ ] Body up to about 8,000 triangles (16 D), effects as now. Keep every shape key and `fx_*` mesh, the heights against the hurtboxes, every strike in its hitbox and the juggle-box checks.
 - [ ] Dale first: compare him with the experiment in the viewer's FACE view, then the rest. Gus and Gideon are built to this standard from the start.
 
+### 22. Hit reactions (Nov 9, game side)
+
+Today every hit on a standing fighter plays `hit_high` (or `hit_low` when
+crouching or hit low): a jab to the face, a gut punch and a heavy Nightstick
+all look the same. The game now knows where each hit lands and how hard
+(hit weight, 0.31.0: light, medium, heavy, ender), so it can pick a
+reaction that matches. Nine new state clips for **all seven fighters**,
+generated in `lib/anim.py` next to `hit_high` and `hit_low` (keep those two:
+the game falls back to them).
+
+**How the game picks** (`src/render/pose.ts`, game side; until a clip is in
+a GLB the game plays the fallback in the last column):
+
+| Clip | Frames | When the game plays it | Falls back to |
+| --- | --- | --- | --- |
+| `hit_head` | 12 | A light or medium hit landing high (contact at 75% of the fighter's standing height or above) | `hit_high` |
+| `hit_head_2` | 12 | The same, on the next hit of a combo: the game alternates the two, so a string doesn't replay one jolt | `hit_high` |
+| `hit_head_heavy` | 18 | A heavy hit or a counter hit landing high | `hit_high` |
+| `hit_body` | 12 | A light or medium hit to the body (between 40% and 75%) | `hit_high` |
+| `hit_body_2` | 12 | The alternate, as for `hit_head_2` | `hit_high` |
+| `hit_body_heavy` | 18 | A heavy hit or a counter hit to the body | `hit_high` |
+| `hit_legs` | 12 | A low hit (or contact below 40%) on a standing fighter | `hit_low` |
+| `hit_crouch` | 12 | Any hit on a crouching fighter | `hit_low` |
+| `stagger` | 30 | A long stun, 26 frames or more, whatever the height: a crushed guard (Tenderise), Margaret's Breaking (36), the Nightstick, the Flashlight, the Isobar Lasso | `hit_high` |
+
+Launches, knockdowns and bounces don't use these (they're `launched`, the
+juggle reactions, `down` and `ko`).
+
+**How they're played** (the same as `hit_high` today):
+
+- The game restarts the clip on every hit and **holds the last frame** for
+  the rest of the stun, which is 12 to 24 frames for most hits. In a string,
+  the next hit often comes 8 to 14 frames later, so **the first 4 frames
+  carry the read**: peak by frame 3 (light) or 4 (heavy), then ease.
+- End each clip about halfway back toward `idle`, not all the way: it's
+  held, and the fighter is still reeling until the stun ends (it cuts to
+  `idle` or `block_*` then).
+- **No `root` translation.** The game slides the body back by the hit's
+  push. Feet stay planted: a heel may lift, and `hit_head_heavy` and
+  `stagger` may shuffle the rear foot back a little, inside the idle
+  stance's footprint.
+- They follow the hit: the attacker is always in front (+x), so the head
+  goes back and away (−x), never toward the attacker.
+- Hands splay and the jaw knocks open with the `hurt` shape as `hit_high`
+  does (the `jolt` dict). A prop in hand (Dale's pointer, Margaret's script,
+  Gus's cleaver, Gideon's Bible, Hollis's keys) stays in that hand.
+
+**Key poses** (angles as in `hit_high`: degrees, at the peak frame; scaled
+by the fighter's stance `k` like the existing hits):
+
+- [ ] **`hit_head`**: the jab to the face. Head snapped back 35° and turned
+  20° away from the camera, neck 15° back, chest back 10° and turned with
+  it; the lead hand flies up and open, the rear hand drops. Peak frame 3,
+  half back by 12.
+- [ ] **`hit_head_2`**: the mirror read: head snapped back 30° and turned
+  20° *toward* the camera, the chest twisting the other way, the rear hand
+  up. Same timing. The two should look like left and right hooks landing.
+- [ ] **`hit_head_heavy`**: the big one. Head whipped back 50° and turned
+  30°, neck 25° back, chest 25° back and twisted 25°, the hips pushed
+  forward and back arched, both arms flung back and wide; the rear foot
+  slides back about 0.15 m and the lead heel lifts. Peak frame 4, hold to 8
+  (the hit's freeze is 11 frames), eased to 60% by 18.
+- [ ] **`hit_body`**: a punch to the ribs. Chest knocked back 12° and
+  folded 10° at the waist, head forward 10° (it follows the fold), a hand
+  coming in to the ribs on the side that was hit (lead side), knees giving
+  slightly (hips down 0.04 m). Peak frame 3.
+- [ ] **`hit_body_2`**: the other side: the twist reversed, the rear hand to
+  the ribs, the shoulders dipping the other way. Same timing.
+- [ ] **`hit_body_heavy`**: doubled over. Folded 45° at the waist (spine 20°,
+  chest 30°), head down 20°, both arms clutched in to the gut, knees bent
+  (hips down 0.12 m), the jaw wide (`jaw` 0.9). Peak frame 4, held to 10,
+  still bent 25° at 18.
+- [ ] **`hit_legs`**: a shin or a knee taken out. The lead knee buckles (the
+  lead leg bent 35° more, its heel up), hips drop 0.08 m and tip toward the
+  lead side, the torso pitches forward 15° and the arms swing out for
+  balance. Peak frame 3.
+- [ ] **`hit_crouch`**: hit while crouched: stay crouched (inside the
+  crouching hurtbox on every frame, as `crouch_idle` is checked), head and
+  shoulders knocked back 20°, the rear hand dropping to the floor to catch
+  the weight. Peak frame 3.
+- [ ] **`stagger`**: reeling. Frames 1–4 a heavy jolt (as `hit_head_heavy`'s
+  peak, a bit less), then a stumble back: two short steps (rear foot, lead
+  foot) by frame 20, arms loose and low, head lolling, torso half turned
+  away; frames 20–30 wobbling on the spot, about to fall. The game holds
+  frame 30 for stuns longer than 30 frames (Breaking is 36), so frame 30
+  should hold well: off balance, arms down.
+
+**Per fighter** (a multiplier on the angles above, and a touch of flavour):
+
+| Fighter | Amount | Flavour |
+| --- | --- | --- |
+| Dale | 1.0 | The smile stays on under the `hurt` shape; the quiff and tie swing (they're `x_*` bones) |
+| Rox | 1.1 | Springy: overshoots a little and snaps back faster (half back by frame 9) |
+| Hollis | 0.7 | A big man: moves least, the head barely turns on light hits, the keys jangle |
+| Mumbles | 1.4 | A puppet: floppy, limbs swing loose past the pose and settle; the head lolls on its neck; the jaw drops right open |
+| Margaret | 0.9 | Composed: the script stays clutched to her chest, the head goes but the shoulders stay square |
+| Gus | 0.85 | Heavy, the toque tips; the cleaver hand swings out wide |
+| Gideon | 1.0 | The Bible goes up as if for protection on `hit_head` / `hit_head_heavy`; theatrical on `stagger` (an arm thrown out) |
+
+**Checks and budget**
+
+- [ ] Exact frame counts (`tests/assets.test.ts` knows the nine names and
+  their lengths) and no `root` translation.
+- [ ] `hit_crouch` inside the crouching hurtbox; the standing ones' heads no
+  more than 0.1 m above the standing hurtbox (they lean back, not up).
+- [ ] **The 2 MB limit.** Dale is at 1.87 MB and nine clips are a lot more
+  keys. Key the poses only (the build's key thinning keeps channels that
+  hold still at two keys), keep the spring bones as they are, and share the
+  `_2` clips' structure with the first. If a GLB still can't fit, note it in
+  Feedback rather than raising the limit; the game can drop `hit_head_2` and
+  `hit_body_2` first.
+- [ ] Review in the art viewer (`/tools/viewer/?f=<id>`) at play size, and
+  run `npx -y -p playwright@1.63.0 node tools/art-check.mjs`.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -879,7 +994,14 @@ Loop where noted; lengths are suggestions unless given.
 | `dash` | Dale 16, Rox 14 | Exactly these |
 | `tape_skip` | 10 | Exactly 10: the Tape Skip dash (0.11 m a frame), low and leaning |
 | `backdash` | Dale 20, Rox 18 | Exactly these |
-| `hit_high`, `hit_low` | 12 | Played and held for however long the stun lasts |
+| `hit_high`, `hit_low` | 12 | Played and held for however long the stun lasts; the fallbacks for the reactions below |
+| `hit_head`, `hit_head_2` | 12 | A light or medium hit to the head; the game alternates the two (step 22) |
+| `hit_head_heavy` | 18 | A heavy or counter hit to the head (step 22) |
+| `hit_body`, `hit_body_2` | 12 | A light or medium hit to the body; alternated (step 22) |
+| `hit_body_heavy` | 18 | A heavy or counter hit to the body: doubled over (step 22) |
+| `hit_legs` | 12 | A low hit on a standing fighter (step 22) |
+| `hit_crouch` | 12 | Any hit on a crouching fighter (step 22) |
+| `stagger` | 30 | A stun of 26 frames or more: reeling back (step 22) |
 | `launched` | 40, hold | Flat on the back in the juggle box from frame 6, turning slightly (step 12) |
 | `down` | 30 | Lying on the floor; exactly 30 |
 | `getup` | 20 | Exactly 20 |
