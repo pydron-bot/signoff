@@ -5,7 +5,9 @@
  * one last shader puts it on screen as a tape would: sharp brightness with
  * the colour smeared sideways, a tracking tear and a colour split on big
  * hits, the glow, a highlight roll-off, the segment's grade, a vignette, a little
- * grain and the flash of an impact frame. The scan lines stay in CSS so they
+ * grain and the flash of an impact frame. On the title, the picture is a CRT
+ * in a dark room at 3:33 a.m. (the tube's bulge, its bezel, its glow on the
+ * dark), and starting a match pushes in through the glass. The scan lines stay in CSS so they
  * cover the HUD too. About 9 draw calls, all full-screen and most of them
  * small. Nothing here allocates per frame.
  */
@@ -105,6 +107,7 @@ uniform vec3 uGain;
 uniform float uSaturation;
 uniform float uContrast;
 uniform float uGrain;
+uniform float uCrt;
 varying vec2 vUv;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
@@ -112,6 +115,17 @@ float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.54
 
 void main() {
   vec2 uv = vUv;
+  // The title's TV: the picture shrunk onto a bulging tube with rounded corners; d is the distance outside its glass.
+  float d = -1.0;
+  float crt = uCrt * uCrt * (3.0 - 2.0 * uCrt);
+  if (crt > 0.0) {
+    vec2 p = (vUv - 0.5) / mix(1.0, 0.64, crt);
+    p *= 1.0 + 0.18 * crt * dot(p, p);
+    float r = 0.07 * crt;
+    vec2 q = abs(p) - (0.5 - r);
+    d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+    uv = clamp(p + 0.5, 0.0, 1.0);
+  }
   // The tape's tracking: each line pulled sideways a little, more in a band that rolls down the picture.
   float line = floor(uv.y * 240.0);
   float frame = floor(uTime * 30.0);
@@ -158,10 +172,22 @@ void main() {
     col = mix(col, vec3(1.0 - k) * vec3(1.0, 0.92, 0.95), uImpact);
   }
 
-  vec2 d = vUv - 0.5;
-  col *= 1.0 - dot(d, d) * (0.55 + 0.35 * uVhs);
+  vec2 vig = vUv - 0.5;
+  col *= 1.0 - dot(vig, vig) * (0.55 + 0.35 * uVhs);
   col += (hash2(vUv * 913.0 + frame) - 0.5) * uGrain;
   col *= uDim;
+
+  if (crt > 0.0) {
+    // Past the glass: a black plastic bezel catching a little light, then the dark room lit by the screen.
+    vec2 c = vUv - 0.5;
+    float flicker = 0.85 + 0.15 * hash(floor(uTime * 12.0));
+    vec3 room = vec3(0.05, 0.07, 0.13) * flicker * exp(-max(d, 0.0) * 7.0) * (1.0 - dot(c, c) * 1.2);
+    vec3 bezel = vec3(0.035) + vec3(0.05) * smoothstep(0.03, 0.0, abs(d - 0.012));
+    vec3 outside = mix(bezel, max(room, 0.0), smoothstep(0.03, 0.045, d));
+    col = mix(col, outside, crt * smoothstep(-0.002, 0.002, d));
+    // The glass: a soft highlight across the top.
+    col += vec3(0.05) * crt * smoothstep(0.0, -0.3, c.y - 0.25) * (1.0 - smoothstep(-0.002, 0.002, d)) * smoothstep(0.35, 0.1, abs(c.x));
+  }
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
   #include <colorspace_fragment>
@@ -188,6 +214,8 @@ export class Post {
   dim = 1;
   /** Scales the grade's saturation (the title's demo is washed out). */
   saturation = 1;
+  /** The title's TV, 0 off to 1: the picture on a CRT in a dark room. */
+  crt = 0;
   /** Grain flickers each frame; Reduce Motion keeps it still. */
   stillGrain = false;
   /** The segment's colour grade: the arena's, which the stage sets. */
@@ -240,6 +268,7 @@ export class Post {
         uSaturation: { value: 1 },
         uContrast: { value: 1 },
         uGrain: { value: 0.02 },
+        uCrt: { value: 0 },
       },
     });
   }
@@ -313,6 +342,7 @@ export class Post {
     u.uSplit.value = this.split * 0.006;
     u.uImpact.value = this.impact;
     u.uDim.value = this.dim;
+    u.uCrt.value = this.crt;
     // The chain adds four levels together.
     u.uBloom.value = g.bloom / LEVELS;
     (u.uLift.value as THREE.Vector3).set(...g.lift);

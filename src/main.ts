@@ -573,6 +573,7 @@ startDemo();
 post.compileScene(arena.scene, arena.camera);
 post.compile();
 
+let lastFrame = 0;
 renderer.setAnimationLoop((now) => {
   let stepped = 0;
   for (const k of menuPresses()) {
@@ -636,8 +637,13 @@ renderer.setAnimationLoop((now) => {
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
   const title = document.body.dataset.scene === 'title';
-  post.dim = title ? 0.45 : powerOn(m);
-  post.saturation = title ? 0.7 : 1;
+  // The title's TV: settles in, and a match starting pushes in through the glass (cut with Reduce Motion).
+  const dt = Math.min(0.1, (now - lastFrame) / 1000);
+  lastFrame = now;
+  if (reducedMotion(settings, systemReduceMotion)) post.crt = title ? 1 : 0;
+  else post.crt = title ? Math.min(1, post.crt + dt / 0.5) : Math.max(0, post.crt - dt / 0.55);
+  post.dim = title ? 0.8 : powerOn(m);
+  post.saturation = title ? 0.85 : 1;
   post.tear = glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
