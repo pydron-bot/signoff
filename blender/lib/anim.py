@@ -284,11 +284,19 @@ class Stance:
     # juggle hurtbox) slides it into the box. tuck: how far the knees come up.
     tuck = 0.8
     juggle_shift = (0.0, 0.0)
+    # Each juggle reaction key pose's own slide into the box (fighter.fit_reactions).
+    react_shift = {}
 
     def aloft(self, spin=0.0):
-        k, tk = self.k, self.tuck
-        pose = self.base(drop=0).but(
-            root={"offset": (0, 0, 0), "turn": (-90, spin, 0)},
+        df, du = self.juggle_shift
+        return shifted(self.aloft_raw(spin), (0, df, du))
+
+    def aloft_raw(self, spin=0.0, pitch=-90.0, tuck=None):
+        """The aloft pose before it's slid into the box; `pitch` tips the
+        whole body (−90 is flat on the back), `tuck` brings the knees up."""
+        k, tk = self.k, self.tuck if tuck is None else tuck
+        return self.base(drop=0).but(
+            root={"offset": (0, 0, 0), "turn": (pitch, spin, 0)},
             hips={"offset": (0, 0, 0), "turn": (-10, 0, 0)}, spine=(8, 0, 0), chest=(16, 0, 0), neck=(14, 0, 0), head=(20, 0, 0),
             shoulder_L=(16, 0, 0), shoulder_R=(16, 0, 0),
             foot_L={"pos": self.s((0.12, 0.2 + 0.1 * tk, 0.1 + 0.6 * tk)), "turn": (-30, 0, 0)},
@@ -296,8 +304,96 @@ class Stance:
             knee_L=self.s((0.14, 0.9, 0.7)), knee_R=self.s((-0.14, 0.9, 0.7)),
             hand_L={"pos": self.s((0.5, 0.18, 1.3)), "aim": (0.8, 0.4, 0.4)}, hand_R={"pos": self.s((-0.5, 0.25, 1.25)), "aim": (-0.8, 0.5, 0.3)},
         ).shaped(hurt=1.0, jaw=0.5, fist_L=0.0, fist_R=0.0, open_L=1.0, open_R=1.0)
-        df, du = self.juggle_shift
+
+    # The juggle reactions (step 16 B): key poses by name, before sliding
+    # into the box. They start and end on launched's held pose ("held").
+    # Keyed every frame (with each key slid back to the box's middle), so the
+    # body turns about its own centre, not its feet.
+    # Angles wrapped to ±180 (a pose blend works on the numbers).
+    TUMBLE = [(f, (-90 - 360 * (f - 1) / 13 + 180) % 360 - 180) for f in range(2, 15)]
+    UNFOLD = (0.25, 0.5, 0.75, 0.9)
+
+    def reaction_poses(self):
+        k = self.k
+        held = self.aloft_raw(14)
+        hurt = {"hurt": 1.0, "jaw": 0.7, "fist_L": 0.0, "fist_R": 0.0, "open_L": 1.0, "open_R": 1.0}
+        out = {"held": held}
+        # Jolted: snapped further back and folded at the waist, limbs flung.
+        out["jolt"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-100, 20, 0)}, spine=(12, 0, 0), chest=(22, 0, 0), neck=(14, 0, 0), head=(24, 0, 0),
+            shoulder_L=(22, 0, 0), shoulder_R=(22, 0, 0),
+            hand_L={"pos": self.s((0.66, 0.12, 1.28)), "aim": (0.9, 0.1, 0.3)}, hand_R={"pos": self.s((-0.66, 0.14, 1.26)), "aim": (-0.9, 0.1, 0.3)},
+            foot_L={"pos": self.s((0.26, 0.3, 0.6)), "turn": (-40, 0, 0)}, foot_R={"pos": self.s((-0.26, 0.32, 0.56)), "turn": (-30, 0, 0)},
+            knee_L=self.s((0.26, 0.9, 0.8)), knee_R=self.s((-0.26, 0.9, 0.75))).shaped(**hurt)
+        # Tucked into a ball for the tumble: knees to the chest, hands on the shins.
+        ball = self.aloft_raw(0, tuck=1.0).but(
+            hips={"offset": (0, 0, 0), "turn": (40, 0, 0)}, spine=(74, 0, 0), chest=(104, 0, 0), neck=(140, 0, 0), head=(165, 0, 0),
+            shoulder_L=(104, 0, 0), shoulder_R=(104, 0, 0),
+            foot_L={"pos": self.s((0.12, 0.3, 0.72)), "turn": (-70, 0, 0)}, foot_R={"pos": self.s((-0.12, 0.28, 0.7)), "turn": (-70, 0, 0)},
+            knee_L=self.s((0.13, 0.7, 1.4)), knee_R=self.s((-0.13, 0.7, 1.4)),
+            hand_L={"pos": self.s((0.17, 0.36, 1.0)), "aim": (0, 0.1, -1)}, hand_R={"pos": self.s((-0.17, 0.34, 0.98)), "aim": (0, 0.1, -1)}).shaped(**hurt)
+        for i, (_, pitch) in enumerate(self.TUMBLE):
+            out[f"tumble{i}"] = ball.but(root={"offset": (0, 0, 0), "turn": (pitch, 0, 0)})
+        # Opening out of the ball into the held pose, each step re-centred.
+        for i, t in enumerate(self.UNFOLD):
+            out[f"unfold{i}"] = lerp_pose(out[f"tumble{len(self.TUMBLE) - 1}"], held, t).shaped(**hurt)
+        # Driven into the floor: spread flat, back arched.
+        out["spread"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-92, 6, 0)}, spine=(-8, 0, 0), chest=(-14, 0, 0), neck=(-10, 0, 0), head=(-16, 0, 0),
+            shoulder_L=(-14, 0, 0), shoulder_R=(-14, 0, 0),
+            hand_L={"pos": self.s((0.72, -0.05, 1.28)), "aim": (1, -0.2, 0.1)}, hand_R={"pos": self.s((-0.72, -0.05, 1.26)), "aim": (-1, -0.2, 0.1)},
+            foot_L={"pos": self.s((0.32, 0.12, 0.55)), "turn": (-30, 0, 0)}, foot_R={"pos": self.s((-0.32, 0.1, 0.56)), "turn": (-30, 0, 0)},
+            knee_L=self.s((0.34, 0.8, 0.8)), knee_R=self.s((-0.34, 0.8, 0.8))).shaped(**hurt)
+        # Crumpled on impact, then bent up off the floor, knees and arms up.
+        out["crumple"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-88, 4, 0)}, spine=(-4, 0, 0), chest=(-8, 0, 0), head=(-10, 0, 0),
+            hand_L={"pos": self.s((0.42, 0.0, 1.2)), "aim": (0.6, -0.2, -0.6)}, hand_R={"pos": self.s((-0.42, 0.0, 1.18)), "aim": (-0.6, -0.2, -0.6)},
+            foot_L={"pos": self.s((0.18, 0.2, 0.55)), "turn": (-30, 0, 0)}, foot_R={"pos": self.s((-0.18, 0.16, 0.52)), "turn": (-30, 0, 0)},
+            knee_L=self.s((0.2, 0.8, 0.8)), knee_R=self.s((-0.2, 0.8, 0.8))).shaped(**{**hurt, "jaw": 0.9})
+        out["vee"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-94, 10, 0)}, spine=(18, 0, 0), chest=(30, 0, 0), neck=(16, 0, 0), head=(20, 0, 0),
+            shoulder_L=(30, 0, 0), shoulder_R=(30, 0, 0),
+            hand_L={"pos": self.s((0.38, 0.5, 1.22)), "aim": (0.3, 0.9, 0.2)}, hand_R={"pos": self.s((-0.38, 0.48, 1.2)), "aim": (-0.3, 0.9, 0.2)},
+            foot_L={"pos": self.s((0.14, 0.42, 0.66)), "turn": (-60, 0, 0)}, foot_R={"pos": self.s((-0.14, 0.4, 0.62)), "turn": (-60, 0, 0)},
+            knee_L=self.s((0.16, 0.9, 1.0)), knee_R=self.s((-0.16, 0.9, 1.0))).shaped(**hurt)
+        # Off the wall (behind, head first): pressed flat to it, arms flung
+        # back against it, then peeling forward off it.
+        out["splat"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-80, 0, 0)}, spine=(-10, 0, 0), chest=(-18, 0, 0), neck=(-12, 0, 0), head=(-16, 0, 0),
+            shoulder_L=(-18, 0, 0), shoulder_R=(-18, 0, 0),
+            hand_L={"pos": self.s((0.62, -0.08, 1.5)), "aim": (0.6, -0.3, 0.6)}, hand_R={"pos": self.s((-0.62, -0.08, 1.48)), "aim": (-0.6, -0.3, 0.6)},
+            foot_L={"pos": self.s((0.24, 0.16, 0.55)), "turn": (-30, 0, 0)}, foot_R={"pos": self.s((-0.24, 0.14, 0.56)), "turn": (-30, 0, 0)},
+            knee_L=self.s((0.26, 0.8, 0.8)), knee_R=self.s((-0.26, 0.8, 0.8))).shaped(**{**hurt, "ko": 0.4})
+        out["peel"] = held.but(
+            root={"offset": (0, 0, 0), "turn": (-100, 8, 0)}, spine=(22, 0, 0), chest=(34, 0, 0), neck=(16, 0, 0), head=(24, 0, 0),
+            shoulder_L=(34, 0, 0), shoulder_R=(34, 0, 0),
+            hand_L={"pos": self.s((0.4, 0.4, 1.1)), "aim": (0.4, 0.6, -0.6)}, hand_R={"pos": self.s((-0.4, 0.38, 1.08)), "aim": (-0.4, 0.6, -0.6)}).shaped(**hurt)
+        return out
+
+    react_blend = {}
+
+    def reacted(self, name):
+        """A reaction key pose fitted to the box (fighter.fit_reactions): blended
+        toward the held pose if it had to be, and slid to the box's middle."""
+        poses = self.reaction_poses()
+        pose = poses[name]
+        if name in self.react_blend:
+            pose = lerp_pose(pose, poses["held"], self.react_blend[name]).shaped(**pose.parts.get("shapes", {}))
+        df, du = self.react_shift.get(name, self.juggle_shift)
         return shifted(pose, (0, df, du))
+
+    def reactions(self):
+        """{clip: (frames, [(frame, pose)])}: the five juggle reactions."""
+        R = {n: self.reacted(n) for n in self.reaction_poses()}
+        held = R["held"]
+        tumble = [(f, R[f"tumble{i}"]) for i, (f, _) in enumerate(self.TUMBLE)]
+        return {
+            "juggle_hit": (12, [(1, held), (3, R["jolt"]), (6, lerp_pose(R["jolt"], held, 0.4)), (12, held)]),
+            "relaunch": (20, [(1, held)] + tumble + [(15 + i, R[f"unfold{i}"]) for i in range(len(self.UNFOLD))] + [(20, held)]),
+            "slam": (8, [(1, held), (3, R["spread"]), (6, R["spread"]), (8, held)]),
+            "floor_bounce": (16, [(1, R["crumple"]), (2, R["crumple"]), (6, R["vee"]), (10, lerp_pose(R["vee"], held, 0.5)), (16, held)]),
+            "wall_splat": (20, [(1, R["splat"]), (4, R["splat"]), (10, R["peel"]), (15, lerp_pose(R["peel"], held, 0.6)), (20, held)]),
+        }
 
     def block(self, crouching=False):
         """Forearms up in front of the face (or the body, crouching)."""
@@ -425,6 +521,9 @@ def state_clips(rig, st, data):
     # Launched: tipped flat on the back by frame 6, inside the juggle
     # hurtbox, then held there turning slowly (the game holds the last frame).
     clip("launched", 40, [(1, hit_high), (6, st.aloft()), (40, st.aloft(14))])
+    # The juggle reactions (step 16 B): each from and back to launched's held pose.
+    for name, (frames, keys) in st.reactions().items():
+        clip(name, frames, keys)
     flat = flat.shaped(hurt=0.7, jaw=0.3, fist_L=0.1, fist_R=0.1, open_L=0.5, open_R=0.5)
     clip("down", 30, [(1, flat), (30, flat.but(head=(4, 6, 0)))])
     sit = base.but(root={"offset": (0, 0.1 * k, 0), "turn": (-25, 0, 0)}, hips={"offset": (0, 0, -0.5 * k), "turn": (0, 0, 0)},

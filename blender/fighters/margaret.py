@@ -127,9 +127,15 @@ def costume(p, b):
     # The slim skirt: the thighs are skirt-coloured to the knee, and a panel
     # between them makes it one skirt (it stays on the hips when she kicks).
     legs(p, b, {**c, "bottom": SUIT}, shin=TIGHTS, shoe_h=0.075, paint=pinstripe, cuffs=False)
+    def with_thighs(q):
+        # The panel follows the thighs as it goes down (half each), so it folds
+        # with them when she kicks or tucks.
+        t = min(1.0, max(0.0, (0.94 * k - q[2]) / (0.36 * k)))
+        return {"hips": 1 - t, "thigh.L": t / 2, "thigh.R": t / 2} if t > 0 else {"hips": 1.0}
+
     p.hull("skirt", [b.p(x, f, u) for x in (-0.11, 0.11) for u, f in ((0.94, -0.085), (0.94, 0.09), (0.58, -0.13), (0.58, 0.13))]
-           + [b.p(x, 0.0, 0.76) for x in (-0.15, 0.15)], SUIT, "hips", paint=pinstripe)
-    p.hull("skirt_hem", [b.p(x, f, u) for u in (0.575, 0.6) for x in (-0.115, 0.115) for f in (-0.135, 0.135)], LAPEL, "hips", paint=lit)
+           + [b.p(x, 0.0, 0.76) for x in (-0.15, 0.15)], SUIT, "hips", paint=pinstripe, weigh=with_thighs)
+    p.hull("skirt_hem", [b.p(x, f, u) for u in (0.575, 0.6) for x in (-0.115, 0.115) for f in (-0.135, 0.135)], LAPEL, "hips", paint=lit, weigh=with_thighs)
 
     # The script: a sheaf of pages in her lead hand, fluttering on x_pages.
     wr, a, w, L, _ = grip(b, "L")
