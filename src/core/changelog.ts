@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.25.0',
+    date: '2026-11-09',
+    title: 'How to do it',
+    notes: [
+      'Combo guides in the move list: every fighter has a bread-and-butter combo without meter, and most have a one-bar or full-meter combo too, written out press by press with the hits and damage it does. A … before a press means wait for them to fall first.',
+      'WATCH plays a guide: your fighter performs it on a standing opponent, over and over, with the presses along the top and the one just made in brackets. Slow it to half or quarter speed from the pause menu. WATCH is on the move list from the title screen and in Training.',
+      'Every guide is a real combo with forgiving timing: each press still works a couple of frames early or late.',
+    ],
+  },
+  {
     version: '0.24.0',
     date: '2026-11-09',
     title: 'Knuckles',

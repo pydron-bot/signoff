@@ -19,7 +19,10 @@ export class MoveListPanel {
   private fighters: string[] = [];
   private index = 0;
   private frames = false;
+  private canWatch = false;
   onClose: () => void = () => {};
+  /** Plays a combo guide: the fighter and the guide's index. */
+  onWatch: (fighter: string, guide: number) => void = () => {};
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
@@ -44,11 +47,12 @@ export class MoveListPanel {
     return !this.root.hidden;
   }
 
-  /** Shows the moves of `fighters[first]`; left/right go through the others. */
-  show(fighters: string[], first: number, frames: boolean): void {
+  /** Shows the moves of `fighters[first]`; left/right go through the others. `watch` offers to play the combo guides. */
+  show(fighters: string[], first: number, frames: boolean, watch = false): void {
     this.fighters = fighters;
     this.index = first;
     this.frames = frames;
+    this.canWatch = watch;
     this.root.hidden = false;
     this.paint();
   }
@@ -82,7 +86,19 @@ export class MoveListPanel {
       for (const r of s.rows) {
         const row = document.createElement('div');
         row.className = 'movelist-row';
-        row.append(cell('movelist-name', r.name), cell('movelist-input', r.input), cell('movelist-notes', this.frames && r.frames ? `${r.notes}\n${r.frames}` : r.notes));
+        // A combo's second line names its moves; a move's is its frame data (training only).
+        const notes = r.frames && (r.watch !== undefined || this.frames) ? `${r.notes}\n${r.frames}` : r.notes;
+        row.append(cell('movelist-name', r.name), cell('movelist-input', r.input), cell('movelist-notes', notes));
+        if (r.watch !== undefined) row.classList.add('combo');
+        if (r.watch !== undefined && this.canWatch) {
+          const k = r.watch;
+          const watch = button('▶ WATCH', () => {
+            this.root.hidden = true;
+            this.onWatch(id, k);
+          });
+          watch.classList.add('movelist-watch');
+          row.querySelector('.movelist-name')!.append(watch);
+        }
         this.body.append(row);
       }
     }

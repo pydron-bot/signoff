@@ -2,23 +2,22 @@
 // simulation allows from a point-blank hit, with no meter, one bar and three
 // bars, found by a beam search over every normal, special and boosted special
 // at every useful timing. It fails if any fighter goes over the damage
-// ceilings, and writes the routes to docs/COMBOS.md. Slow (about a minute), so
-// it runs only on request: `npm run combos`.
+// ceilings, and writes the routes to docs/COMBOS.md. Slow (a few minutes), so
+// it runs only on request: `npm run combos`. `npm run combos:guides` also
+// writes the human routes as the move list's combo guides
+// (src/game/comboRoutes.ts).
 import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { BAR, FIGHTERS, Input, createMatch, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
-import { fx } from '../src/sim/fixed';
+import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, guideStart, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
+import { BAR, FIGHTERS, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
 
-const { DOWN, LEFT, RIGHT, SPECIAL, FP, BP, FK, BK } = Input;
 const RUN = process.env.COMBOS === '1';
-/** Everyone is measured against the same opponent. */
-const DUMMY = 'rox';
-/** The most a combo may take, as % of the dummy's health: no meter, one bar, three bars. */
-export const CEILING = { 0: 33, 1: 42, 3: 52 } as const;
+const GUIDES = process.env.GUIDES === '1';
+const CEILING = DAMAGE_CEILING;
 
-const BUTTONS = { FP, BP, FK, BK } as const;
-/** Presses relative to the moment chosen: [frames later, bits]. */
-type Press = (fwd: number, back: number) => [number, number][];
+const BUTTONS = ['FP', 'BP', 'FK', 'BK'] as const;
+/** Presses relative to the moment chosen: [frames later, press] (see pressBits). */
+type Press = [number, string][];
 const DELAYS = [0, 2, 4, 6, 8, 10, 12, 14, 17, 20, 24, 28, 33, 40];
 const BEAM = 12;
 const DEPTH = 30;
@@ -26,15 +25,15 @@ const DEPTH = 30;
 function actions(id: string, meter: boolean): Press[] {
   const f = FIGHTERS[id];
   const out: Press[] = [];
-  for (const [b, bit] of Object.entries(BUTTONS)) {
-    out.push(() => [[0, bit]], () => [[0, DOWN | bit]]);
-    if (b in f.normals.f) out.push((fw) => [[0, fw | bit]]);
-    if (b in f.normals.b) out.push((_fw, bk) => [[0, bk | bit]]);
+  for (const b of BUTTONS) {
+    out.push([[0, b]], [[0, `d ${b}`]]);
+    if (b in f.normals.f) out.push([[0, `f ${b}`]]);
+    if (b in f.normals.b) out.push([[0, `b ${b}`]]);
   }
   for (const [d, mv] of Object.entries(f.specials)) {
-    const dir = (fw: number, bk: number) => (d === 'f' ? fw : d === 'b' ? bk : d === 'd' ? DOWN : 0);
-    out.push((fw, bk) => [[0, dir(fw, bk) | SPECIAL]]);
-    if (meter && f.moves[mv as string]?.boost) out.push((fw, bk) => [[0, dir(fw, bk) | SPECIAL], [3, SPECIAL]]);
+    const sp = d === 'n' ? 'SP' : `${d} SP`;
+    out.push([[0, sp]]);
+    if (meter && f.moves[mv as string]?.boost) out.push([[0, sp], [3, 'SP']]);
   }
   return out;
 }
@@ -43,8 +42,8 @@ interface Node {
   m: MatchState;
   dmg: number;
   moves: string[];
-  /** Every press so far: [frame from the start, bits]. */
-  inputs: [number, number][];
+  /** Every press so far: [frame from the start, press]. */
+  inputs: [number, string][];
   t: number;
   combo: number;
 }
@@ -53,14 +52,13 @@ interface Node {
 function expand(n: Node, press: Press, delay: number): Node | null {
   const m = saveMatch(n.m);
   const a = m.fighters[0];
-  const fw = a.facing === 1 ? RIGHT : LEFT;
-  const bk = a.facing === 1 ? LEFT : RIGHT;
-  const at = new Map(press(fw, bk).map(([o, bits]) => [delay + o, bits]));
-  const inputs: [number, number][] = [...n.inputs, ...[...at].map(([t, bits]): [number, number] => [n.t + t, bits])];
+  const at = new Map(press.map(([o, p]) => [delay + o, p]));
+  const inputs: [number, string][] = [...n.inputs, ...[...at].map(([t, p]): [number, string] => [n.t + t, p])];
   const ev: SimEvent[] = [];
   for (let t = 0; t < 140; t++) {
     ev.length = 0;
-    step(m, at.get(t) ?? 0, 0, ev);
+    const p = at.get(t);
+    step(m, p ? pressBits(p, a.facing) : 0, 0, ev);
     for (const e of ev) {
       if (e.type !== 'hit' || e.attacker !== 0) continue;
       if (e.combo !== n.combo + 1) return null;
@@ -71,28 +69,21 @@ function expand(n: Node, press: Press, delay: number): Node | null {
   return null;
 }
 
+/** The guide's start, with no K.O. to cut a combo short. */
 function start(id: string, bars: number): MatchState {
-  const m = createMatch({ p1: id, p2: DUMMY, stage: 'weather', seed: 1, studio: true });
-  const ev: SimEvent[] = [];
-  while (m.phase !== 'fight') step(m, 0, 0, ev);
-  const [a, b] = m.fighters;
-  a.x = fx(-0.4);
-  b.x = fx(0.4);
-  a.meter = bars * BAR;
-  // No bar for the first hit, and no K.O. to cut a combo short.
-  m.firstHit = true;
-  b.health = b.maxHealth = 1_000_000;
+  const m = guideStart(id, bars);
+  m.fighters[1].health = m.fighters[1].maxHealth = 1_000_000;
   return m;
 }
 
 /** For the human-safe search: every press must also work this many frames early and late. */
-const SLACK = 2;
+const SLACK = 3;
 
 /**
  * The best route. With `safe`, only presses a person can make reliably: the
  * same hit must follow when the press comes SLACK frames early or late.
  */
-function best(id: string, bars: number, safe = false): Node {
+function best(id: string, bars: number, safe = false, pool: Node[] = []): Node {
   let frontier: Node[] = [{ m: start(id, bars), dmg: 0, moves: [], inputs: [], t: 0, combo: 0 }];
   let top = frontier[0];
   for (let d = 0; d < DEPTH && frontier.length; d++) {
@@ -107,6 +98,7 @@ function best(id: string, bars: number, safe = false): Node {
             if (delay < SLACK || !same(expand(n, press, delay - SLACK)) || !same(expand(n, press, delay + SLACK))) continue;
           }
           if (c.dmg > top.dmg) top = c;
+          if (safe) pool.push(c);
           const f = c.m.fighters;
           const key = `${c.moves.join('|')}#${f[0].meter}${f[1].groundBounced}${f[1].wallBounced}`;
           const prev = kids.get(key);
@@ -119,20 +111,49 @@ function best(id: string, bars: number, safe = false): Node {
   return top;
 }
 
-/** Plays presses from the start; the hits of the combo that follows. */
-function replay(id: string, bars: number, inputs: readonly [number, number][]): number {
-  const m = start(id, bars);
-  const at = new Map<number, number>();
-  for (const [t, bits] of inputs) at.set(t, (at.get(t) ?? 0) | bits);
-  const ev: SimEvent[] = [];
-  let hits = 0;
-  for (let t = 0; t < 900; t++) {
-    ev.length = 0;
-    step(m, at.get(t) ?? 0, 0, ev);
-    for (const e of ev) if (e.type === 'hit' && e.attacker === 0) hits = e.combo === hits + 1 ? hits + 1 : -1000;
-  }
-  return hits;
+/** Plays presses from the start as a guide; the hits of the combo that follows (and its damage, in `dealt`), or -1 if it broke. */
+function replay(id: string, bars: number, inputs: readonly [number, string][], dealt = { dmg: 0 }): number {
+  const r = runGuide(id, { name: '', bars, presses: inputs });
+  dealt.dmg = r.pct;
+  return r.unbroken ? r.hits : -1;
 }
+
+/** Drops presses that change nothing (a button pressed while a multi-hit special plays out), last first. */
+function prune(id: string, bars: number, inputs: readonly [number, string][]): [number, string][] {
+  const want = { dmg: 0 };
+  const hits = replay(id, bars, inputs, want);
+  let out = [...inputs];
+  for (let k = out.length - 1; k > 0; k--) {
+    const without = out.filter((_, i) => i !== k);
+    const got = { dmg: 0 };
+    if (replay(id, bars, without, got) === hits && got.dmg === want.dmg) out = without;
+  }
+  return out;
+}
+
+/** Whether every press after the first still gives the whole combo when it, and everything after it, comes 2 frames early or late. */
+function forgiving(id: string, bars: number, inputs: readonly [number, string][]): boolean {
+  const hits = replay(id, bars, inputs);
+  return inputs.every(([t, p], k) => {
+    if (k === 0 || (p === 'SP' && t - inputs[k - 1][0] <= 3)) return true;
+    return [-2, 2].every((d) => replay(id, bars, inputs.map(([u, q], i): [number, string] => [i >= k ? u + d : u, q])) === hits);
+  });
+}
+
+/** The most damaging route in the pool that is forgiving, its idle presses dropped. */
+function humanRoute(id: string, bars: number, pool: Node[]): Node | null {
+  const seen = new Set<string>();
+  const sorted = pool.sort((x, y) => y.dmg - x.dmg);
+  for (const n of sorted.slice(0, 400)) {
+    const key = n.moves.join('|');
+    if (seen.has(key) || n.moves.length < 4) continue;
+    seen.add(key);
+    const inputs = prune(id, bars, n.inputs);
+    if (forgiving(id, bars, inputs)) return { ...n, inputs };
+  }
+  return null;
+}
+
 
 /**
  * How forgiving each press is: the frames it can move (earlier or later,
@@ -147,13 +168,13 @@ function tightest(id: string, bars: number, b: Node): { frames: number; at: numb
   const groups: number[][] = [];
   b.inputs.forEach(([t, bits], k) => {
     const prev = groups.at(-1);
-    if (prev && bits === SPECIAL && t - b.inputs[prev[0]][0] <= 3) prev.push(k);
+    if (prev && bits === 'SP' && t - b.inputs[prev[0]][0] <= 3) prev.push(k);
     else groups.push([k]);
   });
   groups.forEach((g, gi) => {
     // The opener is the anchor: everything else is timed from it.
     if (gi === 0) return;
-    const ok = (shift: number) => replay(id, bars, b.inputs.map(([t, bits], k): [number, number] => [g.includes(k) ? t + shift : t, bits])) >= want;
+    const ok = (shift: number) => replay(id, bars, b.inputs.map(([t, p], k): [number, string] => [g.includes(k) ? t + shift : t, p])) >= want;
     let lo = 0;
     while (lo > -20 && ok(lo - 1)) lo--;
     let hi = 0;
@@ -178,9 +199,14 @@ function route(moves: readonly string[]): string {
   return parts.join(' › ');
 }
 
+const GUIDE_NAMES: Record<number, string> = { 0: 'Bread and butter', 1: 'One bar', 3: 'Full meter' };
+const guideDamage = new Map<ComboGuide, number>();
+const FIGHTER_ORDER = Object.keys(FIGHTERS);
+
 describe.skipIf(!RUN)('combo search (npm run combos)', () => {
   const health = FIGHTERS[DUMMY].health;
   const rows: string[] = [];
+  const guides: Record<string, ComboGuide[]> = {};
   for (const f of Object.values(FIGHTERS)) {
     for (const bars of [0, 1, 3] as const) {
       it(`${f.name}, ${bars} bar${bars === 1 ? '' : 's'}: under ${CEILING[bars]}%`, () => {
@@ -189,14 +215,39 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
           rows.push(`| ${f.name} | ${bars} | ${label} | ${b.moves.length} | ${((b.dmg * 100) / health).toFixed(1)}% | ${w.frames === Infinity ? '–' : w.frames} | ${route(b.moves)} |`);
         };
         const b = best(f.id, bars);
-        const h = best(f.id, bars, true);
+        const pool: Node[] = [];
+        const top = best(f.id, bars, true, pool);
+        // The human route: forgiving at every press; the guides are these.
+        const human = humanRoute(f.id, bars, pool);
+        const h = human ?? top;
         row(b, 'frame-perfect');
-        row(h, 'human');
+        row(h, human ? 'human' : 'human (none forgiving)');
+        // The human routes are the guides. One with meter only if it spends some (a boost: Special
+        // again just after one) and does clearly more than the guide before it.
+        const list = (guides[f.id] ??= []);
+        const boosts = h.inputs.some(([t, p], k) => k > 0 && p === 'SP' && t - h.inputs[k - 1][0] <= 3);
+        const before = list.length ? (guideDamage.get(list[list.length - 1]) ?? 0) : 0;
+        if (bars === 0) expect(human, 'a forgiving meterless route').not.toBeNull();
+        if (human && (bars === 0 || (boosts && h.dmg > before + 30))) {
+          const g: ComboGuide = { name: GUIDE_NAMES[bars], bars, presses: h.inputs };
+          guideDamage.set(g, h.dmg);
+          list.push(g);
+        }
         // The search is a beam, not every route, so either can come out ahead.
         expect((Math.max(b.dmg, h.dmg) * 100) / health).toBeLessThanOrEqual(CEILING[bars]);
       }, 120_000);
     }
   }
+  it.skipIf(!GUIDES)('writes src/game/comboRoutes.ts', () => {
+    const press = (p: readonly [number, string]) => `[${p[0]}, '${p[1]}']`;
+    const body = FIGHTER_ORDER.filter((id) => guides[id])
+      .map((id) => `  ${id}: [\n${guides[id].map((g) => `    { name: '${g.name}', bars: ${g.bars}, presses: [${g.presses.map(press).join(', ')}] },`).join('\n')}\n  ],`)
+      .join('\n');
+    writeFileSync(
+      'src/game/comboRoutes.ts',
+      `// Written by \`npm run combos:guides\` (tests/combo-search.test.ts); do not edit by hand.\nimport type { ComboGuide } from './comboGuides';\n\nexport const COMBO_ROUTES: Readonly<Record<string, readonly ComboGuide[]>> = {\n${body}\n};\n`,
+    );
+  });
   it('writes docs/COMBOS.md', () => {
     writeFileSync(
       'docs/COMBOS.md',

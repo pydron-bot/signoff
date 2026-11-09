@@ -127,6 +127,9 @@ meter. Every number below is a starting value to tune.
   special). A **launcher** or a **bounce** that hits can be cancelled into any
   normal, to follow them into the air. Tape Skip (1 bar) cancels anything into
   a dash, which is how strings join up.
+- **Combo guides.** The move list shows each fighter's combos (no meter,
+  one bar, full meter), found by searching the simulation for routes a
+  person can land, and WATCH plays one on a loop, slowed down if you like.
 - Combos aim at the length of a modern Mortal Kombat combo, 10 or more hits
   and about 30% without meter, 35 to 40% with a bar, without assists:
   - **Juggles wind down on their own.** No hard limit: each juggle hit pops

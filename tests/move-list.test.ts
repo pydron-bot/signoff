@@ -16,6 +16,14 @@ describe('move list', () => {
       expect(section('Finishers').map((r) => r.name).sort()).toEqual(f.finishers.map((x) => x.name).sort());
       for (const r of section('Finishers')) expect(r.input).toMatch(/^([←→↑↓] )+(FP|BP|FK|BK|BLOCK)$|^win with /);
       for (const s of list) for (const r of s.rows) expect(r.input.length).toBeGreaterThan(0);
+      // Each combo guide, written as presses, with the game able to play it.
+      const combos = section('Combos');
+      expect(combos.length).toBeGreaterThanOrEqual(1);
+      combos.forEach((r, k) => {
+        expect(r.input).toMatch(/^…?[↓→←]?(FP|BP|FK|BK|SP)( SP)?( › …?[↓→←]?(FP|BP|FK|BK|SP)( SP)?)+$/);
+        expect(r.notes).toMatch(/^\d+ hits · \d+% · (no meter|\d bars?)$/);
+        expect(r.watch).toBe(k);
+      });
     });
   }
 });
