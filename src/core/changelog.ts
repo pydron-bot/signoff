@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.28.0',
+    date: '2026-11-09',
+    title: 'Two taps',
+    notes: [
+      'Boosting is much easier. Double-tap Special and the special comes out boosted, even in a combo, where the special waits for your hit to land before it starts (both taps used to have to come after it started, so a quick double tap never worked there). Let go of the direction between taps if you like: the second tap keeps the first one\'s direction.',
+      'On touch, tap the meter just after Special to boost it, as the controls always said. In a combo that used to Tape Skip your punch away instead.',
+      'More combo guides: five or six for every fighter, each from a different way in (your jab, a low, your overhead, a punish with your launcher, then one bar and a full meter) and mostly ending on different moves.',
+      'In the guides, "wait" before a press means let them fall a little first; it used to be a "…" that could end up on the line before its press.',
+    ],
+  },
+  {
     version: '0.27.0',
     date: '2026-11-09',
     title: 'Can I Get an Amen',

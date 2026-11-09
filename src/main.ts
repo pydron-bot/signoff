@@ -504,7 +504,7 @@ function showcaseCaption(s: Session): string {
   const k = s.guideStep;
   if (k !== caption.step) {
     const steps = s.guideRun!.steps;
-    const presses = steps.map((st, i) => (i === k ? `[${st.input}]` : st.input)).join(' › ');
+    const presses = steps.map((st, i) => (st.wait ? 'wait ' : '') + (i === k ? `[${st.input}]` : st.input)).join(' › ');
     caption = { step: k, text: `${presses}${k >= 0 ? ` · ${steps[k].move}` : ''} · Esc menu` };
   }
   return caption.text;

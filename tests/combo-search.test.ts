@@ -3,9 +3,8 @@
 // bars, found by a beam search over every normal, special and boosted special
 // at every useful timing. It fails if any fighter goes over the damage
 // ceilings, and writes the routes to docs/COMBOS.md. Slow (a few minutes), so
-// it runs only on request: `npm run combos`. `npm run combos:guides` also
-// writes the human routes as the move list's combo guides
-// (src/game/comboRoutes.ts).
+// it runs only on request: `npm run combos`. `npm run combos:guides` writes
+// the move list's combo guides instead (src/game/comboRoutes.ts).
 import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, guideStart, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
@@ -83,13 +82,14 @@ const SLACK = 3;
  * The best route. With `safe`, only presses a person can make reliably: the
  * same hit must follow when the press comes SLACK frames early or late.
  */
-function best(id: string, bars: number, safe = false, pool: Node[] = []): Node {
+function best(id: string, bars: number, safe = false, pool: Node[] = [], openers?: readonly string[]): Node {
   let frontier: Node[] = [{ m: start(id, bars), dmg: 0, moves: [], inputs: [], t: 0, combo: 0 }];
   let top = frontier[0];
   for (let d = 0; d < DEPTH && frontier.length; d++) {
     const kids = new Map<string, Node>();
     for (const n of frontier) {
-      for (const press of actions(id, n.m.fighters[0].meter >= BAR && bars > 0)) {
+      const acts = d === 0 && openers ? openers.map((p): Press => [[0, p]]) : actions(id, n.m.fighters[0].meter >= BAR && bars > 0);
+      for (const press of acts) {
         for (const delay of d === 0 ? [0] : DELAYS) {
           const c = expand(n, press, delay);
           if (!c) continue;
@@ -140,18 +140,48 @@ function forgiving(id: string, bars: number, inputs: readonly [number, string][]
   });
 }
 
-/** The most damaging route in the pool that is forgiving, its idle presses dropped. */
-function humanRoute(id: string, bars: number, pool: Node[]): Node | null {
+/**
+ * The most damaging route in the pool that is forgiving, its idle presses
+ * dropped. With `avoid`, one ending on another move is preferred while it
+ * does at least 80% of the best.
+ */
+function humanRoute(id: string, bars: number, pool: Node[], avoid: ReadonlySet<string> = new Set(), keep?: (n: Node) => boolean, minHits = 3): Node | null {
   const seen = new Set<string>();
+  const timings = new Map<string, number>();
   const sorted = pool.sort((x, y) => y.dmg - x.dmg);
-  for (const n of sorted.slice(0, 400)) {
-    const key = n.moves.join('|');
-    if (seen.has(key) || n.moves.length < 4) continue;
+  let first: Node | null = null;
+  let checked = 0;
+  for (const n of sorted.slice(0, 4000)) {
+    // The same moves at other timings are other candidates (one may be forgiving where another isn't), a few of each.
+    const key = n.inputs.map(([t, p]) => `${t}${p}`).join('|');
+    const moves = n.moves.join('|');
+    if (seen.has(key) || (timings.get(moves) ?? 0) >= 4 || n.moves.length < minHits || (keep && !keep(n))) continue;
+    if (first && n.dmg < first.dmg * 0.8) break;
     seen.add(key);
+    timings.set(moves, (timings.get(moves) ?? 0) + 1);
+    if (++checked > 300) break;
     const inputs = prune(id, bars, n.inputs);
-    if (forgiving(id, bars, inputs)) return { ...n, inputs };
+    if (!forgiving(id, bars, inputs)) continue;
+    const found = { ...n, inputs };
+    if (!avoid.has(n.moves[n.moves.length - 1])) return found;
+    first ??= found;
   }
-  return null;
+  return first;
+}
+
+/** A boost: Special again just after one. */
+const boosts = (inputs: readonly [number, string][]) => inputs.some(([t, p], k) => k > 0 && p === 'SP' && t - inputs[k - 1][0] <= 3);
+
+/** The press for each way into a combo: the jab, the crouching low, the command overhead, and the launcher as a punish. */
+function openers(id: string): { jab: string; low: string; overhead: string | null; punish: string } {
+  const f = FIGHTERS[id];
+  let overhead: string | null = null;
+  for (const side of ['f', 'b'] as const) {
+    for (const [btn, mv] of Object.entries(f.normals[side])) {
+      if (!overhead && mv && f.moves[mv].hits[0]?.height === 'overhead') overhead = `${side} ${btn}`;
+    }
+  }
+  return { jab: 'FP', low: 'd FK', overhead, punish: 'd BP' };
 }
 
 
@@ -199,14 +229,11 @@ function route(moves: readonly string[]): string {
   return parts.join(' › ');
 }
 
-const GUIDE_NAMES: Record<number, string> = { 0: 'Bread and butter', 1: 'One bar', 3: 'Full meter' };
-const guideDamage = new Map<ComboGuide, number>();
 const FIGHTER_ORDER = Object.keys(FIGHTERS);
 
 describe.skipIf(!RUN)('combo search (npm run combos)', () => {
   const health = FIGHTERS[DUMMY].health;
   const rows: string[] = [];
-  const guides: Record<string, ComboGuide[]> = {};
   for (const f of Object.values(FIGHTERS)) {
     for (const bars of [0, 1, 3] as const) {
       it(`${f.name}, ${bars} bar${bars === 1 ? '' : 's'}: under ${CEILING[bars]}%`, () => {
@@ -217,28 +244,65 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
         const b = best(f.id, bars);
         const pool: Node[] = [];
         const top = best(f.id, bars, true, pool);
-        // The human route: forgiving at every press; the guides are these.
+        // The human route: forgiving at every press.
         const human = humanRoute(f.id, bars, pool);
         const h = human ?? top;
         row(b, 'frame-perfect');
         row(h, human ? 'human' : 'human (none forgiving)');
-        // The human routes are the guides. One with meter only if it spends some (a boost: Special
-        // again just after one) and does clearly more than the guide before it.
-        const list = (guides[f.id] ??= []);
-        const boosts = h.inputs.some(([t, p], k) => k > 0 && p === 'SP' && t - h.inputs[k - 1][0] <= 3);
-        const before = list.length ? (guideDamage.get(list[list.length - 1]) ?? 0) : 0;
-        if (bars === 0) expect(human, 'a forgiving meterless route').not.toBeNull();
-        if (human && (bars === 0 || (boosts && h.dmg > before + 30))) {
-          const g: ComboGuide = { name: GUIDE_NAMES[bars], bars, presses: h.inputs };
-          guideDamage.set(g, h.dmg);
-          list.push(g);
-        }
         // The search is a beam, not every route, so either can come out ahead.
         expect((Math.max(b.dmg, h.dmg) * 100) / health).toBeLessThanOrEqual(CEILING[bars]);
       }, 120_000);
     }
   }
-  it.skipIf(!GUIDES)('writes src/game/comboRoutes.ts', () => {
+  it('writes docs/COMBOS.md', () => {
+    writeFileSync(
+      'docs/COMBOS.md',
+      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name} (${health} health), with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener still gives the whole combo 2 frames early or late, everything after it moved too, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
+    );
+  });
+});
+
+/**
+ * The move list's guides, for each fighter: the best forgiving combo from
+ * each way in (jab, low, overhead, a punish with the launcher), then one bar
+ * and a full meter from any of those (kept only if they boost and do clearly
+ * more). Each prefers a finisher the ones before it haven't used.
+ */
+describe.skipIf(!GUIDES)('combo guides (npm run combos:guides)', () => {
+  const guides: Record<string, ComboGuide[]> = {};
+  for (const f of Object.values(FIGHTERS)) {
+    it(`${f.name}: at least five guides, each its own way in or out`, () => {
+      const o = openers(f.id);
+      const starts = [o.jab, o.low, ...(o.overhead ? [o.overhead] : []), o.punish];
+      const plan: { name: string; bars: number; from: string[] }[] = [
+        { name: 'From your jab', bars: 0, from: [o.jab] },
+        { name: 'From a low', bars: 0, from: [o.low] },
+        ...(o.overhead ? [{ name: 'From your overhead', bars: 0, from: [o.overhead] }] : []),
+        { name: 'Punish', bars: 0, from: [o.punish] },
+        { name: 'One bar', bars: 1, from: starts },
+        { name: 'Full meter', bars: 3, from: starts },
+      ];
+      const list: ComboGuide[] = (guides[f.id] = []);
+      const enders = new Set<string>();
+      let meterless = 0;
+      let lastMetered = 0;
+      for (const g of plan) {
+        const pool: Node[] = [];
+        best(f.id, g.bars, true, pool, g.from);
+        // Meter has to buy something: a boost, more than any guide without it, and a full meter clearly more than one bar.
+        const keep = g.bars ? (n: Node) => boosts(n.inputs) && n.dmg > meterless && n.dmg > lastMetered + 30 : undefined;
+        // A confirm into a special (two hits) is a combo worth knowing from a low or an overhead.
+        const h = humanRoute(f.id, g.bars, pool, enders, keep, 2);
+        if (!h) continue;
+        enders.add(h.moves[h.moves.length - 1]);
+        if (g.bars) lastMetered = h.dmg;
+        else meterless = Math.max(meterless, h.dmg);
+        list.push({ name: g.name, bars: g.bars, presses: h.inputs });
+      }
+      expect(list.length).toBeGreaterThanOrEqual(5);
+    }, 600_000);
+  }
+  it('writes src/game/comboRoutes.ts', () => {
     const press = (p: readonly [number, string]) => `[${p[0]}, '${p[1]}']`;
     const body = FIGHTER_ORDER.filter((id) => guides[id])
       .map((id) => `  ${id}: [\n${guides[id].map((g) => `    { name: '${g.name}', bars: ${g.bars}, presses: [${g.presses.map(press).join(', ')}] },`).join('\n')}\n  ],`)
@@ -246,12 +310,6 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
     writeFileSync(
       'src/game/comboRoutes.ts',
       `// Written by \`npm run combos:guides\` (tests/combo-search.test.ts); do not edit by hand.\nimport type { ComboGuide } from './comboGuides';\n\nexport const COMBO_ROUTES: Readonly<Record<string, readonly ComboGuide[]>> = {\n${body}\n};\n`,
-    );
-  });
-  it('writes docs/COMBOS.md', () => {
-    writeFileSync(
-      'docs/COMBOS.md',
-      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name} (${health} health), with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener must also give the same hit 2 frames early and 2 late, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
     );
   });
 });

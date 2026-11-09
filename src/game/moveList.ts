@@ -4,7 +4,7 @@
  * normals, the system moves and the finishers. Directions are written for a
  * fighter facing right (→ is forward). No DOM here.
  */
-import { BOOST_WINDOW, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
+import { BOOST_TAP, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
 import { guides, runGuide } from './comboGuides';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
@@ -91,7 +91,8 @@ export function comboRows(fighter: string): MoveRow[] {
     const meter = g.bars ? `${g.bars} bar${g.bars > 1 ? 's' : ''}` : 'no meter';
     return {
       name: g.name,
-      input: r.steps.map((s) => `${s.wait ? '…' : ''}${s.input}`).join(' › '),
+      // Non-breaking spaces inside a step, so "wait BP" or "↓SP SP" never splits across lines.
+      input: r.steps.map((s) => `${s.wait ? 'wait ' : ''}${s.input}`.replaceAll(' ', '\u00a0')).join(' › '),
       notes: `${r.hits} hits · ${Math.round(r.pct)}% · ${meter}`,
       frames: r.steps.map((s) => s.move).join(' › '),
       watch: k,
@@ -138,7 +139,7 @@ export function moveList(fighter: string): MoveSection[] {
 
   const system: MoveRow[] = [
     { name: 'Throw', input: 'THROW (← THROW: throw backward)', notes: 'break it with THROW', frames: '' },
-    { name: 'Boost', input: 'SP again', notes: `within ${BOOST_WINDOW} frames of a special: 1 bar; on a juggled opponent it relaunches them (as often as you have bars)`, frames: '' },
+    { name: 'Boost', input: 'SP SP (or SP, METER)', notes: `a quick double tap (within ${BOOST_TAP} frames, keep the direction from the first): 1 bar; on a juggled opponent it relaunches them (as often as you have bars)`, frames: '' },
     { name: 'Tape Skip', input: 'METER during any move', notes: 'cancels it into a dash: 1 bar', frames: '' },
     { name: 'Cut Away', input: 'METER while being hit', notes: 'breaks the combo: needs a full meter and spends all of it, once a round', frames: '' },
     { name: 'Technical Difficulties', input: 'BLOCK + SP', notes: `under ${TD_HEALTH_PCT}% health, once a match`, frames: '' },
@@ -147,7 +148,7 @@ export function moveList(fighter: string): MoveSection[] {
   return [
     { title: 'Specials', rows: specials },
     { title: 'Strings', rows: strings },
-    { title: 'Combos (point blank, … = let them fall first)', rows: comboRows(fighter) },
+    { title: 'Combos (from point blank; wait = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },
     { title: 'Finishers (after the deciding round)', rows: f.finishers.map(finisherRow) },

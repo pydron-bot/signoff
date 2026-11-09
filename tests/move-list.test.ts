@@ -20,7 +20,7 @@ describe('move list', () => {
       const combos = section('Combos');
       expect(combos.length).toBeGreaterThanOrEqual(1);
       combos.forEach((r, k) => {
-        expect(r.input).toMatch(/^…?[↓→←]?(FP|BP|FK|BK|SP)( SP)?( › …?[↓→←]?(FP|BP|FK|BK|SP)( SP)?)+$/);
+        expect(r.input).toMatch(/^(wait\u00a0)?[↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?( › (wait\u00a0)?[↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?)+$/);
         expect(r.notes).toMatch(/^\d+ hits · \d+% · (no meter|\d bars?)$/);
         expect(r.watch).toBe(k);
       });
