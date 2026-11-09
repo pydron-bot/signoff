@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.36.0',
+    date: '2026-11-09',
+    title: 'Big Finish',
+    notes: [
+      'Specials, launchers and combo enders have more showmanship: a wind-up before, the whole body stretching into the blow, and a follow-through after. Boosted specials go bigger still, sinking lower into the swing.',
+      "A fighter left dazed before a Sign-Off is properly pitiful now: slumped, arms hanging, knees buckling as they sway.",
+    ],
+  },
+  {
     version: '0.35.0',
     date: '2026-11-09',
     title: 'Sharp Dressed',
