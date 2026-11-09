@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.23.0',
+    date: '2026-11-09',
+    title: 'Standards and Practices',
+    notes: [
+      'Launchers now only launch from the ground. On someone already in the air, a crouching Back Punch is one more juggle hit, so it can no longer be repeated up and down the screen; combos go through strings, bounces and specials instead.',
+      'Using the same move again in a combo now does much less damage each time: 60% of its usual damage the second time, 36% the third, on top of the usual scaling. A boosted special counts as the same move as the plain one, and a multi-hit move counts once.',
+      "A relaunch's bonus damage now scales with the combo like any other hit.",
+      "The longer a combo goes on, the less Signal it earns the attacker, so a combo can no longer pay for its own boosted specials. Taking a combo still fills the defender's meter at the full rate.",
+      "Rox, Hollis and Mumbles hit a little less hard, in line with everyone else. Rox: her launcher, Power Punch, Jazzercise, Leg Lift, the kick strings, Step Touch, Cool-Down, the Lariat, the last kick of Count of Eight and the boosted Star Jump and Grapevine. Hollis: the boosted Night Shift and Flashlight. Mumbles: the boosted Knock-Knock, Strings Attached and Hand Puppet.",
+    ],
+  },
+  {
     version: '0.22.0',
     date: '2026-11-09',
     title: 'Live from the kitchen, and a word from our sponsor',

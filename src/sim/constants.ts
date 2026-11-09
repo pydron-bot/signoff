@@ -40,6 +40,11 @@ export const COUNTER_READ_STOP = 12;
 /** Each further hit in a combo does 10% less, down to 30%. */
 export const SCALE_STEP = 10;
 export const SCALE_MIN = 30;
+/** Each earlier use of the same move in a combo keeps only this % of its damage again, so repeating a move soon isn't worth it. */
+export const REPEAT_KEEP = 60;
+/** The attacker's meter gain falls this % per hit of a combo, down to METER_SCALE_MIN %, so a combo can't pay for its own relaunches. */
+export const METER_SCALE_STEP = 15;
+export const METER_SCALE_MIN = 10;
 /** A safety net: juggles end on their own long before this (see JUGGLE_DECAY). */
 export const MAX_JUGGLE = 16;
 export const JUGGLE_POP = fx(0.1);
@@ -50,7 +55,7 @@ export const JUGGLE_POP_MIN = 30;
 export const JUGGLE_GRAVITY = 6;
 /** A boosted special that hits a juggled body pops it back up (no decay), as often as there's meter for; the faster fall still ends it. */
 export const RELAUNCH_VY = fx(0.15);
-/** The bar is worth it: a relaunch adds this much damage, unscaled. */
+/** The bar is worth it: a relaunch adds this much damage, scaled like the hit itself (combo and repeat scaling). */
 export const RELAUNCH_DAMAGE = 70;
 /** Relaunched, the body goes straight up this far in front of the attacker, so a follow-up reaches. */
 export const RELAUNCH_PULL = fx(0.7);

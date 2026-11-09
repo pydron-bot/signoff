@@ -151,6 +151,7 @@ export function startFinisher(m: MatchState, i: number, id: string, ev: SimEvent
   // Finished: whatever the script does, they stay down once they fall.
   l.ko = true;
   l.combo = 0;
+  l.comboMoves.length = 0;
   ev.push({ type: 'finisher', player: i, id, kind: fin.kind });
 }
 

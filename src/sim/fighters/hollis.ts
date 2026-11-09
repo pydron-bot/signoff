@@ -69,7 +69,7 @@ const moves = table(
     name: 'Flashlight (boosted)',
     kind: 'special',
     total: 37,
-    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.9, 1.8], damage: 70, hitstun: 40, blockstun: 22, armorBreak: true })],
+    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.9, 1.8], damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
   }),
   move('Key Ring', {
     name: 'Key Ring',
@@ -103,7 +103,7 @@ const moves = table(
     total: 39,
     armor: [1, 22],
     motion: [{ frames: [4, 18], vx: 0.09 }],
-    hits: [strike({ frames: [16, 19], reach: [0.1, 1.1], at: [0.6, 1.6], damage: 110, hitstun: 0, blockstun: 18, knockdown: true, push: 0.08 })],
+    hits: [strike({ frames: [16, 19], reach: [0.1, 1.1], at: [0.6, 1.6], damage: 70, hitstun: 0, blockstun: 18, knockdown: true, push: 0.08 })],
   }),
   throwMove(130),
   interactMove(),
