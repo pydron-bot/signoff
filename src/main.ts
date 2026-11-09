@@ -104,6 +104,7 @@ function applySettings(): void {
   glitch.censorLevel = settings.censor;
   glitch.vhs = settings.vhs;
   post.vhs = VHS_AMOUNT[settings.vhs];
+  arena.tape = VHS_AMOUNT[settings.vhs];
   post.stillGrain = rm;
   document.body.dataset.vhs = String(settings.vhs);
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);

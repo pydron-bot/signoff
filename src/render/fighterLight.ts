@@ -28,22 +28,61 @@ const BANDED_LAMBERT = THREE.ShaderChunk.lights_lambert_pars_fragment.replace(
     'dotNL = mix(dotNL, bands, uBand);',
   ].join('\n'),
 );
+/** Shared by every fighter material: the clock the signal damage flickers by, and how much tape there is (VHS LOOK). */
+const SIGNAL = {
+  time: { value: 0 },
+  tape: { value: 1 },
+};
+
+/**
+ * Signal damage (src/render/wear.ts): bands of the body drop out to snow
+ * as the tape would, the colour comes apart at their edges, specks of snow,
+ * and the picture under it goes dull and dark, like a bruise. The share of
+ * bands that drop out grows with the wear. With the tape off only the
+ * dulling is left.
+ */
+const SIGNAL_DAMAGE = [
+  'if (uWear > 0.001) {',
+  '  float bandY = vViewPosition.y * 13.0 + uSigTime * 2.5;',
+  '  float band = floor(bandY);',
+  '  float h = fract(sin(band * 12.9898 + floor(uSigTime * 7.0) * 4.1) * 43758.5453);',
+  '  float drop = step(1.0 - uWear * 0.4, h) * uSigTape;',
+  '  float n = fract(sin(dot(gl_FragCoord.xy + floor(uSigTime * 30.0) * 17.0, vec2(12.9898, 78.233))) * 43758.5453);',
+  '  float grey = dot(outgoingLight, vec3(0.299, 0.587, 0.114));',
+  '  outgoingLight = mix(outgoingLight, vec3(grey) * 0.8, uWear * 0.4);',
+  '  outgoingLight = mix(outgoingLight, vec3(0.15 + 0.75 * n) * (0.4 + grey), drop * 0.7);',
+  '  float edge = fract(bandY);',
+  '  outgoingLight += vec3(-0.1, 0.05, 0.16) * (uWear * uSigTape * step(0.82, edge) * step(0.5, h));',
+  '  outgoingLight += vec3(step(1.0 - uWear * 0.025, n) * 0.7 * uSigTape);',
+  '}',
+].join('\n');
+
+/** The signal damage's clock (seconds; hold it still for Reduce Motion) and the tape amount (0 to 1). */
+export function setSignal(time: number, tape: number): void {
+  SIGNAL.time.value = time;
+  SIGNAL.tape.value = tape;
+}
+
 /** When the segment's rim light is off, a cool studio white. */
 const DEFAULT_RIM = new THREE.Color(0xbfd8ff);
 const WHITE = new THREE.Color(0xffffff);
 
 /** Adds the rim to a fighter's material: brighter where the surface turns away from the camera. */
-export function addRim(mat: THREE.MeshLambertMaterial): void {
+export function addRim(mat: THREE.MeshLambertMaterial, wear: { value: number } = { value: 0 }): void {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uRimColor = RIM.color;
     shader.uniforms.uRimStrength = RIM.strength;
     shader.uniforms.uBand = RIM.band;
+    // The fighter's own signal damage; the clock and tape amount are everyone's.
+    shader.uniforms.uWear = wear;
+    shader.uniforms.uSigTime = SIGNAL.time;
+    shader.uniforms.uSigTape = SIGNAL.tape;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;\nuniform float uBand;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;\nuniform float uBand;\nuniform float uWear;\nuniform float uSigTime;\nuniform float uSigTape;')
       .replace('#include <lights_lambert_pars_fragment>', BANDED_LAMBERT)
       .replace(
         '#include <opaque_fragment>',
-        'float rimF = 1.0 - saturate(dot(normalize(normal), normalize(vViewPosition)));\noutgoingLight += uRimColor * (rimF * rimF * rimF * uRimStrength);\n#include <opaque_fragment>',
+        `float rimF = 1.0 - saturate(dot(normalize(normal), normalize(vViewPosition)));\noutgoingLight += uRimColor * (rimF * rimF * rimF * uRimStrength);\n${SIGNAL_DAMAGE}\n#include <opaque_fragment>`,
       );
   };
   mat.customProgramCacheKey = () => 'signoff-rim';

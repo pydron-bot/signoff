@@ -97,6 +97,8 @@ export class FighterModel {
   private clip = '';
   private frame = -1;
   private tint = -1;
+  /** This copy's signal damage, shared by its materials' shaders. */
+  private readonly wear = { value: 0 };
   private readonly floorCopies: THREE.Mesh[];
   private readonly mirrorCopies: THREE.Mesh[];
   private readonly outline: THREE.Mesh[];
@@ -129,7 +131,7 @@ export class FighterModel {
       let mat = swapped.get(src);
       if (!mat) {
         mat = lambert(src);
-        addRim(mat);
+        addRim(mat, this.wear);
         swapped.set(src, mat);
         this.materials.push(mat);
       }
@@ -211,6 +213,11 @@ export class FighterModel {
   showReflections(floor: boolean, mirror: boolean): void {
     for (const c of this.floorCopies) c.visible = floor;
     for (const c of this.mirrorCopies) c.visible = mirror;
+  }
+
+  /** How broken up this fighter's picture is (src/render/wear.ts), 0 to 1. */
+  setWear(v: number): void {
+    this.wear.value = v;
   }
 
   /** An emissive tint over the whole fighter (hit flash, armour, guard): 0 for none. */
