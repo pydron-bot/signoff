@@ -144,10 +144,10 @@ def xbones(b):
     """Secondary motion: the perm's lower curls (back and sides), the headband's tails."""
     hp, _, _ = head_frame(b)
     return [
-        {"name": "x_perm", "parent": "head", "head": hp(0, -0.07, 1.68), "tail": hp(0, -0.1, 1.53), "stiff": 0.2, "damp": 0.35, "max": 14},
-        {"name": "x_perm.L", "parent": "head", "head": hp(0.09, -0.02, 1.67), "tail": hp(0.105, -0.06, 1.54), "stiff": 0.22, "damp": 0.35, "max": 14},
-        {"name": "x_perm.R", "parent": "head", "head": hp(-0.09, -0.02, 1.67), "tail": hp(-0.105, -0.06, 1.54), "stiff": 0.22, "damp": 0.35, "max": 14},
-        {"name": "x_band", "parent": "head", "head": hp(0, -0.158, 1.73), "tail": hp(0, -0.19, 1.6), "stiff": 0.15, "damp": 0.25, "max": 35},
+        {"name": "x_perm", "parent": "head", "head": hp(0, -0.07, 1.68), "tail": hp(0, -0.1, 1.53), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_perm.L", "parent": "head", "head": hp(0.09, -0.02, 1.67), "tail": hp(0.105, -0.06, 1.54), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_perm.R", "parent": "head", "head": hp(-0.09, -0.02, 1.67), "tail": hp(-0.105, -0.06, 1.54), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_band", "parent": "head", "head": hp(0, -0.158, 1.73), "tail": hp(0, -0.19, 1.6), "stiff": 0.15, "damp": 0.25, "max": 20},
     ]
 
 

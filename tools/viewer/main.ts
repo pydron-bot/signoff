@@ -126,7 +126,7 @@ function drawBoxes(): void {
   const name = action.getClip().name;
   const mv = moveFor(name);
   // A body knocked up or down is hurt through its juggle box (src/sim/combat.ts).
-  const lying = name === 'launched' || name === 'down' || name === 'ko' || name === 'getup';
+  const lying = ['launched', 'down', 'ko', 'getup', 'juggle_hit', 'relaunch', 'slam', 'floor_bounce', 'wall_splat'].includes(name);
   const stance = lying ? 'juggle' : mv?.stance === 'crouch' ? 'crouch' : 'stand';
   const h = f?.hurt[stance];
   if (h) addBox(toFloat(h.x), toFloat(h.x + h.w), toFloat(h.y), toFloat(h.y + h.h), hurtMat);

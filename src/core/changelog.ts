@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.21.0',
+    date: '2026-11-09',
+    title: 'Air time',
+    notes: [
+      'Juggles look like juggles: a body hit in the air jolts and folds, a relaunch sends it tumbling head over heels, a slam spreads it flat into the floor, a floor bounce crumples it and throws its knees up, and a wall splat slaps it into the wall and peels it off.',
+    ],
+  },
+  {
     version: '0.20.0',
     date: '2026-11-09',
     title: 'Good evening, in 3D',

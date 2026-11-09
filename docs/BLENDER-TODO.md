@@ -232,14 +232,14 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–16 A are done (11–13 in 0.13.0, 14, 15 and 16 A on Nov 9).
+> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9).
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
 > 1. ~~**Step 14, Feel the Burn at Dawn**~~ *done (Nov 9): `burn.glb` and `interact_throw` for the four built fighters.*
 > 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
-> 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
+> 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, `burn.glb` included.
 
@@ -558,7 +558,7 @@ holds the last frame when the clip ends.
 | `floor_bounce` | 16 | Off the floor: crumpled on impact (frame 1–2), then bent up off it, knees and arms up, back into the held pose by 16 |
 | `wall_splat` | 20 | Off the wall (Feel the Burn near a wall): flattened against it on 1–4 (back to the wall, arms out), peeling forward off it by 10, into the held pose by 20 |
 
-- [ ] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model).
+- [x] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model). *Done (Nov 9), all five fighters. `Stance.reaction_poses` in `lib/anim.py` holds the key poses; the build slides each one to the middle of the juggle box by measuring the mesh (`fit_reactions`), and if a pose is still too big for that fighter's box it's blended toward the held pose just enough to fit. The relaunch tumble is keyed every frame, so the ball turns about its own middle. Notes under* Juggle reactions (Nov 9, art side) *in Feedback.*
 
 **C. Hand-keyed poses where they count**
 
@@ -908,3 +908,9 @@ worked into the move data, and the table above updates itself.
   - 35 bones (the shared 29, `x_pages`, `x_bob.L/R`), morph targets `glasses`, `hurt`, `ko`, `win`; every strike and the juggle check pass, `idle` stands 1.748–1.754 m against her 1.75 m box.
   - `fx_live_feed` is in her GLB as the projectile (`src/render/arena.ts` already places it). Teleprompter Read reaches 1.8 m with the pages' sweep, so its hit is marked `prop` (the hand points the way, like the Isobar Lasso).
   - Two new move styles in `lib/anim.py`, for anyone's moves: `prompter` (a counter stance held over `counter.frames`) and `live` (pointing at the camera on a spawn). A counter window doesn't shout; the Read does.
+- **Juggle reactions (Nov 9, art side).** Step 16 B done: `juggle_hit`, `relaunch`, `slam`, `floor_bounce` and `wall_splat` in all five GLBs, at their exact lengths, each starting and ending on `launched`'s held pose (frame 40), with no `root` translation. Notes for the game side:
+  - **The tumble overflows the juggle box a little.** A body tucked into a ball is still 0.85–0.95 m across, and the juggle boxes are 0.65–0.8 m tall, so for the 4–6 frames of `relaunch` where the ball stands on end it pokes up to about 7 cm over the box's top and under its bottom (Rox's, the shortest box, the most). The build allows `relaunch` 15 cm of slack (`TUMBLE_SLACK` in `lib/fighter.py`) instead of 5. If that matters in play (a hit aimed at the top of a tumbling body), the box could grow during a relaunch, or the art could do a shorter turn.
+  - Every other reaction frame stays inside the box with the usual 5 cm. On the smaller boxes some poses are toned down to fit (blended toward the held pose), so Rox's and Margaret's are a little less wild than Hollis's.
+  - `wall_splat` happens lying down (the box is long and low, so the body can't stand against the wall): head first into it, arms flung back, then folding forward off it.
+  - The viewer now draws the juggle box for the five reactions too.
+  - GLBs grew by about 0.05 MB each: Dale 1.86 MB (of 2), Mumbles 1.72, Rox 1.69, Margaret 1.62, Hollis 1.57.
