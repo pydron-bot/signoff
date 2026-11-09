@@ -147,6 +147,7 @@ function setView(v: string): void {
   const h = FIGHTERS[fighterId] ? toFloat(FIGHTERS[fighterId].hurt.stand.y + FIGHTERS[fighterId].hurt.stand.h) : 1.8;
   if (v === 'face') camera.position.set(facing * 1.1, h - 0.1, 0.45);
   controls.target.set(0, v === 'face' ? h - 0.16 : 1, 0);
+  handPlaced = false;
   if (v === 'fx' && model) {
     // Frame the effect meshes' line-up (see load) from the front.
     const box = new THREE.Box3();
@@ -160,6 +161,20 @@ function setView(v: string): void {
     }
   }
   controls.update();
+}
+
+/** A close-up that follows the lead hand (hand.L), for checking the finger joints. */
+const handAt = new THREE.Vector3();
+let handPlaced = false;
+function followHand(): void {
+  const bone = model?.getObjectByName('handL') ?? model?.getObjectByName('hand.L');
+  if (!bone) return;
+  model!.updateMatrixWorld(true);
+  bone.getWorldPosition(handAt);
+  if (!handPlaced) camera.position.set(handAt.x + facing * 0.08, handAt.y + 0.05, handAt.z + 0.34);
+  else camera.position.add(handAt.clone().sub(controls.target));
+  handPlaced = true;
+  controls.target.copy(handAt);
 }
 
 function stats() {
@@ -219,6 +234,7 @@ renderer.setAnimationLoop((now) => {
       setFrame(frame + 1);
     }
   }
+  if (view === 'hand') followHand();
   controls.update();
   renderer.render(scene, camera);
   info();

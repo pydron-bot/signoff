@@ -10,20 +10,17 @@ import { toFloat } from '../src/sim/fixed';
 
 /**
  * The shared skeleton's deform bones (blender/lib/rig.py DEFORM), with step
- * 16's hands that open, point and grab, and the jaw.
+ * 16's hands that open, point and grab, the jaw, and step 21's finger joints
+ * (each finger group split at the knuckles, so a fist curls at three joints).
  */
 export const RIG_BONES = [
   'root', 'hips', 'spine', 'chest', 'neck', 'head', 'jaw',
-  'shoulder.L', 'upper_arm.L', 'forearm.L', 'hand.L', 'thumb.L', 'index.L', 'fingers.L',
-  'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R', 'thumb.R', 'index.R', 'fingers.R',
+  ...['L', 'R'].flatMap((s) => [
+    `shoulder.${s}`, `upper_arm.${s}`, `forearm.${s}`, `hand.${s}`,
+    `thumb.${s}`, `thumb_2.${s}`, `index.${s}`, `index_2.${s}`, `index_3.${s}`, `fingers.${s}`, `fingers_2.${s}`, `fingers_3.${s}`,
+  ]),
   'thigh.L', 'shin.L', 'foot.L', 'toe.L', 'thigh.R', 'shin.R', 'foot.R', 'toe.R',
 ];
-/**
- * Step 21's finger joints: each finger group's bone split at the knuckles,
- * so a fist curls at three joints. Accepted all or none while the fighters
- * are rebuilt; once every GLB has them they move into RIG_BONES.
- */
-export const FINGER_JOINTS = ['L', 'R'].flatMap((s) => [`thumb_2.${s}`, `index_2.${s}`, `index_3.${s}`, `fingers_2.${s}`, `fingers_3.${s}`]);
 /** Bones past that are the fighter's own, for secondary motion (hair, a tie, a coat tail), named x_*. */
 const MAX_BONES = 48;
 /** Each fighter's GLB, so a full roster still loads quickly on a phone. */
@@ -109,9 +106,7 @@ for (const f of Object.values(FIGHTERS)) {
       expect(g.skins?.length).toBe(1);
       const bones = g.skins![0].joints.map((j) => g.nodes[j].name);
       for (const b of RIG_BONES) expect(bones, b).toContain(b);
-      const joints = FINGER_JOINTS.filter((b) => bones.includes(b));
-      expect(joints.length === 0 || joints.length === FINGER_JOINTS.length, 'all the finger joints or none').toBe(true);
-      for (const b of bones) if (!RIG_BONES.includes(b) && !FINGER_JOINTS.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
+      for (const b of bones) if (!RIG_BONES.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
       expect(bones.length).toBeLessThanOrEqual(MAX_BONES);
     });
 

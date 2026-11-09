@@ -38,15 +38,25 @@ DEFORM = [
     ("forearm.L", "upper_arm.L"),
     ("hand.L", "forearm.L"),
     ("thumb.L", "hand.L"),
+    ("thumb_2.L", "thumb.L"),
     ("index.L", "hand.L"),
+    ("index_2.L", "index.L"),
+    ("index_3.L", "index_2.L"),
     ("fingers.L", "hand.L"),
+    ("fingers_2.L", "fingers.L"),
+    ("fingers_3.L", "fingers_2.L"),
     ("shoulder.R", "chest"),
     ("upper_arm.R", "shoulder.R"),
     ("forearm.R", "upper_arm.R"),
     ("hand.R", "forearm.R"),
     ("thumb.R", "hand.R"),
+    ("thumb_2.R", "thumb.R"),
     ("index.R", "hand.R"),
+    ("index_2.R", "index.R"),
+    ("index_3.R", "index_2.R"),
     ("fingers.R", "hand.R"),
+    ("fingers_2.R", "fingers.R"),
+    ("fingers_3.R", "fingers_2.R"),
     ("thigh.L", "hips"),
     ("shin.L", "thigh.L"),
     ("foot.L", "shin.L"),
@@ -78,12 +88,23 @@ _LEFT = {
     "foot": ((0.10, 0, 0.09), (0.10, 0.13, 0.025)),
     "toe": ((0.10, 0.13, 0.025), (0.10, 0.20, 0.02)),
 }
-# The finger groups and jaw, placed from the hand and the head by build_rig.
-_PLACED = {"jaw", "thumb", "index", "fingers"}
 # How far a value of 1 turns them (degrees): fingers and index curl into a
 # fist, the thumb folds across, an open hand splays back; the jaw drops open.
 CURL, THUMB, SPLAY, THUMB_OUT, JAW = 100.0, 55.0, 18.0, 25.0, 16.0
-_CONNECTED = {"spine", "chest", "neck", "head", "upper_arm", "forearm", "hand", "shin", "foot", "toe"}
+# Each finger group is a chain split at the knuckles (step 21 A): where the
+# joints fall along the group's length (from the base knuckle to the tip),
+# and each joint's share of the group's curl. A fist bends about 90°, 100°
+# and 70° at the three knuckles, the thumb two. Opening only ever turns the
+# base joint, halved, so fingers never bend backwards.
+PHALANGES = {"index": (0.48, 0.77), "fingers": (0.48, 0.77), "thumb": (0.55,)}
+SHARES = {"index": (0.9, 1.0, 0.7), "fingers": (0.9, 1.0, 0.7), "thumb": (0.6, 0.7)}
+_CONNECTED = {"spine", "chest", "neck", "head", "upper_arm", "forearm", "hand", "shin", "foot", "toe",
+              "thumb_2", "index_2", "index_3", "fingers_2", "fingers_3"}
+
+
+def chain(group, s):
+    """The bones of finger group `group` on hand `s`, base first."""
+    return [f"{group}.{s}"] + [f"{group}_{i + 2}.{s}" for i in range(len(PHALANGES[group]))]
 
 
 def joints(height):
@@ -119,18 +140,25 @@ def hand_frame(j, s):
 
 
 def finger_joints(height, s, size=1.0):
-    """(head, tail) of the thumb, index and finger-group bones on hand `s`:
-    the index and the other three fingers from the knuckles to the tips, the
-    thumb from its root by the wrist (body.hand builds the pieces to match)."""
+    """(head, tail) of every finger bone on hand `s`: the index and the other
+    three fingers from the knuckles to the tips, the thumb from its root by
+    the wrist, each group cut into its phalanges at PHALANGES (body.hand
+    builds the pieces to match)."""
     wr, a, w, n, L = hand_frame(joints(height), s)
     kk = height / 1.80 * size
     L *= size
     knuckle = 0.42 * L
-    return {
-        f"index.{s}": (wr + a * knuckle + w * 0.026 * kk, wr + a * L + w * 0.026 * kk),
-        f"fingers.{s}": (wr + a * knuckle - w * 0.012 * kk, wr + a * 0.95 * L - w * 0.012 * kk),
-        f"thumb.{s}": (wr + a * 0.2 * L + w * 0.044 * kk - n * 0.006 * kk, wr + a * 0.62 * L + w * 0.06 * kk - n * 0.012 * kk),
+    groups = {
+        "index": (wr + a * knuckle + w * 0.026 * kk, wr + a * L + w * 0.026 * kk),
+        "fingers": (wr + a * knuckle - w * 0.012 * kk, wr + a * 0.95 * L - w * 0.012 * kk),
+        "thumb": (wr + a * 0.2 * L + w * 0.044 * kk - n * 0.006 * kk, wr + a * 0.62 * L + w * 0.06 * kk - n * 0.012 * kk),
     }
+    out = {}
+    for g, (h, t) in groups.items():
+        cuts = [h] + [h + (t - h) * f for f in PHALANGES[g]] + [t]
+        for name, h0, t0 in zip(chain(g, s), cuts, cuts[1:]):
+            out[name] = (h0, t0)
+    return out
 
 
 def jaw_joint(height, head=1.0):
@@ -234,8 +262,9 @@ def _bend_signs(rig, height):
     for s in ("L", "R"):
         _, _, _, n, _ = hand_frame(j, s)
         palm = fighter(*(-n))
-        for f in ("thumb", "index", "fingers"):
-            tests[f"{f}.{s}"] = ("Z", palm)
+        for g in PHALANGES:
+            for name in chain(g, s):
+                tests[name] = ("Z", palm)
     for name, (axis, want) in tests.items():
         pb = rig.pose.bones[name]
         bpy.context.view_layer.update()
@@ -257,9 +286,11 @@ def pose_hands_and_jaw(rig, shapes):
         splay = shapes.get(f"open_{s}", 0.0)
         point = shapes.get(f"point_{s}", 0.0)
         curl = fist * CURL - splay * SPLAY
-        for name, deg in ((f"fingers.{s}", curl), (f"index.{s}", curl * (1 - point) - point * 4), (f"thumb.{s}", fist * THUMB - splay * THUMB_OUT)):
-            pb = rig.pose.bones[name]
-            pb.rotation_quaternion = Quaternion(Vector((0, 0, 1)), math.radians(deg * pb.bone["bend"]))
+        for g, deg in (("fingers", curl), ("index", curl * (1 - point) - point * 4), ("thumb", fist * THUMB - splay * THUMB_OUT)):
+            parts = [deg * x for x in SHARES[g]] if deg >= 0 else [deg * 0.5] + [0.0] * len(PHALANGES[g])
+            for name, d in zip(chain(g, s), parts):
+                pb = rig.pose.bones[name]
+                pb.rotation_quaternion = Quaternion(Vector((0, 0, 1)), math.radians(d * pb.bone["bend"]))
     pb = rig.pose.bones["jaw"]
     v = shapes.get("jaw", 0.0)
     slide = rig.get("jaw_slide", 0.0)

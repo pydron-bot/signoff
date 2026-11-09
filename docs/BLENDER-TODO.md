@@ -100,7 +100,9 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
 - Hands and jaw (step 16 A): a pose's `shapes` also carries `fist_L/R`,
   `point_L/R`, `open_L/R` and `jaw`, which `rig.pose_hands_and_jaw` turns
   into the finger and jaw bones (strikes close the fist, hits splay the
-  hands, specials shout, intros and wins talk).
+  hands, specials shout, intros and wins talk). A curl is spread over each
+  finger's three joints (`rig.SHARES`: 90°, 100° and 70° for a full fist;
+  the thumb two); an opening turns only the base joint, halved (step 21 A).
 - Secondary motion (`lib/spring.py`): a fighter's `xbones(b)` lists its own
   `x_*` bones; every frame of every clip is baked with a damped spring from
   the bone each hangs from.
@@ -117,7 +119,9 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   translucent `water` material, and the light rig per segment in the
   `lights` node's extras. See *What's in the stage's GLB*.
 - `lib/glb.py`: compacts each export without changing it: channels that
-  never leave the rest pose are dropped, rotations are stored as normalised
+  never leave the rest pose are dropped, a channel that holds still through
+  a clip keeps only its first and last key, identical tracks are stored
+  once, rotations are stored as normalised
   16-bit integers, all animation data shares one bufferView. It also writes
   every clip's morph weights (sampled from the shape-key curves: Blender's
   exporter only writes them for the action assigned at export), so each
@@ -144,7 +148,8 @@ less than 80% of its length. The
 move's hitboxes drawn on their active frames:
 http://hive1:5174/tools/viewer/?f=dale on the dev server (`npm run dev`),
 or `?clip=s.FP&frame=7` to open a frame, `&view=face` for a close-up of the
-face or `&view=fx` for the effect meshes.
+face, `&view=hand` for one that follows the lead hand, or `&view=fx` for the
+effect meshes.
 
 ### What's in a fighter's GLB
 
@@ -201,6 +206,7 @@ checked by `tests/assets.test.ts`). `.L` is the character's left (Blender
 | `jaw` (hinged under the ears, its tail at the chin) | `head` |
 | `shoulder.L` → `upper_arm.L` → `forearm.L` → `hand.L` (and `.R`) | `chest` |
 | `thumb.L`, `index.L`, `fingers.L` (middle, ring and little together) (and `.R`) | `hand.L` (`hand.R`) |
+| `thumb_2.L`; `index_2.L` → `index_3.L`; `fingers_2.L` → `fingers_3.L` (and `.R`): the groups split at the knuckles (step 21 A) | `thumb.L`, `index.L`, `fingers.L` |
 | `thigh.L` → `shin.L` → `foot.L` → `toe.L` (and `.R`) | `hips` |
 
 Each fighter may add its own `x_*` bones for secondary motion (hair, a tie,
@@ -240,7 +246,7 @@ are authored facing right with the left foot and left hand leading.
 > 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
-> 5. **Step 21 A, finger joints** (Nov 9): the rig change, first, so the new fighters are built on it.
+> 5. ~~**Step 21 A, finger joints**~~ *done (Nov 9): the five built fighters rebuilt on the split fingers.*
 > 6. **Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price** (Nov 9): the two new fighters, on the step 21 A skeleton and to step 21 B–C's standard. They play as grey boxes until then.
 > 7. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
@@ -800,11 +806,13 @@ reference: `git show origin/art/dale-hd-experiment:blender/experiments/dale_hd/<
 
 **A. Finger joints** (first: Gus and Gideon are built on it)
 
-- [ ] Split each finger group's bone at the knuckles: new shared deform bones `thumb_2`, `index_2`, `index_3`, `fingers_2`, `fingers_3` on each hand (`.L`, `.R`), each the child of the one before, in `blender/lib/rig.py` DEFORM. The names are `FINGER_JOINTS` in `tests/assets.test.ts`, which accepts all ten or none while fighters are rebuilt. Bone counts stay under 48 (Mumbles, the most, goes from 35 to 45).
-- [ ] Spread the curls: the rig's one-hinge curl (100°) becomes about 90°, 100° and 70° over the three knuckles, using each bone's bend sign; a splay or an open hand stays on the base joint, halved, so fingers never bend backwards. Port `spread_curls` into `lib/anim.py` so every generated clip gets it.
-- [ ] Hands modelled to the joints, still faceted: each finger as separate tapering pieces (4–6 sides), knuckle bumps, a palm with the thumb's ball. About 400 triangles a hand.
-- [ ] Mind the 2 MB: ten more bones in about 66 clips. Key the new joints only where they move (not every frame) and keep the spring off them. If a GLB still can't fit, note it in Feedback rather than raising the limit.
-- [ ] Once every GLB has them, tell the game side to move `FINGER_JOINTS` into `RIG_BONES`.
+*Done (Nov 9): all five fighters rebuilt. Notes under* Finger joints (Nov 9, art side) *in Feedback.*
+
+- [x] Split each finger group's bone at the knuckles: new shared deform bones `thumb_2`, `index_2`, `index_3`, `fingers_2`, `fingers_3` on each hand (`.L`, `.R`), each the child of the one before, in `blender/lib/rig.py` DEFORM. Bone counts stay under 48 (Mumbles, the most, goes from 35 to 45). *Done: placed by `rig.finger_joints` (`PHALANGES`: the fingers cut at 48% and 77% of their length, the thumb at 55%). Bones: Dale 42, Rox 43, Hollis 41, Mumbles 45, Margaret 42.*
+- [x] Spread the curls: the rig's one-hinge curl (100°) becomes about 90°, 100° and 70° over the three knuckles, using each bone's bend sign; a splay or an open hand stays on the base joint, halved, so fingers never bend backwards. Port `spread_curls` into `lib/anim.py` so every generated clip gets it. *Done in `rig.pose_hands_and_jaw` instead (`SHARES`), so every pose is spread as it's keyed: no pass over the actions afterwards, and the build's checks see the final hands.*
+- [x] Hands modelled to the joints, still faceted: each finger as separate tapering pieces (4–6 sides), knuckle bumps, a palm with the thumb's ball. About 400 triangles a hand. *Done (`body.hand`): four fingers of three five-sided pieces each, the thumb in two, a knuckle bump per finger, the palm and a thumb ball; about 300 triangles a hand. Body triangles: Dale 3,038, Rox 2,998, Hollis 3,114, Mumbles 2,654, Margaret 3,052.*
+- [x] Mind the 2 MB: ten more bones in about 66 clips. Key the new joints only where they move (not every frame) and keep the spring off them. If a GLB still can't fit, note it in Feedback rather than raising the limit. *Done in `lib/glb.py`: a channel that holds still through a clip keeps two keys, identical tracks are stored once, and the default `LINEAR` is left out of the JSON (the per-channel JSON, not the key data, was most of the growth). GLBs: Dale 1.87 MB, Mumbles 1.74, Rox 1.68, Margaret 1.62, Hollis 1.56, about what they were before the ten bones.*
+- [x] Once every GLB has them, move `FINGER_JOINTS` into `RIG_BONES`. *Done: they're in `RIG_BONES` in `tests/assets.test.ts` (required); `FINGER_JOINTS` is gone.*
 
 **B. Faces** (with 16 D's shape pass)
 
@@ -1189,3 +1197,8 @@ worked into the move data, and the table above updates itself.
   - `wall_splat` happens lying down (the box is long and low, so the body can't stand against the wall): head first into it, arms flung back, then folding forward off it.
   - The viewer now draws the juggle box for the five reactions too.
   - GLBs grew by about 0.05 MB each: Dale 1.86 MB (of 2), Mumbles 1.72, Rox 1.69, Margaret 1.62, Hollis 1.57.
+- **Finger joints (Nov 9, art side).** Step 21 A done; all five GLBs rebuilt, every build check and `tests/assets.test.ts` passing. Notes for the game side:
+  - The ten new bones are in `RIG_BONES` now, so Gus and Gideon must have them (built on `lib/rig.py`, they will).
+  - Nothing in the game reads finger bones, so no game change is needed. A fist reads clearly in close-ups (intros, wins, Sign-Offs); at play size it's the silhouette that changes.
+  - Channels that hold still through a clip now have two keys (first and last) instead of one a frame. three.js plays them the same; anything else reading the GLB's animation data shouldn't assume one key per frame.
+  - The viewer has a HAND view (`&view=hand`) that follows the lead hand.

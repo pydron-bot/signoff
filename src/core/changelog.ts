@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.24.0',
+    date: '2026-11-09',
+    title: 'Knuckles',
+    notes: [
+      'Every fighter has proper fingers now, four of them and a thumb, each bending at its knuckles: fists curl tight, open hands spread, and a point looks like a point.',
+    ],
+  },
+  {
     version: '0.23.0',
     date: '2026-11-09',
     title: 'Standards and Practices',

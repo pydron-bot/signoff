@@ -5,8 +5,12 @@
   those bones, so the mixer never needs them to reset a pose.
 - Stores rotations as normalised 16-bit integers (glTF allows it for
   rotation outputs; three.js reads them): half the size, error ~3e-5.
+- A channel that holds one value through a clip (fingers that stay in a
+  fist, a jaw that stays shut) keeps two keys, its first and last time, so
+  the clip's length is unchanged.
 - Packs the animation data into one bufferView and shares identical
-  keyframe-time tracks; everything else (meshes, morph targets, images) is
+  keyframe-time tracks and identical value tracks (the same held fist in
+  every clip is stored once); everything else (meshes, morph targets, images) is
   copied as it was.
 - Gives every clip a channel for each morphed mesh's weights, 0 where the
   clip doesn't use them, so an expression never carries over.
@@ -153,7 +157,7 @@ def compact(path, morphs=None):
         return start
 
     anim_view = len(new_views)
-    shared_inputs = {}
+    shared_inputs, shared_outputs = {}, {}
 
     def input_acc(raw, template):
         if raw not in shared_inputs:
@@ -172,20 +176,39 @@ def compact(path, morphs=None):
             if (t["node"], t["path"]) not in moving or (t["path"] == "weights" and t["node"] in morph_node):
                 continue
             s = an["samplers"][ch["sampler"]]
-            inp = input_acc(_bytes(gltf, binary, s["input"]), gltf["accessors"][s["input"]])
             out = gltf["accessors"][s["output"]]
+            rows = _floats(gltf, binary, s["output"]) if t["path"] in ("rotation", "translation") else None
+            if rows and len(rows) > 2 and s.get("interpolation", "LINEAR") != "CUBICSPLINE" and all(
+                    abs(v - r) < 1e-5 for row in rows for v, r in zip(row, rows[0])):
+                times = _floats(gltf, binary, s["input"])
+                ends = (times[0][0], times[-1][0])
+                inp = input_acc(struct.pack("<2f", *ends), {"componentType": FLOAT, "count": 2, "type": "SCALAR",
+                                                            "min": [ends[0]], "max": [ends[1]]})
+                rows = [rows[0], rows[0]]
+            else:
+                inp = input_acc(_bytes(gltf, binary, s["input"]), gltf["accessors"][s["input"]])
             if t["path"] == "rotation":
-                vals = [max(-32767, min(32767, round(v * 32767))) for row in _floats(gltf, binary, s["output"]) for v in row]
+                vals = [max(-32767, min(32767, round(v * 32767))) for row in rows for v in row]
                 data = struct.pack(f"<{len(vals)}h", *vals)
-                a = {"componentType": SHORT, "normalized": True, "count": out["count"], "type": "VEC4"}
+                a = {"componentType": SHORT, "normalized": True, "count": len(rows), "type": "VEC4"}
+            elif rows is not None:
+                data = struct.pack(f"<{3 * len(rows)}f", *(v for row in rows for v in row))
+                a = {"componentType": FLOAT, "count": len(rows), "type": "VEC3", "min": [min(r[i] for r in rows) for i in range(3)],
+                     "max": [max(r[i] for r in rows) for i in range(3)]}
             else:
                 data = _bytes(gltf, binary, s["output"])
                 a = {k: out[k] for k in ("componentType", "count", "type")}
             if t["path"] == "weights":
                 has_weights.add(t["node"])
-            a.update(bufferView=anim_view, byteOffset=anim_add(data))
-            new_acc.append(a)
-            samplers.append({"input": inp, "output": len(new_acc) - 1, "interpolation": s.get("interpolation", "LINEAR")})
+            key = (data, json.dumps(a, sort_keys=True))
+            if key not in shared_outputs:
+                a.update(bufferView=anim_view, byteOffset=anim_add(data))
+                new_acc.append(a)
+                shared_outputs[key] = len(new_acc) - 1
+            sampler = {"input": inp, "output": shared_outputs[key]}
+            if s.get("interpolation", "LINEAR") != "LINEAR":
+                sampler["interpolation"] = s["interpolation"]  # LINEAR is the default: left out, it adds up
+            samplers.append(sampler)
             channels.append({"sampler": len(samplers) - 1, "target": t})
         for node, tracks in morph_node.items():
             if an["name"] not in tracks:
@@ -196,7 +219,7 @@ def compact(path, morphs=None):
             flat = [w for row in weights for w in row]
             new_acc.append({"componentType": FLOAT, "count": len(flat), "type": "SCALAR", "bufferView": anim_view,
                             "byteOffset": anim_add(struct.pack(f"<{len(flat)}f", *flat))})
-            samplers.append({"input": inp, "output": len(new_acc) - 1, "interpolation": "LINEAR"})
+            samplers.append({"input": inp, "output": len(new_acc) - 1})
             channels.append({"sampler": len(samplers) - 1, "target": {"node": node, "path": "weights"}})
             has_weights.add(node)
         # A clip that never changes a morph weight still sets it (to 0), so an
