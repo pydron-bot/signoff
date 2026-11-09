@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.37.0',
+    date: '2026-11-09',
+    title: 'Corners',
+    notes: [
+      'Every stage has soft shading baked into its corners: where walls meet the floor, under the kitchen hood, along the foot of the mirrors, and round the props, so the sets look less flat.',
+    ],
+  },
+  {
     version: '0.36.0',
     date: '2026-11-09',
     title: 'Big Finish',

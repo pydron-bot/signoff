@@ -140,7 +140,7 @@ def paint(objects, meta, mi, size, path, seed=1987):
     return _save(np.clip(img, 0, 255), path)
 
 
-def _raster(obj, mi, size, img, owner, pos, nrm):
+def _raster(obj, mi, size, img, owner, pos, nrm, layer="UV"):
     me = obj.data
     me.calc_loop_triangles()
     n = len(me.loop_triangles)
@@ -158,7 +158,7 @@ def _raster(obj, mi, size, img, owner, pos, nrm):
     me.polygons.foreach_get("normal", pnorm)
     pnorm = pnorm.reshape(-1, 3)
     uv = np.empty(len(me.loops) * 2)
-    me.uv_layers["UV"].data.foreach_get("uv", uv)
+    me.uv_layers[layer].data.foreach_get("uv", uv)
     uv = uv.reshape(-1, 2)
     co = np.empty(len(me.vertices) * 3)
     me.vertices.foreach_get("co", co)

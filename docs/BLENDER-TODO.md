@@ -254,7 +254,7 @@ are authored facing right with the left foot and left hand leading.
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
-> 10. **Step 23, baked light on the sets**: ambient occlusion, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
+> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
@@ -1003,17 +1003,19 @@ only some file size.
 
 **A. Ambient occlusion (every stage)**
 
-- [ ] A second UV set (`TEXCOORD_1`) on `set`, every `seg_*` and every
+*Done (Nov 9): all four stages (`blender/lib/bake.py`). Notes under* Ambient occlusion (Nov 9, art side) *in Feedback.*
+
+- [x] A second UV set (`TEXCOORD_1`) on `set`, every `seg_*` and every
   `prop_*`: a lightmap unwrap, no overlaps, a margin of 4 pixels or more.
   `fx_*` meshes don't need one.
-- [ ] Bake ambient occlusion (Cycles, distance about 1.5 m, denoised) into a
+- [x] Bake ambient occlusion (Cycles, distance about 1.5 m, denoised) into a
   greyscale atlas on that UV set: 1024² for the `set` material (`set` and
   every `seg_*`), 512² for `props`. Export it as the material's glTF
   occlusion texture (`occlusionTexture`, `texCoord: 1`).
-- [ ] Bake the `seg_*` pieces with segment 1's pieces in place (they're what
+- [x] Bake the `seg_*` pieces with segment 1's pieces in place (they're what
   is seen most), and each prop on its own (props move, so no floor in their
   bake: the game gives them their contact).
-- [ ] Soft, not black: the darkest corner about 35%. The game applies it to
+- [x] Soft, not black: the darkest corner about 35%. The game applies it to
   the sky-and-ground and ambient light only, never the key light, so it
   reads as corners and contact, not dirt.
 
@@ -1573,3 +1575,10 @@ worked into the move data, and the table above updates itself.
   - Boosted versions (`+`, and Gideon's alternates) go 1.6 times as far and sink lower and further in over the business, so they look bigger as well as glowing.
   - `dazed` is slumped and knock-kneed, the arms hanging, the knees buckling twice a sway with the eyes closing on each dip.
   - GLBs grew 0.03–0.05 MB: Dale 2.36 MB, Rox 2.24, Gus 2.19, Margaret 2.00, Gideon 1.97, Mumbles 1.94, Hollis 1.91.
+- **Ambient occlusion (Nov 9, art side).** Step 23 A done for all four stages; `npm test` passing. Notes for the game side:
+  - Every object in a stage GLB has `TEXCOORD_1`, and `set` and `props` carry the AO as `occlusionTexture` on `texCoord` 1 (1024² and 512², greyscale PNG). `set`, the `seg_*` pieces and the `prop_*` objects are unwrapped onto it without overlaps (8 texels between islands); the `fx_*` meshes share those materials, so their `TEXCOORD_1` all sits on a white corner of the atlas: no AO on effects. `water` has none.
+  - The exporter only writes occlusion from a glTF node group, so `lib/glb.py`'s `add_occlusion` adds it to the GLB after export. The atlases are also in `art/textures/stage-<id>_<material>_ao.png` for review.
+  - Passes: `set` with segment 1's pieces in place (a stage's `FIRST`; Weather has none), each later segment's pieces with the set and segment 1's around them, each prop on its own. Cycles on the CPU (the P1000 isn't picked up), 256 samples, distance 1.5 m, a 3×3 smoothing inside the islands in place of a denoiser.
+  - The curve: raw AO is taken to the 4th power, then lifted so 0 lands at 35%. Raw AO in the corners players see is only 0.75–0.9 (a few texels a metre, and the contact line is thin), so without the power it barely showed; faces hidden in contact reach the 35%, open floor stays white. Under the game's key light it reads as soft corners (the side walls' feet, under the hood, the mirrors' base), not dirt. Seen on a throwaway page from about the game camera, not yet in a match.
+  - GLBs: Kitchen 1.60 MB, Weather 1.11, Burn 0.98, News 0.74 (all under 2 MB; Kitchen leaves about 0.4 MB for 23 B's light map).
+  - The light maps (23 B) can use the same `TEXCOORD_1` layout as is.

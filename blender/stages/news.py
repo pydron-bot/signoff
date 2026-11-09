@@ -59,6 +59,9 @@ BAND_U = 1.0
 LAMP_X = (-5, -3, -1, 1, 3, 5)
 GRID_U = 6.8
 
+# Segment 1's pieces: in place for the set's AO bake (lib/bake.py).
+FIRST = ("seg_headlines",)
+
 LIGHTS = [
     {"segment": "Headlines", "background": "#06101e",
      "ambient": {"color": "#dfe8ff", "intensity": 1.3},

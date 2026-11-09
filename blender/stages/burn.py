@@ -64,6 +64,9 @@ SIGN_LINES = (("FEEL THE BURN", 0.3, 0.0, 3.55), ("AT DAWN", 0.22, 0.0, 3.17))
 
 # Light rig per segment, for the game (three.js space: x, y up, z toward
 # the camera). Written to the `lights` node's extras; see BLENDER-TODO.
+# Segment 1's pieces: in place for the set's AO bake (lib/bake.py).
+FIRST = ("seg_warmup",)
+
 LIGHTS = [
     {"segment": "Warm-Up", "background": "#1a0c14",
      "ambient": {"color": "#ffe6d8", "intensity": 1.3},
