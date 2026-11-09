@@ -253,7 +253,7 @@ are authored facing right with the left foot and left hand leading.
 > 6. ~~**Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price**~~ *done (Nov 9): `gus.glb` and `gideon.glb`.*
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
-> 9. **Step 22, hit reactions (Nov 9, new; do this first).** Nine new state clips for all seven fighters, so a jab to the face, a heavy gut punch and a sweep stop looking the same. Generated in `lib/anim.py` like `hit_high` and `hit_low`.
+> 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -914,40 +914,42 @@ already and plays the fallback until a GLB has the clip.*
   does (the `jolt` dict). A prop in hand (Dale's pointer, Margaret's script,
   Gus's cleaver, Gideon's Bible, Hollis's keys) stays in that hand.
 
+*Done (Nov 9): `Stance.hit_raw` / `hit_reactions` in `lib/anim.py`, per-fighter amounts, easing and `hit_flavour` in each fighter module. Notes under* Hit reactions (Nov 9, art side) *in Feedback.*
+
 **Key poses** (angles as in `hit_high`: degrees, at the peak frame; scaled
 by the fighter's stance `k` like the existing hits):
 
-- [ ] **`hit_head`**: the jab to the face. Head snapped back 35° and turned
+- [x] **`hit_head`**: the jab to the face. Head snapped back 35° and turned
   20° away from the camera, neck 15° back, chest back 10° and turned with
   it; the lead hand flies up and open, the rear hand drops. Peak frame 3,
   half back by 12.
-- [ ] **`hit_head_2`**: the mirror read: head snapped back 30° and turned
+- [x] **`hit_head_2`**: the mirror read: head snapped back 30° and turned
   20° *toward* the camera, the chest twisting the other way, the rear hand
   up. Same timing. The two should look like left and right hooks landing.
-- [ ] **`hit_head_heavy`**: the big one. Head whipped back 50° and turned
+- [x] **`hit_head_heavy`**: the big one. Head whipped back 50° and turned
   30°, neck 25° back, chest 25° back and twisted 25°, the hips pushed
   forward and back arched, both arms flung back and wide; the rear foot
   slides back about 0.15 m and the lead heel lifts. Peak frame 4, hold to 8
   (the hit's freeze is 11 frames), eased to 60% by 18.
-- [ ] **`hit_body`**: a punch to the ribs. Chest knocked back 12° and
+- [x] **`hit_body`**: a punch to the ribs. Chest knocked back 12° and
   folded 10° at the waist, head forward 10° (it follows the fold), a hand
   coming in to the ribs on the side that was hit (lead side), knees giving
   slightly (hips down 0.04 m). Peak frame 3.
-- [ ] **`hit_body_2`**: the other side: the twist reversed, the rear hand to
+- [x] **`hit_body_2`**: the other side: the twist reversed, the rear hand to
   the ribs, the shoulders dipping the other way. Same timing.
-- [ ] **`hit_body_heavy`**: doubled over. Folded 45° at the waist (spine 20°,
+- [x] **`hit_body_heavy`**: doubled over. Folded 45° at the waist (spine 20°,
   chest 30°), head down 20°, both arms clutched in to the gut, knees bent
   (hips down 0.12 m), the jaw wide (`jaw` 0.9). Peak frame 4, held to 10,
   still bent 25° at 18.
-- [ ] **`hit_legs`**: a shin or a knee taken out. The lead knee buckles (the
+- [x] **`hit_legs`**: a shin or a knee taken out. The lead knee buckles (the
   lead leg bent 35° more, its heel up), hips drop 0.08 m and tip toward the
   lead side, the torso pitches forward 15° and the arms swing out for
   balance. Peak frame 3.
-- [ ] **`hit_crouch`**: hit while crouched: stay crouched (inside the
+- [x] **`hit_crouch`**: hit while crouched: stay crouched (inside the
   crouching hurtbox on every frame, as `crouch_idle` is checked), head and
   shoulders knocked back 20°, the rear hand dropping to the floor to catch
   the weight. Peak frame 3.
-- [ ] **`stagger`**: reeling. Frames 1–4 a heavy jolt (as `hit_head_heavy`'s
+- [x] **`stagger`**: reeling. Frames 1–4 a heavy jolt (as `hit_head_heavy`'s
   peak, a bit less), then a stumble back: two short steps (rear foot, lead
   foot) by frame 20, arms loose and low, head lolling, torso half turned
   away; frames 20–30 wobbling on the spot, about to fall. The game holds
@@ -968,16 +970,16 @@ by the fighter's stance `k` like the existing hits):
 
 **Checks and budget**
 
-- [ ] Exact frame counts (`tests/assets.test.ts` knows the nine names and
+- [x] Exact frame counts (`tests/assets.test.ts` knows the nine names and
   their lengths) and no `root` translation.
-- [ ] `hit_crouch` inside the crouching hurtbox; the standing ones' heads no
+- [x] `hit_crouch` inside the crouching hurtbox; the standing ones' heads no
   more than 0.1 m above the standing hurtbox (they lean back, not up).
-- [ ] **Under 5 MB a GLB** (Derek raised the limit from 2 MB for these
+- [x] **Under 5 MB a GLB** (Derek raised the limit from 2 MB for these
   clips, Nov 9). Dale is at 1.87 MB today, so there's room, but key the
   poses only (the build's key thinning keeps channels that hold still at
   two keys) and keep the spring bones as they are. Note each GLB's new
   size in Feedback.
-- [ ] Review in the art viewer (`/tools/viewer/?f=<id>`) at play size, and
+- [x] Review in the art viewer (`/tools/viewer/?f=<id>`) at play size, and
   run `npx -y -p playwright@1.63.0 node tools/art-check.mjs`.
 
 ### State clips (every fighter)
@@ -1376,3 +1378,9 @@ worked into the move data, and the table above updates itself.
   - News: the lamps over the floor are in `seg_headlines`, so they're gone in Lights Out, where the cables they hung from are left.
   - Kitchen: `seg_prep` is the heaviest object (2,100 triangles, mostly jars); the whole stage is 4,210, about Feel the Burn's weight times three but well inside 20k. The flames are opaque cones in the `set` atlas, shaded root to tip; the game's flicker on the rim light sells them.
   - Neither stage has a stage viewer yet: I checked them with a throwaway page (the segment's lights from the `lights` node, from the game camera). A `?stage=` mode in the art viewer would make this easier next time.
+- **Hit reactions (Nov 9, art side).** Step 22 done; every build check and `tests/assets.test.ts` passing. Notes for the game side:
+  - GLBs: Dale 1.97 MB, Mumbles 1.84, Gus 1.79, Rox 1.77, Margaret 1.71, Hollis 1.64, Gideon 1.64: about 0.09 MB each for the nine clips, so they'd have fitted under the old 2 MB too.
+  - The camera looks along the fighter's side axis, so an arm thrown out sideways goes into the screen and disappears behind the body. "Arms flung back and wide" (`hit_head_heavy`), Gus's cleaver and Gideon's arm on `stagger` are flung back (away from the attacker) and up instead, which reads from the camera.
+  - The build checks the standing reactions' **heads** (the vertices on `head` and the bones under it) against the hurtbox plus 0.1 m, not the whole body: Mumbles' flung hand and Gideon's raised Bible go over it, and they're hands, not heads. `hit_crouch` checks the whole body against the crouching box; each fighter sinks it 6–12 cm deeper than `crouch_idle` (solved per build, `fit_hit_crouch`) so the lean back stays inside.
+  - Flavour: Dale keeps `win` at 0.6 under `hurt`; Rox 1.1 and half back by 9; Hollis 0.7 with the head turning a third as far on light hits; Mumbles 1.4, swinging past the pose and back (an overshoot on frame 5) with the jaw wide; Margaret 0.9, the script to her chest and the shoulders square; Gus 0.85, the cleaver hand flung back; Gideon raises the Bible on the head hits and throws his lead arm out on `stagger`. The quiff, tie, keys, toque and the rest swing on their springs.
+  - `hit_body` and `hit_body_2` are subtle at play size (the spec's 10–12° fold); worth a look in the game before 16 C.

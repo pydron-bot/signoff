@@ -228,6 +228,12 @@ class STANCE(Stance):
     rear_aim = (-0.1, 0.6, 0.6)
     guard_fist = 0.0
     talk = True
+    # A puppet: floppy, swinging past the pose and settling, the jaw right open.
+    hit_amount = 1.4
+    hit_ease = ((3, 0.0), (5, -0.2), (8, 0.15), (10, 0.05), (12, 0.45))
+    hit_ease_heavy = ((4, 0.0), (6, -0.2), (9, 0.05), (12, -0.05), (18, 0.4))
+    hit_ease_gut = ((4, 0.0), (6, -0.15), (10, 0.0), (18, 0.45))
+    hit_shapes = {"jaw": 1.0}
 
     def win(self, t=0):
         """A deep, jerky bow."""

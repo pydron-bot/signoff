@@ -187,6 +187,18 @@ class STANCE(Stance):
     lead_foot = (0.11, 0.18)
     rear_foot = (-0.14, -0.18)
     guard_fist = 0.6
+    hit_amount = 0.9
+
+    def hit_flavour(self, name, pose, base):
+        """Composed: the script stays clutched to her chest, and the head
+        goes but the shoulders stay square."""
+        if name == "hit_body_heavy":
+            return pose
+        crouched = name == "hit_crouch"
+        z = 1.3 - (self.crouch_drop + self.hit_crouch_drop if crouched else 0)
+        sq = {p: (pose.parts[p][0], base.parts[p][1], pose.parts[p][2]) for p in ("chest", "shoulder_L", "shoulder_R")}
+        return pose.but(**sq, hand_L={"pos": self.s((0.06, 0.1 if not crouched else 0.24, z - 0.1)), "aim": (-0.3, 0.1, 1), "hint": (0, 1, 0)}
+                        ).shaped(fist_L=0.6, open_L=0.0)
 
     def intro(self, t=0):
         """"Good evening.": squaring the pages on the desk that isn't there,
