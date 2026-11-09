@@ -267,10 +267,14 @@ def clump(p, name, root, tip, width, colour, bone, paint=None, flat=0.6, shapes=
 
 
 def hand(p, b, s, colour, size=1.0, paint=None, thumb_colour=None):
-    """A mitt in four rigid pieces on the step-16 bones: the palm on the
-    hand, the index and the other three fingers (together) from the
-    knuckles, and the thumb. The bones curl them (rig.pose_hands_and_jaw);
-    the finger pieces start inside the palm so a curl shows no gap."""
+    """A faceted hand on the step-21 bones: the palm with the thumb's ball
+    and a knuckle bump per finger on the hand, then each finger as three
+    tapering pieces, one per phalanx (the index on index…index_3, the other
+    three together on fingers…fingers_3), and the thumb in two. The bones
+    curl them (rig.pose_hands_and_jaw); each piece starts a little behind its
+    joint, so a curl shows no gap."""
+    import math
+
     wr, a, w, n, L = hand_frame(b.j, s)
     L *= size
     hd = f"hand.{s}"
@@ -290,12 +294,45 @@ def hand(p, b, s, colour, size=1.0, paint=None, thumb_colour=None):
                     pts.append(at(t * L, u * wid * k, v * th * k * (1.0 if v > 0 else 0.9)))
         p.hull(name, pts, colour, bone, paint=paint)
 
-    slab(f"palm.{s}", ((-0.1, 0.034, 0.02), (0.15, 0.046, 0.024), (0.47, 0.048, 0.021)), -1, 1, hd)
-    fingers = ((0.4, 0.047, 0.019), (0.55, 0.048, 0.019), (0.9, 0.04, 0.016), (1.0, 0.03, 0.012))
-    slab(f"index.{s}", fingers, 0.32, 1, f"index.{s}")
-    slab(f"fingers.{s}", tuple((t, wid, th * 0.97) for t, wid, th in fingers[:3]) + ((0.95, 0.03, 0.012),), -1, 0.27, f"fingers.{s}")
+    def piece(name, c0, c1, r0, r1, bone, col, back=0.6):
+        # A five-sided tapering piece from c0 to c1, slightly flattened
+        # front to back, its base pushed back into the joint behind it.
+        c0, c1 = np.array(c0), np.array(c1)
+        d = (c1 - c0) / np.linalg.norm(c1 - c0)
+        u = np.cross(n, d)
+        u /= np.linalg.norm(u)
+        v = np.cross(d, u)
+        pts = []
+        for c, r in ((c0 - d * r0 * back, r0), (c1, r1)):
+            for i in range(5):
+                ang = 2 * math.pi * i / 5 + math.pi / 2
+                pts.append(tuple(c + (u * math.cos(ang) + v * math.sin(ang) * 0.85) * r))
+        p.hull(name, pts, col, bone, paint=paint)
+
+    slab(f"palm.{s}", ((-0.1, 0.034, 0.02), (0.15, 0.046, 0.024), (0.45, 0.048, 0.019)), -1, 1, hd)
+    # The thumb's ball, on the palm side by the wrist.
+    ball = [at(t * L, u * k, v * k) for t in (0.05, 0.32) for u in (0.022, 0.046) for v in (-0.026, 0.004)]
+    p.hull(f"thenar.{s}", ball, colour, hd, paint=paint)
+
+    def along(bone):
+        return [float(np.dot(np.array(q) - wr, a)) for q in fj[bone]]
+
+    # (finger, group, across the hand, tip as a fraction of the hand, radius)
+    for f, g, u, tip, r in (("index", "index", 0.036, 0.98, 0.0115), ("middle", "fingers", 0.012, 1.0, 0.012),
+                            ("ring", "fingers", -0.012, 0.96, 0.011), ("little", "fingers", -0.035, 0.88, 0.0095)):
+        bones = [f"{g}.{s}", f"{g}_2.{s}", f"{g}_3.{s}"]
+        ts = [along(bones[0])[0], along(bones[1])[0], along(bones[2])[0], tip * L]
+        rs = [r * k, r * k * 0.93, r * k * 0.86, r * k * 0.75]
+        # The knuckle: a bump on the back of the hand.
+        kn = np.array(at(ts[0], u * k, 0.012 * k))
+        p.hull(f"knuckle_{f}.{s}", [tuple(kn + e * r * k * 0.8) for e in (a, -a, w, -w, n, -n * 1.5)], colour, hd, paint=paint)
+        for i, bone in enumerate(bones):
+            piece(f"{f}{i + 1}.{s}", at(ts[i], u * k, 0), at(ts[i + 1], u * k, 0), rs[i], rs[i + 1], bone, colour)
     th0, th1 = fj[f"thumb.{s}"]
-    clump(p, f"thumb.{s}", tuple(th0 + (th0 - th1) * 0.12), tuple(th1), 0.017 * k, thumb_colour or colour, f"thumb.{s}", paint=paint, flat=0.8)
+    th2 = fj[f"thumb_2.{s}"][1]
+    tc = thumb_colour or colour
+    piece(f"thumb1.{s}", th0 - (th1 - th0) * 0.25, th1, 0.016 * k, 0.0135 * k, f"thumb.{s}", tc)
+    piece(f"thumb2.{s}", th1, th2, 0.0135 * k, 0.0105 * k, f"thumb_2.{s}", tc)
 
 
 def grip(b, s):
