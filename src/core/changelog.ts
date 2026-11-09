@@ -14,6 +14,23 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.38.0',
+    date: '2026-11-09',
+    title: 'Sweeps Week',
+    notes: [
+      "Specials in the air: press Special while jumping (once a jump; Special again boosts it). Dale hangs under his umbrella dropping hail, Rox dives heel first, Mumbles vanishes and drops on you from behind, Hollis sweeps the floor with his flashlight, Margaret shoots straight across, Gus throws a cleaver down and Gideon lights up all round him.",
+      'Air strings: jumping attacks chain into each other (the move list has them under In the air), and a jumping attack that hits cancels into the air special.',
+      'Jump cancel: when a launcher hits, press Up (or Up-Forward) to hop after them and keep the combo going in the air.',
+      "Technical Difficulties isn't gone if it misses or is blocked any more: it comes back 12 seconds later (SIGNAL RESTORED). Only a hit spends it for the match.",
+      "Two new Cancellations for every fighter, found by ending the match the right way: with an air special, a string's last hit, a throw, or a direction held as the blow lands. The move list shows them as ??? with a hint until you've landed one.",
+      'Stage Sign-Offs: close up with their back to a wall, press → ↓ BLOCK, and the set finishes them: the studio lightning, the mirrors, a falling lamp or the burners, depending on the show.',
+      'Finisher practice in Training (FINISHERS in the menu): one hit wins the match, Stay tuned waits as long as you like, and it starts again after the finisher. AT THE WALL sets up the Stage Sign-Off.',
+      "Before a match, the two fighters trade a line, and some of them have history. Any button skips it.",
+      "Signal damage: as a fighter gets hurt their picture breaks up, snow and colour bleeding through, and some of it is still there after the commercial break. VHS LOOK turns it down.",
+      'Every stage has soft shading baked into its corners: where walls meet the floor, under the kitchen hood, along the foot of the mirrors, and round the props.',
+    ],
+  },
+  {
     version: '0.37.0',
     date: '2026-11-09',
     title: 'House Style',

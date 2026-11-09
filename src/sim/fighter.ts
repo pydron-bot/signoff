@@ -17,6 +17,7 @@ import {
   GETUP_FRAMES,
   GRAVITY,
   HOP_PCT,
+  JUMP_CANCEL_SCALE,
   GROUND_BOUNCE_VY,
   JUGGLE_GRAVITY,
   JUMP_LAND_FRAMES,
@@ -82,6 +83,7 @@ export function endCombo(f: FighterState): void {
   f.comboMoves.length = 0;
   f.groundBounced = false;
   f.wallBounced = false;
+  f.chased = false;
   f.bounce = 'none';
 }
 
@@ -268,7 +270,7 @@ export function control(m: MatchState, i: number, ev: SimEvent[]): void {
       groundControl(m, i, ev);
       return;
     case 'move':
-      moveControl(f, i, ev);
+      moveControl(m, i, ev);
       return;
     case 'air':
       airControl(f, i, ev);
@@ -454,7 +456,8 @@ export function footwork(m: MatchState, i: number, canJump: boolean): void {
 }
 
 /** Inside a move: boost a special, Tape Skip the recovery, chain a string or cancel into a special. */
-function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
+function moveControl(m: MatchState, i: number, ev: SimEvent[]): void {
+  const f = m.fighters[i];
   const mv = moveOf(f);
   if (mv.kind === 'throw' || mv.kind === 'super') return;
   const air = mv.stance === 'air';
@@ -500,8 +503,12 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
       }
     }
     // A launcher that connects can be jump-cancelled, to follow them up into an air string.
-    if (!air && f.contact === 'hit' && opensJuggle(mv) && pressed(inp, UP, since)) {
+    // Once a combo, and it costs scaling: the air adds style, not damage.
+    const o = m.fighters[1 - i];
+    if (!air && f.contact === 'hit' && opensJuggle(mv) && !o.chased && pressed(inp, UP, since)) {
       consume(inp, UP);
+      o.chased = true;
+      o.combo += JUMP_CANCEL_SCALE;
       jump(f, i, ev);
       return;
     }

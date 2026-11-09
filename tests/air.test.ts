@@ -99,7 +99,7 @@ describe('air strings', () => {
       if (f.mode === 'move' && seen[seen.length - 1] !== f.move) seen.push(f.move);
       return t === 0 ? UP : t === 5 ? FP : t === 17 ? FK : t === 28 ? BK_ : 0;
     });
-    expect(seen.slice(0, 3)).toEqual(['j.FP', 'j.FK', 'j.BK']);
+    expect(seen.slice(0, 2)).toEqual(['j.FP', 'j.FK']);
     expect(a.airAttackUsed).toBe(true);
   });
 
@@ -135,6 +135,21 @@ describe('jump cancel', () => {
     // A hop: lower than a jump.
     run(m, 60);
     expect(a.y).toBe(0);
+  });
+
+  it('once a combo, and it costs scaling', () => {
+    const m = ready('dale', 'rox');
+    place(m, -0.5, 0.4);
+    const ev = run(m, 40, (mm, t) => {
+      const f = mm.fighters[0];
+      if (t === 0) return DOWN | BP;
+      return f.mode === 'move' && f.move === 'c.BP' && f.contact === 'hit' ? UP | RIGHT : 0;
+    });
+    expect(count(ev, 'jumpCancel')).toBe(1);
+    const d = m.fighters[1];
+    expect(d.chased).toBe(true);
+    // One hit landed, scaled as if three had.
+    expect(d.combo).toBe(3);
   });
 
   it('only off a hit: a blocked launcher stays on the ground', () => {

@@ -1176,8 +1176,9 @@ body[data-vhs='1'] .vhs {
 
 .cold-open-plate {
   position: absolute;
-  bottom: calc(env(safe-area-inset-bottom) + 96px);
-  max-width: min(46vw, 420px);
+  /* Up under the health bars: clear of the touch buttons. */
+  top: calc(env(safe-area-inset-top) + 92px);
+  max-width: min(42vw, 420px);
   padding: 8px 14px 10px;
   background: linear-gradient(90deg, rgba(8, 10, 30, 0.92), rgba(8, 10, 30, 0.6));
   border-left: 5px solid var(--accent, #f1ede0);
@@ -1220,7 +1221,7 @@ body[data-vhs='1'] .vhs {
 
 .cold-open-skip {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 64px);
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.55rem;

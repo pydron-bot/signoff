@@ -121,6 +121,22 @@ meter. Every number below is a starting value to tune.
   the getup: it comes out on the first free frame. A *punish* is a hit on a
   move's recovery (whiffed or blocked): the first hit does 20% more and
   earns meter. Each is called out on screen.
+- **The air (0.38.0).** Every fighter has a special in the air (Special
+  while jumping, once a jump, with a boosted version): Dale hangs under his
+  umbrella dropping hail (Downpour), Rox dives heel first (Aerobic Dive),
+  Mumbles vanishes and drops on them from behind (Cut the Strings), Hollis
+  sweeps the floor with his flashlight (Searchlight), Margaret shoots
+  straight across (On the Wire), Gus throws a cleaver down (Cleaver Toss)
+  and Gideon lights up all round him (Rapture). A move can hang in the air
+  (`hover`), set off at a speed (`dive`) and have its own landing lag.
+  **Air strings** chain one jumping normal into another, on hit or block,
+  and an air normal that hits cancels into the air special as a ground one
+  cancels into a special. A **jump cancel**: a launcher (or bounce) that
+  hits can be cancelled into a hop (75% of a jump) with Up, which meets the
+  body on the way up, so a juggle can go into the air. Once a combo, and it
+  counts as two more hits for damage scaling: the air adds style, not
+  damage. The combo search (`npm run combos`) tries jump cancels and air
+  attacks too, so the damage ceilings cover them.
 - **Input display.** Recent inputs scroll down the side of the screen, newest
   on top with the frames each was held (Settings: off, in Training and combo
   showcases, or always; versus and replays show both players).
@@ -202,10 +218,12 @@ worth a bar.
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
 | Cut Away | All 3 bars (a full meter) | Combo breaker: knocks the opponent away mid-combo; once per round |
 
-**Technical Difficulties.** Once per match, below 30% health, a fighter can
-launch their comeback super. If it connects, the screen tears, the broadcast
-"loses signal", and a short cinematic attack deals about 30% damage. If it
-misses, it is spent until the next match.
+**Technical Difficulties.** Below 30% health, a fighter can launch their
+comeback super. If it connects, the screen tears, the broadcast "loses
+signal", and a short cinematic attack deals about 30% damage, and it's spent
+for the match. If it misses or is blocked it isn't spent: it comes back
+after 12 seconds (SIGNAL RESTORED), as in MK1, so throwing it out isn't a
+match-long gamble.
 
 **Frame conventions.** The simulation runs at exactly 60 steps a second.
 Every move is data: startup, active and recovery frames, hitboxes and
@@ -265,14 +283,39 @@ card: the loser's own show going off the air.
   entered as two taps then a button: e.g. back, forward, Back Punch. About
   6 to 9 seconds: 8 or more blows, 5 or more of them on screen, with the
   camera in close, then the cut, more blows heard over it, and the card.
-- **Cancellation** (the quick finish): ending the deciding round with the
-  winner's cancellation special (Dale: Heat Lightning; Rox: Count of Eight;
-  Hollis: Clocking In; Mumbles: Knock-Knock; Margaret: Breaking; Gus:
-  Tenderise; Gideon: Fire and Brimstone). Straight after the K.O., the
-  set switches off and the card reads CANCELLED, about 3 seconds in all.
+- **Cancellation** (the quick finish): three per fighter, each earned by
+  how the deciding round ends: a set move landing the K.O., sometimes with
+  a direction held as it lands. One is a special on the ground, listed from
+  the start (Dale: Heat Lightning; Rox: Count of Eight; Hollis: Clocking
+  In; Mumbles: Knock-Knock; Margaret: Breaking; Gus: Tenderise; Gideon:
+  Fire and Brimstone). The other two (0.38.0) are found by playing: the move
+  list shows them as ??? with a hint (a throw, an air special, a string,
+  holding a direction) until a player lands one, and remembers it
+  (`signoff.found`). They are Cold Snap (Cold Front, holding back) and
+  Washed Out (Downpour) for Dale; Hit the Wall (Aerobic Dive) and Out of
+  Step (the Full Routine) for Rox; Off Duty (Searchlight) and Cuffed (Cuff
+  'Em) for Hollis; Put Away (a throw, holding back) and Pulled the Strings
+  (Cut the Strings) for Mumbles; Dead Air (On the Wire) and Correction
+  (Teleprompter's answer) for Margaret; Burnt (Flambé, holding down) and
+  Off the Menu (Cleaver Toss) for Gus; Passing the Plate (Collection Plate,
+  holding back) and Raptured (Rapture) for Gideon. Straight after the K.O.
+  the broadcast cuts away (each to its own censor) and the card reads
+  CANCELLED, about 3 seconds in all.
+- **Stage Sign-Off** (0.38.0): forward, down, Block, close up with the
+  loser's back to a wall (within 1.5 m), on any stage, for anyone. Two
+  blows and a throw into the set, then the set's own hazard comes down on
+  them where they lie before the cut: *Act of God* (the studio's lightning,
+  Weather at Eleven), *Mirror, Mirror* (the mirrors, Feel the Burn at
+  Dawn), *Lights Down* (a lamp off the grid, the News) and *Well Done* (the
+  burners, Kitchen Live). The CPU uses it when the loser is against a wall.
 - **Rerun** (the merciful finish): up, down, Block at any range. The winner
   lets them go; the set switches off and the loser is shown waking on their
   sofa at 3:34 a.m. (Unlocking it per fighter can come later.)
+
+**Finisher practice** (Training → FINISHERS): the dummy on its last point
+of health and the player a round up, so one hit wins the match; "Stay
+tuned" waits as long as it takes, and after the finisher it starts again.
+AT THE WALL puts the dummy's back to the wall for the Stage Sign-Off.
 
 The CPU finishes too: mostly a Sign-Off, now and then a Rerun, and on easy it
 often lets the moment pass. Finisher inputs:
@@ -332,6 +375,22 @@ more it reacts to a big one than a small one.
 - **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
   Skip) trail a cyan and a magenta afterimage a few frames behind, like a
   tape's colour lagging; an ender or a KO lands on two frames of negative.
+- **The cold open** (0.38.0): before round 1 of a match against someone,
+  the two trade a line each in captions on their sides of the screen, typed
+  on with their voices babbling under them, in the half-lit studio before
+  the lights bang on, like the top of a talk show. Pairings with history
+  have their own exchange (Margaret and Dale; Gideon and Mumbles; Hollis
+  and Mumbles; Rox and Gus...), otherwise one fighter's opener and the
+  other's reply. Any button or a tap skips it; the match isn't stepped
+  until it's done.
+- **Signal damage** (0.38.0): a hurt fighter's picture breaks up. As health
+  falls, bands of the body drop out to snow, the colour comes apart at the
+  bands' edges, specks of snow show and the picture under it dulls like a
+  bruise; 60% of it carries over the commercial break, so the loser of a
+  round starts the next one already breaking up. A few lines in the
+  fighters' shader with a per-fighter value: no draw calls. VHS LOOK turns
+  the tape part down or off (the dulling stays); Reduce Motion holds it
+  still.
 - **Each round goes on air:** the studio lights bang on in three banks
   and the camera opens wide and high, settling on the fighters as the
   intro ends; the first round introduces both fighters in lower thirds.

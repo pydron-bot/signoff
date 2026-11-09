@@ -257,6 +257,7 @@ are authored facing right with the left foot and left hand leading.
 > 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 > 12. **Step 25, the fighting styles pilot**: Rox's and Hollis's new and changed normals, and a timing profile per fighter. Game side in (0.37.0); stand-ins play until the clips land.
+> 13. **Step 26, air specials**: one special in the air for every fighter, and its boosted version (14 clips). Game side in (0.38.0); stand-ins play until the clips land.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1249,6 +1250,51 @@ themselves even in clips nobody hand-keys:
 - [ ] Empty `ART_PENDING` of Rox's and Hollis's entries as their clips land.
 - [ ] Review in the art viewer at play size, side by side with the old
   clips: could you name the fighter from the silhouette of each strike?
+
+### 26. Air specials (Nov 9, game side)
+
+Every fighter has a special in the air now (Special while jumping, once a
+jump), with a boosted version, and air strings that chain one jumping
+normal into another. The air strings reuse the jumping normals' clips; the
+air specials are new, and until a clip lands the game plays the stand-in
+in brackets (`STAND_INS`, `ART_PENDING` in `src/render/pose.ts`). The
+boosted clip (`+`) can be the plain one with more on it, as elsewhere.
+Frames, hitboxes, hovers and dives are in the clip table below.
+
+- [ ] `dale:Downpour`, `Downpour+` (34 frames; stand-in `j.BP`): the
+  umbrella opens over his head and he hangs there (frames 1–16, 1–20
+  boosted), the free arm hurling hail down and forward on 12 (and 15 and
+  18 boosted).
+- [ ] `rox:Aerobic Dive`, `Aerobic Dive+` (40 frames; stand-in `j.FK`): a
+  beat's pause (1–5), then down at 45° heel first from 6, the other leg
+  tucked, arms swept back; it's cut short when she lands.
+- [ ] `mumbles:Cut the Strings`, `Cut the Strings+` (34 frames; stand-in
+  `Strings Attached`): the strings snap and he's gone (off screen 5–15),
+  back behind them at the same height on 12, hanging limp, then dropping
+  feet first from 16.
+- [ ] `hollis:Searchlight`, `Searchlight+` (38 frames; stand-in
+  `Flashlight`): he hangs in the air (1–22) and sweeps the flashlight
+  down across the floor in front of him, 12–16. The beam effect
+  (`fx_flashlight_beam`) can be reused, aimed down.
+- [ ] `margaret:On the Wire`, `On the Wire+` (32 frames; stand-in
+  `Breaking`): she hangs at the height she's at and shoots straight across
+  (6–16), the cue cards held out like a blade, hitting on 8–14 (two hits
+  boosted, 8–10 and 13–15).
+- [ ] `gus:Cleaver Toss`, `Cleaver Toss+` (32 frames; stand-in `Mise en
+  Place`): a cleaver thrown down and forward from the air on 10 (and 14
+  boosted), hanging there 1–12.
+- [ ] `gideon:Rapture`, `Rapture+` (40 frames; stand-in `Fire and
+  Brimstone`): arms out, head back, hanging (1–26), the light going off all
+  round him on 14–20; armoured 1–13 boosted (glows).
+
+**The sets in the Stage Sign-Offs.** Each stage's own finisher (close up,
+the loser's back to a wall, → ↓ BLOCK) ends with the set coming down on
+the loser where they lie, and it uses pieces the sets already have: the
+lightning bolt and the cable sparks (Weather), `fx_shard` and `fx_shatter`
+(Burn), `fx_lamp` and `fx_wreck` (News), `fx_flare` (Kitchen), placed at
+the loser in any segment, not only the one whose hazard they belong to. No
+new art is needed; if a piece looks wrong outside its own segment's
+lighting, that's the thing to fix.
 
 ### State clips (every fighter)
 

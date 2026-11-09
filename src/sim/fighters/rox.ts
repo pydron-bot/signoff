@@ -92,7 +92,7 @@ const moves = table(
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.75], at: [0.6, 1.1], height: 'overhead', damage: 55, hitstun: 17, blockstun: 11, chain: { FK: 'j.FK' } }),
   normal('j.BP', { name: 'Jumping Elbow', kind: 'air', startup: 6, active: 5, recovery: 6, reach: [0.1, 0.8], at: [0.8, 1.3], height: 'overhead', damage: 71, hitstun: 18, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 63, hitstun: 17, blockstun: 11, chain: { BK: 'j.BK' } }),
+  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 63, hitstun: 17, blockstun: 11 }),
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 7, active: 6, recovery: 7, reach: [-0.6, 0.95], at: [0.1, 0.6], height: 'overhead', damage: 87, hitstun: 19, blockstun: 12 }),
   // String steps
   normal('FP FP', { name: 'Warm-Up', startup: 6, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.1, 1.45], damage: 36, hitstun: 15, blockstun: 11, motion: stepIn(6), chain: { FK: 'FP FP FK' } }),
@@ -173,7 +173,7 @@ const moves = table(
     hover: [1, 5],
     dive: { frame: 6, vx: 0.11, vy: -0.13 },
     landing: 12,
-    hits: [strike({ frames: [7, 38], reach: [0, 0.8], at: [-0.1, 0.5], height: 'overhead', damage: 60, hitstun: 24, blockstun: 12 })],
+    hits: [strike({ frames: [7, 38], reach: [0, 0.8], at: [-0.1, 0.5], height: 'overhead', damage: 60, hitstun: 0, blockstun: 12, knockdown: true })],
   }),
   move('Aerobic Dive+', {
     name: 'Aerobic Dive (boosted)',
@@ -183,7 +183,7 @@ const moves = table(
     hover: [1, 5],
     dive: { frame: 6, vx: 0.11, vy: -0.13 },
     landing: 12,
-    hits: [strike({ frames: [7, 38], reach: [0, 0.8], at: [-0.1, 0.5], height: 'overhead', damage: 70, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
+    hits: [strike({ frames: [7, 38], reach: [0, 0.8], at: [-0.1, 0.5], height: 'overhead', damage: 50, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
   }),
   throwMove(110),
   interactMove(),
@@ -271,7 +271,7 @@ export const ROX: FighterData = {
   },
   specials: { n: 'Star Jump', f: 'Grapevine', b: 'Leg Warmer Lariat', d: 'Count of Eight' },
   airSpecials: { n: 'Aerobic Dive' },
-  airStrings: [{ name: 'Jumping Jacks', path: ['j.FP', 'FK', 'BK'], safe: false }],
+  airStrings: [{ name: 'Jumping Jacks', path: ['j.FP', 'FK'], safe: false }],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

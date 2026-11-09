@@ -79,6 +79,8 @@ export interface FighterState {
   /** Spent this combo: the one ground and wall bounce. */
   groundBounced: boolean;
   wallBounced: boolean;
+  /** A jump cancel has followed this fighter into the air this combo (once a combo). */
+  chased: boolean;
   /** Defence: the delayed getup is used this knockdown; frames left in which a move is a reversal; the move under way is one. */
   getupDelayed: boolean;
   wakeup: number;
@@ -209,6 +211,7 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     reversal: false,
     groundBounced: false,
     wallBounced: false,
+    chased: false,
     bounce: 'none',
     ko: false,
     cutAwayUsed: false,

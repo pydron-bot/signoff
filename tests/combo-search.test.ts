@@ -34,6 +34,15 @@ function actions(id: string, meter: boolean): Press[] {
     out.push([[0, sp]]);
     if (meter && f.moves[mv as string]?.boost) out.push([[0, sp], [3, 'SP']]);
   }
+  // The ceilings also cover the air: a jump cancel (or a jump) and an air normal or the air special on the way.
+  // Not for the guides, which stay on the ground.
+  if (RUN) {
+    for (const k of [6, 10, 14]) {
+      for (const b of BUTTONS) out.push([[0, 'u f'], [k, b]]);
+      out.push([[0, 'u f'], [k, 'SP']]);
+      if (meter) out.push([[0, 'u f'], [k, 'SP'], [k + 3, 'SP']]);
+    }
+  }
   return out;
 }
 
