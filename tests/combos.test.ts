@@ -221,9 +221,9 @@ describe('MK-style juggles', () => {
 describe("Rox's signature routes", () => {
   // Pressed on exact frames from the start (found by searching the simulation for her best routes).
   // Lariat (ground bounce), launcher, Step Touch string, Jazzercise, Count of Eight.
-  const meterless: [number, number][] = [[0, LEFT | SPECIAL], [50, DOWN | BP], [68, RIGHT | FK], [84, BK], [105, BP], [123, BP], [140, DOWN | SPECIAL]];
+  const meterless: [number, number][] = [[0, LEFT | SPECIAL], [52, DOWN | BP], [73, RIGHT | FK], [89, BK], [110, BP], [128, BP], [145, DOWN | SPECIAL]];
   // Launcher, boosted Star Jump (relaunch), Step Touch string, Lariat, Count of Eight.
-  const oneBar: [number, number][] = [[0, DOWN | BP], [16, SPECIAL], [19, SPECIAL], [48, RIGHT | FK], [65, BK], [87, LEFT | SPECIAL], [126, BP], [142, DOWN | SPECIAL]];
+  const oneBar: [number, number][] = [[0, DOWN | BP], [22, SPECIAL], [25, SPECIAL], [60, RIGHT | FK], [77, BK], [99, LEFT | SPECIAL], [142, BP], [158, DOWN | SPECIAL]];
 
   function damage(script: [number, number][], meter: number): { hits: number; pct: number } {
     const m = ready('rox', 'rox');

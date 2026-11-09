@@ -11,6 +11,7 @@ import {
   COUNTER_READ_STOP,
   COUNTER_HITSTUN,
   HITSTOP,
+  HITSTOP_BY_WEIGHT,
   JUGGLE_DECAY,
   JUGGLE_POP,
   JUGGLE_POP_MIN,
@@ -26,6 +27,8 @@ import {
   WALL_BOUNCE_RANGE,
   WALL_BOUNCE_VX,
   WALL_BOUNCE_VY,
+  WEIGHT_HEAVY,
+  WEIGHT_MEDIUM,
   METER_MAX,
   FLAWLESS_BLOCKSTUN_CUT,
   FLAWLESS_METER,
@@ -45,7 +48,7 @@ import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
 import { BLOCK, DOWN, bitIndex } from './input';
 import type { FighterState, MatchState } from './state';
-import type { Box, HitEffect, MoveKind } from './types';
+import type { Box, HitEffect, HitWeight, MoveKind } from './types';
 
 // Scratch for one step's pending contacts (not match state: rebuilt every step).
 const pendingHit = [-1, -1];
@@ -427,8 +430,6 @@ export function applyHit(
     return;
   }
 
-  // Counter hits freeze a little longer, so they read.
-  const hitStop = stop + (counter ? COUNTER_HITSTOP : 0);
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
   const relaunching = relaunch && wasAir;
@@ -451,6 +452,8 @@ export function applyHit(
   const juggle = wasAir ? d.juggle + 1 : 0;
   const ko = takeDamage(d, dmg);
   d.move = '';
+  // Anything that ends the exchange on the ground lands as an ender; a launcher on a body already up is one more juggle hit.
+  let ender = ko || relaunching;
   if (ko) {
     d.koMove = moveId;
     launch(d, dir, KNOCK_VY, false);
@@ -469,11 +472,13 @@ export function applyHit(
     d.vx = 0;
     d.bounce = 'ground';
     d.juggle = juggle;
+    ender = true;
   } else if (e.wallBounce && !d.wallBounced && wallX(m, d) - dir * d.x <= WALL_BOUNCE_RANGE) {
     launch(d, dir, WALL_BOUNCE_VY, false);
     d.vx = dir * WALL_BOUNCE_VX;
     d.bounce = 'wall';
     d.juggle = juggle;
+    ender = true;
   } else if (wasAir || e.launch !== undefined || e.knockdown) {
     // A launcher only launches from the ground: on a body already in the air it's one more juggle hit.
     let pop = e.knockdown ? KNOCK_VY : wasAir ? JUGGLE_POP : (e.launch ?? JUGGLE_POP);
@@ -481,6 +486,7 @@ export function applyHit(
     if (wasAir && !e.knockdown) pop = Math.floor((pop * Math.max(JUGGLE_POP_MIN, 100 - JUGGLE_DECAY * juggle)) / 100);
     launch(d, dir, pop, !e.knockdown);
     d.juggle = juggle;
+    if (e.knockdown || !wasAir) ender = true;
   } else {
     d.mode = 'hitstun';
     d.timer = e.hitstun + (counter ? COUNTER_HITSTUN : 0);
@@ -488,6 +494,9 @@ export function applyHit(
     setSlide(d, dir, e.push);
   }
   if (e.pull !== undefined) pull(m, a, d, e.pull);
+  const weight = hitWeight(e.damage, ender);
+  // Heavier strikes freeze longer; a projectile keeps the plain freeze, as its thrower doesn't freeze with it. Counter hits freeze a little longer, so they read.
+  const hitStop = (e.hitstop ?? (projectile ? HITSTOP : HITSTOP_BY_WEIGHT[weight])) + (counter ? COUNTER_HITSTOP : 0);
   d.hitstop = hitStop;
   if (!projectile) a.hitstop = hitStop;
   // Later hits of a combo earn the attacker less; the defender's gain isn't scaled, so Cut Away stays in reach.
@@ -495,8 +504,14 @@ export function applyHit(
   gainMeter(m, a, Math.floor(((dmg + (dmg >> 1)) * meterPct) / 100));
   gainMeter(m, d, dmg);
   firstHit(m, ai, ev);
-  ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, x: d.x, y });
+  ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, weight, dir, x: d.x, y });
   if (ko) ev.push({ type: 'ko', player: di });
+}
+
+/** How hard a hit lands: an ender, else by its damage before scaling (docs/DESIGN.md, Hit weight). */
+export function hitWeight(damage: number, ender: boolean): HitWeight {
+  if (ender) return 3;
+  return damage >= WEIGHT_HEAVY ? 2 : damage >= WEIGHT_MEDIUM ? 1 : 0;
 }
 
 function pull(m: MatchState, a: FighterState, d: FighterState, dist: Fx): void {
