@@ -715,8 +715,9 @@ def move_clips(rig, st, data, overrides):
     """One clip per move in the data. overrides[move id] tunes a move: limb,
     alt (limbs taking turns on multi-hit moves), prop (a weapon or effect
     makes the hit, so the limb only points at it), style (hop, spin,
-    teleport, knock, grapevine, rising, braced, yank, prompter, live), tx / ty (where to aim the
-    strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
+    teleport, knock, grapevine, rising, braced, yank, prompter, live), chop (every
+    hit comes down from overhead, like an overhead: a pound, a cleaver
+    chop), tx / ty (where to aim the strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
     over frames show, whose tip, `reach` metres past the hand, makes the hit)."""
     fitter = Fitter(rig, st)
     strikes = {}
@@ -911,7 +912,7 @@ def move_clips(rig, st, data, overrides):
             lb = alt[i % len(alt)] if alt else limb
             over = hit["height"] == "overhead" and lb.startswith("hand")
             # On the ground an overhead must read as one: raised high, chopping down.
-            chop = hit["height"] == "overhead" and mv["stance"] != "air" and style != "spin"
+            chop = (hit["height"] == "overhead" and mv["stance"] != "air" and style != "spin") or spec.get("chop", False)
             low = hit["box"][3] < 0.5
             x0, x1, y0, y1 = hit["box"]
             label = f"{mid} hit {i + 1}"

@@ -15,7 +15,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-TARGETS = ["rig", "dale", "rox", "hollis", "mumbles", "margaret", "weather", "burn"]
+TARGETS = ["rig", "dale", "rox", "hollis", "mumbles", "margaret", "gus", "weather", "burn"]
 STAGES = {"weather", "burn"}
 
 

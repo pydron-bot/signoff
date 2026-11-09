@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.25.0',
+    date: '2026-11-09',
+    title: 'Yes, Chef',
+    notes: [
+      "Chef Gus Lamarre has his model: chef's whites gone grey at the cuffs, a tall toque that has seen things, a striped apron, check trousers, clogs and a waxed moustache. His cleaver rests on his shoulder, the pan comes out for the heavy swings and the mallet for Tenderise. No more grey box.",
+    ],
+  },
+  {
     version: '0.24.0',
     date: '2026-11-09',
     title: 'Knuckles',

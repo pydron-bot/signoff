@@ -156,7 +156,7 @@ effect meshes.
 - `<id>_body`: the skinned body (materials `body`, and `props` for
   accessories), each material with its PNG atlas, and morph targets
   `hurt`, `ko`, `win` and the held props (`umbrella` for Dale, `cuffs` for Hollis, `string` and
-  `puppet` for Mumbles), whose weights every clip animates.
+  `puppet` for Mumbles, `glasses` for Margaret, `pan` and `mallet` for Gus), whose weights every clip animates.
 - `<id>_<part>`: other skinned parts that shouldn't count toward the
   fighter's size (Mumbles' strings, `mumbles_strings`).
 - `fx_*`: effect meshes (projectiles, beams, decoys) at the origin, not
@@ -247,7 +247,7 @@ are authored facing right with the left foot and left hand leading.
 > 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
 > 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
 > 5. ~~**Step 21 A, finger joints**~~ *done (Nov 9): the five built fighters rebuilt on the split fingers.*
-> 6. **Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price** (Nov 9): the two new fighters, on the step 21 A skeleton and to step 21 B–C's standard. They play as grey boxes until then.
+> 6. ~~**Step 17, Chef Gus Lamarre**~~ *done (Nov 9): `gus.glb`.* Then **step 18, Rev. Gideon Price** (Nov 9), on the step 21 A skeleton and to step 21 B–C's standard. He plays as a grey box until then.
 > 7. **Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live** (Nov 9): the two new stages, on flat stand-ins until then.
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 >
@@ -603,7 +603,9 @@ materials, every state clip, a module `blender/fighters/gus.py` (add `gus`
 to `TARGETS` in `blender/build.py`). The asset test checks his GLB once it
 exists. Until then he plays as a white grey box.
 
-- [ ] **Model and textures**, in the approved style. A big, round-shouldered
+*Done (Nov 9): `blender/fighters/gus.py`, 3,056 body triangles plus 292 in effects, 1.70 MB, 42 bones. Notes under* Chef Gus Lamarre (Nov 9, art side) *in Feedback.*
+
+- [x] **Model and textures**, in the approved style. A big, round-shouldered
       chef in whites gone grey at the cuffs: a double-breasted jacket with two
       rows of buttons, a tall pleated toque that has seen things, a
       neckerchief, a striped apron tied high, check trousers and clogs. A
@@ -612,19 +614,32 @@ exists. Until then he plays as a white grey box.
       thousand times. Held props (`props`): a meat cleaver in the lead hand,
       a heavy frying pan in the rear hand for the pan moves (a held-prop
       shape key or `x_*` bone, like Dale's umbrella), a meat mallet for
-      Tenderise.
-- [ ] **Textures:** grease spots and a scorch on the apron, the *Kitchen
+      Tenderise. *Done: a round body (girth 1.25 and a belly) in whites with a
+      double-breasted flap and two rows of buttons, greyed cuffs, a red
+      neckerchief, a navy-striped apron tied high that wraps round the belly
+      (its lower half follows the thighs), a striped towel in the apron
+      string, black-and-white check trousers, clogs, a waxed moustache with
+      curled tips, heavy brows, a grin with teeth, a tall pleated toque. The
+      cleaver is always in his lead hand; the pan (`pan`) and the mallet
+      (`mallet`) are held-prop shape keys in the rear hand. The toque costs
+      him height: the rig is 1.76 m so the toque tops out at the 1.85 m box.*
+- [x] **Textures:** grease spots and a scorch on the apron, the *Kitchen
       Live* logo embroidered on the breast, a towel tucked in the apron
-      string, nicks on the cleaver's blade.
-- [ ] **Secondary motion** (`x_*`, step 16 A's spring): the toque's tip, the
-      apron's hem, the towel.
-- [ ] **State clips:** everything in the state clips table. `idle` is
+      string, nicks on the cleaver's blade. *Done, but the nicks: the blade
+      is a bright steel sheen (too fine to read at play size).*
+- [x] **Secondary motion** (`x_*`, step 16 A's spring): the toque's tip, the
+      apron's hem, the towel. *Done: `x_toque`, `x_apron`, `x_towel`.*
+- [x] **State clips:** everything in the state clips table. `idle` is
       heavy and patient, weight on the back foot, the cleaver resting on the
       shoulder; walks are a slow, rolling waddle (0.036 m a frame, the
       slowest in the game). Intros: tastes from a spoon and nods ("Mm.
       Perfect."); sharpens the cleaver on a steel. Wins: wipes his hands on
       the towel and presents an invisible plate to camera; a chef's kiss.
-- [ ] **Move clips** (table below), fitted to their hitboxes. Notes:
+      *Done: weight back, the cleaver over his lead shoulder. `intro` tastes
+      from the rear fist and nods; `intro_2` draws the cleaver down his rear
+      fist as the steel; `win` presents the plate on his rear palm, the
+      cleaver lowered (no towel wipe); `win_2` is the chef's kiss.*
+- [x] **Move clips** (table below), fitted to their hitboxes. *Done: the rear-hand normals (`s.BP`, `c.BP`, `f.BP`, `b.BP`, `j.BP`, `FP BP`, `FK FP BP`) swing the pan, its middle checked in the box; `s.BK`, `BP BK` and `FP FP BK` are cleaver swings (lead hand). Tenderise pounds overhand with the mallet and Chop Chop chops the cleaver down along the floor, both by a new `chop` override in `lib/anim.py`. Every hit reaches with the hand, so none is marked `prop`. Flambé and Mise en Place show the pan until the spawn frame.* Notes:
   - Normals swing the cleaver and the pan wide and late: big wind-ups
     (startups of 10–15 frames) and long reach. Mark the cleaver hits `prop`
     where the arm can't reach the box.
@@ -643,10 +658,10 @@ exists. Until then he plays as a white grey box.
   - `Chop Chop`, `Chop Chop+`: a crouching, two-handed chop along the floor,
     the blade out to 2.0 m on 14–16 (the boosted one chops twice, 12–13 and
     20–22). Low and flat.
-- [ ] **`fx_flambe`** (`props`): a patch of fire on the floor, about 0.9 m
+- [x] **`fx_flambe`** (`props`): a patch of fire on the floor, about 0.9 m
       across and 0.5 m high, standing on its bottom centre: low blue flames
       with orange tips, and a pan on its side in the middle.
-- [ ] **`fx_pan`** (`props`): a frying pan 0.6 m long with its handle,
+- [x] **`fx_pan`** (`props`): a frying pan 0.6 m long with its handle,
       flat side down, origin at its bottom centre.
 
 ### 18. Rev. Gideon Price (Nov 9, game side)
@@ -1202,3 +1217,8 @@ worked into the move data, and the table above updates itself.
   - Nothing in the game reads finger bones, so no game change is needed. A fist reads clearly in close-ups (intros, wins, Sign-Offs); at play size it's the silhouette that changes.
   - Channels that hold still through a clip now have two keys (first and last) instead of one a frame. three.js plays them the same; anything else reading the GLB's animation data shouldn't assume one key per frame.
   - The viewer has a HAND view (`&view=hand`) that follows the lead hand.
+- **Chef Gus Lamarre (Nov 9, art side).** Step 17 done; `npm run art -- --only gus`. Notes for the game side:
+  - Every strike and height check passes; `tests/assets.test.ts` checks his GLB like the others (1.70 MB, 42 bones).
+  - Two held props, `pan` and `mallet`: five shape keys in all (one over step 16's four), still well under 2 MB.
+  - Mise en Place shows the generic "calling down from above" pose (hands up, watching), not a one-handed flick: worth a hand-keyed pose in 16 C.
+  - `lib/anim.py` has a `chop` override: every hit of the move comes down from overhead like an overhead does, whatever its height. Gideon's Fire and Brimstone may want it.
