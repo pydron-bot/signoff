@@ -131,6 +131,10 @@ export class FighterModel {
       let mat = swapped.get(src);
       if (!mat) {
         mat = lambert(src);
+        // The file's glow is for the effect meshes (step 23 C); setTint owns the body's emissive.
+        mat.emissive.setHex(0);
+        mat.emissiveMap = null;
+        mat.emissiveIntensity = 1;
         addRim(mat, this.wear);
         swapped.set(src, mat);
         this.materials.push(mat);

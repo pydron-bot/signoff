@@ -28,6 +28,8 @@ export const CHANGELOG: readonly Release[] = [
       "Before a match, the two fighters trade a line, and some of them have history. Any button skips it.",
       "Signal damage: as a fighter gets hurt their picture breaks up, snow and colour bleeding through, and some of it is still there after the commercial break. VHS LOOK turns it down.",
       'Every stage has soft shading baked into its corners: where walls meet the floor, under the kitchen hood, along the foot of the mirrors, and round the props.',
+      'Signs, screens and lamps on every stage glow now: the neon over the mirrors, the dawn sun through the windows, the CH 0 NEWS header and the globe, the KITCHEN LIVE sign, the grease fire and the oven, the lightning and the sparking cables.',
+      "Energy specials glow too: Dale's Cold Front and Heat Lightning, Margaret's Live Feed and Gideon's Fire and Brimstone.",
     ],
   },
   {

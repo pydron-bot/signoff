@@ -9,6 +9,9 @@ from lib.anim import Stance
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
+# What gives off light (step 23 C), on the effect meshes only: the body's
+# emission belongs to the game's hit-flash tint.
+EMISSION = {r"curl\d+_.*": 1.5, r"core|bolt\d+_.*": 3, r"streak\d+": 1.5}
 HEIGHT = 1.80
 
 SKIN = (226, 184, 150)

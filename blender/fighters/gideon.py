@@ -12,6 +12,8 @@ from lib.anim import DATA, Stance, lerp_pose
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "gideon"
+# What gives off light (step 23 C), on the effect meshes only.
+EMISSION = {r"fire\d+": 3, r"glory\d+": 2}
 HEIGHT = 1.80
 GIRTH = 0.94
 
