@@ -7,6 +7,7 @@
 import {
   AIR_ATTACK_LAND_FRAMES,
   BAR,
+  BOOST_TAP,
   BOOST_WINDOW,
   CUT_AWAY_FRAMES,
   DOWN_FRAMES,
@@ -37,7 +38,7 @@ import {
 import type { SimEvent } from './events';
 import { fighterData, moveData } from './fighters';
 import { approach, clamp, fx, type Fx } from './fixed';
-import { ATTACK_BITS, BLOCK, DOWN, INTERACT, METER, SPECIAL, THROW, UP, backBit, bufferedAttack, consume, doubleTapped, forwardBit, pressed } from './input';
+import { ATTACK_BITS, BLOCK, DOWN, INTERACT, METER, SPECIAL, THROW, UP, backBit, bitIndex, bufferedAttack, consume, doubleTapped, forwardBit, pressed } from './input';
 import { kickProp, propInReach } from './stage';
 import { segmentData, stageData } from './stages';
 import type { FighterState, MatchState } from './state';
@@ -272,6 +273,20 @@ function startSpecial(f: FighterState, i: number, ev: SimEvent[]): void {
   }
   startMove(f, id);
   ev.push({ type: 'special', player: i, move: id });
+  // A double tap, or METER with it, boosts it straight away, however long the special waited to come out.
+  const inp = f.input;
+  if (inp.gap[bitIndex(SPECIAL)] <= BOOST_TAP && boost(f, i, ev)) return;
+  if (inp.age[bitIndex(METER)] <= BOOST_TAP && boost(f, i, ev)) consume(inp, METER);
+}
+
+/** Spends a bar on the boosted version of the special just started, if it has one and there's a bar. */
+function boost(f: FighterState, i: number, ev: SimEvent[]): boolean {
+  const mv = moveOf(f);
+  if (!mv.boost || f.meter < BAR) return false;
+  f.meter -= BAR;
+  f.move = mv.boost;
+  ev.push({ type: 'boost', player: i, move: mv.boost });
+  return true;
 }
 
 function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
@@ -389,14 +404,19 @@ function moveControl(f: FighterState, i: number, ev: SimEvent[]): void {
   const inp = f.input;
   // Only presses made during this move count, so a held or early press can't fire twice.
   const since = f.moveFrame;
-  if (mv.boost && f.moveFrame <= BOOST_WINDOW && f.meter >= BAR && pressed(inp, SPECIAL, since)) {
-    consume(inp, SPECIAL);
-    f.meter -= BAR;
-    f.move = mv.boost;
-    ev.push({ type: 'boost', player: i, move: mv.boost });
-    return;
+  // Special again, or METER (the touch meter), early in a special boosts it: within BOOST_WINDOW,
+  // or up to BOOST_TAP while nothing has come out yet (so a double tap works the same everywhere).
+  const early = f.moveFrame <= BOOST_WINDOW || (f.moveFrame <= BOOST_TAP && f.moveFrame < mv.startup);
+  if (mv.boost && early && f.meter >= BAR) {
+    const bit = pressed(inp, SPECIAL, since) ? SPECIAL : pressed(inp, METER, since) ? METER : 0;
+    if (bit && boost(f, i, ev)) {
+      consume(inp, bit);
+      return;
+    }
   }
-  if (mv.startup > 0 && f.moveFrame >= mv.startup && f.meter >= BAR && pressed(inp, METER, since)) {
+  // Not while a special is waiting to cancel out of a hit: then METER is for boosting it.
+  const specialNext = f.contact === 'hit' && mv.kind !== 'special' && pressed(inp, SPECIAL, since);
+  if (mv.startup > 0 && f.moveFrame >= mv.startup && f.meter >= BAR && !specialNext && pressed(inp, METER, since)) {
     consume(inp, METER);
     f.meter -= BAR;
     f.mode = 'dash';

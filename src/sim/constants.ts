@@ -89,8 +89,10 @@ export const BAR = 1000;
 /** The first hit of a round is worth a bar. */
 export const FIRST_HIT_METER = BAR;
 export const METER_MAX = 3 * BAR;
-/** Boosting must come within this many frames of the special starting. */
+/** Boosting: Special (or METER) again within this many frames of the special starting... */
 export const BOOST_WINDOW = 8;
+/** ...or Special twice this close together, even if both came before it started (a special cancelled out of a normal waits for the hit). */
+export const BOOST_TAP = 12;
 export const TAPE_SKIP_FRAMES = 10;
 export const TAPE_SKIP_SPEED = fx(0.11);
 export const CUT_AWAY_FRAMES = 20;
