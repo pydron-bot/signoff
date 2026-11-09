@@ -1,6 +1,6 @@
 """Build the game's art headless (docs/BLENDER-TODO.md has the contracts).
 
-    blender -b --factory-startup -P blender/build.py -- [--only rig|dale|weather] [--out public/assets] [--art art]
+    blender -b --factory-startup -P blender/build.py -- [--only rig|dale|weather|burn] [--out public/assets] [--art art]
 
 Writes the .blend sources to art/ and the GLBs to public/assets/ (fighters/
 and stages/). The
@@ -15,8 +15,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-TARGETS = ["rig", "dale", "rox", "hollis", "mumbles", "weather"]
-STAGES = {"weather"}
+TARGETS = ["rig", "dale", "rox", "hollis", "mumbles", "weather", "burn"]
+STAGES = {"weather", "burn"}
 
 
 def build_rig_file(out_dir, art_dir):

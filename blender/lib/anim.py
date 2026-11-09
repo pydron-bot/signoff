@@ -439,6 +439,22 @@ def state_clips(rig, st, data):
     clip("ko", 90, [(1, hit_high), (6, st.aloft()), (14, st.aloft(8).shaped(ko=0.4)), (24, out_cold),
                     (29, out_cold.but(root={"offset": (0, 0.85 * k, 0.18 * k), "turn": (-94, 0, 0)})), (34, out_cold), (90, out_cold)])
     clip("dazed", 60, [(1 + round(7.5 * i), st.dazed(i / 8)) for i in range(9)], loop=True)
+    # Picking up the stage's prop and hurling it (Feel the Burn's boombox):
+    # grab it low by 4, overhead by 6, let go forward on 8 (the game launches
+    # it then), follow through and back to stance.
+    grab = base.but(hips={"offset": (0, -0.04 * k, -(st.drop + 0.22) * k), "turn": (40, st.hips_yaw * 0.5, 0)},
+                    spine=(50, 0, 0), chest=(72, -6, 0), shoulder_L=(72, -6, 0), shoulder_R=(72, -6, 0), neck=(-20, 0, 0), head=(-30, 0, 0),
+                    hand_L={"pos": st.s((0.14, 0.58, 0.22)), "aim": (0.2, 0.6, -0.8)}, hand_R={"pos": st.s((-0.14, 0.58, 0.22)), "aim": (-0.2, 0.6, -0.8)})
+    overhead = base.but(hips={"offset": (0, -0.06 * k, -(st.drop * 0.5) * k), "turn": (-8, st.hips_yaw * 0.5, 0)},
+                        spine=(-8, 0, 0), chest=(-16, -4, 0), shoulder_L=(-16, -4, 0), shoulder_R=(-16, -4, 0), head=(-14, 0, 0),
+                        hand_L={"pos": st.s((0.16, -0.12, 2.0)), "aim": (0.1, -0.3, 1)}, hand_R={"pos": st.s((-0.16, -0.12, 2.0)), "aim": (-0.1, -0.3, 1)})
+    release = base.but(hips={"offset": (0, 0.14 * k, -(st.drop + 0.04) * k), "turn": (14, st.hips_yaw * 0.5, 0)},
+                       spine=(16, 0, 0), chest=(28, -6, 0), shoulder_L=(28, -6, 0), shoulder_R=(28, -6, 0), head=(-6, 0, 0),
+                       hand_L={"pos": st.s((0.14, 0.62, 1.55)), "aim": (0.1, 1, 0.2)}, hand_R={"pos": st.s((-0.14, 0.62, 1.55)), "aim": (-0.1, 1, 0.2)})
+    through = release.but(chest=(40, -6, 0), shoulder_L=(40, -6, 0), shoulder_R=(40, -6, 0),
+                          hand_L={"pos": st.s((0.16, 0.55, 0.95)), "aim": (0.1, 0.6, -0.8)}, hand_R={"pos": st.s((-0.16, 0.55, 0.95)), "aim": (-0.1, 0.6, -0.8)})
+    grab, overhead, release, through = (q.shaped(fist_L=0.0, fist_R=0.0) for q in (grab, overhead, release, through))
+    clip("interact_throw", 22, [(1, base), (4, grab), (5, grab), (6, overhead), (8, release), (13, through), (22, base)])
     clip("win", 120, [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))])
     relaxed = base.but(hips={"offset": (0, 0, 0), "turn": (0, -10, 0)}, spine=(0, -10, 0), chest=(0, -10, 0), neck=(0, 0, 0), head=(0, 0, 0),
                        shoulder_L=(0, -10, 0), shoulder_R=(0, -10, 0),
