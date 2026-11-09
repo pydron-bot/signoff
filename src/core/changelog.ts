@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.27.0',
+    date: '2026-11-09',
+    title: 'Can I Get an Amen',
+    notes: [
+      "Rev. Gideon Price has his model: a powder-blue three-piece suit, a long gold tie, two-tone shoes, a lacquered silver pompadour and the widest smile on late-night television. The Bible never leaves his hand, the collection plate goes out like a frisbee, and Fire and Brimstone brings both arms down in a ring of fire. No more grey box.",
+    ],
+  },
+  {
     version: '0.26.0',
     date: '2026-11-09',
     title: 'Yes, Chef',
