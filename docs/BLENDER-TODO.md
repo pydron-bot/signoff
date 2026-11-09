@@ -241,7 +241,7 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9); 17–20 are new; 23 is the newest.
+> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9); 17–22 are done; 23 and 24 are new.
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
@@ -255,6 +255,7 @@ are authored facing right with the left foot and left hand leading.
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
 > 10. **Step 23, baked light on the sets**: ambient occlusion, the sets' own lamps and what glows, for the four stages. The game side (0.34.0) is in and uses them as they land.
+> 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1022,19 +1023,22 @@ light over the hob, the oven pouring orange across the floor.
   ambient, key or rim, which it adds itself), as an RGB light map on the
   same `TEXCOORD_1` layout as the AO. glTF has no light-map slot, so it's
   its own file: `art/textures/stage-<id>_light.png`, exported to
-  `public/assets/stages/<id>-light.png` (1024², PNG, sRGB). The game loads
-  it if it's there.
+  `public/assets/stages/<id>-light.png` (1024², PNG, sRGB), and named in
+  the `lights` rig as `lightMapFile` (below): the game loads only the
+  files the rig names.
 - [ ] Value: 1.0 in the light map lights a surface about as brightly as the
   key light does. Keep pools soft-edged; a hot spot under a lamp can go to
   about 1.5 (it will just begin to glow).
 - [ ] Per segment: one light map is the lamps that are on in segment 1. A
   segment whose lamps are very different can have its own,
-  `<id>-light-<n>.png` (n is the segment, 1 to 3), used in place of the
-  first: Kitchen's Oven (the glow from the oven door, the hood light dead),
+  `<id>-light-<n>.png` (n is the segment, 1 to 3), named as that
+  segment's `lightMapFile`; a segment that names none uses the first file
+  the rig names: Kitchen's Oven (the glow from the oven door, the hood light dead),
   Burn's Burnout (the windows black, one top light), News' Lights Out (the
   grid lamps gone).
-- [ ] Add `lightMap` to each segment in the `lights` rig: how strongly the
-  game applies the map, 0 to 2 (1 if it's left out). The game dims it
+- [ ] Add `lightMapFile` (the file name, e.g. `news-light.png`) and
+  `lightMap` to each segment in the `lights` rig: which map and how
+  strongly the game applies it, 0 to 2 (1 if it's left out). The game dims it
   further itself in Lights Out with each lamp that falls, and flickers it
   with Grease Fire's flames.
 
@@ -1080,12 +1084,74 @@ the fighters' reflections read over it.
 **Checks and budget**
 
 - [ ] `tests/assets.test.ts` (game side, written with 0.34.0) checks, once a
-  stage has them: a `TEXCOORD_1` on every mesh that uses an occlusion
-  texture, the light map's size, and `lightMap` between 0 and 2.
+  stage has them: the occlusion on `texCoord` 1 and a `TEXCOORD_1` on every
+  mesh that uses it, each named light map present and 1024² at most, and
+  `lightMap` between 0 and 2.
 - [ ] Each stage's GLB plus its light maps under 2 MB in all.
 - [ ] Look at each segment in a match (Training, any segment) at the
   iPhone size and on desktop, with the performance overlay (` key): the
   draw calls mustn't change.
+
+### 24. Depth: the studio round the fight, and the room at 3:33 a.m. (Nov 9, spec; game side to follow)
+
+0.34.0 gives each set haze, light beams and dust, and the title shows the
+game on a CRT drawn by the shader. What's still flat is the space: every set
+is a floor and a back wall, with nothing between the camera and the
+fighters and nothing at the sides. This step adds three things to model. The
+game side isn't written yet; it will be built to these names. Until then
+the GLBs can carry the new objects and the game will ignore them.
+
+**A. Foreground silhouettes (every stage)**
+
+Studio kit between the camera and the fight, at the edges of the frame,
+which the game draws as near-black shapes against the lit set. As the
+camera tracks and pulls back, they slide past faster than the set does.
+
+- [ ] `fg_left`, `fg_right` in each stage GLB: a studio camera on its
+  pedestal (Weather, News), a boom mic and its stand (Burn: a speaker stack
+  and a mic stand; Kitchen: a second camera and a cue-card stand). Each at
+  x = ∓6.2, z = +2.5 to +3.5, 1.6–2.2 m tall, in `props`. Keep them below
+  half the screen's height when the camera is closest (6.4 m back, looking
+  at 1.15 m): no higher than 2.2 m, and never between x = −4.5 and 4.5.
+- [ ] `fg_top`: something hanging into the top of the frame from the grid
+  (a lamp on its yoke, a boom's tip, the hood's edge in Kitchen) at z = +2,
+  y = 4.2 to 5.
+- [ ] Under 400 triangles each; one material (`props`).
+
+**B. The audience in the dark**
+
+Bleachers out past each side wall (x = ±8.5 to ±12, z = −2 to +2, rising
+away from the floor), in near darkness, so the walls aren't the end of the
+world when the camera pulls back. Losers become the studio audience
+(DESIGN.md, the deal): in Arcade, the fighters you've beaten will sit
+there, slumped and staring.
+
+- [ ] An object `audience` in each stage, shown in every segment: three rows of
+  bench seats each side, a rail, a dim exit sign.
+- [ ] Empties `seat_1` … `seat_6` (three each side, front row) where the
+  game will sit a fighter: origin on the seat, facing the fight.
+- [ ] A new state clip for every fighter, `sit_audience` (60 frames,
+  looping): sitting, hands on knees, swaying very slightly, head turned to
+  the fight. Same rules as the other state clips.
+
+**C. The living room (the title)**
+
+`public/assets/stages/room.glb`: where the viewer is at 3:33 a.m. The game
+will draw the attract mode onto the TV's screen and push in through it on
+START, in place of today's shader TV.
+
+- [ ] A 1987 living room, seen from a sofa: a wood-cabinet CRT on a stand
+  (the screen 4:3, about 0.6 m across), a coffee table with an ashtray and a
+  TV guide open at Channel 0, the sofa's arm in the foreground, a window
+  with a streetlight's orange through the blinds, a standard lamp, off.
+- [ ] `screen`: the TV's glass as its own mesh, a curved quad with UVs 0–1
+  across it, in a material `screen` (the game replaces it).
+- [ ] `camera_start` and `camera_end` empties: where the title's camera
+  sits (on the sofa, about 2.5 m from the set) and where the push ends
+  (just short of the glass, the screen filling the view).
+- [ ] The light: only the TV's glow (the game lights the room from the
+  screen's colour) and the streetlight; bake the streetlight as in step 23.
+- [ ] Under 6,000 triangles, two materials plus `screen`, under 1.5 MB.
 
 ### State clips (every fighter)
 
