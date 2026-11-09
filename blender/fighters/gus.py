@@ -244,6 +244,13 @@ class STANCE(Stance):
     guard_fist = 0.9
     block_up = 1.38
     block_head = -4  # ducking would tip the toque up over the hurtbox
+    hit_amount = 0.85
+
+    def hit_flavour(self, name, pose, base):
+        """Heavy; the cleaver hand swings out wide (the toque tips on its spring)."""
+        if name in ("hit_crouch", "hit_body_heavy"):
+            return pose
+        return pose.but(hand_L={"pos": self.s((0.34, -0.34, 1.4)), "aim": (0.3, -0.8, 0.5)}).shaped(fist_L=0.9, open_L=0.0)
 
     def base(self, bob=0.0, drop=None):
         # Weight back: the hips sit a little behind the feet.

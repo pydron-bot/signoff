@@ -159,6 +159,9 @@ class STANCE(Stance):
     rear_aim = (0, 1, 0.3)
     guard_fist = 0.0
     block_head = -4  # ducking would lift the back of his cap over the hurtbox
+    # A big man: moves least, and the head barely turns on light hits.
+    hit_amount = 0.7
+    hit_turn = 0.35
 
     def win(self, t=0):
         """Arms folded, unimpressed."""

@@ -162,6 +162,10 @@ class STANCE(Stance):
     rear_hand = (-0.05, 0.2, 1.3)
     lead_foot = (0.11, 0.22)
     rear_foot = (-0.15, -0.22)
+    # Springy: a little further, and snapping back faster (half back by 9).
+    hit_amount = 1.1
+    hit_ease = ((3, 0.0), (5, 0.25), (9, 0.5), (12, 0.55))
+    hit_ease_heavy = ((4, 0.0), (7, 0.05), (13, 0.45), (18, 0.5))
 
     def win(self, t=0):
         """Both arms up in a V: and… hold."""

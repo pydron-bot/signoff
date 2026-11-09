@@ -166,6 +166,8 @@ def xbones(b):
 class STANCE(Stance):
     """Upright and smiling: a weatherman's half-turn to camera, hands up."""
 
+    hit_shapes = {"win": 0.6}  # the smile stays on under the hurt
+
     def intro(self, t=0):
         """The round intro: pointing back at the map behind him (his left),
         talking it through, then squaring up."""
