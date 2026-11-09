@@ -65,6 +65,7 @@ const hud = new Hud(document.body);
 const coldOpen = new ColdOpen(
   document.body,
   (side, fighter) => sound.babble(side, fighter),
+  (side, clip) => sound.line(side, clip),
   () => endColdOpen(),
 );
 /** What skips the cold open: an attack, Block, Special or Throw. */
@@ -72,6 +73,7 @@ const SKIP_BITS = Input.FP | Input.BP | Input.FK | Input.BK | Input.BLOCK | Inpu
 let coldOpenHeld = 0;
 
 function endColdOpen(): void {
+  if (coldOpen.active) sound.hush();
   coldOpen.end();
   arena.idling = false;
   // The match starts now, not with the time the lines took.
@@ -286,7 +288,8 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
   // A match against someone opens on the two of them trading a line.
   if (mode === 'cpu' || mode === 'versus') {
     const o = session.options;
-    coldOpen.begin(o.p1, o.p2, banter(o.p1, o.p2, o.seed));
+    const ex = banter(o.p1, o.p2, o.seed);
+    coldOpen.begin(o.p1, o.p2, ex, [sound.lineSeconds(ex.clips[0]), sound.lineSeconds(ex.clips[1])]);
     arena.idling = true;
     coldOpenHeld = ~0;
   } else endColdOpen();

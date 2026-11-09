@@ -68,7 +68,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json,m4a}'],
         // The fighter models are precached (~3 MB) so fights work offline.
         globIgnores: ['**/node_modules/**/*', '**/icons/*512.png'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,

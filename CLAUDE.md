@@ -7,6 +7,7 @@ gamepad). Served from https://deeek.org/signoff/.
 
 Read first: `docs/DESIGN.md` (the game design: systems, roster, stages,
 controls, technical rules). Art work: `docs/BLENDER-TODO.md` (contracts, rig, pipeline); the art viewer is `/tools/viewer/` on the dev server.
+Sound: `docs/AUDIO-TODO.md` (the recording script; recordings replace the synthesised sounds slot by slot).
 
 ## Commands
 
@@ -17,6 +18,8 @@ npm test               # vitest
 npm run combos         # best combos per fighter (frame-perfect and human), checked against damage ceilings; writes docs/COMBOS.md
 npm run combos:guides  # five or six forgiving guides per fighter (jab, low, overhead, punish, meter); rewrites the move list's combo guides (src/game/comboRoutes.ts) after changing moves
 npm run docs:clips     # rewrite the clip table in docs/BLENDER-TODO.md after changing moves
+node tools/audio-import.mjs <folder>  # recordings (WAV) into public/assets/audio as AAC (needs ffmpeg)
+npm run audio:index    # list the recordings for the game; update the shot list in docs/AUDIO-TODO.md
 npm run art            # headless Blender: art/*.blend and public/assets/fighters/*.glb
 npx -y -p playwright@1.63.0 node tools/art-check.mjs  # GLBs measured in three.js, screenshots
 npm run build          # tsc --noEmit && vite build

@@ -1,5 +1,6 @@
 /**
- * Sound, all synthesised with Web Audio (no audio files): hits, blocks,
+ * Sound, synthesised with Web Audio, with recordings taking over slot by
+ * slot as they're added (src/audio/clips.ts, docs/AUDIO-TODO.md): hits, blocks,
  * throws, the station ident, the Emergency-Broadcast-style hazard alarm, a
  * laugh track and applause that come in at the wrong moments, and the
  * sign-off tone. The announcer speaks through the browser's speech
@@ -11,6 +12,8 @@ import { Music } from './music';
 import { timbre, type Timbre } from './timbre';
 import { VocalDirector, type VocalCue } from './vocals';
 import { Voices } from './voice';
+import { HITS, hitLayers, slotKey, voiceSlot } from './clips';
+import { SampleBank } from './samples';
 import { SCORES } from './score';
 
 export type SoundMode = 'on' | 'novoice' | 'off';
@@ -24,6 +27,18 @@ const CRUNCH_DUR = [0, 0.05, 0.09, 0.15] as const;
 const CRUNCH_GAIN = [0, 0.14, 0.24, 0.32] as const;
 const SNAP_FREQ: Readonly<Record<Timbre, number>> = { punch: 2600, kick: 1700, special: 2000, metal: 3500, blade: 5000, wood: 1400 };
 const THUD_FREQ: Readonly<Record<Timbre, number>> = { punch: 170, kick: 115, special: 140, metal: 160, blade: 150, wood: 190 };
+/** Recorded hit layers' loudness by weight (light, medium, heavy, ender). */
+const SAMPLE_GAIN: Readonly<Record<string, readonly [number, number, number, number]>> = {
+  snap: [0.45, 0.55, 0.65, 0.75],
+  thud: [0.5, 0.65, 0.8, 0.95],
+  crunch: [0, 0.4, 0.6, 0.75],
+  boom: [0, 0, 0, 0.9],
+};
+/** Recorded voices: loudness, and how far each take's pitch may wander (so repeats sound less alike). */
+const VOICE_GAIN = 0.9;
+const VOICE_JITTER = 0.04;
+/** Damage from which a swing's whoosh is the heavy one. */
+const HEAVY_SWING = 60;
 
 export class Sound {
   mode: SoundMode = 'on';
@@ -41,6 +56,10 @@ export class Sound {
   private voices: Voices | null = null;
   private readonly vocals = new VocalDirector();
   private readonly cues: VocalCue[] = [];
+  /** The recordings, where there are any. */
+  readonly samples = new SampleBank();
+  /** Each fighter's recorded voice now playing: a new sound cuts it, as the synth does. */
+  private readonly voiceSrc: (AudioBufferSourceNode | null)[] = [null, null];
 
   /**
    * Audio can only start from a user gesture (iOS): call from every tap and
@@ -72,6 +91,7 @@ export class Sound {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     this.music = new Music(this.ctx, this.master, this.noiseBuf);
     this.voices = new Voices(this.ctx, this.master, this.noiseBuf);
+    this.samples.load(this.ctx);
     this.music.setVolume(this.musicVolume);
   }
 
@@ -200,14 +220,84 @@ export class Sound {
    * tape warble; then the ring of a pan, the shing of a blade or the knock
    * of a stick.
    */
-  private hit(w: HitWeight, t: Timbre): void {
-    this.noise(SNAP_DUR[w], SNAP_FREQ[t], SNAP_GAIN[w], 'highpass', 0.8);
-    this.tone(THUD_FREQ[t], THUD_DUR[w], THUD_GAIN[w], 'sine', 42);
-    if (w >= 1) this.noise(CRUNCH_DUR[w], 650, CRUNCH_GAIN[w], 'bandpass', 1.3, 0.005);
-    if (w === 3) {
-      this.tone(62, 0.45, 0.45, 'sine', 28);
-      this.tone(180, 0.18, 0.06, 'sawtooth', 55, 0.01);
+  /**
+   * A recording from the bank: a take of the slot, a touch off pitch.
+   * Returns the source, or null if the slot has no recording (the caller
+   * synthesises instead).
+   */
+  private sample(key: string, gain: number, rate = 1, jitter = 0.03, at = 0): AudioBufferSourceNode | null {
+    const buf = this.samples.take(key);
+    if (!buf) return null;
+    const c = this.ctx!;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * jitter);
+    const g = c.createGain();
+    g.gain.value = gain;
+    src.connect(g).connect(this.master!);
+    src.start(c.currentTime + at);
+    src.onended = () => g.disconnect();
+    return src;
+  }
+
+  /** A fighter's recorded voice for this slot, cutting their last; false if there's no recording. */
+  private voice(player: number, key: string, gain: number): boolean {
+    if (!this.samples.has(key)) return false;
+    const prev = this.voiceSrc[player];
+    if (prev) {
+      try {
+        prev.stop();
+      } catch {
+        // Already over.
+      }
     }
+    this.voiceSrc[player] = this.sample(key, gain, 1, VOICE_JITTER);
+    return true;
+  }
+
+  /** Stops both fighters' recorded voices (the cold open skipped). */
+  hush(): void {
+    for (let i = 0; i < 2; i++) {
+      try {
+        this.voiceSrc[i]?.stop();
+      } catch {
+        // Already over.
+      }
+      this.voiceSrc[i] = null;
+    }
+  }
+
+  /** A cold open line's recording, if there is one: true if it's playing. */
+  line(player: number, key: string): boolean {
+    if (!this.live) return false;
+    return this.voice(player, key, VOICE_GAIN);
+  }
+
+  /** How long a recorded line lasts (0 without one), so the caption can wait for it. */
+  lineSeconds(key: string): number {
+    return this.samples.seconds(key);
+  }
+
+  /** A hit, layer by layer: each recorded layer plays its recording, the rest are synthesised. */
+  private hit(w: HitWeight, t: Timbre): void {
+    // Heavier hits play their recordings a little lower.
+    const rate = 1.06 - 0.04 * w;
+    for (const layer of hitLayers(w, t)) {
+      const kind = layer === 'thud' || layer === 'crunch' || layer === 'boom' ? layer : 'snap';
+      if (this.sample(slotKey(HITS, layer), SAMPLE_GAIN[kind][w], rate)) continue;
+      if (kind === 'snap') this.snapSynth(w, t);
+      else if (kind === 'thud') this.tone(THUD_FREQ[t], THUD_DUR[w], THUD_GAIN[w], 'sine', 42);
+      else if (kind === 'crunch') this.noise(CRUNCH_DUR[w], 650, CRUNCH_GAIN[w], 'bandpass', 1.3, 0.005);
+      else {
+        this.tone(62, 0.45, 0.45, 'sine', 28);
+        this.tone(180, 0.18, 0.06, 'sawtooth', 55, 0.01);
+      }
+    }
+  }
+
+  /** The synthesised snap: the contact, and the ring, shing or knock of a prop. */
+  private snapSynth(w: HitWeight, t: Timbre): void {
+    this.noise(SNAP_DUR[w], SNAP_FREQ[t], SNAP_GAIN[w], 'highpass', 0.8);
     if (t === 'metal') {
       this.tone(880, 0.35, 0.06, 'triangle');
       this.tone(1294, 0.3, 0.05, 'triangle');
@@ -226,7 +316,18 @@ export class Sound {
 
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     if (!this.live) return;
-    for (const c of this.vocals.step(m, ev, this.cues)) this.voices?.say(c.player, m.fighters[c.player].fighter, c.kind, c.size);
+    for (const c of this.vocals.step(m, ev, this.cues)) {
+      const f = m.fighters[c.player].fighter;
+      const slot = voiceSlot(c.kind, c.size);
+      // The fighter's recording if there is one, the synthesised voice if not.
+      if (slot && this.voice(c.player, slotKey(f, slot), VOICE_GAIN * (0.75 + 0.25 * c.size))) continue;
+      this.voices?.say(c.player, f, c.kind, c.size);
+    }
+    // Attacks cutting the air (recorded only: the synth has no whoosh).
+    for (let i = 0; i < 2; i++) {
+      const s = this.vocals.swings[i];
+      if (s >= 0) this.sample(slotKey(HITS, s >= HEAVY_SWING ? 'whoosh_heavy' : 'whoosh_light'), 0.35, 1, 0.06);
+    }
     for (const e of ev) {
       switch (e.type) {
         case 'roundStart':
@@ -246,6 +347,7 @@ export class Sound {
           break;
         }
         case 'block':
+          if (this.sample(slotKey(HITS, 'block'), 0.55)) break;
           this.noise(0.04, 3200, 0.18, 'highpass');
           this.tone(880, 0.03, 0.05, 'square');
           break;
@@ -313,6 +415,7 @@ export class Sound {
         case 'throw':
           // Clocking In punches the time clock.
           if (e.move.startsWith('Clocking In')) this.tone(1400, 0.05, 0.15, 'square', undefined, 0.02);
+          if (this.sample(slotKey(HITS, 'throw'), 0.8)) break;
           this.tone(90, 0.25, 0.4, 'sine', 50);
           this.noise(0.12, 500, 0.2, 'lowpass');
           break;
@@ -349,8 +452,10 @@ export class Sound {
           this.tone(1320, 0.2, 0.08, 'sine', undefined, 0.08);
           break;
         case 'knockdown':
-          this.tone(70, 0.3, 0.4, 'sine', 40);
-          this.noise(0.2, 300, 0.25, 'lowpass');
+          if (!this.sample(slotKey(HITS, 'bodyfall'), 0.8)) {
+            this.tone(70, 0.3, 0.4, 'sine', 40);
+            this.noise(0.2, 300, 0.25, 'lowpass');
+          }
           if (Math.random() < 0.25) this.laugh(0.3);
           break;
         case 'ko':
@@ -360,6 +465,8 @@ export class Sound {
           break;
         case 'roundOver':
           this.music?.stop(1.5);
+          // The winner's line (recorded only), once the K.O. has rung out.
+          if (e.winner >= 0) this.sample(slotKey(m.fighters[e.winner].fighter, 'win'), VOICE_GAIN, 1, 0, 1.2);
           if (e.reason === 'time') this.say('Time');
           this.applause(0.5);
           break;

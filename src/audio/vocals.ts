@@ -34,6 +34,8 @@ export class VocalDirector {
   private readonly moveKey = ['', ''];
   private readonly moveFrame = [0, 0];
   private t = 0;
+  /** Set each step: the hardest hit of an attack each fighter just started, or -1 (for its whoosh). */
+  readonly swings = [-1, -1];
 
   constructor(private readonly roll: () => number = Math.random) {}
 
@@ -48,6 +50,7 @@ export class VocalDirector {
   step(m: MatchState, ev: readonly SimEvent[], out: VocalCue[]): VocalCue[] {
     out.length = 0;
     this.t++;
+    this.swings[0] = this.swings[1] = -1;
     for (const e of ev) {
       switch (e.type) {
         case 'hit': {
@@ -85,9 +88,12 @@ export class VocalDirector {
       this.moveFrame[i] = f.moveFrame;
       if (!started) continue;
       const mv = fighterData(f.fighter).moves[f.move];
-      if (!mv || (mv.kind !== 'normal' && mv.kind !== 'air')) continue;
+      if (!mv) continue;
       let hardest = 0;
       for (const h of mv.hits) hardest = Math.max(hardest, h.damage);
+      // Anything that strikes swings through the air (specials included).
+      if (mv.hits.length && mv.kind !== 'super') this.swings[i] = hardest;
+      if (mv.kind !== 'normal' && mv.kind !== 'air') continue;
       const chance = hardest >= HEAVY ? 0.75 : hardest >= MEDIUM ? 0.3 : 0.08;
       if (this.roll() < chance) this.cue(out, i, 'effort', hardest >= HEAVY ? 0.7 : 0.45, false);
     }
