@@ -3,7 +3,7 @@
 // each clip's exact length (move clips from the move data). Fighters without
 // a GLB yet are skipped. The stage GLB (public/assets/stages/weather.glb) is
 // checked for the objects, materials and lights the game reads.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { FIGHTERS, STAGES } from '../src/sim';
 import { toFloat } from '../src/sim/fixed';
@@ -14,6 +14,17 @@ export const RIG_BONES = [
   'shoulder.L', 'upper_arm.L', 'forearm.L', 'hand.L', 'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R',
   'thigh.L', 'shin.L', 'foot.L', 'toe.L', 'thigh.R', 'shin.R', 'foot.R', 'toe.R',
 ];
+
+/**
+ * Step 16's shared bones: hands that open, point and grab, and a jaw. A
+ * fighter has all of them or none (until every human fighter is rebuilt;
+ * then they join RIG_BONES).
+ */
+export const RIG_BONES_16 = ['jaw', 'thumb.L', 'index.L', 'fingers.L', 'thumb.R', 'index.R', 'fingers.R'];
+/** Bones past that are the fighter's own, for secondary motion (hair, a tie, a coat tail), named x_*. */
+const MAX_BONES = 48;
+/** Each fighter's GLB, so a full roster still loads quickly on a phone. */
+const MAX_GLB_BYTES = 2_000_000;
 
 /** State clips: exact frame counts where the table gives them; loops last exactly their frames. */
 const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
@@ -48,6 +59,12 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   td_cinematic: { frames: 150 },
   // Asked for in docs/BLENDER-TODO.md (step 14); the game stands in `interact` until it exists.
   interact_throw: { frames: 22 },
+  // Juggle reactions (step 16).
+  juggle_hit: { frames: 12 },
+  relaunch: { frames: 20 },
+  slam: { frames: 8 },
+  floor_bounce: { frames: 16 },
+  wall_splat: { frames: 20 },
 };
 const MAX_TRIANGLES = 20000;
 /** One atlas per material, at most this size (docs/BLENDER-TODO.md, step 8). */
@@ -87,7 +104,16 @@ for (const f of Object.values(FIGHTERS)) {
 
     it('uses the shared skeleton', () => {
       expect(g.skins?.length).toBe(1);
-      expect(g.skins![0].joints.map((j) => g.nodes[j].name).sort()).toEqual([...RIG_BONES].sort());
+      const bones = g.skins![0].joints.map((j) => g.nodes[j].name);
+      for (const b of RIG_BONES) expect(bones, b).toContain(b);
+      const step16 = RIG_BONES_16.filter((b) => bones.includes(b));
+      expect(step16.length === 0 || step16.length === RIG_BONES_16.length, `all of step 16's bones or none (has ${step16.join(', ')})`).toBe(true);
+      for (const b of bones) if (!RIG_BONES.includes(b) && !RIG_BONES_16.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
+      expect(bones.length).toBeLessThanOrEqual(MAX_BONES);
+    });
+
+    it(`stays under ${MAX_GLB_BYTES / 1e6} MB`, () => {
+      expect(statSync(path).size).toBeLessThanOrEqual(MAX_GLB_BYTES);
     });
 
     it('keeps to the budget: body and at most props for materials, and at most 20k triangles', () => {

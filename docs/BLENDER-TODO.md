@@ -196,6 +196,9 @@ checked by `tests/assets.test.ts`). `.L` is the character's left (Blender
 | `shoulder.L` → `upper_arm.L` → `forearm.L` → `hand.L` (and `.R`) | `chest` |
 | `thigh.L` → `shin.L` → `foot.L` → `toe.L` (and `.R`) | `hips` |
 
+Step 16 adds shared bones for the hands and jaw, and lets each fighter
+have its own `x_*` bones for secondary motion (hair, a tie): see step 16 A.
+
 Controls, not exported (the exporter bakes what they do into the bones
 above): `ik_hand.L/R` and `ik_foot.L/R` (IK targets; the hand and foot copy
 their rotation), `pole_elbow.L/R` and `pole_knee.L/R`. Rest pose is an A-pose
@@ -222,12 +225,14 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 8, evening).** Steps 1–13 are done (11–13 in 0.13.0).
+> **Start here (Nov 9).** Steps 1–13 are done (11–13 in 0.13.0).
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
 > 1. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is in: 0.14.0), and `interact_throw` for the four built fighters.
-> 2. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
+> 2. **Step 16 A, the skeleton** (hands, jaw, secondary bones) on the four built fighters, so Margaret is built once, on the new rig.
+> 3. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
+> 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, and will check `burn.glb` once it exists.
 
@@ -486,6 +491,82 @@ exists.
   - `f.FK` Field Report: steps forward while kicking (frames 1–10), foot out at mid height on 12–14.
 - [ ] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward.
 
+### 16. More detail, better poses (Nov 9, game side)
+
+Measured on Nov 9 (0.16.0): the four fighters are well inside every budget
+except the skeleton, which is what limits their poses.
+
+| | Dale | Rox | Hollis | Mumbles | Budget |
+| --- | --- | --- | --- | --- | --- |
+| Body triangles | 2,574 | 2,474 | 2,666 | 2,206 | 20,000 (this step: about 8,000) |
+| Effect triangles | 1,932 | 240 | 364 | 428 | — |
+| Bones | 22 | 22 | 22 | 22 | 48 (asset test) |
+| Shape keys | 6 | 5 | 6 | 8 | keep to about 4 (below) |
+| Clips | 60 | 62 | 61 | 60 | — |
+| GLB | 1.59 MB | 1.37 MB | 1.30 MB | 1.36 MB | 2 MB (asset test) |
+
+In a match on the iPhone profile the whole scene draws 6 to 13 draw calls and
+at most about 6,700 triangles a frame (limits: 100 calls, and the phone could
+draw many times the triangles). A fighter is about a quarter of the screen
+height in play, roughly 300 pixels on the phone, so extra triangles show in
+silhouettes and close-ups (intros, wins, Sign-Offs), not in surface detail.
+Each GLB is about a quarter animation (about 6 KB a clip), a fifth
+textures, a quarter to a third shape keys and the rest geometry. **Each
+shape key is a full copy of the mesh's vertices** (the two fist keys alone
+are 8–10% of a GLB), so more detail times more keys grows fast. Prefer bones (fists,
+the jaw) and texture swaps (faces) over new shape keys.
+
+Game side, done: the new reaction clips are picked by `src/render/pose.ts`
+(until a GLB has them they hold the last frame of `launched`, so nothing
+jumps); `tests/assets.test.ts` accepts the step 16 bones (all or none), any
+number of `x_*` bones up to 48 in all, the five new clips at their exact
+lengths, and fails a GLB over 2 MB.
+
+**A. The skeleton** (first: Margaret should be built on it)
+
+- [ ] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`.
+- [ ] Hands posed by the bones in every clip, generated from the move data like the rest: a fist on strikes (replacing the `fist_L`/`fist_R` shape keys: drop them, it saves about a tenth of each GLB), open on blocks, `hit_*`, `launched` and `dazed` (fingers splayed), grabbing on throws and `Clocking In`/`Cuff 'Em`, pointing where it's in character (Dale at the map in `intro`, Margaret at the camera).
+- [ ] The jaw on its bone: gritted on strikes, a shout on specials, slack in `ko` and `dazed`, talking in intros and wins. Mumbles' `jaw` shape key becomes the bone (his clacking and `Knock-Knock` knocks).
+- [ ] Secondary motion on each fighter's own `x_*` bones, baked as a seeded spring (lag and overshoot) from the bone it hangs from, so every clip gets it without hand keys: Dale's tie (2 bones) and quiff, Rox's perm (2–3) and headband tails, Hollis's key ring and cap peak, Mumbles' bow tie and the slack of his strings, Margaret's pages and bob. Keep it small: nothing may push the mesh outside the hurtbox checks.
+
+**B. Juggle reactions** (the combo system, 0.16.0)
+
+Juggles are long now (a launcher, strings and specials on a falling body,
+relaunches for a bar, a bounce off the floor or the wall), and every one of
+those beats shows the same held `launched` pose. Five new state clips, for
+every fighter. Each starts from and ends on `launched`'s held pose (its last
+frame), keeps the mesh in the `juggle` box like step 12 (the same build
+check), and has no `root` translation (the game moves the body). The game
+holds the last frame when the clip ends.
+
+| Clip | Frames | When the game plays it, and what it shows |
+| --- | --- | --- |
+| `juggle_hit` | 12 | Each hit on a body already in the air. A jolt: snapped further back and folded at the waist by frame 3, limbs flung, easing back to the held pose by 12. The most-seen clip in a long combo, so it should read at phone size |
+| `relaunch` | 20 | A boosted special (1 bar) pops them back up in front of the attacker. A full backward tumble (one turn in the screen plane) by frame 14, then settling into the held pose |
+| `slam` | 8 | A ground-bounce hit drives them into the floor (Rox's Lariat). Spread flat, back arched, falling fast; they hit the floor around frame 8–10 |
+| `floor_bounce` | 16 | Off the floor: crumpled on impact (frame 1–2), then bent up off it, knees and arms up, back into the held pose by 16 |
+| `wall_splat` | 20 | Off the wall (Feel the Burn near a wall): flattened against it on 1–4 (back to the wall, arms out), peeling forward off it by 10, into the held pose by 20 |
+
+- [ ] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model).
+
+**C. Hand-keyed poses where they count**
+
+Every clip today is generated from the move data as a few key poses (base,
+chamber, strike, recover). That's right for most normals; the moves people
+watch deserve more. Add per-move pose overrides (a file per fighter under
+`blender/data/`, read by `lib/anim.py`), keeping the strike frames on the
+hitbox (the build's check still applies):
+
+- [ ] Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
+- [ ] The launchers (`c.BP` for everyone) and the string enders: they start and end combos, and the camera is on them most.
+- [ ] `intro`, `intro_2`, `win`, `win_2`, using the new hands and jaw (talking to camera, pointing, waving).
+- [ ] `dazed`: with the jaw slack and the hands open it can be much more pitiful.
+
+**D. Shape detail**
+
+- [ ] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
+- [ ] Keep each GLB under 2 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -514,6 +595,11 @@ Loop where noted; lengths are suggestions unless given.
 | `intro` | 90 | Round intro |
 | `win_2`, `intro_2` | 120, 90 | Second versions. Dale: "…and that's the forecast", clicking the map / straightens the tie and the quiff. Rox: hands on hips, high knees / an overhead side stretch. Hollis: checks his watch and yawns / touches his cap, cracks his knuckles. Mumbles: laughs, jaw clacking / slumped until the strings snap him up |
 | `interact_throw` | 22 | Picking up the stage's prop and hurling it forward (Feel the Burn's boombox, step 14): crouch and grab low on 1–5, lift it overhead by 6, release forward on frame 8 (when the game launches it), follow through. Until it exists the game plays `interact` (the kick) |
+| `juggle_hit` | 12 | Hit again in the air: a jolt, ending on `launched`'s held pose (step 16 B) |
+| `relaunch` | 20 | Relaunched by a boosted special: a backward tumble into the held pose (step 16 B) |
+| `slam` | 8 | Driven into the floor by a ground-bounce hit (step 16 B) |
+| `floor_bounce` | 16 | Off the floor into the held pose (step 16 B) |
+| `wall_splat` | 20 | Against the wall, then off it into the held pose (step 16 B) |
 | `td_cinematic` | 150 | Technical Difficulties: plays under a "PLEASE STAND BY" card, so only the first and last 20 frames are really seen |
 
 ### Move clips
