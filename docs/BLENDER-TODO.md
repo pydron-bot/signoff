@@ -39,6 +39,7 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
 | Origin | Between the feet, on the floor (z = 0) |
 | Height | The fighting stance (`idle`) stands as tall as the standing hurtbox, so the straight-legged rest pose is a few per cent taller |
 | Budget per fighter | About 20,000 triangles, 2 materials (body, and accessories/props) |
+| File size | Each fighter's GLB under 5 MB (raised from 2 MB on Nov 9; `tests/assets.test.ts`). The game caches every fighter for offline play, so smaller is still better on a phone's first visit |
 | Textures | Up to 2048² per material; we'll convert to KTX2 on our side. Keep texture count low |
 | Skeleton | **One shared humanoid skeleton for all human fighters** (bone names identical) so clips can be retargeted. Mister Mumbles and Test Pattern may need their own later |
 | Animation | 60 fps, one Action per clip, named exactly as the clip names below; no root motion baked into the hips for gameplay moves (the game moves the fighter); in-place clips |
@@ -544,7 +545,7 @@ Game side, done: the new reaction clips are picked by `src/render/pose.ts`
 (until a GLB has them they hold the last frame of `launched`, so nothing
 jumps); `tests/assets.test.ts` accepts the step 16 bones (all or none), any
 number of `x_*` bones up to 48 in all, the five new clips at their exact
-lengths, and fails a GLB over 2 MB.
+lengths, and fails a GLB over 5 MB (2 MB until Nov 9).
 
 **A. The skeleton** (first: Margaret should be built on it)
 
@@ -591,7 +592,7 @@ hitbox (the build's check still applies):
 **D. Shape detail**
 
 - [ ] Up to about 8,000 body triangles each (the step 8 cap was 6,000), spent on silhouettes and on what the close-ups see: hands with the finger groups as separate pieces, faces (brow, cheek and jaw planes, the jaw as its own piece for the bone), hair clumps, clothing edges. Still faceted, still two materials, same atlas sizes.
-- [ ] Keep each GLB under 2 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
+- [ ] Keep each GLB under 5 MB: drop the fist shape keys (A), keep to about four keys (`hurt`, `ko`, `win`, and one per fighter's signature: Dale's `umbrella`, Hollis's `cuffs`), and swap expressions by face texture region where you can.
 
 ### 17. Chef Gus Lamarre (Nov 9, game side)
 
@@ -968,12 +969,11 @@ by the fighter's stance `k` like the existing hits):
   their lengths) and no `root` translation.
 - [ ] `hit_crouch` inside the crouching hurtbox; the standing ones' heads no
   more than 0.1 m above the standing hurtbox (they lean back, not up).
-- [ ] **The 2 MB limit.** Dale is at 1.87 MB and nine clips are a lot more
-  keys. Key the poses only (the build's key thinning keeps channels that
-  hold still at two keys), keep the spring bones as they are, and share the
-  `_2` clips' structure with the first. If a GLB still can't fit, note it in
-  Feedback rather than raising the limit; the game can drop `hit_head_2` and
-  `hit_body_2` first.
+- [ ] **Under 5 MB a GLB** (Derek raised the limit from 2 MB for these
+  clips, Nov 9). Dale is at 1.87 MB today, so there's room, but key the
+  poses only (the build's key thinning keeps channels that hold still at
+  two keys) and keep the spring bones as they are. Note each GLB's new
+  size in Feedback.
 - [ ] Review in the art viewer (`/tools/viewer/?f=<id>`) at play size, and
   run `npx -y -p playwright@1.63.0 node tools/art-check.mjs`.
 

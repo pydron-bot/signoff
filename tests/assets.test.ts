@@ -23,8 +23,8 @@ export const RIG_BONES = [
 ];
 /** Bones past that are the fighter's own, for secondary motion (hair, a tie, a coat tail), named x_*. */
 const MAX_BONES = 48;
-/** Each fighter's GLB, so a full roster still loads quickly on a phone. */
-const MAX_GLB_BYTES = 2_000_000;
+/** Each fighter's GLB, so a full roster still loads quickly on a phone (raised from 2 MB on Nov 9 for the hit reactions, step 22). */
+const MAX_GLB_BYTES = 5_000_000;
 
 /** State clips: exact frame counts where the table gives them; loops last exactly their frames. */
 const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
