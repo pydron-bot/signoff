@@ -8,19 +8,16 @@ import { describe, expect, it } from 'vitest';
 import { FIGHTERS, STAGES } from '../src/sim';
 import { toFloat } from '../src/sim/fixed';
 
-/** The shared skeleton's deform bones (blender/lib/rig.py DEFORM). */
+/**
+ * The shared skeleton's deform bones (blender/lib/rig.py DEFORM), with step
+ * 16's hands that open, point and grab, and the jaw.
+ */
 export const RIG_BONES = [
-  'root', 'hips', 'spine', 'chest', 'neck', 'head',
-  'shoulder.L', 'upper_arm.L', 'forearm.L', 'hand.L', 'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R',
+  'root', 'hips', 'spine', 'chest', 'neck', 'head', 'jaw',
+  'shoulder.L', 'upper_arm.L', 'forearm.L', 'hand.L', 'thumb.L', 'index.L', 'fingers.L',
+  'shoulder.R', 'upper_arm.R', 'forearm.R', 'hand.R', 'thumb.R', 'index.R', 'fingers.R',
   'thigh.L', 'shin.L', 'foot.L', 'toe.L', 'thigh.R', 'shin.R', 'foot.R', 'toe.R',
 ];
-
-/**
- * Step 16's shared bones: hands that open, point and grab, and a jaw. A
- * fighter has all of them or none (until every human fighter is rebuilt;
- * then they join RIG_BONES).
- */
-export const RIG_BONES_16 = ['jaw', 'thumb.L', 'index.L', 'fingers.L', 'thumb.R', 'index.R', 'fingers.R'];
 /** Bones past that are the fighter's own, for secondary motion (hair, a tie, a coat tail), named x_*. */
 const MAX_BONES = 48;
 /** Each fighter's GLB, so a full roster still loads quickly on a phone. */
@@ -106,9 +103,7 @@ for (const f of Object.values(FIGHTERS)) {
       expect(g.skins?.length).toBe(1);
       const bones = g.skins![0].joints.map((j) => g.nodes[j].name);
       for (const b of RIG_BONES) expect(bones, b).toContain(b);
-      const step16 = RIG_BONES_16.filter((b) => bones.includes(b));
-      expect(step16.length === 0 || step16.length === RIG_BONES_16.length, `all of step 16's bones or none (has ${step16.join(', ')})`).toBe(true);
-      for (const b of bones) if (!RIG_BONES.includes(b) && !RIG_BONES_16.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
+      for (const b of bones) if (!RIG_BONES.includes(b)) expect(b, 'its own bones are x_*').toMatch(/^x_/);
       expect(bones.length).toBeLessThanOrEqual(MAX_BONES);
     });
 

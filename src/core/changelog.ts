@@ -14,13 +14,41 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
-    version: '0.19.0',
+    version: '0.22.0',
     date: '2026-11-09',
     title: 'Live from the kitchen, and a word from our sponsor',
     notes: [
       "A seventh fighter: Rev. Gideon Price, an all-rounder with a second resource. His Collection Plate goes out and comes back, hitting on both passes, and every time it connects he collects a donation (up to five, shown as coins under his health). Laying On of Hands heals him when he has a donation to spend; Fire and Brimstone hits all round him, and with two donations it becomes a far bigger blast with armour.",
       "A fourth stage: Kitchen Live, Chef Gus's own show. In Prep, throw the stockpot (it flies at chest height) or the knife block (low and fast: block it crouching). In Grease Fire the flames take both ends of the kitchen, the walls close in and the fire flares up at one end. In The Oven the heat makes Signal fill half as fast again, for both of you.",
       "Gus's Arcade fights are now on his own show.",
+    ],
+  },
+  {
+    version: '0.21.0',
+    date: '2026-11-09',
+    title: 'Air time',
+    notes: [
+      'Juggles look like juggles: a body hit in the air jolts and folds, a relaunch sends it tumbling head over heels, a slam spreads it flat into the floor, a floor bounce crumples it and throws its knees up, and a wall splat slaps it into the wall and peels it off.',
+    ],
+  },
+  {
+    version: '0.20.0',
+    date: '2026-11-09',
+    title: 'Good evening, in 3D',
+    notes: [
+      "Margaret Okafor has her model: a burgundy pinstripe power suit with 1987's shoulder pads, pearls, a sharp bob and her script in hand. No more grey box.",
+      'Teleprompter reads as a counter stance (tall, palm out, eyes on the prompter), the Read sweeps the pages across, Live Feed points right down the camera, and Lead Story slams the script down overhead.',
+      'Her intros square the pages and take off her reading glasses; her wins set the script down and say goodnight.',
+    ],
+  },
+  {
+    version: '0.19.0',
+    date: '2026-11-09',
+    title: 'Hands on',
+    notes: [
+      'The fighters have hands now: fists close to punch, fingers splay when they get hit, hands cup to grab, and Dale points at his map in the intro.',
+      'Faces talk: jaws move through intros and wins, open in a shout on every special, and hang slack when someone is dazed or out cold. Mister Mumbles\' jaw drops between its slots like a real dummy\'s.',
+      "Things swing: Dale's tie and quiff, Rox's perm and her headband's new tails, Hollis's key ring and Mister Mumbles' bow tie and strings all follow the fight with a little lag.",
     ],
   },
   {

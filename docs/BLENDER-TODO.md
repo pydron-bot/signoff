@@ -94,10 +94,16 @@ fighter in `blender/fighters/` (body, stance, per-move tuning, effects).
   warm, slightly desaturated 1987 grade. Seeded, so a rebuild gives the same
   pixels. The PNGs are written to `art/textures/<id>_body.png` and
   `<id>_props.png` for review.
-- Shape keys: parts may carry shape functions; the body gets `fist_L`,
-  `fist_R`, `hurt`, `ko`, `win` (and `jaw` for Mumbles), keyed by every
-  clip in the same action (strikes close the fist, hits swap to `hurt`, KO
-  closes the eyes, `win` grins).
+- Shape keys: parts may carry shape functions; the body gets `hurt`, `ko`
+  and `win`, keyed by every clip in the same action (hits swap to `hurt`,
+  KO closes the eyes, `win` grins).
+- Hands and jaw (step 16 A): a pose's `shapes` also carries `fist_L/R`,
+  `point_L/R`, `open_L/R` and `jaw`, which `rig.pose_hands_and_jaw` turns
+  into the finger and jaw bones (strikes close the fist, hits splay the
+  hands, specials shout, intros and wins talk).
+- Secondary motion (`lib/spring.py`): a fighter's `xbones(b)` lists its own
+  `x_*` bones; every frame of every clip is baked with a damped spring from
+  the bone each hangs from.
 - Held props (`Parts.held`): a prop taken out for one move (Dale's
   umbrella, Hollis's handcuffs, Mumbles' string and glove puppet) is built
   and painted full size along the hand, then collapsed into the fist in
@@ -144,8 +150,7 @@ face or `&view=fx` for the effect meshes.
 
 - `<id>_body`: the skinned body (materials `body`, and `props` for
   accessories), each material with its PNG atlas, and morph targets
-  `fist_L`, `fist_R`, `hurt`, `jaw` (Mumbles only), `ko`, `win`, and the
-  held props (`umbrella` for Dale, `cuffs` for Hollis, `string` and
+  `hurt`, `ko`, `win` and the held props (`umbrella` for Dale, `cuffs` for Hollis, `string` and
   `puppet` for Mumbles), whose weights every clip animates.
 - `<id>_<part>`: other skinned parts that shouldn't count toward the
   fighter's size (Mumbles' strings, `mumbles_strings`).
@@ -193,11 +198,13 @@ checked by `tests/assets.test.ts`). `.L` is the character's left (Blender
 | --- | --- |
 | `root` (at the floor, between the feet) | — |
 | `hips` → `spine` → `chest` → `neck` → `head` | `root` |
+| `jaw` (hinged under the ears, its tail at the chin) | `head` |
 | `shoulder.L` → `upper_arm.L` → `forearm.L` → `hand.L` (and `.R`) | `chest` |
+| `thumb.L`, `index.L`, `fingers.L` (middle, ring and little together) (and `.R`) | `hand.L` (`hand.R`) |
 | `thigh.L` → `shin.L` → `foot.L` → `toe.L` (and `.R`) | `hips` |
 
-Step 16 adds shared bones for the hands and jaw, and lets each fighter
-have its own `x_*` bones for secondary motion (hair, a tie): see step 16 A.
+Each fighter may add its own `x_*` bones for secondary motion (hair, a tie,
+a key ring), up to 48 bones in all: see step 16 A.
 
 Controls, not exported (the exporter bakes what they do into the bones
 above): `ik_hand.L/R` and `ik_foot.L/R` (IK targets; the hand and foot copy
@@ -225,14 +232,14 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–14 are done (11–13 in 0.13.0, 14 on Nov 9).
+> **Start here (Nov 9).** Steps 1–16 B are done (11–13 in 0.13.0, 14–16 B on Nov 9).
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
 > 1. ~~**Step 14, Feel the Burn at Dawn**~~ *done (Nov 9): `burn.glb` and `interact_throw` for the four built fighters.*
-> 2. **Step 16 A, the skeleton** (hands, jaw, secondary bones) on the four built fighters, so Margaret is built once, on the new rig.
-> 3. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
-> 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
+> 2. ~~**Step 16 A, the skeleton**~~ *done (Nov 9): hands, jaw and `x_*` bones on the four built fighters.*
+> 3. ~~**Step 15, Margaret Okafor**~~ *done (Nov 9): `margaret.glb`, on the new skeleton.*
+> 4. ~~**Step 16 B**~~ *done (Nov 9): the five juggle reactions.* Then **16 C–D**: hand-keyed poses and the shape pass.
 >
 > Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, `burn.glb` included.
 
@@ -481,17 +488,17 @@ the others: the shared rig at 1.75 m (crouch 1.05 m, hurtbox 0.6 m wide),
 `blender/build.py`). The asset test checks her GLB like the others once it
 exists.
 
-- [ ] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some.
-- [ ] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick).
-- [ ] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight."
-- [ ] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials:
+- [x] **Model and textures**, in the approved style (step 8's budget and rules). A dark burgundy power suit with big square shoulder pads and a nipped waist, a cream blouse with a pussy-bow, a slim skirt to the knee with dark tights and low court shoes (she fights in them), pearl earrings and a single strand of pearls, a sharp chin-length bob with a side parting. **Signature expression:** composed, one eyebrow slightly raised, the faint professional smile of someone reading bad news well. Hands: a sheaf of script pages in the lead hand (`props`), held through most moves and used in some. *Done (Nov 9): 2,724 body triangles plus 40 in `fx_live_feed`, 1.56 MB. Burgundy pinstripe suit with square pads and a nipped waist, blouse and pussy-bow, a slim skirt (skirt-coloured thighs and a panel between them, so it stays put when she kicks), dark tights, court shoes, pearls, a bob parted on her left (side panels on `x_bob.L/R`), deep lipstick, her left brow 8 mm higher (`brow_lift`), and the script pages on `x_pages` in her lead hand.*
+- [x] **Textures:** a fine pinstripe on the suit, the station's CH 0 logo as a lapel pin, typed lines on the script pages, pearl highlights, neat make-up (a deep lipstick). *Done.*
+- [x] **State clips:** everything in the state clips table, including `dazed`, `interact_throw`, `tape_skip`, `win_2` and `intro_2`. `idle` is upright and still (she barely moves: a slow breath, the pages squared once a loop); walks are measured, heel-toe. Intros: straightens her pages and looks into the camera ("Good evening."); takes off her reading glasses. Wins: shuffles the pages and sets them down; a nod to camera, "Goodnight." *Done: the intros square the pages and look up into the camera, and take off her reading glasses (a held prop, `glasses`); the wins shuffle the pages and set them down, and nod "Goodnight." to the camera. Not yet: squaring the pages once an idle loop (the idle is the shared breath).*
+- [x] **Move clips** (table below), each fitted to its hitbox like the others. Notes on the specials: *Done: Breaking with the rear hand (+ adds the lead); Teleprompter is a new `prompter` style held over the counter window; Teleprompter Read is a `prop` hit with the pages (the + aims high); Live Feed a new `live` style, pointing at the camera; Lead Story slams the pages overhead.*
   - `Breaking`, `Breaking+`: a sharp, fast straight (the pages rolled into a baton is a nice touch); the boosted one adds a second strike with the other hand.
   - `Teleprompter`, `Teleprompter+`: the counter stance. She stands tall, the lead hand raised palm out, eyes reading something just off screen; held through the window (frames 8–26, or 8–34 boosted). Readable from across the screen: it's what the opponent must learn not to hit.
   - `Teleprompter Read`, `Teleprompter Read+`: the answer, played the moment a strike is read: a fast, wide backhand with the pages, hitting on 3–5 out to 1.8 m (an effect-sized reach: mark it `prop` like the Isobar Lasso if the arm can't reach), the boosted one sweeping upward (it launches).
   - `Live Feed`, `Live Feed+`: she points two fingers at the camera, "We go live", and the feed spawns on frame 14 in front of her.
   - `Lead Story`: steps in over frames 4–14 and slams the pages down overhead on 20–21. The boosted one walks through a hit (armour, the game tints it orange).
   - `f.FK` Field Report: steps forward while kicking (frames 1–10), foot out at mid height on 12–14.
-- [ ] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward.
+- [x] **`fx_live_feed`** (`props`): the projectile, a broadcast signal about 0.6 × 0.7 m standing on its box's bottom centre at 0.6 m high: a red "LIVE" bug in a frame of TV static, or a floating studio camera's tally light with a beam. The game blinks it while it waits on standby (the first 30 frames, 12 boosted), then sends it forward. *Done: TV static in blocks with a red LIVE bug and a tally light, 0.6 × 0.7 m on its bottom centre.*
 
 ### 16. More detail, better poses (Nov 9, game side)
 
@@ -526,10 +533,12 @@ lengths, and fails a GLB over 2 MB.
 
 **A. The skeleton** (first: Margaret should be built on it)
 
-- [ ] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`.
-- [ ] Hands posed by the bones in every clip, generated from the move data like the rest: a fist on strikes (replacing the `fist_L`/`fist_R` shape keys: drop them, it saves about a tenth of each GLB), open on blocks, `hit_*`, `launched` and `dazed` (fingers splayed), grabbing on throws and `Clocking In`/`Cuff 'Em`, pointing where it's in character (Dale at the map in `intro`, Margaret at the camera).
-- [ ] The jaw on its bone: gritted on strikes, a shout on specials, slack in `ko` and `dazed`, talking in intros and wins. Mumbles' `jaw` shape key becomes the bone (his clacking and `Knock-Knock` knocks).
-- [ ] Secondary motion on each fighter's own `x_*` bones, baked as a seeded spring (lag and overshoot) from the bone it hangs from, so every clip gets it without hand keys: Dale's tie (2 bones) and quiff, Rox's perm (2–3) and headband tails, Hollis's key ring and cap peak, Mumbles' bow tie and the slack of his strings, Margaret's pages and bob. Keep it small: nothing may push the mesh outside the hurtbox checks.
+*Done (Nov 9). Notes under* The skeleton (Nov 9, art side) *in Feedback.*
+
+- [x] New shared deform bones, the same in every human fighter (Mumbles too), added to `blender/lib/rig.py` DEFORM: `jaw` (child of `head`), and on each hand `thumb.L`, `index.L`, `fingers.L` (children of `hand.L`; `fingers` curls the middle, ring and little fingers together) and the same `.R`. The faceted mitts stay mitts: a bone curls a finger group, not single fingers. Once all four fighters are rebuilt, tell the game side to move them into `RIG_BONES`. *Done: placed from each fighter's hand and head scale; `RIG_BONES` in `tests/assets.test.ts` now includes them (required).*
+- [x] Hands posed by the bones in every clip, generated from the move data like the rest: a fist on strikes (replacing the `fist_L`/`fist_R` shape keys: drop them, it saves about a tenth of each GLB), open on blocks, `hit_*`, `launched` and `dazed` (fingers splayed), grabbing on throws and `Clocking In`/`Cuff 'Em`, pointing where it's in character (Dale at the map in `intro`, Margaret at the camera). *Done: the mitts are four pieces now (palm, index, three fingers, thumb); the fist keys are gone. Dale points back at the map (his left) through `intro`. Margaret's point comes with her.*
+- [x] The jaw on its bone: gritted on strikes, a shout on specials, slack in `ko` and `dazed`, talking in intros and wins. Mumbles' `jaw` shape key becomes the bone (his clacking and `Knock-Knock` knocks). *Done: the chin and the mouth's lower half ride it, so the mouth opens; Mumbles' jaw slides straight down between its slots instead of hinging (`JAW_SLIDE`). Shouts run over a special's hits, spawns, grab or counter window; strikes keep it shut.*
+- [x] Secondary motion on each fighter's own `x_*` bones, baked as a seeded spring (lag and overshoot) from the bone it hangs from, so every clip gets it without hand keys: Dale's tie (2 bones) and quiff, Rox's perm (2–3) and headband tails, Hollis's key ring and cap peak, Mumbles' bow tie and the slack of his strings, Margaret's pages and bob. Keep it small: nothing may push the mesh outside the hurtbox checks. *Done (`lib/spring.py`): Dale `x_tie`, `x_tie_end`, `x_quiff`; Rox `x_perm`, `x_perm.L/R`, `x_band` (new headband tails, tied at the back); Hollis `x_keys`, `x_peak`; Mumbles `x_bow` and an `x_string_*` per string, whose middle chases its end with a lag. Every build check still passes. Margaret's come with her.*
 
 **B. Juggle reactions** (the combo system, 0.16.0)
 
@@ -549,7 +558,7 @@ holds the last frame when the clip ends.
 | `floor_bounce` | 16 | Off the floor: crumpled on impact (frame 1–2), then bent up off it, knees and arms up, back into the held pose by 16 |
 | `wall_splat` | 20 | Off the wall (Feel the Burn near a wall): flattened against it on 1–4 (back to the wall, arms out), peeling forward off it by 10, into the held pose by 20 |
 
-- [ ] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model).
+- [x] The five clips for Dale, Rox, Hollis and Mumbles (and Margaret with her model). *Done (Nov 9), all five fighters. `Stance.reaction_poses` in `lib/anim.py` holds the key poses; the build slides each one to the middle of the juggle box by measuring the mesh (`fit_reactions`), and if a pose is still too big for that fighter's box it's blended toward the held pose just enough to fit. The relaunch tumble is keyed every frame, so the ball turns about its own middle. Notes under* Juggle reactions (Nov 9, art side) *in Feedback.*
 
 **C. Hand-keyed poses where they count**
 
@@ -901,7 +910,7 @@ worked into the move data, and the table above updates itself.
 - **`tape_skip` (game side):** a new 10-frame state clip for the Tape Skip dash; play it (with `fx_tape_skip`, when it exists) instead of `dash`.
 - **Detail pass (Nov 8, art side).** Step 8 and 9 done. Notes for the game side:
   - The bodies use 2,042–2,474 triangles of the ~6,000 allowed, so there's room for more shape where review asks for it. Each GLB is 1.2–1.5 MB with both atlases (PNG; the KTX2 conversion should shrink that).
-  - Each fighter has morph targets on `<id>_body` (`fist_L`, `fist_R`, `hurt`, `jaw`, `ko`, `win`) and every clip animates all of them, so playing clips is enough; nothing needs setting by hand. Expressions: `hurt` in the hits, `launched`, `thrown`, `down` (part) and the start of `ko`; eyes closed at the end of `ko`; `win` grins (and shows Rox's sweat drop).
+  - Each fighter has morph targets on `<id>_body` (`hurt`, `ko`, `win`; until step 16 A also `fist_L`, `fist_R` and Mumbles' `jaw`, now bones) and every clip animates all of them, so playing clips is enough; nothing needs setting by hand. Expressions: `hurt` in the hits, `launched`, `thrown`, `down` (part) and the start of `ko`; eyes closed at the end of `ko`; `win` grins (and shows Rox's sweat drop).
   - Mumbles' strings now hang from a control bar 3.3 m up, on `root`, so they stay straight whatever he does; strings to his head, hands and knees.
   - Rox now has a `props` material (her sweat drop and `fx_lariat_trail`).
   - Effects are modelled where they're used: `fx_isobar_lasso` from the hand (0.6 m) to 2.6 m at 0.8–1.4 m; `fx_key_ring` from 0.4 m out and 0.45 m up to the keys at 1.9 m; `fx_heat_lightning` and `fx_hand_puppet`'s base centred on the origin; `fx_lariat_trail` round the origin at hand height; `fx_tape_skip` (in `dale.glb`, for every fighter) trails back from the origin (−x).
@@ -924,3 +933,18 @@ worked into the move data, and the table above updates itself.
   - Burnout has its own copy of the sign with every tube dead but BURN, the mirror frames with two posts knocked askew, jagged remnants in the panels' corners, bare concrete behind them, glass scattered along the wall and in front of the mats, and pleated drapes at ±8.4.
   - The floor carries a faded sunrise logo in front of the start marks and darkens past ±6.6, so in Burnout it runs off into the background colour without a hard edge.
   - `fx_shard` is two one-sided faces (front and back), point at the origin, 1.2 m tall; `fx_shatter` is 18 flat bits within 0.6 m, `fx_mark` two strips of tape, both a few millimetres off the floor.
+- **The skeleton (Nov 9, art side).** Step 16 A done; all four GLBs rebuilt. Notes for the game side:
+  - Every fighter has the 29 shared bones (`RIG_BONES`, now including `jaw`, `thumb`, `index` and `fingers`) plus its own: Dale 3, Rox 4, Hollis 2, Mumbles 6 (31 to 35 in all).
+  - The fist and jaw shape keys are gone; the clips pose those bones instead, so playing a clip is still all the game does. Morph targets left: Dale `hurt`, `ko`, `umbrella`, `win`; Rox `hurt`, `ko`, `win`; Hollis `cuffs`, `hurt`, `ko`, `win`; Mumbles `hurt`, `ko`, `puppet`, `string`, `win`.
+  - The `x_*` bones are keyed on every frame (the spring is baked). Loops wrap cleanly; one-shot clips start at rest and ease back to it over their last 8 frames, so switching clips doesn't make the tie or the hair jump.
+  - GLBs: Dale 1.81 MB, Rox 1.64, Hollis 1.51, Mumbles 1.66. Dropping the fist keys saved less than the new channels cost (seven bones animated in every clip, the spring baked on every frame), so they grew 0.1–0.3 MB; step 16 D's shape pass should watch Dale's budget.
+- **Margaret Okafor (Nov 9, art side).** Step 15 done; `npm run art -- --only margaret`. Notes for the game side:
+  - 35 bones (the shared 29, `x_pages`, `x_bob.L/R`), morph targets `glasses`, `hurt`, `ko`, `win`; every strike and the juggle check pass, `idle` stands 1.748–1.754 m against her 1.75 m box.
+  - `fx_live_feed` is in her GLB as the projectile (`src/render/arena.ts` already places it). Teleprompter Read reaches 1.8 m with the pages' sweep, so its hit is marked `prop` (the hand points the way, like the Isobar Lasso).
+  - Two new move styles in `lib/anim.py`, for anyone's moves: `prompter` (a counter stance held over `counter.frames`) and `live` (pointing at the camera on a spawn). A counter window doesn't shout; the Read does.
+- **Juggle reactions (Nov 9, art side).** Step 16 B done: `juggle_hit`, `relaunch`, `slam`, `floor_bounce` and `wall_splat` in all five GLBs, at their exact lengths, each starting and ending on `launched`'s held pose (frame 40), with no `root` translation. Notes for the game side:
+  - **The tumble overflows the juggle box a little.** A body tucked into a ball is still 0.85–0.95 m across, and the juggle boxes are 0.65–0.8 m tall, so for the 4–6 frames of `relaunch` where the ball stands on end it pokes up to about 7 cm over the box's top and under its bottom (Rox's, the shortest box, the most). The build allows `relaunch` 15 cm of slack (`TUMBLE_SLACK` in `lib/fighter.py`) instead of 5. If that matters in play (a hit aimed at the top of a tumbling body), the box could grow during a relaunch, or the art could do a shorter turn.
+  - Every other reaction frame stays inside the box with the usual 5 cm. On the smaller boxes some poses are toned down to fit (blended toward the held pose), so Rox's and Margaret's are a little less wild than Hollis's.
+  - `wall_splat` happens lying down (the box is long and low, so the body can't stand against the wall): head first into it, arms flung back, then folding forward off it.
+  - The viewer now draws the juggle box for the five reactions too.
+  - GLBs grew by about 0.05 MB each: Dale 1.86 MB (of 2), Mumbles 1.72, Rox 1.69, Margaret 1.62, Hollis 1.57.

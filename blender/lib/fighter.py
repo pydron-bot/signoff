@@ -11,10 +11,11 @@ and HEAD (build), STANCE (a Stance subclass), costume(p, b), OVERRIDES
 import bpy
 import numpy as np
 
-from .anim import DATA, check, move_clips, state_clips
+from .anim import DATA, check, move_clips, shifted, state_clips
 from .body import Build, new_parts
 from .common import export_glb, reset_scene, shape_key_tracks, triangles
-from .rig import Clip, apply_pose, build_rig
+from .rig import JAW, Clip, add_bones, apply_pose, build_rig
+from .spring import bake
 from .texture import paint, unwrap, use_atlas
 
 # Seen most (round start, win, intro): twice the texel density.
@@ -29,6 +30,9 @@ UNDER, OVER = 0.03, 0.01
 # launched from frame 6 on: the body within the juggle hurtbox (this much
 # slack each side) and at least this long against the box's width.
 JUGGLE_SLACK, JUGGLE_FILL, JUGGLE_FROM = 0.05, 0.8, 6
+# relaunch's somersault gets more: a tucked body is still 0.85–0.95 m
+# across, and the boxes are 0.65–0.8 m tall (see BLENDER-TODO, Feedback).
+TUMBLE_SLACK = 0.15
 
 
 def mesh_top(body):
@@ -68,21 +72,82 @@ def fit_juggle(rig, body, st, box):
         st.juggle_shift = (df + dy, du - dx)
 
 
+def fit_reactions(rig, body, st, box):
+    """Each juggle reaction key pose's slide (in the body frame) that centres
+    the body in the juggle hurtbox, solved by measuring (the body turns in
+    these poses, so a slide's effect on the stage isn't fixed). A pose that
+    is still too big for this fighter's box is blended toward the held pose
+    (which fits) just enough to fit; the tumble's ball can't be, and keeps
+    its own slack (TUMBLE_SLACK)."""
+    from .anim import lerp_pose
+
+    target = np.array(((box[0] + box[1]) / 2, (box[2] + box[3]) / 2))
+    poses = st.reaction_poses()
+    held = poses["held"]
+    st.react_shift, st.react_blend = {}, {}
+
+    def centred(pose):
+        def centre(d):
+            apply_pose(rig, shifted(pose, (0, d[0], d[1])), st.height)
+            x0, x1, y0, y1 = mesh_bounds(body)
+            return np.array(((x0 + x1) / 2, (y0 + y1) / 2)), (x0, x1, y0, y1)
+
+        d = np.array(st.juggle_shift, dtype=float)
+        for _ in range(3):
+            c, _ = centre(d)
+            e = 0.05
+            J = np.column_stack(((centre(d + (e, 0))[0] - c) / e, (centre(d + (0, e))[0] - c) / e))
+            d = d + np.linalg.lstsq(J, target - c, rcond=None)[0]
+        return tuple(d), centre(d)[1]
+
+    def fits(b):
+        return b[0] >= box[0] and b[1] <= box[1] and b[2] >= box[2] and b[3] <= box[3]
+
+    for name, pose in poses.items():
+        if name == "held":
+            continue
+        d, b = centred(pose)
+        if not fits(b) and not name.startswith("tumble"):
+            lo, hi = 0.0, 1.0
+            for _ in range(6):
+                t = (lo + hi) / 2
+                d2, b2 = centred(lerp_pose(pose, held, t).shaped(**pose.parts.get("shapes", {})))
+                if fits(b2):
+                    hi, d = t, d2
+                else:
+                    lo = t
+            st.react_blend[name] = hi
+        st.react_shift[name] = d
+
+
+REACTIONS = ("juggle_hit", "relaunch", "slam", "floor_bounce", "wall_splat")
+
+
 def check_juggle(rig, body, actions, box):
-    """launched lies in the juggle hurtbox from frame 6 on, filling its length."""
-    a = next(a for a in actions if a.name == "launched")
+    """launched lies in the juggle hurtbox from frame 6 on, filling its
+    length; the juggle reactions stay inside it on every frame."""
+    problems, seen = _juggle_box(rig, body, next(a for a in actions if a.name == "launched"), box, JUGGLE_FROM, fill=True)
+    for a in actions:
+        if a.name in REACTIONS:
+            more, ext = _juggle_box(rig, body, a, box, 1, fill=False, slack=TUMBLE_SLACK if a.name == "relaunch" else JUGGLE_SLACK)
+            if more:
+                problems.append(f"{a.name}: {len(more)} frames outside the juggle box (at worst x {ext[0]:.2f}…{ext[1]:.2f}, y {ext[2]:.2f}…{ext[3]:.2f}); first: {more[0]}")
+    return problems, seen
+
+
+def _juggle_box(rig, body, a, box, first, fill, slack=JUGGLE_SLACK):
     rig.animation_data.action = a
     bx0, bx1, by0, by1 = box
     problems, seen = [], [9, -9, 9, -9]
-    for f in range(JUGGLE_FROM, int(a.frame_end) + 1):
+    for f in range(first, int(a.frame_end) + 1):
         bpy.context.scene.frame_set(f)
         x0, x1, y0, y1 = mesh_bounds(body)
         seen = [min(seen[0], x0), max(seen[1], x1), min(seen[2], y0), max(seen[3], y1)]
-        if x0 < bx0 - JUGGLE_SLACK or x1 > bx1 + JUGGLE_SLACK or y0 < by0 - JUGGLE_SLACK or y1 > by1 + JUGGLE_SLACK:
-            problems.append(f"launched frame {f}: body at x {x0:.2f}…{x1:.2f}, y {y0:.2f}…{y1:.2f}, outside the juggle box x {bx0}…{bx1}, y {by0}…{by1}")
-        if x1 - x0 < JUGGLE_FILL * (bx1 - bx0):
+        if x0 < bx0 - slack or x1 > bx1 + slack or y0 < by0 - slack or y1 > by1 + slack:
+            problems.append(f"{a.name} frame {f}: body at x {x0:.2f}…{x1:.2f}, y {y0:.2f}…{y1:.2f}, outside the juggle box x {bx0}…{bx1}, y {by0}…{by1}")
+        if fill and x1 - x0 < JUGGLE_FILL * (bx1 - bx0):
             problems.append(f"launched frame {f}: body {x1 - x0:.2f} m long, under {JUGGLE_FILL:.0%} of the juggle box ({bx1 - bx0:.2f} m)")
-    return problems[:4], seen
+    return problems, seen
 
 
 def top_in(rig, body, st, pose):
@@ -113,8 +178,13 @@ def fit_crouch(rig, body, st, top):
 def make_body(mod, height):
     """A fresh scene with the rig and the skinned body at `height`."""
     reset_scene()
-    rig = build_rig(mod.ID, height)
-    b = Build(height, getattr(mod, "GIRTH", 1.0), getattr(mod, "HEAD", 1.0))
+    head = getattr(mod, "HEAD", 1.0)
+    rig = build_rig(mod.ID, height, head, getattr(mod, "HAND", 1.0))
+    rig["jaw_open"] = getattr(mod, "JAW_OPEN", JAW)
+    rig["jaw_slide"] = getattr(mod, "JAW_SLIDE", 0.0) * height / 1.80 * head
+    b = Build(height, getattr(mod, "GIRTH", 1.0), head)
+    if hasattr(mod, "xbones"):
+        add_bones(rig, mod.xbones(b))
     p = new_parts()
     mod.costume(p, b)
     body = p.join(f"{mod.ID}_body", rig)
@@ -189,8 +259,11 @@ def build(mod, out_dir, art_dir):
     Clip.shape_keys = body.data.shape_keys
     fit_crouch(rig, body, st, hurt["crouch"][3])
     fit_juggle(rig, body, st, hurt["juggle"])
+    fit_reactions(rig, body, st, hurt["juggle"])
     actions = state_clips(rig, st, data)
     moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
+    # Secondary motion on the fighter's own bones, before the checks (it moves the mesh).
+    bake(rig, actions + moves, mod.xbones(b) if hasattr(mod, "xbones") else [], skinned)
     problems = unreachable + check(rig, moves, strikes)
     tall, heights = check_heights(rig, body, actions, hurt)
     problems += tall

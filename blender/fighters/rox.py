@@ -7,7 +7,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import about, arms, face_paint, head, head_frame, legs, lerp, lit, mouth, torso
+from lib.body import about, arms, clump, face_paint, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "rox"
 HEIGHT = 1.75
@@ -111,10 +111,16 @@ def costume(p, b):
             (0.065, -0.045, 1.73, 0.06), (-0.065, -0.045, 1.73, 0.06), (0.1, 0.01, 1.68, 0.055), (-0.1, 0.01, 1.68, 0.055),
             (0.11, -0.04, 1.62, 0.06), (-0.11, -0.04, 1.62, 0.06), (0.09, -0.07, 1.56, 0.055), (-0.09, -0.07, 1.56, 0.055),
             (0, -0.085, 1.68, 0.075), (0, -0.095, 1.6, 0.07), (0.04, -0.08, 1.54, 0.05), (-0.04, -0.08, 1.54, 0.05))):
-        p.blob(f"hair{i}", hp(x, f, u), hr(r, r * 0.9, r * 0.85), HAIR, "head", paint=hair)
+        # The perm's lower curls swing (x_perm at the back, x_perm.L/R at the sides).
+        bone = {13: "x_perm", 14: "x_perm", 15: "x_perm", 8: "x_perm.L", 10: "x_perm.L", 9: "x_perm.R", 11: "x_perm.R"}.get(i, "head")
+        p.blob(f"hair{i}", hp(x, f, u), hr(r, r * 0.9, r * 0.85), HAIR, bone, paint=hair)
     # The two-colour headband: teal with FEEL THE BURN, a pink edge.
     p.seg("headband", hp(0, 0.0, 1.729), hp(0, 0.0, 1.753), b.k * b.head * 0.106, b.k * b.head * 0.1, WARMERS, "head", verts=16, paint=headband)
     p.seg("headband_edge", hp(0, 0.0, 1.753), hp(0, 0.0, 1.76), b.k * b.head * 0.1, b.k * b.head * 0.096, LEOTARD, "head", verts=16, paint=lit)
+    # Tied at the back, two tails hanging out of the perm (x_band).
+    p.blob("headband_knot", hp(0, -0.155, 1.735), hr(0.02, 0.016, 0.018), WARMERS, "head", paint=lit)
+    for sd in (1, -1):
+        clump(p, f"headband_tail{sd}", hp(sd * 0.008, -0.158, 1.73), hp(sd * 0.04, -0.19, 1.6), 0.016 * b.k, WARMERS, "x_band", paint=lit, flat=0.3)
     # A sweat drop on her brow, out only when she wins.
     drop = hp(0.07, 0.0, 1.7)
     p.blob("sweat", drop, hr(0.009, 0.006, 0.014), SWEAT, "head", mat=1, paint=lit, shapes={"win": about(drop, move=(0.004 * k, 0.07 * k, 0))})
@@ -132,6 +138,17 @@ def costume(p, b):
         for i, (t0, t1, r0, r1) in enumerate(((0.32, 0.5, 0.066, 0.07), (0.5, 0.68, 0.071, 0.067), (0.68, 0.86, 0.068, 0.073), (0.86, 0.97, 0.072, 0.064))):
             p.seg(f"warmer{i}.{s}", lerp(knee, ankle, t0), lerp(knee, ankle, t1), b.r(r0), b.r(r1), WARMERS, f"shin.{s}", verts=10, paint=warmers)
         p.seg(f"hightop.{s}", (ankle[0], 0.0, 0.07 * k), (ankle[0], 0.0, 0.15 * k), b.r(0.062), b.r(0.058), SHOES, f"shin.{s}", verts=10, paint=shoes)
+
+
+def xbones(b):
+    """Secondary motion: the perm's lower curls (back and sides), the headband's tails."""
+    hp, _, _ = head_frame(b)
+    return [
+        {"name": "x_perm", "parent": "head", "head": hp(0, -0.07, 1.68), "tail": hp(0, -0.1, 1.53), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_perm.L", "parent": "head", "head": hp(0.09, -0.02, 1.67), "tail": hp(0.105, -0.06, 1.54), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_perm.R", "parent": "head", "head": hp(-0.09, -0.02, 1.67), "tail": hp(-0.105, -0.06, 1.54), "stiff": 0.26, "damp": 0.4, "max": 9},
+        {"name": "x_band", "parent": "head", "head": hp(0, -0.158, 1.73), "tail": hp(0, -0.19, 1.6), "stiff": 0.15, "damp": 0.25, "max": 20},
+    ]
 
 
 class STANCE(Stance):
