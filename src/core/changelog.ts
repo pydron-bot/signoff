@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.39.0',
+    date: '2026-11-09',
+    title: 'Sound Check',
+    notes: [
+      'The game is ready for real voices and real hits: recordings can now replace the fighters\' grunts, shouts, cries and screams, their lines before a match, and every layer of a hit, one sound at a time. Nothing sounds different until the first recordings arrive.',
+      'Settings → SCREEN BUTTONS: the touch buttons get out of the way while a gamepad is playing (or keep them with ALWAYS).',
+      'The menus scroll on a phone held sideways: Settings no longer runs off the bottom of the screen.',
+      "The move list's columns no longer run into each other: long inputs wrap.",
+    ],
+  },
+  {
     version: '0.38.0',
     date: '2026-11-09',
     title: 'Sweeps Week',

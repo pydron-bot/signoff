@@ -476,7 +476,9 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
 - 8-frame input buffer; a special entered during a string's cancel window
   comes out on the first allowed frame.
 - Touch buttons are 56 points or larger, inside the safe areas, and can be
-  moved and resized in Settings.
+  moved and resized in Settings. They hide while a gamepad plays player 1
+  (SCREEN BUTTONS: NOT WITH A PAD, or ALWAYS); in VS PLAYER a single pad is
+  player 2's, so player 1 keeps the screen.
 - Every control can be rebound on keyboard and gamepad; a button-mash guard
   stops held buttons repeating attacks.
 
