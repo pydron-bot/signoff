@@ -13,6 +13,7 @@ HEIGHT = 1.80
 
 SKIN = (226, 184, 150)
 TAN = (214, 150, 104)
+LIPS = (184, 104, 92)
 JACKET = (184, 146, 98)
 CHECK = (150, 112, 70)
 LAPEL = (150, 116, 76)
@@ -107,7 +108,7 @@ def costume(p, b):
 
     skin = face_paint(b, SKIN, tan=TAN, extra=forehead)
     hp, hr = head(p, b, c, paint=skin)
-    mouth(p, b, (0, 0.111, 1.63), 0.086, 0.026, SKIN, kind="grin", inner=(110, 30, 40), teeth=TEETH)
+    mouth(p, b, (0, 0.111, 1.63), 0.086, 0.026, SKIN, kind="grin", inner=(110, 30, 40), teeth=TEETH, lips=LIPS, skin=(222, 172, 134))  # skin: his face under the tan
     # Helmet hair, parted on his left and swept right, with a quiff in front.
     p.blob("hair", hp(0, -0.01, 1.725), hr(0.1, 0.112, 0.07), HAIR, "head", subdiv=2, paint=hair)
     p.blob("hair_back", hp(0, -0.04, 1.665), hr(0.097, 0.08, 0.085), HAIR, "head", paint=hair)

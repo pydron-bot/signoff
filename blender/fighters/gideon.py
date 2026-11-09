@@ -112,7 +112,7 @@ def costume(p, b):
     p.tube("mic_cord", [(q, 0.004, {"chest": 1.0} if i < 1 else {"x_cord": 1.0}, CORD) for i, q in enumerate(cord)], verts=4, mat=1)
 
     hp, hr = head(p, b, c, paint=skin, skull=(0.088, 0.104, 0.124))
-    mouth(p, b, (0, 0.11, 1.622), 0.088, 0.026, SKIN, kind="grin", inner=(120, 36, 44), teeth=TEETH)
+    mouth(p, b, (0, 0.11, 1.622), 0.088, 0.026, SKIN, kind="grin", inner=(120, 36, 44), teeth=TEETH, lips=(204, 128, 118), skin=(226, 173, 140))  # skin: under the tan
     # The pompadour: swept back at the sides, high and forward at the front
     # (the front rides x_pomp).
     p.blob("hair", hp(0, -0.012, 1.728), hr(0.098, 0.11, 0.074), HAIR, "head", subdiv=2, paint=hair_paint)
