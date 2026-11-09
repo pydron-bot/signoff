@@ -5,6 +5,7 @@
 // checked for the objects, materials and lights the game reads.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { ART_PENDING } from '../src/render/pose';
 import { FIGHTERS, STAGES } from '../src/sim';
 import { toFloat } from '../src/sim/fixed';
 
@@ -178,6 +179,8 @@ for (const f of Object.values(FIGHTERS)) {
       const anims = g.animations ?? [];
       expect(anims.map((a) => a.name)).toContain('idle');
       for (const a of anims) {
+        // Owed by the art (step 25): a retimed or retired move's old clip.
+        if (ART_PENDING.has(`${f.id}:${a.name}`)) continue;
         const seconds = Math.max(...a.samplers.map((s) => g.accessors[s.input].max![0]));
         const move = f.moves[a.name];
         const state = STATE_CLIPS[a.name];

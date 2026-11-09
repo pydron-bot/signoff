@@ -84,9 +84,9 @@ describe('getting up', () => {
 
 describe('punish', () => {
   it("a hit on a move's recovery is a punish: more damage and meter", () => {
-    // Rox whiffs her sweep from range; Dale's long kick catches her in its recovery.
+    // Rox whiffs her sweep from range (it slides in, but not far enough); Dale's long kick catches her in its recovery.
     const m = ready('dale', 'rox');
-    place(m, -0.85, 0.85);
+    place(m, -1.0, 1.0);
     const sweep = ROX.moves['c.BK'];
     const kick = FIGHTERS.dale.moves['s.BK'];
     let kicked = false;

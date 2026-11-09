@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.35.0',
+    date: '2026-11-09',
+    title: 'House Style',
+    notes: [
+      'Rox and Hollis now fight like nobody else (the rest of the cast follows).',
+      "Rox is the routine: she steps in on every string step, claps twice in your face, kicks straight up (it catches jumpers but sails over anyone crouching), slides into her splits sweep, and her jab is the most plus in the game. Her new Full Routine (FP, FP, FK, FK, BP) ends low then overhead.",
+      "Hollis is the night watch: his jab grabs your collar and drags you into grab range, his knee staggers long enough to link the jab, his Rising Clothesline and Shoulder Check are armoured (and the shoulder barges forward), and forward + FK is a slow Stiff Arm that crushes a guard. His strings are fewer and shorter, and Frisk (BP, FP, FK) is a second one that ends in a grab.",
+      'Their new moves play stand-in animations until the new ones are made; the combo guides in the move list are updated.',
+    ],
+  },
+  {
     version: '0.34.0',
     date: '2026-11-09',
     title: 'Picture Quality',

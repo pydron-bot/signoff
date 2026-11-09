@@ -9,7 +9,7 @@
 import { BAR, DONATIONS_MAX, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
-import { FIGHTER_COLORS, FIGHTER_SHOWS } from '../core/fighterLook';
+import { FIGHTER_COLORS } from '../core/fighterLook';
 import { tickerText } from './ticker';
 
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
@@ -173,7 +173,7 @@ export class Hud {
     m.fighters.forEach((f, i) => {
       const s = this.sides[i];
       const name = fighterData(f.fighter).name.toUpperCase();
-      const show = FIGHTER_SHOWS[f.fighter] ?? '';
+      const show = fighterData(f.fighter).show;
       s.name.textContent = name;
       s.show.textContent = show.toUpperCase();
       s.coins.hidden = fighterData(f.fighter).resource !== 'donations';

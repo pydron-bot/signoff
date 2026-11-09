@@ -43,6 +43,14 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   stagger: 'hit_high',
   hit_legs: 'hit_low',
   hit_crouch: 'hit_low',
+  // The styles pilot (step 25, docs/STYLES.md): new and retimed normals until their clips land.
+  'rox:s.BP': 'FP FP',
+  'rox:s.FK': 'FK FK BP',
+  'rox:FP FP FK FK': 'BP BP FK',
+  'rox:FP FP FK FK BP': 'FK FK BP',
+  'hollis:s.FK': 'FK FK',
+  'hollis:f.FK': 'f.BP',
+  'hollis:BP FP FK': 'FP FP FK',
   // Juggle reactions (step 16): the held end of `launched`.
   juggle_hit: 'launched',
   relaunch: 'launched',
@@ -50,6 +58,25 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   floor_bounce: 'launched',
   wall_splat: 'launched',
 };
+/**
+ * Move clips the art owes (docs/BLENDER-TODO.md, step 25), as fighter:clip:
+ * new moves, moves whose timing changed (a GLB clip of the old length is
+ * ignored, so the stand-in plays), and retired moves whose clips should go.
+ * The asset tests let these through; the art side empties the list.
+ */
+export const ART_PENDING: ReadonlySet<string> = new Set([
+  'rox:s.BP',
+  'rox:s.FK',
+  'rox:FP FP FK FK',
+  'rox:FP FP FK FK BP',
+  'hollis:s.FK',
+  'hollis:f.FK',
+  'hollis:BP FP FK',
+  // Retired in the pilot.
+  'hollis:FP BK',
+  'hollis:FK FK BP',
+]);
+
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */
 export const HELD_STAND_INS: ReadonlySet<string> = new Set(['juggle_hit', 'relaunch', 'slam', 'floor_bounce', 'wall_splat']);
 

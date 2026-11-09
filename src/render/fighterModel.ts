@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
+import { FIGHTERS } from '../sim';
 import { STEPS_PER_SECOND } from '../sim/constants';
 import { addRim } from './fighterLight';
 import { addOutline } from './outline';
@@ -147,7 +148,11 @@ export class FighterModel {
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
     this.mixer = new THREE.AnimationMixer(model);
+    const moves = FIGHTERS[art.id]?.moves;
     for (const [name, c] of art.clips) {
+      // A move clip made for an older version of the move (another length) is left out: its stand-in plays.
+      const mv = moves?.[name];
+      if (mv && clipFrames(c) !== mv.total) continue;
       const action = this.mixer.clipAction(c);
       // One-shot clips clamp on their last frame: repeating would wrap the
       // last frame (time = duration) back to the first (a KO would stand up).
