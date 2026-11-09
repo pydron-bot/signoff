@@ -9,14 +9,19 @@ import type { MatchState } from '../sim';
 import { BurnSet } from './burnSet';
 import { KitchenSet } from './kitchenSet';
 import { NewsSet } from './newsSet';
-import type { SegmentLights } from './stageModel';
+import { setFalloff } from './look';
+import type { Grade } from './post';
+import { applyLightMap, type SegmentLights, type StageArt } from './stageModel';
 import { WeatherSet } from './weatherSet';
 
 /** The arena's fixed lights, which the stage sets per segment. */
 export interface StageLights {
-  ambient: THREE.AmbientLight;
+  /** Sky above, the floor's bounce below. */
+  ambient: THREE.HemisphereLight;
   key: THREE.DirectionalLight;
   rim: THREE.DirectionalLight;
+  /** The post pass's colour grade, set per segment. */
+  grade: Grade;
 }
 
 export interface StageSet {
@@ -26,11 +31,21 @@ export interface StageSet {
   update(m: MatchState, frame: number): void;
 }
 
-/** Sets one segment's lights and background. */
-export function applyLights(scene: THREE.Scene, lights: StageLights, spec: SegmentLights): void {
-  const { ambient, key, rim } = lights;
+/** Sets one segment's lights, background, grade and falloff, and its baked light map when the art has one. */
+export function applyLights(scene: THREE.Scene, lights: StageLights, spec: SegmentLights, art?: StageArt | null): void {
+  const { ambient, key, rim, grade } = lights;
   ambient.color.set(spec.ambient.color);
+  ambient.groundColor.set(spec.ground ?? spec.ambient.color);
   ambient.intensity = spec.ambient.intensity;
+  if (spec.grade) {
+    grade.lift = spec.grade.lift;
+    grade.gain = spec.grade.gain;
+    grade.saturation = spec.grade.saturation;
+    grade.contrast = spec.grade.contrast;
+    grade.bloom = spec.grade.bloom;
+  }
+  setFalloff(spec.falloff ?? 0.5);
+  if (art) applyLightMap(art, spec);
   key.color.set(spec.key.color);
   key.intensity = spec.key.intensity;
   if (spec.key.position) key.position.set(...spec.key.position);

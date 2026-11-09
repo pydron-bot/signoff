@@ -17,6 +17,7 @@ import { CameraRig, FOV } from './camera';
 import { ContactShadows, setRim } from './fighterLight';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
+import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
@@ -139,6 +140,8 @@ class EffectSlot {
 
 export class Arena {
   readonly scene = new THREE.Scene();
+  /** The segment's colour grade, for the post pass. */
+  readonly grade: Grade = { ...NEUTRAL_GRADE };
   readonly camera = new THREE.PerspectiveCamera(FOV, 16 / 9, 0.1, 80);
   /** Where the camera goes, step by step (src/render/camera.ts). */
   private readonly rig = new CameraRig();
@@ -178,7 +181,7 @@ export class Arena {
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
-    const ambient = new THREE.AmbientLight(0xffffff, 1.4);
+    const ambient = new THREE.HemisphereLight(0xffffff, 0x404048, 1.1);
     this.scene.add(ambient);
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(-3, 6, 8);
@@ -187,7 +190,7 @@ export class Arena {
     this.scene.add(rim);
     this.rim = rim;
     this.shadows = new ContactShadows(this.scene);
-    this.stage = new StageView(this.scene, { ambient, key, rim });
+    this.stage = new StageView(this.scene, { ambient, key, rim, grade: this.grade });
     this.sparks = new Sparks(this.scene);
     this.burst = new SignalBurst(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());

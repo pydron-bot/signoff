@@ -65,6 +65,12 @@ export function lambert(src: THREE.MeshStandardMaterial): THREE.MeshLambertMater
     opacity: src.opacity,
     alphaTest: src.alphaTest,
     side: src.side,
+    // What glows, and the baked shading on a set's second UV set (docs/BLENDER-TODO.md, step 23).
+    emissive: src.emissive,
+    emissiveMap: src.emissiveMap,
+    emissiveIntensity: src.emissiveIntensity,
+    aoMap: src.aoMap,
+    aoMapIntensity: src.aoMapIntensity,
   });
   m.name = src.name;
   return m;

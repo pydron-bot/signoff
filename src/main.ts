@@ -14,6 +14,7 @@ import { DUMMIES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
+import { Post } from './render/post';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, TD_HEALTH_PCT, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
@@ -34,14 +35,20 @@ const SETUP_KEY = 'signoff.setup';
 const REPLAY_KEY = 'signoff.replay';
 /** Seconds the replay's back and forward buttons skip. */
 const SKIP_STEPS = 5 * 60;
+/** Settings → VHS LOOK (off, low, full): how much tape the post pass puts on the picture. */
+const VHS_AMOUNT = [0, 0.5, 1] as const;
 
 const app = document.getElementById('app')!;
 const title = document.getElementById('title')!;
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// The post pass renders several times a frame: the overlay counts them all.
+renderer.info.autoReset = false;
 app.appendChild(renderer.domElement);
+const post = new Post(renderer);
 
 const arena = new Arena();
+post.grade = arena.grade;
 const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const settings = loadSettings();
 const sound = new Sound();
@@ -62,6 +69,7 @@ const replayBar = new ReplayBar(document.body);
 const moveListPanel = new MoveListPanel(document.body);
 const arcadeCard = new ArcadeCard(document.body);
 const perf = new PerfOverlay(document.body, renderer);
+perf.note = () => `POST ${post.hdr ? 'HDR' : '8-BIT'} ×${post.drawScale}`;
 initKeyboard();
 
 /** Puts the settings into effect everywhere they matter. */
@@ -71,6 +79,8 @@ function applySettings(): void {
   glitch.reduceMotion = rm;
   glitch.censorLevel = settings.censor;
   glitch.vhs = settings.vhs;
+  post.vhs = VHS_AMOUNT[settings.vhs];
+  post.stillGrain = rm;
   document.body.dataset.vhs = String(settings.vhs);
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
   touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
@@ -205,7 +215,7 @@ function inputSides(s: Session | null): boolean[] {
 function begin(s: Session): Session {
   for (const d of inputDisplays) d.clear();
   // Compile the models' shaders as they arrive, not on their first frame.
-  void arena.setFighters(s.match).then(() => renderer.compile(arena.scene, arena.camera));
+  void arena.setFighters(s.match).then(() => post.compileScene(arena.scene, arena.camera));
   clock.reset();
   return s;
 }
@@ -546,6 +556,9 @@ function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
   renderer.setSize(w, h, false);
+  // A phone's 2x screen is drawn at 1.5x: the tape's softness hides it, and the fill it saves pays for the glow.
+  const pr = renderer.getPixelRatio();
+  post.setSize(w * pr, h * pr, pr >= 2 ? 0.75 : 1);
   arena.resize(w, h);
 }
 window.addEventListener('resize', resize);
@@ -553,7 +566,8 @@ resize();
 
 startDemo();
 // Compile every shader now, not mid-fight.
-renderer.compile(arena.scene, arena.camera);
+post.compileScene(arena.scene, arena.camera);
+post.compile();
 
 renderer.setAnimationLoop((now) => {
   let stepped = 0;
@@ -617,7 +631,13 @@ renderer.setAnimationLoop((now) => {
     inputDisplays[i].update();
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
-  renderer.render(arena.scene, arena.camera);
+  const title = document.body.dataset.scene === 'title';
+  post.dim = title ? 0.45 : 1;
+  post.saturation = title ? 0.7 : 1;
+  post.tear = glitch.tear;
+  post.split = glitch.split;
+  renderer.info.reset();
+  post.render(arena.scene, arena.camera, now);
   perf.frame(now, stepped);
 });
 

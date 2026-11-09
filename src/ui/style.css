@@ -101,11 +101,7 @@ body {
   }
 }
 
-/* ---- Title over the demo ---- */
-body[data-scene='title'] #app {
-  filter: brightness(0.45) saturate(0.7);
-}
-
+/* ---- Title over the demo (the post pass dims it) ---- */
 .title-logo {
   margin-top: -2rem;
 }
@@ -475,18 +471,6 @@ body[data-scene='title'] #app {
 .t-td { right: 196px; top: 0; border-color: #ff4a3a; font-size: 0.55rem; }
 
 /* ---- VHS reactions ---- */
-#app.wobble {
-  animation: tracking 0.2s steps(2) infinite;
-  filter: drop-shadow(3px 0 rgba(255, 0, 60, 0.6)) drop-shadow(-3px 0 rgba(0, 200, 255, 0.6));
-}
-
-@keyframes tracking {
-  0% { transform: translate(0, 0) skewX(0deg); }
-  25% { transform: translate(-6px, 2px) skewX(1.5deg); }
-  50% { transform: translate(5px, -1px) skewX(-1deg); }
-  75% { transform: translate(-3px, 0) skewX(0.5deg); }
-}
-
 .vhs-static {
   position: fixed;
   inset: 0;

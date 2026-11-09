@@ -18,6 +18,8 @@ export class PerfOverlay {
   private readonly sum: FrameSummary = { fps: 0, avgMs: 0, worstMs: 0, steps: 0, calls: 0, triangles: 0 };
   private readonly size = new THREE.Vector2();
   private on = false;
+  /** A line of its own at the bottom: how the picture is drawn. */
+  note: () => string = () => '';
   private shownAt = 0;
 
   constructor(
@@ -54,7 +56,7 @@ export class PerfOverlay {
       `<b class="${grade(s.fps, 55, 45, true)}">${s.fps.toFixed(0)} FPS</b> ` +
       `${s.avgMs.toFixed(1)} ms · worst <span class="${grade(s.worstMs, 20, 34, false)}">${s.worstMs.toFixed(1)}</span><br>` +
       `SIM ${s.steps.toFixed(0)}/s · DRAW <span class="${s.calls > DRAW_CALL_BUDGET ? 'bad' : ''}">${s.calls}</span>/${DRAW_CALL_BUDGET} · TRI ${(s.triangles / 1000).toFixed(1)}k<br>` +
-      `SHADERS ${programs} · ${this.size.x}×${this.size.y} @${this.renderer.getPixelRatio()}x`;
+      `SHADERS ${programs} · ${this.size.x}×${this.size.y} @${this.renderer.getPixelRatio()}x<br>${this.note()}`;
   }
 
   /** After a pause: time jumped, so start counting afresh. */
