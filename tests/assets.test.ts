@@ -65,6 +65,16 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   slam: { frames: 8 },
   floor_bounce: { frames: 16 },
   wall_splat: { frames: 20 },
+  // Hit reactions (step 22); the game stands in hit_high / hit_low until they exist.
+  hit_head: { frames: 12 },
+  hit_head_2: { frames: 12 },
+  hit_head_heavy: { frames: 18 },
+  hit_body: { frames: 12 },
+  hit_body_2: { frames: 12 },
+  hit_body_heavy: { frames: 18 },
+  hit_legs: { frames: 12 },
+  hit_crouch: { frames: 12 },
+  stagger: { frames: 30 },
 };
 const MAX_TRIANGLES = 20000;
 /** One atlas per material, at most this size (docs/BLENDER-TODO.md, step 8). */
