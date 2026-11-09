@@ -9,7 +9,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import DATA, Stance, lerp_pose
-from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "gideon"
 HEIGHT = 1.80
@@ -105,6 +105,7 @@ def costume(p, b):
         p.hull(f"lapel{sd}", [b.p(sd * x, f + d, u) for d in (0, 0.012) for x, f, u in ((0.075, 0.106, 1.465), (0.18, 0.1, 1.38), (0.15, 0.104, 1.34), (0.03, 0.108, 1.12))],
                LAPEL, "chest", paint=suit)
     p.seg("collar", b.p(0, 0.005, 1.43), b.p(0, 0.008, 1.485), b.r(0.06), b.r(0.056), SHIRT, "chest", paint=lit)
+    p.tube("jacket_hem", [(b.p(0, 0, u), (0.135 * k * b.g, 0.09 * k * b.g), {"hips": 1.0}, SUIT) for u in (0.79, 0.825)], verts=18, paint=suit)
     p.box("pin", pin_at, (0.06, 0.008, 0.04), PIN, "chest", mat=1, paint=pin)
     # The lapel microphone, its cord looping down to his hip (x_cord).
     p.box("lav_mic", b.p(-0.1, 0.12, 1.4), (0.014, 0.012, 0.024), MIC, "chest", mat=1)
@@ -120,6 +121,11 @@ def costume(p, b):
     for sd in (1, -1):
         clump(p, f"hair_side{sd}", hp(sd * 0.08, 0.06, 1.74), hp(sd * 0.094, -0.07, 1.69), 0.03 * k, HAIR, "head", paint=hair_paint, flat=0.4)
         clump(p, f"sideburn{sd}", hp(sd * 0.09, 0.03, 1.71), hp(sd * 0.092, 0.04, 1.655), 0.012 * k, HAIR, "head", paint=hair_paint)
+    # Lacquered locks swept back along the sides, meeting in a ducktail.
+    hair_cover(p, b, "sweep", (0, -0.03, 1.69), (0.097, 0.09, 0.09), HAIR, paint=hair_paint, rows=((0, 9), (28, 8)), az=(55, 305), flow=(28, -6),
+               width=0.026, lift=1.01, flat=0.3)
+    for sd in (1, -1):
+        clump(p, f"ducktail{sd}", hp(sd * 0.05, -0.07, 1.7), hp(sd * 0.004, -0.122, 1.64), 0.03 * k, HAIR, "head", paint=hair_paint, flat=0.35)
     # One smooth lacquered roll over the forehead, swept back into the crown.
     p.blob("pomp", hp(0, 0.06, 1.792), hr(0.084, 0.07, 0.046), HAIR, "x_pomp", subdiv=2, paint=hair_paint)
     p.blob("pomp_crown", hp(0, -0.01, 1.788), hr(0.09, 0.08, 0.05), HAIR, "x_pomp", paint=hair_paint)
