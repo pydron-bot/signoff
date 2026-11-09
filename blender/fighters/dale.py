@@ -6,7 +6,7 @@ import numpy as np
 
 from lib import paint as P
 from lib.anim import Stance
-from lib.body import arms, clump, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, torso
+from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
 HEIGHT = 1.80
@@ -89,6 +89,11 @@ def costume(p, b):
     p.box("pocket", b.p(0.12, 0.107, 1.315), (0.07, 0.01, 0.012), CHECK, "chest", paint=lit)
     p.hull("pocket_square", [b.p(x, f, u) for f in (0.104, 0.112) for x, u in ((0.095, 1.322), (0.145, 1.322), (0.105, 1.35), (0.122, 1.36), (0.138, 1.348))], SQUARE, "chest", paint=lit)
     p.seg("collar", b.p(0, 0.005, 1.43), b.p(0, 0.008, 1.485), b.r(0.06), b.r(0.056), SHIRT, "chest", paint=lit)
+    # The shirt collar's points over the lapels, and a hem round the blazer.
+    for sd in (1, -1):
+        p.hull(f"collar_point{sd}", [b.p(sd * x, f, u) for x, f, u in ((0.012, 0.118, 1.47), (0.06, 0.104, 1.478), (0.042, 0.118, 1.43),
+                                                                     (0.012, 0.11, 1.47), (0.06, 0.096, 1.478), (0.042, 0.11, 1.43))], SHIRT, "chest", paint=lit)
+    p.tube("jacket_hem", [(b.p(0, 0, u), (0.14 * b.k * b.g, 0.09 * b.k * b.g), {"hips": 1.0}, JACKET) for u in (0.79, 0.825)], verts=18, paint=suit)
     p.box("mic", b.p(-0.1, 0.122, 1.385), (0.016, 0.014, 0.026), DARK, "chest", mat=1)
 
     pin_at = b.p(0.105, 0.128, 1.395)
@@ -117,6 +122,10 @@ def costume(p, b):
     # The quiff: three broad, flat waves rolling forward off the parting.
     for i, (x, u) in enumerate(((0.035, 1.778), (0.0, 1.784), (-0.04, 1.776))):
         clump(p, f"quiff{i}", hp(x + 0.03, 0.0, u - 0.004), hp(x - 0.02, 0.118, u + 0.004), 0.034 * b.k, HAIR, "x_quiff", paint=hair, flat=0.35)
+    # Locks over the back and sides, and the top swept to his right off the parting.
+    hair_cover(p, b, "hair_lock", (0, -0.04, 1.665), (0.097, 0.08, 0.085), HAIR, paint=hair, rows=((-15, 9), (15, 10)), az=(75, 285), flow=(6, -30), width=0.026)
+    hair_cover(p, b, "hair_top", (0, -0.01, 1.725), (0.1, 0.112, 0.07), HAIR, paint=hair, rows=((20, 7), (50, 5)), az=(-60, 200), flow=(-40, -12),
+               width=0.028, lift=0.99, flat=0.3, mirror=False, skip=lambda a, e: -40 < a < 40)
     for sd in (1, -1):
         clump(p, f"sideburn{sd}", hp(sd * 0.088, 0.03, 1.715), hp(sd * 0.091, 0.04, 1.66), 0.012 * b.k, HAIR, "head", paint=hair)
 
