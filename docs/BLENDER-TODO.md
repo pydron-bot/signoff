@@ -225,16 +225,16 @@ are authored facing right with the left foot and left hand leading.
 
 ## TODO
 
-> **Start here (Nov 9).** Steps 1–13 are done (11–13 in 0.13.0).
+> **Start here (Nov 9).** Steps 1–14 are done (11–13 in 0.13.0, 14 on Nov 9).
 > Work the open steps in this order; the game side is building the next
 > fighters and stages, and will add their contracts here as their data lands.
 >
-> 1. **Step 14, Feel the Burn at Dawn**, the second stage (its game side is in: 0.14.0), and `interact_throw` for the four built fighters.
+> 1. ~~**Step 14, Feel the Burn at Dawn**~~ *done (Nov 9): `burn.glb` and `interact_throw` for the four built fighters.*
 > 2. **Step 16 A, the skeleton** (hands, jaw, secondary bones) on the four built fighters, so Margaret is built once, on the new rig.
 > 3. **Step 15, Margaret Okafor**, the fifth fighter (her game side is in: 0.15.0; she plays as a grey box until her GLB exists).
 > 4. **Step 16 B–D**: the juggle reactions for the new combo system (the game side is in: 0.16.0), then hand-keyed poses and the shape pass.
 >
-> Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, and will check `burn.glb` once it exists.
+> Run `npm test` before committing: `tests/assets.test.ts` checks every GLB, `burn.glb` included.
 
 ### 1. Rig and blockout (first)
 
@@ -461,11 +461,13 @@ The light rig per segment (suggested; tune by eye):
 | Double Time | `#140a10` | `#fff0e0` × 1.5 | `#ffffff` × 2.4 from (3, 7, 7) | `#40e0ff` × 0.9 from (−3, 5, −4); the game pulses it on the beat |
 | Burnout | `#020206` | `#6a5a9a` × 0.6 | `#c8b8ff` × 1.4 from (0, 8, 6), a single top light | `#ff4a8a` × 0.6 from (0, 3, −6) |
 
-- [ ] `set`, `seg_warmup`, `seg_double`, `seg_burnout` and the light rigs
-- [ ] `prop_boombox` at the size above
-- [ ] `fx_shard`, `fx_shatter`, `fx_mark`
-- [ ] `interact_throw` (22 frames) for every fighter, in the state clips table below: picking up the boombox and hurling it
-- [ ] Pass `tests/assets.test.ts`'s `burn.glb` checks (already written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place, the shard's length)
+*Done (Nov 9): `blender/stages/burn.py`, 1,324 triangles (0.64 MB), 8 draw calls with everything showing. Notes under* Feel the Burn at Dawn (Nov 9, art side) *in Feedback.*
+
+- [x] `set`, `seg_warmup`, `seg_double`, `seg_burnout` and the light rigs. *The lights are the table above as given.*
+- [x] `prop_boombox` at the size above. *0.6 × 0.39 × 0.2 m with the handle: silver, two woofers, twin cassette decks, a tuning dial.*
+- [x] `fx_shard`, `fx_shatter`, `fx_mark`
+- [x] `interact_throw` (22 frames) for every fighter, in the state clips table below: picking up the boombox and hurling it. *Bent over it with both hands low on 4–5, overhead on 6, arms thrown forward on 8, following through and back in stance by 22. The boombox isn't in the hands: the game moves it.*
+- [x] Pass `tests/assets.test.ts`'s `burn.glb` checks (already written: objects, materials and atlas sizes, a rig per segment named as in `STAGES.burn`, the boombox's size and place, the shard's length)
 
 ### 15. Margaret Okafor (Nov 8, game side)
 
@@ -845,3 +847,9 @@ worked into the move data, and the table above updates itself.
   - Held props are morph targets on `<id>_body` (`umbrella`, `cuffs`, `string`, `puppet`): the clips show and hide them, so there's nothing to place. They're collapsed inside the fist otherwise, so they don't change any bounds.
   - `root` is never pitched or rolled now: a pose that tips it (lying down, thrown) has the tip baked into the other bones (`upright_root` in `blender/lib/rig.py`), so the body is where it was but `root` keeps only its offset and yaw. Mumbles' strings (on `root`) now hang straight up to him when he's knocked down, instead of swinging sideways across the stage.
   - The art viewer draws the juggle hurtbox for `launched`, `down`, `ko` and `getup`, as `src/sim/combat.ts` uses it.
+- **Feel the Burn at Dawn (Nov 9, art side).** Step 14 done; `npm run art -- --only burn`. Notes for the game side:
+  - Everything is as the contract's tables say: object names, places and sizes, the light rigs, `set` 2048² and `props` 512² (no `water` material). `set` is 356 triangles, `seg_warmup` 378, `seg_double` 58, `seg_burnout` 336, the boombox 160 and the three effects 36.
+  - The windows are separate panes per segment (dawn in `seg_warmup`, morning with the sun up in `seg_double`, a starry black in `seg_burnout`) in front of the frames painted on the wall in `set`, so they swap with the segments as the game already shows them.
+  - Burnout has its own copy of the sign with every tube dead but BURN, the mirror frames with two posts knocked askew, jagged remnants in the panels' corners, bare concrete behind them, glass scattered along the wall and in front of the mats, and pleated drapes at ±8.4.
+  - The floor carries a faded sunrise logo in front of the start marks and darkens past ±6.6, so in Burnout it runs off into the background colour without a hard edge.
+  - `fx_shard` is two one-sided faces (front and back), point at the origin, 1.2 m tall; `fx_shatter` is 18 flat bits within 0.6 m, `fx_mark` two strips of tape, both a few millimetres off the floor.

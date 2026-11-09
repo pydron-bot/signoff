@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.17.0',
+    date: '2026-11-09',
+    title: 'Rise and shine',
+    notes: [
+      "Feel the Burn at Dawn gets its real set: a sprung floor and mirror wall under a sunrise, the neon sign, speaker stacks and a proper twin-deck boombox. Double Time brings the chase lights and the sun up; in Burnout the mirrors lie in pieces, the windows go black and only BURN is still lit.",
+      'Picking up the boombox is a real throw now: bend down, lift it overhead and hurl it.',
+    ],
+  },
+  {
     version: '0.16.1',
     date: '2026-11-09',
     title: 'Juggle reactions, cued up',
