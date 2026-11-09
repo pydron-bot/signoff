@@ -15,7 +15,7 @@ export interface Release {
 export const CHANGELOG: readonly Release[] = [
   {
     version: '0.16.0',
-    date: '2026-11-08',
+    date: '2026-11-09',
     title: 'Extended coverage',
     notes: [
       'Longer combos: the four-hit juggle limit is gone. Each juggle hit pops them a little lower and they fall a little faster, so juggles wind down on their own, and strings and specials keep working on a falling opponent.',
