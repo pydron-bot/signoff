@@ -175,6 +175,8 @@ export interface NormalSpec extends Omit<StrikeSpec, 'frames'> {
   boost?: string;
   armor?: Window;
   invuln?: Window;
+  /** Steps in (or back) as it strikes: metres a frame over the frames given. */
+  motion?: readonly { frames: Window; vx: number }[];
 }
 
 /**
@@ -202,6 +204,7 @@ export function normal(id: string, s: NormalSpec): MoveData {
     boost: s.boost,
     armor: s.armor,
     invuln: s.invuln,
+    motion: s.motion,
   });
 }
 

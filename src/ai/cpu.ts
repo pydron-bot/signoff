@@ -427,6 +427,8 @@ export class Cpu {
     if (dist < fx(1.1)) {
       const grab = s.guarding ? 40 : 22;
       if (r < grab) this.start(this.special(me, fwd | SPECIAL));
+      // A guard he can't grab through: the stiff arm crushes it.
+      else if (s.guarding && d.normals.f.FK && r < grab + 10) this.start(tap(fwd | FK));
       else if (r < grab + 25) this.start(this.string(d, me));
       else if (r < grab + 33) this.start(tap(THROW));
       else if (r < grab + 40) this.start(tap(DOWN | BK));

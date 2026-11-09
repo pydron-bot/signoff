@@ -12,18 +12,18 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 | Dale Storm | 1 | human | 8 | 38.7% | 13 | →BP › →BP BP › BK › Isobar Lasso+ › ↓BP › BP › BP FK › Heat Lightning |
 | Dale Storm | 3 | frame-perfect | 7 | 37.9% | 7 | →BP › →BP BP › ↓BP › BP › Isobar Lasso+ › BK › Cold Front+ |
 | Dale Storm | 3 | human | 7 | 38.8% | 6 | ↓BP › Isobar Lasso+ › →BP › →BP BP › BP › Cold Front+ ×2 |
-| Rox Vega | 0 | frame-perfect | 17 | 32.9% | 1 | ↓BP › →FK › →FK BK › BP › BP BP › Leg Warmer Lariat ×2 › BK ×2 › Count of Eight ×8 |
-| Rox Vega | 0 | human | 17 | 32.0% | 9 | ↓BP › BP › FK › FK FK › FK FK BP › Leg Warmer Lariat ×3 › FP › Count of Eight ×8 |
-| Rox Vega | 1 | frame-perfect | 17 | 41.4% | 1 | ↓BP › Star Jump+ › →FK › →FK BK › BP › BP BP › Leg Warmer Lariat ×3 › Count of Eight ×8 |
-| Rox Vega | 1 | human | 11 | 38.8% | 6 | ↓BP › Star Jump+ › →FK › →FK BK › BP › BP BP › Leg Warmer Lariat ×3 › BK ×2 |
-| Rox Vega | 3 | frame-perfect | 17 | 42.4% | 1 | ↓BP › Star Jump+ › →FK › →FK BK › BP › BP BP › Leg Warmer Lariat ×3 › FP FP › Count of Eight › Count of Eight+ ×6 |
-| Rox Vega | 3 | human | 11 | 38.8% | 6 | ↓BP › Star Jump+ › →FK › →FK BK › BP › BP BP › Leg Warmer Lariat ×3 › BK ×2 |
+| Rox Vega | 0 | frame-perfect | 16 | 30.7% | 3 | ↓BP › →FK › →FK BK › FK › Leg Warmer Lariat ×2 › ↓BP › FP › Count of Eight ×8 |
+| Rox Vega | 0 | human | 17 | 30.5% | 10 | ↓BP › FP › FK › FK FK › FK FK BP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
+| Rox Vega | 1 | frame-perfect | 17 | 38.8% | 3 | ↓BP › Star Jump+ › FK › ↓BP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×8 |
+| Rox Vega | 1 | human | 10 | 36.7% | 7 | ↓BP › Star Jump+ › →FK › →FK BK › FK › Leg Warmer Lariat ×3 › BK ×2 |
+| Rox Vega | 3 | frame-perfect | 17 | 44.0% | 1 | ↓BP › Star Jump+ › →FK › →FK BK › FK › FK FK › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight+ › Leg Warmer Lariat ×2 › Leg Warmer Lariat+ ×3 |
+| Rox Vega | 3 | human | 12 | 41.9% | 6 | ↓BP › Star Jump+ › →FK › →FK BK › FK › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight+ › Star Jump+ |
 | Hollis Bey | 0 | frame-perfect | 4 | 24.4% | 3 | ↓BP › BP › BP FP › BP FP BK |
-| Hollis Bey | 0 | human | 5 | 26.9% | 7 | ↓BP ×2 › BP › BP FP › Night Shift |
+| Hollis Bey | 0 | human | 3 | 23.4% | 26 | ↓BP › BK › Night Shift |
 | Hollis Bey | 1 | frame-perfect | 5 | 38.1% | 1 | ↓BP › BK › Key Ring+ › →BP › Night Shift |
-| Hollis Bey | 1 | human | 6 | 39.3% | 4 | ↓BP › BK › Key Ring+ › BP › BP FP › BP FP BK |
-| Hollis Bey | 3 | frame-perfect | 10 | 50.8% | 1 | ↓BP › BK › Night Shift+ › BP › BP FP › Flashlight+ › BK › Key Ring+ › ↓BP › ↓FK |
-| Hollis Bey | 3 | human | 6 | 42.3% | 7 | ↓BP › BK › Key Ring+ › BP › BP FP › Night Shift+ |
+| Hollis Bey | 1 | human | 5 | 37.4% | 9 | ↓BP › BK › Key Ring+ › BP › Night Shift |
+| Hollis Bey | 3 | frame-perfect | 10 | 51.4% | 1 | ↓BP › BK › Night Shift+ › FK › FK FK › Flashlight+ › BP › Key Ring+ › ↓BP › ↓FP |
+| Hollis Bey | 3 | human | 7 | 47.1% | 7 | ↓BP › BK › Key Ring+ › BP › BP FP › Night Shift+ › Flashlight+ |
 | Mister Mumbles | 0 | frame-perfect | 5 | 29.4% | 1 | ↓BP › ←BP › BP › BP FK › Hand Puppet |
 | Mister Mumbles | 0 | human | 6 | 26.0% | 8 | FK › FK FK › FK FK FK › BP › FK › Hand Puppet |
 | Mister Mumbles | 1 | frame-perfect | 7 | 40.5% | 1 | ↓BP › Knock-Knock+ › BP › FK › FK FK › FK FK FK › FP |

@@ -172,10 +172,18 @@ meter. Every number below is a starting value to tune.
   - **Breaking out.** The defender's answer to a long combo is Cut Away,
     which takes a full meter and spends all of it: the attacker has to
     weigh spending bars to extend against the bars the defender is holding.
-- Each fighter's normals do their own job: Dale has the longest pokes and a
-  step-back kick; Rox is short-ranged but plus on block, with a lunge and
-  double kicks; Hollis has an armoured kick, the only link in the game
-  (Nightstick into jab) and a string that ends in a grab (Cuff 'Em);
+- Each fighter's normals do their own job, and each fighter has a style of
+  their own (`docs/STYLES.md`: shape, rhythm, space, properties, strings;
+  Rox and Hollis first, in 0.37.0): Dale has the longest pokes and a
+  step-back kick; Rox is the routine: the closest range and the most plus,
+  every string step stepping in, two-hit claps, a high kick that's an
+  anti-air but sails over a croucher, a sliding splits sweep, and the
+  longest strings (the Full Routine branches low or overhead at its fourth
+  hit); Hollis is the night watch: a jab that drags you into grab range, a
+  close knee and the Nightstick that both link, armour on his heavies
+  (Door Kick, Rising Clothesline, a barging Shoulder Check), a slow Stiff
+  Arm that crushes a guard, and short strings, two of them ending in a
+  grab (Cuff 'Em, Frisk);
   Mumbles ducks under high attacks, reels people in on a string, and ends
   combos with his Hand Puppet; Margaret has the best all-round normals
   (fast, long enough, safe), a step-in kick, and a stagger (Breaking) that

@@ -874,9 +874,9 @@
    "s.BP": {
     "kind": "normal",
     "stance": "stand",
-    "total": 21,
+    "total": 22,
     "startup": 8,
-    "lastActive": 9,
+    "lastActive": 13,
     "hits": [
      {
       "frames": [
@@ -885,9 +885,22 @@
       ],
       "box": [
        0.2,
-       0.95,
-       1.05,
-       1.4
+       0.8,
+       1.15,
+       1.5
+      ],
+      "height": "mid"
+     },
+     {
+      "frames": [
+       12,
+       13
+      ],
+      "box": [
+       0.2,
+       0.8,
+       1.15,
+       1.5
       ],
       "height": "mid"
      }
@@ -898,20 +911,20 @@
    "s.FK": {
     "kind": "normal",
     "stance": "stand",
-    "total": 21,
-    "startup": 7,
-    "lastActive": 9,
+    "total": 23,
+    "startup": 9,
+    "lastActive": 11,
     "hits": [
      {
       "frames": [
-       7,
-       9
+       9,
+       11
       ],
       "box": [
-       0.2,
-       1.05,
-       0.55,
-       0.9
+       0.15,
+       0.95,
+       1.2,
+       2.15
       ],
       "height": "mid"
      }
@@ -1042,7 +1055,7 @@
       ],
       "box": [
        0.2,
-       1.2,
+       1,
        0,
        0.3
       ],
@@ -1050,7 +1063,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       2,
+       10
+      ],
+      "vx": 0.05
+     }
+    ]
    },
    "f.FK": {
     "kind": "normal",
@@ -1226,7 +1247,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       5
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "FP FP FK": {
     "kind": "normal",
@@ -1250,7 +1279,79 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       7
+      ],
+      "vx": 0.03
+     }
+    ]
+   },
+   "FP FP FK FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 23,
+    "startup": 8,
+    "lastActive": 9,
+    "hits": [
+     {
+      "frames": [
+       8,
+       9
+      ],
+      "box": [
+       0.2,
+       1.15,
+       0,
+       0.3
+      ],
+      "height": "low"
+     }
+    ],
+    "spawns": [],
+    "motion": [
+     {
+      "frames": [
+       1,
+       7
+      ],
+      "vx": 0.03
+     }
+    ]
+   },
+   "FP FP FK FK BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 33,
+    "startup": 14,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       14,
+       15
+      ],
+      "box": [
+       0.2,
+       1.2,
+       1,
+       1.6
+      ],
+      "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": [
+     {
+      "frames": [
+       1,
+       13
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "FP FP FK BK": {
     "kind": "normal",
@@ -1298,7 +1399,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       7
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "BP BP FK": {
     "kind": "normal",
@@ -1322,7 +1431,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       8
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "FK FK": {
     "kind": "normal",
@@ -1346,7 +1463,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       8
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "FK FK BP": {
     "kind": "normal",
@@ -1370,7 +1495,15 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [
+     {
+      "frames": [
+       1,
+       13
+      ],
+      "vx": 0.03
+     }
+    ]
    },
    "c.FK FK": {
     "kind": "normal",
@@ -2073,20 +2206,20 @@
    "s.FK": {
     "kind": "normal",
     "stance": "stand",
-    "total": 28,
-    "startup": 10,
-    "lastActive": 12,
+    "total": 26,
+    "startup": 9,
+    "lastActive": 11,
     "hits": [
      {
       "frames": [
-       10,
-       12
+       9,
+       11
       ],
       "box": [
-       0.2,
-       1.2,
-       0.5,
-       0.9
+       0.15,
+       0.85,
+       0.8,
+       1.35
       ],
       "height": "mid"
      }
@@ -2168,7 +2301,11 @@
      }
     ],
     "spawns": [],
-    "motion": []
+    "motion": [],
+    "armor": [
+     1,
+     10
+    ]
    },
    "c.FK": {
     "kind": "normal",
@@ -2237,6 +2374,42 @@
        1.7
       ],
       "height": "overhead"
+     }
+    ],
+    "spawns": [],
+    "motion": [
+     {
+      "frames": [
+       4,
+       20
+      ],
+      "vx": 0.05
+     }
+    ],
+    "armor": [
+     1,
+     16
+    ]
+   },
+   "f.FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 42,
+    "startup": 20,
+    "lastActive": 22,
+    "hits": [
+     {
+      "frames": [
+       20,
+       22
+      ],
+      "box": [
+       0.2,
+       1.05,
+       0.9,
+       1.6
+      ],
+      "height": "mid"
      }
     ],
     "spawns": [],
@@ -2403,30 +2576,6 @@
     "spawns": [],
     "motion": []
    },
-   "FP BK": {
-    "kind": "normal",
-    "stance": "stand",
-    "total": 33,
-    "startup": 13,
-    "lastActive": 15,
-    "hits": [
-     {
-      "frames": [
-       13,
-       15
-      ],
-      "box": [
-       0.2,
-       1.35,
-       0.7,
-       1.2
-      ],
-      "height": "mid"
-     }
-    ],
-    "spawns": [],
-    "motion": []
-   },
    "BP FP": {
     "kind": "normal",
     "stance": "stand",
@@ -2449,6 +2598,23 @@
      }
     ],
     "spawns": [],
+    "motion": []
+   },
+   "BP FP FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 34,
+    "startup": 8,
+    "lastActive": 9,
+    "hits": [],
+    "spawns": [],
+    "throw": {
+     "frames": [
+      8,
+      9
+     ],
+     "range": 1.2
+    },
     "motion": []
    },
    "BP FP BK": {
@@ -2488,40 +2654,24 @@
        13
       ],
       "box": [
-       0.2,
-       1.3,
-       0.5,
-       0.9
+       0.15,
+       0.9,
+       0.8,
+       1.35
       ],
       "height": "mid"
      }
     ],
     "spawns": [],
-    "motion": []
-   },
-   "FK FK BP": {
-    "kind": "normal",
-    "stance": "stand",
-    "total": 37,
-    "startup": 17,
-    "lastActive": 18,
-    "hits": [
+    "motion": [
      {
       "frames": [
-       17,
-       18
+       2,
+       10
       ],
-      "box": [
-       0.2,
-       1.2,
-       1,
-       1.7
-      ],
-      "height": "overhead"
+      "vx": 0.03
      }
-    ],
-    "spawns": [],
-    "motion": []
+    ]
    },
    "c.FP FK": {
     "kind": "normal",

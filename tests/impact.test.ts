@@ -7,7 +7,7 @@ import { timbre } from '../src/audio/timbre';
 import { hitWeight } from '../src/sim/combat';
 import { place, ready } from './sim-helpers';
 
-const { DOWN, RIGHT, SPECIAL, FP, BP } = Input;
+const { DOWN, RIGHT, SPECIAL, FP, BP, FK } = Input;
 
 /** Rox does `input` on step 0 against a standing Dale; the first hit event, and the freeze on both just after it. */
 function firstHit(input: number, gap = 0.8) {
@@ -31,12 +31,12 @@ describe('hit weight', () => {
     expect(hitWeight(10, true)).toBe(3);
   });
 
-  it('a jab is light, a power punch medium, a launcher an ender, each with its own freeze on both fighters', () => {
+  it('a jab is light, a high kick medium, a launcher an ender, each with its own freeze on both fighters', () => {
     const jab = firstHit(FP);
     expect(FIGHTERS.rox.moves['s.FP'].hits[0].damage).toBeLessThan(WEIGHT_MEDIUM);
     expect(jab.hit.weight).toBe(0);
     expect(jab.stop).toEqual([HITSTOP_BY_WEIGHT[0], HITSTOP_BY_WEIGHT[0]]);
-    const power = firstHit(BP);
+    const power = firstHit(FK);
     expect(power.hit.weight).toBe(1);
     expect(power.stop[1]).toBe(HITSTOP_BY_WEIGHT[1]);
     const launcher = firstHit(DOWN | BP);
