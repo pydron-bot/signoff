@@ -25,8 +25,10 @@ drop in. Read `docs/DESIGN.md` first for the game, the cast and the tone.
   different timing, note it in the Feedback section at the bottom; timing
   changes go through the move data and its tests.
 - Fighters stand on a 2D plane: the 3D is for looks. Only the side view
-  matters for gameplay, but the camera sits about 12 m in front, slightly
-  above, so the front three-quarters is what players see most.
+  matters for gameplay, but the camera sits about 6.5 m in front (further
+  as the fighters part, up to 16 m), slightly above, so the front
+  three-quarters is what players see most, with a fighter about half the
+  screen's height. On a KO it swings up to about 12° round to one side.
 
 ## Technical rules
 

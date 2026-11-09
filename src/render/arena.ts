@@ -5,7 +5,8 @@
  * of their hurtboxes with attacks as limb boxes (lit red while they can
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
  * are some, else boxes. It reads the latest match step and the step's events
- * and never changes the match. About 16 draw calls, plus 3 to 7 a model.
+ * and never changes the match. About 19 draw calls (the signal spray is
+ * one, the contact shadows two), plus 3 to 7 a model.
  */
 import * as THREE from 'three';
 import { moveData, type FighterState, type MatchState, type MoveData, type SimEvent } from '../sim';
@@ -13,8 +14,10 @@ import { hittable, hurtBox } from '../sim/combat';
 import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
 import { CameraRig, FOV } from './camera';
+import { ContactShadows, setRim } from './fighterLight';
 import { FighterModel, loadFighterArt } from './fighterModel';
 import { PoseTracker, type Pose } from './pose';
+import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { StageView } from './stageView';
 
@@ -24,7 +27,7 @@ const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
 /** The hit flash by weight (light, medium, heavy, ender): steps, and how bright. */
 const FLASH_STEPS = [3, 4, 6, 8] as const;
-const FLASH = [0x505050, 0x707070, 0x9a9a9a, 0xc0c0c0] as const;
+const FLASH = [0x303030, 0x404040, 0x585858, 0x707070] as const;
 
 /**
  * How an effect mesh is placed: on a projectile (its look), stretched over
@@ -163,6 +166,9 @@ export class Arena {
   private readonly hurtOffMat = new THREE.LineBasicMaterial({ color: 0x808080, transparent: true, opacity: 0.35 });
   private readonly stage: StageView;
   private readonly sparks: Sparks;
+  private readonly burst: SignalBurst;
+  private readonly shadows: ContactShadows;
+  private readonly rim: THREE.DirectionalLight;
   private frame = 0;
   private projectileMat!: THREE.MeshBasicMaterial;
   /** The hand puppet decoy: a little wooden figure, not a blast of wind. */
@@ -179,8 +185,11 @@ export class Arena {
     this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0);
     this.scene.add(rim);
+    this.rim = rim;
+    this.shadows = new ContactShadows(this.scene);
     this.stage = new StageView(this.scene, { ambient, key, rim });
     this.sparks = new Sparks(this.scene);
+    this.burst = new SignalBurst(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
     this.projectileMat = pm;
@@ -255,14 +264,17 @@ export class Arena {
   resync(): void {
     this.poses.reset();
     this.rig.reset();
+    this.burst.clear();
   }
 
   /** Once per simulation step, with that step's events: timed effects keep sim time, not display time. */
   step(m: MatchState, ev: readonly SimEvent[]): void {
     this.poses.step(m, ev);
     this.sparks.update();
+    this.burst.update();
     for (const v of this.fighters) if (v.flash > 0) v.flash--;
     this.sparks.onEvents(ev);
+    this.burst.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
         const v = this.fighters[e.defender];
@@ -286,6 +298,8 @@ export class Arena {
   render(m: MatchState): void {
     this.frame++;
     this.stage.update(m, this.frame);
+    // After the set has lit the segment (its rim may pulse on the beat).
+    setRim(this.rim);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
@@ -407,6 +421,7 @@ export class Arena {
         v.limbMat.opacity = model ? 0.4 : 1;
       }
     }
+    this.shadows.update(m, i, shown);
     if (shown) this.drawEffect(f, v, mv, x, y, model ? this.pose.clip : '');
     else v.effect.show('', undefined);
     // Flash when hit; dim while invulnerable on the floor.

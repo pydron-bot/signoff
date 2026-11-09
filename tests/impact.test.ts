@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { AdvantageTracker } from '../src/game/advantage';
 import { FIGHTERS, HITSTOP, HITSTOP_BY_WEIGHT, Input, WEIGHT_HEAVY, WEIGHT_MEDIUM, frameData, step, type SimEvent } from '../src/sim';
+import { timbre } from '../src/audio/timbre';
 import { hitWeight } from '../src/sim/combat';
 import { place, ready } from './sim-helpers';
 
@@ -78,5 +79,18 @@ describe('hit weight', () => {
       expect(adv.last?.kind, id).toBe('hit');
       expect(adv.last?.frames, id).toBe(frameData(mv).onHit);
     }
+  });
+});
+
+describe('hit sounds', () => {
+  it('know a fist from a foot, a special, and the props', () => {
+    const t = (f: string, id: string) => timbre(id, FIGHTERS[f].moves[id]);
+    expect(t('rox', 's.FP')).toBe('punch');
+    expect(t('rox', 'FP FP FK')).toBe('kick');
+    expect(t('rox', 'Count of Eight')).toBe('special');
+    expect(t('gus', 's.BP')).toBe('metal');
+    expect(t('gus', 's.BK')).toBe('blade');
+    expect(t('hollis', 's.BP')).toBe('wood');
+    expect(timbre('td', undefined)).toBe('special');
   });
 });

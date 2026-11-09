@@ -1,18 +1,25 @@
 /**
- * Hit sparks: a burst where a hit lands, bigger and yellow on a counter
- * hit, small and blue on a block. A pool of quads, reused.
+ * Hit sparks: a flash of light at the contact, sized and timed by the hit's
+ * weight (a jab's is small and quick, an ender's big and slow to fade),
+ * yellow on a counter hit, small and blue on a block. A pool of quads,
+ * reused.
  */
 import * as THREE from 'three';
 import type { SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
 
-const POOL = 6;
-const LIFE = 9;
+const POOL = 8;
+/** By hit weight (light, medium, heavy, ender): size, steps shown, colour. */
+const SIZE = [0.4, 0.55, 0.75, 0.95] as const;
+const LIFE = [7, 8, 10, 13] as const;
+const COLOR = [0xffffff, 0xffffff, 0xfff2c8, 0xffe080] as const;
+const COUNTER = 0xffe040;
 
 export class Sparks {
   private readonly meshes: THREE.Mesh[] = [];
   private readonly mats: THREE.MeshBasicMaterial[] = [];
   private readonly left = new Int8Array(POOL);
+  private readonly life = new Int8Array(POOL);
   private readonly size = new Float32Array(POOL);
   private next = 0;
 
@@ -39,20 +46,21 @@ export class Sparks {
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
-      if (e.type === 'hit') this.spawn(toFloat(e.x), toFloat(e.y), e.counter ? 0xffe040 : 0xffffff, e.counter ? 0.9 : 0.35 + Math.min(e.damage, 90) / 200);
-      else if (e.type === 'block') this.spawn(toFloat(e.x), toFloat(e.y), 0x60b0ff, 0.3);
-      else if (e.type === 'projectileClash') this.spawn(toFloat(e.x), toFloat(e.y), 0x9fe8ff, 0.6);
+      // At the contact, a little in front of the body, not its middle.
+      if (e.type === 'hit') this.spawn(toFloat(e.x) - e.dir * 0.25, toFloat(e.y), e.counter ? COUNTER : COLOR[e.weight], SIZE[e.weight] * (e.counter ? 1.25 : 1), LIFE[e.weight]);
+      else if (e.type === 'block') this.spawn(toFloat(e.x), toFloat(e.y), 0x60b0ff, 0.3, 7);
+      else if (e.type === 'projectileClash') this.spawn(toFloat(e.x), toFloat(e.y), 0x9fe8ff, 0.6, 9);
     }
   }
 
-  private spawn(x: number, y: number, color: number, size: number): void {
+  private spawn(x: number, y: number, color: number, size: number, life: number): void {
     const k = this.next;
     this.next = (k + 1) % POOL;
     const m = this.meshes[k];
     m.position.set(x, y, 0.6);
     m.rotation.z = Math.random() * Math.PI;
     this.mats[k].color.setHex(color);
-    this.left[k] = LIFE;
+    this.left[k] = this.life[k] = life;
     this.size[k] = size;
     m.visible = true;
   }
@@ -60,7 +68,7 @@ export class Sparks {
   update(): void {
     for (let k = 0; k < POOL; k++) {
       if (this.left[k] <= 0) continue;
-      const t = 1 - this.left[k] / LIFE;
+      const t = 1 - this.left[k] / this.life[k];
       const m = this.meshes[k];
       m.scale.setScalar(this.size[k] * (0.6 + t));
       this.mats[k].opacity = 1 - t;

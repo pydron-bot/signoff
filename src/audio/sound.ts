@@ -5,12 +5,23 @@
  * sign-off tone. The announcer speaks through the browser's speech
  * synthesis where there is one. Presentation only: it listens to events.
  */
-import type { MatchState, SimEvent } from '../sim';
+import type { HitWeight, MatchState, SimEvent } from '../sim';
 import { INTRO_FRAMES, STEPS_PER_SECOND, fighterData } from '../sim';
 import { Music } from './music';
+import { timbre, type Timbre } from './timbre';
 import { SCORES } from './score';
 
 export type SoundMode = 'on' | 'novoice' | 'off';
+
+/** Hit layers by weight (light, medium, heavy, ender), and by what hit. */
+const SNAP_DUR = [0.025, 0.035, 0.05, 0.07] as const;
+const SNAP_GAIN = [0.22, 0.28, 0.34, 0.4] as const;
+const THUD_DUR = [0.07, 0.11, 0.17, 0.26] as const;
+const THUD_GAIN = [0.28, 0.38, 0.5, 0.62] as const;
+const CRUNCH_DUR = [0, 0.05, 0.09, 0.15] as const;
+const CRUNCH_GAIN = [0, 0.14, 0.24, 0.32] as const;
+const SNAP_FREQ: Readonly<Record<Timbre, number>> = { punch: 2600, kick: 1700, special: 2000, metal: 3500, blade: 5000, wood: 1400 };
+const THUD_FREQ: Readonly<Record<Timbre, number>> = { punch: 170, kick: 115, special: 140, metal: 160, blade: 150, wood: 190 };
 
 export class Sound {
   mode: SoundMode = 'on';
@@ -34,7 +45,14 @@ export class Sound {
     this.ctx = new Ctx();
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.5;
-    this.master.connect(this.ctx.destination);
+    // A bus compressor: hits can be loud without clipping, and duck the music a touch when they land.
+    const comp = this.ctx.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.knee.value = 8;
+    comp.ratio.value = 5;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.18;
+    this.master.connect(comp).connect(this.ctx.destination);
     const len = this.ctx.sampleRate;
     this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
@@ -140,6 +158,30 @@ export class Sound {
     this.tone(960, 0.9, 0.07, 'sine');
   }
 
+  /**
+   * A hit, built in layers by weight: a snap (what hit), a thud (the body
+   * taking it), a crunch from medium up, and on an ender a sub drop and a
+   * tape warble; then the ring of a pan, the shing of a blade or the knock
+   * of a stick.
+   */
+  private hit(w: HitWeight, t: Timbre): void {
+    this.noise(SNAP_DUR[w], SNAP_FREQ[t], SNAP_GAIN[w], 'highpass', 0.8);
+    this.tone(THUD_FREQ[t], THUD_DUR[w], THUD_GAIN[w], 'sine', 42);
+    if (w >= 1) this.noise(CRUNCH_DUR[w], 650, CRUNCH_GAIN[w], 'bandpass', 1.3, 0.005);
+    if (w === 3) {
+      this.tone(62, 0.45, 0.45, 'sine', 28);
+      this.tone(180, 0.18, 0.06, 'sawtooth', 55, 0.01);
+    }
+    if (t === 'metal') {
+      this.tone(880, 0.35, 0.06, 'triangle');
+      this.tone(1294, 0.3, 0.05, 'triangle');
+      this.tone(2210, 0.2, 0.03, 'sine');
+    } else if (t === 'blade') {
+      this.noise(0.18, 6500, 0.12, 'highpass', 0.7, 0, 0.01);
+      this.tone(2600, 0.15, 0.03, 'triangle', 2200);
+    } else if (t === 'wood') this.tone(420, 0.06, 0.2, 'triangle', 300);
+  }
+
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
     if (!this.live) return;
     for (const e of ev) {
@@ -154,9 +196,8 @@ export class Sound {
           this.say('On air!');
           break;
         case 'hit': {
-          const big = Math.min(1, e.damage / 80);
-          this.noise(0.08 + big * 0.06, 1400, 0.25 + big * 0.25, 'lowpass');
-          this.tone(140, 0.12 + big * 0.1, 0.35 + big * 0.2, 'sine', 45);
+          const f = m.fighters[e.attacker].fighter;
+          this.hit(e.weight, timbre(e.move, fighterData(f).moves[e.move]));
           if (e.counter) this.tone(1600, 0.12, 0.08, 'square', 900);
           break;
         }
