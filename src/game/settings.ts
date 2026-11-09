@@ -17,6 +17,8 @@ export interface Settings {
   touchSize: number;
   /** Touch buttons: 0 on the right, 1 on the left (the stick swaps over). */
   touchSide: number;
+  /** The input display down the side: 0 off, 1 in Training (and combo showcases), 2 always. */
+  inputs: number;
 }
 
 export const SETTINGS_KEY = 'signoff.settings';
@@ -28,6 +30,7 @@ export const OPTIONS: Readonly<Record<keyof Settings, readonly string[]>> = {
   music: ['OFF', 'LOW', 'FULL'],
   touchSize: ['SMALL', 'MEDIUM', 'LARGE'],
   touchSide: ['RIGHT', 'LEFT'],
+  inputs: ['OFF', 'TRAINING', 'ALWAYS'],
 };
 
 export const LABELS: Readonly<Record<keyof Settings, string>> = {
@@ -37,10 +40,11 @@ export const LABELS: Readonly<Record<keyof Settings, string>> = {
   music: 'MUSIC',
   touchSize: 'TOUCH BUTTONS',
   touchSide: 'BUTTONS ON THE',
+  inputs: 'INPUT DISPLAY',
 };
 
 export function defaults(): Settings {
-  return { censor: 1, vhs: 2, motion: 0, music: 2, touchSize: 1, touchSide: 0 };
+  return { censor: 1, vhs: 2, motion: 0, music: 2, touchSize: 1, touchSide: 0, inputs: 1 };
 }
 
 /** Anything stored that isn't a valid index falls back to the default. */

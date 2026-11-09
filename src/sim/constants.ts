@@ -75,6 +75,20 @@ export const LAUNCH_VX = fx(0.012);
 export const DOWN_FRAMES = 30;
 export const GETUP_FRAMES = 20;
 
+// Defence
+/** Block pressed this few frames before a hit lands: a flawless block (no chip, shorter blockstun, a little meter). */
+export const FLAWLESS_WINDOW = 4;
+/** Frames a flawless block takes off the blockstun, so the blocker can punish more. */
+export const FLAWLESS_BLOCKSTUN_CUT = 6;
+export const FLAWLESS_METER = 100;
+/** Down held as a knockdown ends keeps you down this much longer, once a knockdown: a timed attack on your getup misses. */
+export const DELAYED_GETUP = 20;
+/** A move started this soon after getting up is a reversal. */
+export const REVERSAL_WINDOW = 3;
+/** Hitting someone in a move's recovery (it whiffed or was blocked) is a punish: the first hit does this % and earns meter. */
+export const PUNISH_DAMAGE_PCT = 120;
+export const PUNISH_METER = 150;
+
 // Throws
 export const THROW_RANGE = fx(1.0);
 /** Frames after being grabbed in which pressing Throw breaks it. */
@@ -89,10 +103,15 @@ export const BAR = 1000;
 /** The first hit of a round is worth a bar. */
 export const FIRST_HIT_METER = BAR;
 export const METER_MAX = 3 * BAR;
-/** Boosting: Special (or METER) again within this many frames of the special starting... */
-export const BOOST_WINDOW = 8;
-/** ...or Special twice this close together, even if both came before it started (a special cancelled out of a normal waits for the hit). */
-export const BOOST_TAP = 12;
+/**
+ * Boosting: Special (or METER) again within this many frames of the special
+ * starting (a third of a second: room for a double tap on a touchscreen,
+ * even once its first hit has landed), or Special twice this close together
+ * even if both came before it started (a special cancelled out of a normal
+ * waits for the hit).
+ */
+export const BOOST_WINDOW = 20;
+export const BOOST_TAP = 20;
 export const TAPE_SKIP_FRAMES = 10;
 export const TAPE_SKIP_SPEED = fx(0.11);
 export const CUT_AWAY_FRAMES = 20;

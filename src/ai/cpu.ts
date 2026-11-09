@@ -72,6 +72,8 @@ export class Cpu {
   private plan: Plan | null = null;
   private planT = 0;
   private wait = 0;
+  /** Knocked down: whether to stay down a moment (decided once a knockdown); -1 until decided. */
+  private stayDown = -1;
   private techTried = false;
   /** Whether the opponent's current decoy has its attention. */
   private decoyFools = false;
@@ -149,6 +151,12 @@ export class Cpu {
       return 0;
     }
     this.techTried = false;
+    // Knocked down: sometimes hold Down to get up late, as often as it techs throws.
+    if (me.mode === 'down') {
+      if (this.stayDown < 0) this.stayDown = this.roll(this.level.tech / 2) ? 1 : 0;
+      return this.stayDown ? DOWN : 0;
+    }
+    this.stayDown = -1;
     if ((me.mode === 'hitstun' || me.mode === 'launched') && me.meter >= METER_MAX && !me.cutAwayUsed && this.roll(2)) return METER;
 
     if (this.plan) {

@@ -113,6 +113,17 @@ meter. Every number below is a starting value to tune.
   blocks mids and lows. Blocked specials do small chip damage.
 - Throw: a button pair at close range; tech it with the same pair within 10
   frames.
+- **Defence (0.30.0).** A *flawless block* is Block pressed within 4
+  frames of the hit landing: no chip, 6 frames less blockstun (so the
+  blocker can punish more) and a little meter. A *delayed getup*: hold Down
+  as a knockdown ends to stay down 20 frames longer, once a knockdown, so a
+  timed attack on the getup misses. A *reversal* is any move pressed during
+  the getup: it comes out on the first free frame. A *punish* is a hit on a
+  move's recovery (whiffed or blocked): the first hit does 20% more and
+  earns meter. Each is called out on screen.
+- **Input display.** Recent inputs scroll down the side of the screen, newest
+  on top with the frames each was held (Settings: off, in Training and combo
+  showcases, or always; versus and replays show both players).
 
 ### Attacks
 

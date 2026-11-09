@@ -16,6 +16,8 @@ import {
   JUGGLE_POP_MIN,
   KNOCK_VY,
   MAX_JUGGLE,
+  PUNISH_DAMAGE_PCT,
+  PUNISH_METER,
   RELAUNCH_DAMAGE,
   RELAUNCH_PULL,
   RELAUNCH_VY,
@@ -25,6 +27,9 @@ import {
   WALL_BOUNCE_VX,
   WALL_BOUNCE_VY,
   METER_MAX,
+  FLAWLESS_BLOCKSTUN_CUT,
+  FLAWLESS_METER,
+  FLAWLESS_WINDOW,
   METER_SCALE_MIN,
   METER_SCALE_STEP,
   SCALE_MIN,
@@ -38,7 +43,7 @@ import { segmentData } from './stages';
 import { airborne, firstHit, inWindow, launch, moveOf, setSlide, startMove, takeDamage, tech, toIdle, wallX } from './fighter';
 import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
-import { BLOCK, DOWN } from './input';
+import { BLOCK, DOWN, bitIndex } from './input';
 import type { FighterState, MatchState } from './state';
 import type { Box, HitEffect, MoveKind } from './types';
 
@@ -358,11 +363,17 @@ export function applyHit(
   const stop = e.hitstop ?? HITSTOP;
 
   if (blocked) {
-    const chip = kind === 'special' || kind === 'super' ? (e.chip ?? Math.floor(e.damage / 8)) : 0;
+    // Block pressed just before the hit: flawless, no chip, out of blockstun sooner.
+    const flawless = d.input.age[bitIndex(BLOCK)] <= FLAWLESS_WINDOW;
+    const chip = flawless ? 0 : kind === 'special' || kind === 'super' ? (e.chip ?? Math.floor(e.damage / 8)) : 0;
     // Chip wears health down but never takes the last point.
     if (chip) d.health = Math.max(1, d.health - chip);
     d.mode = 'blockstun';
-    d.timer = e.blockstun;
+    d.timer = flawless ? Math.max(1, e.blockstun - FLAWLESS_BLOCKSTUN_CUT) : e.blockstun;
+    if (flawless) {
+      gainMeter(m, d, FLAWLESS_METER);
+      ev.push({ type: 'flawless', player: di });
+    }
     d.crouching = (d.input.held & DOWN) !== 0;
     d.move = '';
     d.vx = 0;
@@ -422,7 +433,20 @@ export function applyHit(
   const wasAir = airborne(d);
   const relaunching = relaunch && wasAir;
   const keep = repeatKeep(d, moveId, fresh);
-  const dmg = Math.max(1, Math.floor((e.damage * scale * keep) / 10000) + (relaunching ? Math.floor((RELAUNCH_DAMAGE * scale * keep) / 10000) : 0));
+  // Caught in a move's recovery (it whiffed or was blocked): a punish, worth more.
+  const dm = d.mode === 'move' ? moveOf(d) : null;
+  const punish = d.combo === 0 && dm !== null && dm.startup > 0 && d.moveFrame > dm.lastActive;
+  const base = punish ? Math.floor((e.damage * PUNISH_DAMAGE_PCT) / 100) : e.damage;
+  const dmg = Math.max(1, Math.floor((base * scale * keep) / 10000) + (relaunching ? Math.floor((RELAUNCH_DAMAGE * scale * keep) / 10000) : 0));
+  if (punish) {
+    gainMeter(m, a, PUNISH_METER);
+    ev.push({ type: 'punish', player: ai });
+  }
+  // A move straight off the floor that connects: a reversal.
+  if (!projectile && a.reversal) {
+    a.reversal = false;
+    ev.push({ type: 'reversal', player: ai });
+  }
   d.combo++;
   const juggle = wasAir ? d.juggle + 1 : 0;
   const ko = takeDamage(d, dmg);

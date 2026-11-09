@@ -118,9 +118,10 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
       if (mv.boost) {
         const b = f.moves[mv.boost];
         expect(b, mv.boost).toBeDefined();
-        // Boosting swaps the move by frame BOOST_WINDOW, so neither version may hit or spawn before then.
-        expect(b.startup, mv.boost).toBeGreaterThanOrEqual(BOOST_WINDOW);
-        if (mv.startup) expect(mv.startup, mv.id).toBeGreaterThanOrEqual(BOOST_WINDOW);
+        // A boost can come after the first hit (up to BOOST_WINDOW; the hits already landed stay landed).
+        // A projectile boosts only before it's thrown.
+        // A boost on frame k (up to BOOST_WINDOW) before the plain first hit must not skip the boosted one.
+        if (mv.hits.length && b.hits.length) expect(b.hits[0].frames[1], mv.boost).toBeGreaterThanOrEqual(Math.min(mv.hits[0].frames[0], BOOST_WINDOW + 1) - 1);
         expect(b.kind).toBe(mv.kind);
       }
     }

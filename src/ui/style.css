@@ -959,3 +959,64 @@ body[data-vhs='1'] .vhs {
     padding: 0.35rem 0.6rem;
   }
 }
+
+/* ---- Input display: recent inputs down the side, newest at the top ---- */
+.input-display {
+  position: fixed;
+  top: 38%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  font: 600 clamp(0.6rem, 1.6vw, 0.8rem) / 1.2 ui-monospace, Menlo, Consolas, monospace;
+  z-index: 6;
+}
+
+.input-display-0 {
+  left: calc(env(safe-area-inset-left) + 8px);
+}
+
+.input-display-1 {
+  right: calc(env(safe-area-inset-right) + 8px);
+  align-items: flex-end;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  background: rgba(5, 6, 14, 0.6);
+  color: #f1ede0;
+}
+
+.input-row:nth-child(n + 8) {
+  opacity: 0.55;
+}
+
+.input-frames {
+  min-width: 1.6em;
+  text-align: right;
+  color: rgba(241, 237, 224, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.input-dir {
+  min-width: 1em;
+  color: #7fd7ff;
+}
+
+.input-btn {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(241, 237, 224, 0.15);
+}
+
+.input-SP {
+  background: #ffd75e;
+  color: #17140d;
+}
+
+.input-BL {
+  background: rgba(127, 215, 255, 0.35);
+}

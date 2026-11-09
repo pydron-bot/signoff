@@ -51,6 +51,8 @@ export class Session {
   readonly guide: ComboGuide | null = null;
   readonly guideRun: GuideRun | null = null;
   guideFrame = 0;
+  /** Both players' inputs on the last step, whoever sent them (player, CPU, replay or guide), for the input display. */
+  readonly inputs: [number, number] = [0, 0];
 
   constructor(readonly options: SessionOptions) {
     const o = options;
@@ -103,6 +105,8 @@ export class Session {
     if (this.player) {
       const from = ev.length;
       this.player.step(ev);
+      this.inputs[0] = this.player.last[0];
+      this.inputs[1] = this.player.last[1];
       this.adv.update(m, from ? ev.slice(from) : ev);
       return;
     }
@@ -113,6 +117,8 @@ export class Session {
     const in1 = this.cpu1 ? this.cpu1.next(m) : p1;
     const in2 = o.mode === 'versus' ? p2 : o.mode !== 'training' || this.dummy === 'cpu' ? this.cpu!.next(m) : this.dummyInput();
     const from = ev.length;
+    this.inputs[0] = in1;
+    this.inputs[1] = in2;
     step(m, in1, in2, ev);
     this.recorder?.push(in1, in2);
     if (this.training) this.trainingAfter(ev, from);
@@ -127,7 +133,9 @@ export class Session {
       this.guideFrame = 0;
     }
     const from = ev.length;
-    step(m, guideInput(this.guide!, this.guideFrame, m.fighters[0].facing), 0, ev);
+    this.inputs[0] = guideInput(this.guide!, this.guideFrame, m.fighters[0].facing);
+    this.inputs[1] = 0;
+    step(m, this.inputs[0], 0, ev);
     this.guideFrame++;
     m.timer = ROUND_FRAMES;
     this.adv.update(m, from ? ev.slice(from) : ev);

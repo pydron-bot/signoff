@@ -77,6 +77,8 @@ export class ReplayPlayer {
   private readonly inputs: Uint32Array;
   private readonly snapshots = new Map<number, MatchState>();
   private readonly scratch: SimEvent[] = [];
+  /** The inputs the last step played, for the input display. */
+  readonly last: [number, number] = [0, 0];
 
   constructor(readonly replay: Replay) {
     this.inputs = new Uint32Array(replay.frames);
@@ -97,7 +99,9 @@ export class ReplayPlayer {
   step(ev: SimEvent[]): void {
     if (this.done) return;
     const p = this.inputs[this.frame];
-    step(this.match, p & MASK, (p >>> INPUT_BITS) & MASK, ev);
+    this.last[0] = p & MASK;
+    this.last[1] = (p >>> INPUT_BITS) & MASK;
+    step(this.match, this.last[0], this.last[1], ev);
     this.frame++;
     if (this.frame % SNAPSHOT_EVERY === 0 && !this.snapshots.has(this.frame)) this.snapshots.set(this.frame, saveMatch(this.match));
   }
