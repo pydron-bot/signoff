@@ -110,7 +110,7 @@ def costume(p, b):
         return P.light(t)
 
     c = {"skin": WOOD, "top": SUIT, "bottom": TROUSERS, "shoes": SHOES, "hair": HAIR, "brows": HAIR, "brow_raise": 0.006,
-         "eye": (0.026, 0.008, 0.026), "eye_side": 0.042, "pupil_in": 0.0, "whites": WHITE, "eyes": BLACK, "eye_paint": glossy}
+         "eye": (0.026, 0.008, 0.026), "eye_side": 0.042, "pupil_in": 0.0, "whites": WHITE, "eyes": BLACK, "eye_paint": glossy, "planes": False}
     torso(p, b, c, waist=0.93, paint=felt)
     p.hull("shirt", [b.p(x, f, u) for f in (0.104, 0.116) for x, u in ((-0.07, 1.455), (0.07, 1.455), (0, 1.3))], SHIRT, "chest", paint=lit)
     # A big red bow tie, and three big buttons.

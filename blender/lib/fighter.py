@@ -20,7 +20,9 @@ from .texture import paint, unwrap, use_atlas
 
 # Seen most (round start, win, intro): twice the texel density.
 DENSE = ("head", "face", "torso", "shirt", "tie", "lapel", "brow", "eye", "pupil", "nose", "mouth", "grin", "teeth", "lip",
-         "cheek", "jaw", "badge", "patch", "tag", "pin", "moustache", "headband")
+         "cheek", "jaw", "badge", "patch", "tag", "pin", "moustache", "headband", "nostril", "lid_line", "mouth_corner",
+         # The hands, seen in every close-up (step 21 C).
+         "palm", "thenar", "knuckle_", "index", "middle", "ring.", "little", "thumb")
 
 # The head tops out within this of the hurtbox's top in idle, the walks and
 # block_stand (crouch_idle against the crouching box): under by up to 3 cm,
@@ -228,6 +230,74 @@ def head_mask(rig, body):
     return mask
 
 
+def check_genus(rig, body):
+    """No holes or tunnels in the head or the hands (step 21 B): every piece
+    on the head, a hand or a bone under them must be genus 0. Per connected
+    piece, genus = (2 − χ − boundary loops) / 2, χ = V − E + F."""
+    under = {}
+    for b in rig.data.bones:
+        top = next((a.name for a in [b, *b.parent_recursive] if a.name in ("head", "hand.L", "hand.R")), None)
+        if top:
+            under[b.name] = top
+    groups = {g.index: under[g.name] for g in body.vertex_groups if g.name in under}
+    me = body.data
+    nv = len(me.vertices)
+    parent = np.arange(nv)
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    edges = {}
+    for poly in me.polygons:
+        vs = list(poly.vertices)
+        for a, b in zip(vs, vs[1:] + vs[:1]):
+            e = (min(a, b), max(a, b))
+            edges[e] = edges.get(e, 0) + 1
+            parent[find(a)] = find(b)
+    comp = np.array([find(v) for v in range(nv)])
+    owner = {}
+    for v in me.vertices:
+        if v.groups:
+            g = max(v.groups, key=lambda e: e.weight).group
+            if g in groups:
+                owner.setdefault(comp[v.index], groups[g])
+    faces = {}
+    for poly in me.polygons:
+        faces[comp[poly.vertices[0]]] = faces.get(comp[poly.vertices[0]], 0) + 1
+    count_e, bnd = {}, {}
+    for (a, b), n in edges.items():
+        c = comp[a]
+        count_e[c] = count_e.get(c, 0) + 1
+        if n == 1:
+            bnd.setdefault(c, []).append((a, b))
+    count_v = {}
+    for c in comp:
+        count_v[c] = count_v.get(c, 0) + 1
+    problems = []
+    for c, where in owner.items():
+        if c not in faces:
+            continue  # a loose vertex, not a surface
+        loops = 0
+        if c in bnd:
+            bp = {}
+
+            def bf(x):
+                while bp.setdefault(x, x) != x:
+                    x = bp[x]
+                return x
+
+            for a, b in bnd[c]:
+                bp[bf(a)] = bf(b)
+            loops = len({bf(x) for x in bp})
+        g = (2 - (count_v[c] - count_e[c] + faces.get(c, 0)) - loops) / 2
+        if g != 0:
+            problems.append(f"a piece on {where} has genus {g:g} (a hole or tunnel through it)")
+    return problems
+
+
 def check_hits(rig, body, actions, hurt):
     """The hit reactions' heads: hit_crouch's whole body in the crouching
     hurtbox on every frame, the standing ones' heads at most HIT_OVER above
@@ -346,7 +416,7 @@ def build(mod, out_dir, art_dir):
     flat, juggle = check_juggle(rig, body, actions, hurt["juggle"])
     problems += flat
     hits_over, hit_tops = check_hits(rig, body, actions, hurt)
-    problems += hits_over
+    problems += hits_over + check_genus(rig, body)
 
     rig.data.pose_position = "REST"
     bpy.context.view_layer.update()
