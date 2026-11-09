@@ -1,6 +1,6 @@
 {
   "name": "signoff",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "description": "2.5D one-on-one fighting game set inside a haunted 1987 UHF channel (PWA, three.js).",
   "type": "module",
@@ -15,6 +15,7 @@
     "test": "vitest run",
     "art": "blender -b --factory-startup -P blender/build.py --",
     "combos": "COMBOS=1 vitest run tests/combo-search.test.ts",
+    "combos:guides": "COMBOS=1 GUIDES=1 vitest run tests/combo-search.test.ts",
     "docs:clips": "UPDATE_DOCS=1 vitest run tests/blender-doc.test.ts tests/blender-data.test.ts"
   },
   "dependencies": {

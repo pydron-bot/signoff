@@ -6,6 +6,7 @@ import type { CpuLevel } from './ai/cpu';
 import { Sound, type SoundMode } from './audio/sound';
 import { BUILD_ID } from './core/build';
 import { VERSION } from './core/changelog';
+import { GUIDE_DUMMY } from './game/comboGuides';
 import { FixedStep } from './game/loop';
 import { parseReplay, type Replay } from './game/replay';
 import { DUMMIES, Session, type Mode } from './game/session';
@@ -156,6 +157,13 @@ try {
 }
 let replayPaused = false;
 let replaySpeed = 0;
+/** Combo showcases can run slowed down, to follow the presses. */
+const SHOWCASE_SPEEDS = [1, 0.5, 0.25] as const;
+let showcaseSpeed = 0;
+/** Where a showcase goes back to: the training session it was opened from (or the title), on this fighter's move list. */
+let showcaseReturn: { training: Session | null; fighter: string } | null = null;
+/** The showcase caption, rebuilt only when the step changes. */
+let caption = { step: -2, text: '' };
 
 function keepReplay(r: Replay | null): void {
   if (!r) return;
@@ -326,7 +334,7 @@ function showTitle(): void {
     { label: 'TRAINING', id: 'play-training', run: () => play('training') },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
-    { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle) },
+    { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) },
     { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
     { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
@@ -336,12 +344,55 @@ function showTitle(): void {
   ]);
 }
 
-/** The move list, starting on one fighter (the others a swipe away); `back` reopens whatever menu it came from. */
-function showMoves(first: string, frames: boolean, back: () => void): void {
+/**
+ * The move list, starting on one fighter (the others a swipe away); `back`
+ * reopens whatever menu it came from. `watch` offers to play the combo
+ * guides (from the title and training, where leaving the fight costs nothing).
+ */
+function showMoves(first: string, frames: boolean, back: () => void, watch = false): void {
   titleMenu.hide();
   pauseMenu.hide();
   moveListPanel.onClose = back;
-  moveListPanel.show(FIGHTER_IDS, Math.max(0, FIGHTER_IDS.indexOf(first)), frames);
+  moveListPanel.onWatch = showcase;
+  moveListPanel.show(FIGHTER_IDS, Math.max(0, FIGHTER_IDS.indexOf(first)), frames, watch);
+}
+
+/** Plays one of a fighter's combo guides on a loop, against a standing dummy. */
+function showcase(fighter: string, guide: number): void {
+  showcaseReturn = { training: session?.training ? session : null, fighter };
+  ladder = null;
+  demo = false;
+  over = false;
+  paused = false;
+  showcaseSpeed = 0;
+  caption = { step: -2, text: '' };
+  session = begin(new Session({ mode: 'showcase', p1: fighter, p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, guide }));
+  title.hidden = true;
+  titleMenu.hide();
+  pauseMenu.hide();
+  hud.start(session.match, true);
+  touch.show(false);
+  pauseBtn.hidden = false;
+  replayBar.show(false);
+  document.body.dataset.scene = 'showcase';
+}
+
+/** Back from a showcase to the move list it was opened from. */
+function leaveShowcase(): void {
+  const r = showcaseReturn;
+  showcaseReturn = null;
+  if (r?.training) {
+    session = begin(r.training);
+    over = false;
+    hud.start(r.training.match, true);
+    touch.show(touchUi);
+    document.body.dataset.scene = 'fight';
+    pause(true);
+    showMoves(r.fighter, true, () => pause(true), true);
+  } else {
+    startDemo();
+    showMoves(r?.fighter ?? FIGHTER_IDS[setup.p1], false, showTitle, true);
+  }
 }
 
 function pause(on: boolean): void {
@@ -355,6 +406,16 @@ function pause(on: boolean): void {
     return;
   }
   const s = session;
+  if (s.options.mode === 'showcase') {
+    pauseMenu.show(s.guide?.name.toUpperCase() ?? 'COMBO', [
+      { label: 'RESUME', run: () => pause(false) },
+      { label: 'SPEED', options: ['FULL', 'HALF', 'QUARTER'], value: showcaseSpeed, onChange: (v) => ((showcaseSpeed = v), clock.reset()) },
+      { label: 'FROM THE START', run: () => (s.reset(), (s.guideFrame = 0), arena.resync(), pause(false)) },
+      { label: 'BACK TO MOVE LIST', id: 'showcase-back', run: leaveShowcase },
+      { label: 'QUIT TO TITLE', run: startDemo },
+    ]);
+    return;
+  }
   const rows: Parameters<Menu['show']>[1] = [
     { label: 'RESUME', run: () => pause(false) },
     s.options.mode === 'replay'
@@ -369,7 +430,7 @@ function pause(on: boolean): void {
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
     );
   }
-  rows.splice(1, 0, { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(s.match.fighters[0].fighter, s.training, () => pause(true)) });
+  rows.splice(1, 0, { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(s.match.fighters[0].fighter, s.training, () => pause(true), s.training) });
   rows.push({ label: 'SETTINGS', run: () => showSettings(() => pause(true)) });
   rows.push({ label: 'QUIT TO TITLE', run: startDemo });
   pauseMenu.show('PAUSED', rows);
@@ -438,6 +499,17 @@ function readInputs(): void {
   }
 }
 
+/** The showcase's line: the presses, the one just made in brackets, and the move it brought out. */
+function showcaseCaption(s: Session): string {
+  const k = s.guideStep;
+  if (k !== caption.step) {
+    const steps = s.guideRun!.steps;
+    const presses = steps.map((st, i) => (i === k ? `[${st.input}]` : st.input)).join(' › ');
+    caption = { step: k, text: `${presses}${k >= 0 ? ` · ${steps[k].move}` : ''} · Esc menu` };
+  }
+  return caption.text;
+}
+
 function resize(): void {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -466,7 +538,8 @@ renderer.setAnimationLoop((now) => {
   const replaying = s.options.mode === 'replay';
   if (!paused && !over && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
-    const n = clock.advance(replaying ? now * SPEEDS[replaySpeed] : now);
+    const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
+    const n = clock.advance(now * speed);
     for (let i = 0; i < n; i++) {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
@@ -496,7 +569,7 @@ renderer.setAnimationLoop((now) => {
   const m = session!.match;
   arena.render(m);
   if (!demo) {
-    hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : '');
+    hud.update(m, s.adv.last, s.training ? `Dummy: ${s.dummy} · R reset · B boxes · Esc menu` : s.guideRun ? showcaseCaption(s) : '');
     const p1 = m.fighters[0];
     touch.setTD(!p1.tdUsed && p1.health > 0 && p1.health * 100 < p1.maxHealth * TD_HEALTH_PCT);
     touch.setInteract(propInReach(m, p1) >= 0);

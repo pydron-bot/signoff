@@ -168,6 +168,12 @@ export class Hud {
     this.captionSub.textContent = '';
     this.lastHealth = [-1, -1];
     this.lastMeter = [-1, -1];
+    // A new view of a match: no combo counter left over from the last one.
+    for (let i = 0; i < 2; i++) {
+      this.comboLeft[i] = 0;
+      this.comboDamage[i] = 0;
+      this.sides[i].combo.textContent = '';
+    }
     this.lastWins = [-1, -1];
     this.lastCoins = [-1, -1];
     this.lastSecs = -1;

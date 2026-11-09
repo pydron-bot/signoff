@@ -5,6 +5,7 @@
  * fighter facing right (→ is forward). No DOM here.
  */
 import { BOOST_WINDOW, TD_HEALTH_PCT, fighterData, frameData, stringMoves, type FighterData, type MoveData } from '../sim';
+import { guides, runGuide } from './comboGuides';
 import type { FinishDir, FinisherData, Height, SpecialDir } from '../sim/types';
 
 export interface MoveRow {
@@ -13,6 +14,8 @@ export interface MoveRow {
   notes: string;
   /** Startup, on block, on hit (training shows these). */
   frames: string;
+  /** A combo guide the game can play: its index in the fighter's guides. */
+  watch?: number;
 }
 
 export interface MoveSection {
@@ -81,6 +84,21 @@ function finisherRow(fin: FinisherData): MoveRow {
   return { name: fin.name, input, notes: fin.kind === 'cancellation' ? kind : `${kind} · ${RANGE[fin.range]}`, frames: '' };
 }
 
+/** The fighter's combo guides: the presses in order (a boost as SP SP), and what the combo does. */
+export function comboRows(fighter: string): MoveRow[] {
+  return guides(fighter).map((g, k) => {
+    const r = runGuide(fighter, g);
+    const meter = g.bars ? `${g.bars} bar${g.bars > 1 ? 's' : ''}` : 'no meter';
+    return {
+      name: g.name,
+      input: r.steps.map((s) => `${s.wait ? '…' : ''}${s.input}`).join(' › '),
+      notes: `${r.hits} hits · ${Math.round(r.pct)}% · ${meter}`,
+      frames: r.steps.map((s) => s.move).join(' › '),
+      watch: k,
+    };
+  });
+}
+
 export function moveList(fighter: string): MoveSection[] {
   const f = fighterData(fighter);
   const specials: MoveRow[] = [];
@@ -129,6 +147,7 @@ export function moveList(fighter: string): MoveSection[] {
   return [
     { title: 'Specials', rows: specials },
     { title: 'Strings', rows: strings },
+    { title: 'Combos (point blank, … = let them fall first)', rows: comboRows(fighter) },
     { title: 'Normals', rows: command },
     { title: 'System', rows: system },
     { title: 'Finishers (after the deciding round)', rows: f.finishers.map(finisherRow) },
