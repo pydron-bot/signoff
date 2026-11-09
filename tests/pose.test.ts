@@ -4,8 +4,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Cpu } from '../src/ai/cpu';
-import { HELD_STAND_INS, PoseTracker, standIn, type Pose } from '../src/render/pose';
+import { HELD_STAND_INS, PoseTracker, STAGGER_STUN, hitReaction, standIn, type Pose } from '../src/render/pose';
 import { BAR, FIGHTERS, INTRO_FRAMES, Input, createMatch, step, type MatchState, type SimEvent } from '../src/sim';
+import { fx } from '../src/sim/fixed';
 import { place, ready } from './sim-helpers';
 
 const { RIGHT, DOWN, UP, FP, FK, BLOCK, METER } = Input;
@@ -70,14 +71,14 @@ describe('poses', () => {
     expect(drive(m, t, 40, DOWN)).toMatchObject({ clip: 'crouch_idle' });
   });
 
-  it('reacts high or low to a hit, restarting on each hit and freezing in hitstop', () => {
+  it('reacts to a hit by where it lands, restarting on each hit and freezing in hitstop', () => {
     const m = ready();
     place(m, -0.5, 0.5);
     const t = new PoseTracker();
     drive(m, t, 1);
     // A standing jab lands on a standing P2.
     let p = drive(m, t, 9, (k) => (k === 0 ? FP : 0), 0, 1);
-    expect(p.clip).toBe('hit_high');
+    expect(p.clip).toBe('hit_head');
     const frozen = p.frame;
     expect(m.fighters[1].hitstop).toBeGreaterThan(0);
     p = drive(m, t, 1, 0, 0, 1);
@@ -85,7 +86,7 @@ describe('poses', () => {
     drive(m, t, 40);
     // A crouching low (c.FK) on a crouching P2.
     p = drive(m, t, 12, (k) => (k === 0 ? DOWN | FK : DOWN), DOWN, 1);
-    expect(p.clip).toBe('hit_low');
+    expect(p.clip).toBe('hit_crouch');
   });
 
   it('blocks standing or crouching', () => {
@@ -223,5 +224,72 @@ describe('juggle reactions (step 16)', () => {
       expect(standIn('rox', c)).toBe('launched');
       expect(HELD_STAND_INS.has(c)).toBe(true);
     }
+  });
+});
+
+describe('hit reactions (step 22)', () => {
+  type Hit = Extract<SimEvent, { type: 'hit' }>;
+  /** A hit on a standing Dale (1.8 m tall) at `y` metres. */
+  const hit = (y: number, over: Partial<Hit> = {}): Hit => ({ type: 'hit', attacker: 0, defender: 1, move: 's.FP', damage: 30, height: 'mid', counter: false, combo: 1, weight: 0, dir: 1, x: 0, y: fx(y), ...over });
+  const dale = () => {
+    const m = ready('rox', 'dale');
+    const d = m.fighters[1];
+    d.mode = 'hitstun';
+    d.timer = 14;
+    return d;
+  };
+
+  it('picks the head, the body or the legs by where it lands', () => {
+    expect(hitReaction(hit(1.4), dale(), false)).toBe('hit_head');
+    expect(hitReaction(hit(1.0), dale(), false)).toBe('hit_body');
+    expect(hitReaction(hit(0.4), dale(), false)).toBe('hit_legs');
+    expect(hitReaction(hit(1.0, { height: 'low' }), dale(), false)).toBe('hit_legs');
+  });
+
+  it('heavy and counter hits get the heavy reaction; light ones alternate down a combo', () => {
+    expect(hitReaction(hit(1.4, { weight: 2 }), dale(), false)).toBe('hit_head_heavy');
+    expect(hitReaction(hit(1.0, { counter: true }), dale(), false)).toBe('hit_body_heavy');
+    expect(hitReaction(hit(1.4, { combo: 2 }), dale(), false)).toBe('hit_head_2');
+    expect(hitReaction(hit(1.0, { combo: 3 }), dale(), false)).toBe('hit_body');
+  });
+
+  it('crouching takes its own; a long stun staggers', () => {
+    const c = dale();
+    c.crouching = true;
+    expect(hitReaction(hit(0.6), c, false)).toBe('hit_crouch');
+    const s = dale();
+    s.timer = STAGGER_STUN;
+    expect(hitReaction(hit(1.4), s, false)).toBe('stagger');
+  });
+
+  it("a finisher's blows are heavy, head and body in turn", () => {
+    expect(hitReaction(hit(0, { combo: 1 }), dale(), true)).toBe('hit_head_heavy');
+    expect(hitReaction(hit(0, { combo: 2 }), dale(), true)).toBe('hit_body_heavy');
+  });
+
+  it("Margaret's Breaking staggers, and so does a crushed guard", () => {
+    const seen = (attacker: string, script: (k: number) => number, block: number) => {
+      const m = ready(attacker, 'dale');
+      place(m, -0.5, 0.5);
+      const t = new PoseTracker();
+      const out = new Set<string>();
+      const ev: SimEvent[] = [];
+      for (let k = 0; k < 90; k++) {
+        ev.length = 0;
+        step(m, script(k), block, ev);
+        t.step(m, ev);
+        out.add(t.pose(m, 1, { clip: '', frame: 0, loop: false }).clip);
+      }
+      return out;
+    };
+    const { SPECIAL } = Input;
+    expect(seen('margaret', (k) => (k === 0 ? SPECIAL : 0), 0)).toContain('stagger');
+    // Tenderise's last blow breaks the guard.
+    expect(seen('gus', (k) => (k === 0 ? SPECIAL : 0), BLOCK)).toContain('stagger');
+  });
+
+  it('every new reaction falls back to hit_high or hit_low until the art has it', () => {
+    for (const c of ['hit_head', 'hit_head_2', 'hit_head_heavy', 'hit_body', 'hit_body_2', 'hit_body_heavy', 'stagger']) expect(standIn('dale', c)).toBe('hit_high');
+    for (const c of ['hit_legs', 'hit_crouch']) expect(standIn('dale', c)).toBe('hit_low');
   });
 });

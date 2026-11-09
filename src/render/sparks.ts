@@ -59,7 +59,8 @@ export class Sparks {
     const m = this.meshes[k];
     m.position.set(x, y, 0.6);
     m.rotation.z = Math.random() * Math.PI;
-    this.mats[k].color.setHex(color);
+    // Past white, so the glow picks them up.
+    this.mats[k].color.setHex(color).multiplyScalar(2.5);
     this.left[k] = this.life[k] = life;
     this.size[k] = size;
     m.visible = true;

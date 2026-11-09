@@ -11,6 +11,7 @@ import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
+import { relight } from './look';
 import { applyLights, type StageLights, type StageSet } from './stageView';
 
 /** The objects the game needs from burn.glb; without them all, the stand-ins stay. */
@@ -26,11 +27,11 @@ const DOUBLE_BEAT = 30;
 
 type V3 = [number, number, number];
 /** The light rigs from the contract, used by the stand-ins (the GLB brings its own). */
-const STAND_IN_LIGHTS: readonly SegmentLights[] = [
+const STAND_IN_LIGHTS: readonly SegmentLights[] = relight('burn', [
   { segment: 'Warm-Up', background: '#1a0c14', ambient: { color: '#ffe6d8', intensity: 1.3 }, key: { color: '#ffc890', intensity: 2.0, position: [-4, 5, 8] as V3 }, rim: { color: '#ff7ab0', intensity: 0.7, position: [3, 4, -4] as V3 } },
   { segment: 'Double Time', background: '#140a10', ambient: { color: '#fff0e0', intensity: 1.5 }, key: { color: '#ffffff', intensity: 2.4, position: [3, 7, 7] as V3 }, rim: { color: '#40e0ff', intensity: 0.9, position: [-3, 5, -4] as V3 } },
   { segment: 'Burnout', background: '#020206', ambient: { color: '#6a5a9a', intensity: 0.6 }, key: { color: '#c8b8ff', intensity: 1.4, position: [0, 8, 6] as V3 }, rim: { color: '#ff4a8a', intensity: 0.6, position: [0, 3, -6] as V3 } },
-];
+]);
 
 export class BurnSet implements StageSet {
   readonly root = new THREE.Group();
@@ -84,7 +85,7 @@ export class BurnSet implements StageSet {
     if (this.segment !== m.segment) {
       this.segment = m.segment;
       const spec = this.art?.lights[m.segment] ?? STAND_IN_LIGHTS[m.segment];
-      applyLights(this.scene, this.lights, spec);
+      applyLights(this.scene, this.lights, spec, this.art);
       this.rimBase = spec.rim.intensity;
       this.part('set').visible = true;
       this.part('seg_warmup').visible = m.segment < 2;

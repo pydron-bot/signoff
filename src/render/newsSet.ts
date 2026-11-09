@@ -10,6 +10,7 @@ import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
 import { loadStageArt, type SegmentLights, type StageArt } from './stageModel';
+import { relight } from './look';
 import { applyLights, type StageLights, type StageSet } from './stageView';
 
 /** The objects the game needs from news.glb; without them all, the stand-ins stay. */
@@ -24,11 +25,11 @@ const DIM_STEP = 0.12;
 const DIM_FLOOR = 0.35;
 
 type V3 = [number, number, number];
-const STAND_IN_LIGHTS: readonly SegmentLights[] = [
+const STAND_IN_LIGHTS: readonly SegmentLights[] = relight('news', [
   { segment: 'Headlines', background: '#06101e', ambient: { color: '#dfe8ff', intensity: 1.3 }, key: { color: '#ffffff', intensity: 2.2, position: [0, 6, 8] as V3 }, rim: { color: '#4a7aff', intensity: 0.8, position: [3, 4, -4] as V3 } },
   { segment: 'The Ticker', background: '#081428', ambient: { color: '#d8e4ff', intensity: 1.2 }, key: { color: '#fff4e0', intensity: 2.2, position: [-3, 6, 7] as V3 }, rim: { color: '#ff3a3a', intensity: 0.9, position: [-3, 4, -4] as V3 } },
   { segment: 'Lights Out', background: '#020308', ambient: { color: '#8090b0', intensity: 0.8 }, key: { color: '#fff0d0', intensity: 2.0, position: [0, 8, 6] as V3 }, rim: { color: '#3050a0', intensity: 0.5, position: [0, 3, -6] as V3 } },
-];
+]);
 
 export class NewsSet implements StageSet {
   readonly root = new THREE.Group();
@@ -81,7 +82,7 @@ export class NewsSet implements StageSet {
     if (this.segment !== m.segment) {
       this.segment = m.segment;
       const spec = this.art?.lights[m.segment] ?? STAND_IN_LIGHTS[m.segment];
-      applyLights(this.scene, this.lights, spec);
+      applyLights(this.scene, this.lights, spec, this.art);
       this.keyBase = spec.key.intensity;
       this.ambientBase = spec.ambient.intensity;
       this.part('set').visible = true;

@@ -14,6 +14,24 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.34.0',
+    date: '2026-11-09',
+    title: 'Picture Quality',
+    notes: [
+      'A new picture: colour smears off edges the way it did on tape, big hits tear the tracking and knock the colours out of line, lights and sparks glow, and every segment has its own colour grade. Edges are smooth, not jagged.',
+      'Studio lighting: the sets fall away into the dark behind the fight, light bounces up off the floor, haze hangs in the air, lamps throw faint beams and dust drifts through them. Kitchen Live is no longer one shade of white.',
+      'Reflections: the fighters show in the studio floors (and in the flood water), and in Feel the Burn at Dawn they fight in the mirrors too, until Burnout shatters them.',
+      'The fighters are drawn with a dark outline and stepped light and shade, so they stand out from any set; their shadows fall away from the light.',
+      'Fast moves trail cyan and magenta ghosts, like a tape that can\'t keep up, and enders and K.O.s land on a flash of negative.',
+      'Each round opens on a wide shot of the studio as the lights bang on bank by bank, then settles on the fighters; a match opens with each fighter introduced by name and show.',
+      'A broadcast HUD: names on caption plates with their shows, health bars that leave a red chunk where the last hits landed before it drains, and a blinking LIVE beside the station logo (no longer on top of Gideon\'s donations).',
+      'The title is a TV in a dark room at 3:33 a.m.; starting a match pushes in through the glass.',
+      'Reduce Motion drops the negative flashes, the ghosts and the push-in; the VHS LOOK setting turns the tape effects down or off.',
+      'Hits look different by where they land: a snap of the head, a punch to the ribs, doubled over by a heavy one, a knee buckling, reeling from a long stun.',
+      'Performance overlay: Settings → PERFORMANCE (or the ` key on a keyboard) shows the frame rate, how long frames take (and the worst in the last second), simulation steps a second, draw calls and triangles, in the top left.',
+    ],
+  },
+  {
     version: '0.33.0',
     date: '2026-11-09',
     title: 'Face Time',
