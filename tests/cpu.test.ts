@@ -62,7 +62,7 @@ function conversions(p1: string, p2: string, seed: number, levels: [CpuLevel, Cp
     }
     for (let d = 0; d < 2; d++) if (hits[d] && m.fighters[d].combo === 0 && m.fighters[d].mode !== 'hitstun' && m.fighters[d].mode !== 'launched') close(d);
   }
-  return { opened, three, routes: [cpus[0].routes, cpus[1].routes] };
+  return { opened, three, routes: [cpus[0].tally.routes, cpus[1].tally.routes] };
 }
 
 describe('combo routes', () => {
@@ -95,13 +95,13 @@ describe('the CPU converts', () => {
     let opened = 0;
     let three = 0;
     for (let k = 0; k < IDS.length; k++) {
-      for (const seed of [1, 2]) {
+      for (const seed of [1, 2, 3, 4]) {
         const c = conversions(IDS[k], IDS[(k + seed) % IDS.length], seed, ['hard', 'hard']);
         opened += c.opened[0] + c.opened[1];
         three += c.three[0] + c.three[1];
       }
     }
-    expect(opened).toBeGreaterThan(100);
+    expect(opened).toBeGreaterThan(150);
     expect(three * 2).toBeGreaterThanOrEqual(opened);
   });
 

@@ -19,7 +19,7 @@ import { propInReach } from '../sim/stage';
 import { segmentData } from '../sim/stages';
 import { GUIDE_DUMMY } from '../game/comboGuides';
 import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_PRESS, AFTER_BLOCK_THROW, Habits, WAKE_ATTACK, WAKE_BLOCK, WAKE_JUMP, type Glimpse } from './habits';
-import { RouteRun, openerBits, routeAfter, routeOf, type Opener } from './routes';
+import { RouteRun, openerBits, routeAfter, routeOf, warm, type Opener } from './routes';
 
 const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT, METER } = Input;
 
@@ -61,7 +61,7 @@ const LEVELS: Readonly<Record<CpuLevel, Level>> = {
   normal: { delay: 15, block: 50, tech: 35, antiAir: 45, boost: 30, fooled: 40, think: 14, convert: 33, read: 25, prior: 6, tapeSkip: 25, cutAway: 45, meaty: 30, dashBlock: 20 },
   hard: HARD,
   // Hard's eyes and hands; it converts nearly everything and reads you fastest.
-  director: { ...HARD, convert: 96, read: 70, prior: 1, tapeSkip: 75, cutAway: 90, meaty: 75, dashBlock: 50 },
+  director: { ...HARD, convert: 96, read: 70, prior: 2, tapeSkip: 75, cutAway: 90, meaty: 70, dashBlock: 50 },
 };
 
 const HISTORY = 32;
@@ -103,6 +103,20 @@ interface Seen extends Glimpse {
   crouching: boolean;
 }
 
+/** Counts of what the CPU chose to do. */
+export interface CpuTally {
+  /** Combo routes it carried an opener into, and anti-airs it chased with a jump cancel. */
+  routes: number;
+  chases: number;
+  /** Openers pressed to punish something it saw recovering. */
+  punishes: number;
+  /** Getups it set something up for, answers to a blocked attack it played from a read, and duckers it checked. */
+  wakeups: number;
+  reads: number;
+  checks: number;
+  dashBlocks: number;
+}
+
 /** A plan gives the input for each frame until it returns null. A soft one (walking) gives way when something's coming. */
 type Plan = ((me: FighterState, t: number) => number | null) & { soft?: boolean };
 
@@ -134,6 +148,8 @@ export class Cpu {
   /** Knocked down: whether to stay down a moment (decided once a knockdown); -1 until decided. */
   private stayDown = -1;
   private techTried = false;
+  /** Getting up: what it holds to wake up guarding (decided once a getup); -1 until decided. */
+  private wakeGuard = -1;
   /** Whether the opponent's current decoy has its attention. */
   private decoyFools = false;
   private decoyWas = false;
@@ -169,14 +185,16 @@ export class Cpu {
   private skipSeq = -1;
   /** The combo route under way, if any. */
   private route: RouteRun | null = null;
+  /** The move it's blocking ('' before it has looked, '-' once weighed or not worth weighing). */
+  private blockedBy = '';
   /** The combo count it last weighed a Cut Away at. */
   private cutCombo = 0;
   /** The step it saw the opponent start getting up (-1: not yet). */
   private getupAt = -1;
   /** What it has learned of the opponent this match. */
   readonly habits: Habits;
-  /** Routes it went into, for the tests and the balance bench. */
-  routes = 0;
+  /** What it chose to do, counted over the match: for the tests and the balance bench. */
+  readonly tally: CpuTally = { routes: 0, chases: 0, punishes: 0, wakeups: 0, reads: 0, checks: 0, dashBlocks: 0 };
 
   constructor(
     private readonly player: 0 | 1,
@@ -241,8 +259,8 @@ export class Cpu {
       this.route = null;
       if (m.phase === 'intro') {
         this.finishing = null;
-        // Worked out before the bell, not on its first hit.
-        if (this.level.convert > 0) routeOf(me.fighter, 'jab');
+        // Its routes are measured a little each step before the bell, not all on its first hit.
+        if (this.level.convert > 0) warm(me.fighter);
       }
       return 0;
     }
@@ -269,6 +287,12 @@ export class Cpu {
       return this.stayDown ? DOWN : 0;
     }
     this.stayDown = -1;
+    // Getting up with them close: guard on the first frame up (crouching mostly: a high goes over it), now and then.
+    if (me.mode === 'getup') {
+      if (this.wakeGuard < 0) this.wakeGuard = Math.abs(s.x - me.x) < fx(1.6) && this.roll((this.level.block * 3) / 5) ? (this.roll(60) ? BLOCK | DOWN : BLOCK) : 0;
+      return this.wakeGuard;
+    }
+    this.wakeGuard = -1;
     if (me.combo === 0) this.cutCombo = 0;
     if (this.cutAway(me)) return METER;
 
@@ -280,6 +304,8 @@ export class Cpu {
     if (conf !== null) return conf;
     const skip = this.tapeSkip(me);
     if (skip) return skip;
+    const pun = this.punishBlocked(me, them);
+    if (pun) return pun;
 
     if (this.plan?.soft && s.threat && actionable(me)) this.plan = null;
     if (this.plan) {
@@ -376,18 +402,14 @@ export class Cpu {
   /** The route's press for this step (0 between presses), or null once it's over or has visibly dropped. */
   private runRoute(me: FighterState, s: Seen, now: number): number | null {
     const r = this.route!;
-    // Hit, blocked or done: back to playing.
-    if (r.done || !inRoute(me) || (me.mode === 'move' && me.contact === 'block')) {
+    // Hit, blocked or done: back to playing. Before each press: are they still reeling? Only what it has seen since its last hit counts.
+    if (r.done || !inRoute(me) || (me.mode === 'move' && me.contact === 'block') || (r.due(now) && now - this.level.delay > this.hitAt + 1 && s.mode !== 'hitstun' && s.mode !== 'launched')) {
       this.route = null;
+      // The route's own last move doesn't open another.
+      this.confirmSeq = this.ownSeq;
       return null;
     }
-    if (!r.due(now)) return 0;
-    // Before each press: are they still reeling? Only what it has seen since its last hit counts.
-    if (now - this.level.delay > this.hitAt + 1 && s.mode !== 'hitstun' && s.mode !== 'launched') {
-      this.route = null;
-      return null;
-    }
-    return r.input(now, me.facing);
+    return r.due(now) ? r.input(now, me.facing) : 0;
   }
 
   /** An opener just hit: carry on into its route (once a move, by level). */
@@ -399,7 +421,7 @@ export class Cpu {
     if (this.foeWasUp) {
       const mv = moveData(me.fighter, me.move);
       if (!opensJuggle(mv) || !mv.cancel) return null;
-      this.routes++;
+      this.tally.chases++;
       this.start(this.chase(me, mv.cancel[0]));
       return this.next0(me);
     }
@@ -412,7 +434,7 @@ export class Cpu {
     const run = new RouteRun(r, this.ownStart + Math.max(0, me.hitstop - r.stop), now);
     if (run.done) return null;
     this.route = run;
-    this.routes++;
+    this.tally.routes++;
     this.plan = null;
     return this.runRoute(me, s, now);
   }
@@ -512,6 +534,7 @@ export class Cpu {
     if (!this.roll(this.level.read)) return false;
     const h = this.habits;
     const k = h.likely(h.afterBlock, SURE);
+    if (k >= 0) this.tally.reads++;
     if (k === AFTER_BLOCK_THROW) {
       // A neutral duck goes under a throw; a whiffed throw is punished (decide sees it recovering).
       this.start(this.duck(16));
@@ -656,11 +679,13 @@ export class Cpu {
     if (s.recovering && this.punish(me, d, s, dist, r, fwd, back)) return;
     // On the floor: wait for them to get up (a delayed getup is waited out), then something timed for it.
     if ((s.mode === 'down' || s.mode === 'getup') && this.roll(this.level.meaty)) {
+      this.tally.wakeups++;
       this.start(this.wakeup(me, d));
       return;
     }
     // A neutral duck is checked with a mid, or a low that leads somewhere.
     if (s.mode === 'crouch' && !s.guarding && dist < fx(1.0) && this.roll(this.level.read)) {
+      this.tally.checks++;
       this.start(this.roll(50) ? tap(DOWN | FP) : this.opener(me, 'low'));
       return;
     }
@@ -698,6 +723,38 @@ export class Cpu {
   }
 
   /**
+   * Blocking a move it knows is unsafe (a player learns the frame data): as
+   * the blockstun ends, the punish route if the frames allow its launcher,
+   * else the jab route, else nothing. Weighed once a blockstun.
+   */
+  private punishBlocked(me: FighterState, them: FighterState): number {
+    if (me.mode !== 'blockstun') {
+      this.blockedBy = '';
+      return 0;
+    }
+    // The move on its guard, as it lands: an ender (no string to come), not a projectile.
+    if (this.blockedBy === '') this.blockedBy = them.mode === 'move' ? them.move : '-';
+    if (me.timer > 1 || this.blockedBy === '-') return 0;
+    const mv = moveData(them.fighter, this.blockedBy);
+    this.blockedBy = '-';
+    if (hasChain(mv) || mv.spawns.length) return 0;
+    const onBlock = frameData(mv).onBlock;
+    if (onBlock === null || !this.roll(this.level.antiAir)) return 0;
+    const hurt = fighterData(them.fighter).hurt.stand;
+    const dist = Math.abs(them.x - me.x);
+    for (const kind of PUNISHERS) {
+      const rt = routeOf(me.fighter, kind);
+      if (rt && rt.startup <= -onBlock && dist <= rt.reach + hurt.x + hurt.w) {
+        this.tally.punishes++;
+        // Pressed a step early: the buffer brings it out on the first free frame.
+        this.plan = null;
+        return openerBits(rt, me.facing);
+      }
+    }
+    return 0;
+  }
+
+  /**
    * Something it sees recovering: the punish route if the frames they have
    * left allow its launcher, else the jab route, else (out of reach) the
    * fighter's own answer, else nothing.
@@ -711,6 +768,7 @@ export class Cpu {
     for (const kind of PUNISHERS) {
       const rt = routeOf(me.fighter, kind);
       if (rt && left >= rt.startup && dist <= rt.reach + body) {
+        this.tally.punishes++;
         this.start(tap(openerBits(rt, me.facing)));
         return true;
       }
@@ -771,6 +829,7 @@ export class Cpu {
   }
 
   private dashBlock(_me: FighterState, n: number): Plan {
+    this.tally.dashBlocks++;
     let k = 0;
     let from = 0;
     let guardAt = -1;

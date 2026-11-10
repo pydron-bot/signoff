@@ -100,29 +100,64 @@ function kindOf(fighter: string, g: ComboGuide, opener: string): Opener {
   return h === 'low' ? 'low' : h === 'overhead' ? 'overhead' : 'punish';
 }
 
+/** Measuring a fighter's routes, a trial at a time: the guide on now, its first trial, the furthest it held, the routes done. */
+interface Warming {
+  k: number;
+  gap: number;
+  base: Trial | null;
+  far: Fx;
+  out: Route[];
+}
+
+const warming = new Map<string, Warming>();
+
+/**
+ * Measures a little more of the fighter's routes (one trial of one guide)
+ * and says whether they're all done. The CPU calls it through the round's
+ * intro, so the work is spread over steps instead of landing on one.
+ */
+export function warm(fighter: string): boolean {
+  if (cache.has(fighter)) return true;
+  let w = warming.get(fighter);
+  if (!w) {
+    w = { k: 0, gap: 0, base: null, far: 0, out: [] };
+    warming.set(fighter, w);
+  }
+  const gs = guides(fighter);
+  // Past guides that don't open with a normal at the start.
+  while (w.k < gs.length && !openerOf(fighter, gs[w.k])) w.k++;
+  if (w.k >= gs.length) {
+    cache.set(fighter, w.out);
+    warming.delete(fighter);
+    return true;
+  }
+  const g = gs[w.k];
+  const t = trial(fighter, g, GAPS[w.gap]);
+  if (!w.base) {
+    w.base = t;
+    w.far = t.dist;
+  } else if (t.hits >= w.base.hits) w.far = t.dist;
+  // How far out it still holds together: on until a gap loses a hit.
+  if (++w.gap >= GAPS.length || t.hits < w.base.hits) {
+    const opener = openerOf(fighter, g)!;
+    const mv = moveData(fighter, opener);
+    const b = w.base;
+    w.out.push({ guide: g, kind: kindOf(fighter, g, opener), opener, press: g.presses[0][1], startup: mv.startup, reach: reachOf(mv), pct: b.pct, hits: b.hits, far: w.far, stop: b.stop });
+    w.k++;
+    w.gap = 0;
+    w.base = null;
+  }
+  return false;
+}
+
+function openerOf(fighter: string, g: ComboGuide): string | null {
+  return g.presses.length && g.presses[0][0] === 0 ? moveForPress(fighter, g.presses[0][1]) : null;
+}
+
 /** Every guide of the fighter that opens with a normal, sorted by opener and measured in the simulation. Worked out once a fighter. */
 export function routesFor(fighter: string): readonly Route[] {
-  let rs = cache.get(fighter);
-  if (rs) return rs;
-  const out: Route[] = [];
-  for (const g of guides(fighter)) {
-    if (!g.presses.length || g.presses[0][0] !== 0) continue;
-    const opener = moveForPress(fighter, g.presses[0][1]);
-    if (!opener) continue;
-    const mv = moveData(fighter, opener);
-    const base = trial(fighter, g, GAPS[0]);
-    // How far out it still holds together.
-    let far = base.dist;
-    for (let k = 1; k < GAPS.length; k++) {
-      const t = trial(fighter, g, GAPS[k]);
-      if (t.hits < base.hits) break;
-      far = t.dist;
-    }
-    out.push({ guide: g, kind: kindOf(fighter, g, opener), opener, press: g.presses[0][1], startup: mv.startup, reach: reachOf(mv), pct: base.pct, hits: base.hits, far, stop: base.stop });
-  }
-  rs = out;
-  cache.set(fighter, rs);
-  return rs;
+  while (!warm(fighter));
+  return cache.get(fighter)!;
 }
 
 export function routeOf(fighter: string, kind: Opener): Route | null {
@@ -178,11 +213,6 @@ export class RouteRun {
   /** Is a press due on this step? */
   due(now: number): boolean {
     return !this.done && this.route.guide.presses[this.k][0] === now - this.start;
-  }
-
-  /** The presses made after the opener (some are already in). */
-  get pressed(): number {
-    return this.k;
   }
 
   /** This step's input (0 between presses), moving past the presses made. */
