@@ -7,7 +7,8 @@
  * are some, else boxes. It reads the latest match step and the step's events
  * and never changes the match. About 19 draw calls (the signal spray is
  * one, the contact shadows two), plus 3 to 7 a model; the impact layer
- * (src/render/impact.ts, dust.ts, swoosh.ts) adds up to six while it shows.
+ * (src/render/impact.ts, dust.ts, swoosh.ts) adds up to six while it shows;
+ * the knocked-about set dressing (clutter.ts) three.
  */
 import * as THREE from 'three';
 import { FIGHTER_COLORS } from '../core/fighterLook';
@@ -27,6 +28,7 @@ import { FLOOR, MIRROR } from './reflection';
 import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
+import { Clutter } from './clutter';
 import { Dust } from './dust';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { Swoosh } from './swoosh';
@@ -219,6 +221,7 @@ export class Arena {
   private readonly sparks: Sparks;
   private readonly burst: SignalBurst;
   private readonly dust: Dust;
+  private readonly clutter: Clutter;
   private readonly light: ImpactLight;
   /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
   private readonly impactScreen = new ImpactScreen();
@@ -252,6 +255,7 @@ export class Arena {
     this.air = new Atmosphere(this.scene);
     this.burst = new SignalBurst(this.scene);
     this.dust = new Dust(this.scene);
+    this.clutter = new Clutter(this.scene);
     this.light = new ImpactLight(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
@@ -298,7 +302,7 @@ export class Arena {
   setFighters(m: MatchState): Promise<void> {
     this.poses.reset();
     this.rig.reset();
-    const loads: Promise<void>[] = [this.stage.setStage(m.stage)];
+    const loads: Promise<void>[] = [this.stage.setStage(m.stage), this.clutter.setStage(m.stage)];
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
       v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
@@ -363,6 +367,7 @@ export class Arena {
     this.rig.reset();
     this.burst.clear();
     this.dust.clear();
+    this.clutter.clear();
     this.light.clear();
     this.impactScreen.clear();
     this.wear.reset();
@@ -381,6 +386,7 @@ export class Arena {
     this.sparks.onEvents(ev);
     this.burst.onEvents(ev);
     this.dust.onEvents(m, ev);
+    this.clutter.step(m, ev);
     this.light.onEvents(ev);
     this.impactScreen.onEvents(ev);
     for (const e of ev) {
@@ -424,6 +430,7 @@ export class Arena {
   render(m: MatchState): void {
     this.frame++;
     this.stage.update(m, this.frame);
+    this.clutter.update();
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
     // The signal damage flickers on display time; held still for Reduce Motion.

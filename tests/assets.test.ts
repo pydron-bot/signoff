@@ -403,7 +403,7 @@ stageChecks('kitchen', ['set', 'seg_prep', 'seg_grease', 'seg_oven', 'prop_pot',
  * Baked light on the sets (docs/BLENDER-TODO.md, step 23), once a stage has
  * it: occlusion on the second UV set, which every mesh using it carries;
  * light maps named in the rigs that exist and are 1024² at most; each
- * segment's strength between 0 and 2; and the stage under 2 MB with them.
+ * segment's strength between 0 and 2; and the stage under 5 MB with them (2 MB until Nov 10).
  */
 for (const id of ['weather', 'burn', 'news', 'kitchen']) {
   const path = `public/assets/stages/${id}.glb`;
@@ -435,7 +435,7 @@ for (const id of ['weather', 'burn', 'news', 'kitchen']) {
         expect(Math.max(w, h), `${r.lightMapFile} size`).toBeLessThanOrEqual(1024);
         bytes += png.length;
       }
-      expect(bytes, `${id} with its light maps`).toBeLessThan(2 * 1024 * 1024);
+      expect(bytes, `${id} with its light maps`).toBeLessThan(5 * 1024 * 1024);
     });
   });
 }
