@@ -34,6 +34,8 @@ import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { Swoosh } from './swoosh';
 import { StageView } from './stageView';
 
+/** A step with nothing happening, for the camera during the cold open. */
+const NO_EVENTS: readonly SimEvent[] = [];
 const COLORS = FIGHTER_COLORS;
 const LIMB = 0x9a9a9a;
 const ACTIVE = 0xff3030;
@@ -211,8 +213,14 @@ export class Arena {
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
   private readonly wear = new WearTracker();
-  /** The cold open: the match isn't running yet, so the fighters idle on display time. */
-  idling = false;
+  /** The cold open: the match isn't running yet, so the fighters idle on display time, and the camera frames them close. */
+  get idling(): boolean {
+    return this.rig.opening;
+  }
+
+  set idling(on: boolean) {
+    this.rig.opening = on;
+  }
   private readonly hurtOverlays: THREE.LineSegments[] = [];
   private readonly hurtMat = new THREE.LineBasicMaterial({ color: 0x40ff80 });
   /** The hurtbox of a body nothing can hit right now. */
@@ -429,6 +437,8 @@ export class Arena {
 
   render(m: MatchState): void {
     this.frame++;
+    // The cold open: nothing steps, so the camera frames the match from here (else it keeps the last match's shot).
+    if (this.idling) this.rig.step(m, NO_EVENTS);
     this.stage.update(m, this.frame);
     this.clutter.update();
     // After the set has lit the segment (its rim may pulse on the beat).

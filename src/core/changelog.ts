@@ -19,6 +19,7 @@ export const CHANGELOG: readonly Release[] = [
     title: 'Insomnia',
     notes: [
       "With Endless on, CPU VS CPU keeps your screen from dimming and locking, so the channel can play all night. Pause, or leave CPU VS CPU, and the screen sleeps as usual again.",
+      "Fixed: the lines the two fighters trade before round 1 sometimes had one of them out of shot (the camera was still where the title screen's match left it, or framed for the phone the other way up). Now it's always the two of them, close, then the round's wide shot cuts in.",
     ],
   },
   {
