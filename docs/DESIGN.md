@@ -361,9 +361,16 @@ keyed on seeing the getup start. It counts the opponent's habits over
 the match (the answer to a blocked attack, what they do on getting up,
 how often they jump or throw projectiles) and plays against the
 strongest. Easy does none of this, normal converts about a third of the
-time and hard most of the time. DIRECTOR, Arcade's last fight only, has
+time and hard most of the time. DIRECTOR (Arcade's last fight, and CPU VS CPU) has
 hard's reactions, converts nearly always and adapts fastest. Everything
 is seeded, so a match replays from its seed.
+
+**CPU VS CPU (0.55.0).** The title's attract mode as a match to watch:
+the fighters and stage chosen on the title (or RANDOM MATCH), each side's
+CPU at its own level, DIRECTOR included, with the HUD, the cold open and
+the sound. The players' inputs go nowhere; the pause menu runs it at half
+or double speed and shows the hit boxes. It isn't recorded, so the last
+match kept for WATCH REPLAY stays the player's.
 
 **Styles and leans (0.50.0).** Each style's choices (strings, throws,
 specials, pokes, lows, approaching, retreating, waiting, guarding,

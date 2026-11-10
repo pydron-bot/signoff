@@ -41,8 +41,11 @@ import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
-// The menu's levels; the DIRECTOR plays only Arcade's last fight (arcade.ts).
+// The menu's levels; the DIRECTOR plays Arcade's last fight (arcade.ts) and CPU VS CPU.
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
+/** CPU VS CPU's levels: the DIRECTOR's included, since watching takes nothing from Arcade. */
+const WATCH_LEVELS: CpuLevel[] = ['easy', 'normal', 'hard', 'director'];
+const WATCH_LEVEL_NAMES = ['EASY', 'NORMAL', 'HARD', 'DIRECTOR'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 /** Cancellations players have found (signoff.found). */
 const found = loadFound();
@@ -223,7 +226,7 @@ window.addEventListener('gamepadconnected', refreshTouch);
 window.addEventListener('gamepaddisconnected', refreshTouch);
 
 // The chosen fighters and CPU level, remembered between visits.
-const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0 };
+const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0, watch1: 1, watch2: 1 };
 try {
   Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) ?? '{}'));
 } catch {
@@ -258,6 +261,8 @@ let replaySpeed = 0;
 /** Combo showcases can run slowed down, to follow the presses. */
 const SHOWCASE_SPEEDS = [1, 0.5, 0.25] as const;
 let showcaseSpeed = 0;
+/** CPU VS CPU can run at the replays' speeds. */
+let watchSpeed = 0;
 /** Where a showcase goes back to: the training session it was opened from (or the title), on this fighter's move list. */
 let showcaseReturn: { training: Session | null; fighter: string } | null = null;
 /** The showcase caption, rebuilt only when the step changes. */
@@ -277,8 +282,8 @@ const clock = new FixedStep();
 /** A KO runs in slow motion for a moment. */
 const slowMo = new SlowMo();
 
-function newSession(mode: Mode, p1: string, p2: string, stage: string, level: CpuLevel = LEVELS[setup.level]): Session {
-  const s = new Session({ mode, p1, p2, stage, level, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
+function newSession(mode: Mode, p1: string, p2: string, stage: string, level: CpuLevel = LEVELS[setup.level], level1?: CpuLevel): Session {
+  const s = new Session({ mode, p1, p2, stage, level, level1, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
   return begin(s);
 }
 
@@ -288,7 +293,7 @@ function inputSides(s: Session | null): boolean[] {
   const on = !!s && !demo && settings.inputs > 0;
   const mode = s?.options.mode;
   sides[0] = on && (settings.inputs === 2 || !!s?.training || mode === 'showcase');
-  sides[1] = on && settings.inputs === 2 && (mode === 'versus' || mode === 'replay');
+  sides[1] = on && settings.inputs === 2 && (mode === 'versus' || mode === 'replay' || mode === 'watch');
   return sides;
 }
 
@@ -334,14 +339,16 @@ function play(mode: Mode): void {
   start(mode, FIGHTER_IDS[setup.p2], STAGE_IDS[setup.stage] ?? STAGE_IDS[0]);
 }
 
-function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
+function start(mode: Mode, p2: string, stage: string, level?: CpuLevel, p1 = FIGHTER_IDS[setup.p1]): void {
   demo = false;
   over = false;
   paused = false;
   arcadeCard.hide();
-  session = newSession(mode, FIGHTER_IDS[setup.p1], p2, stage, level);
-  // A match against someone opens on the two of them trading a line.
-  if (mode === 'cpu' || mode === 'versus') {
+  const watching = mode === 'watch';
+  watchSpeed = 0;
+  session = watching ? newSession(mode, p1, p2, stage, WATCH_LEVELS[setup.watch2], WATCH_LEVELS[setup.watch1]) : newSession(mode, p1, p2, stage, level);
+  // A match between two fighters opens on the two of them trading a line.
+  if (mode === 'cpu' || mode === 'versus' || watching) {
     const o = session.options;
     const ex = banter(o.p1, o.p2, o.seed);
     coldOpen.begin(o.p1, o.p2, ex, [sound.lineSeconds(ex.clips[0]), sound.lineSeconds(ex.clips[1])]);
@@ -351,10 +358,30 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
   title.hidden = true;
   titleMenu.hide();
   hud.start(session.match, session.training);
-  setTouch(true);
+  // Watching: no buttons, only the pause button.
+  setTouch(!watching);
   pauseBtn.hidden = false;
   replayBar.show(false);
   document.body.dataset.scene = 'fight';
+}
+
+/** CPU VS CPU: each side's level, then the fighters and stage chosen on the title. */
+function showWatch(): void {
+  titleMenu.show('CPU VS CPU', [
+    { label: 'START', id: 'watch-start', run: () => play('watch') },
+    { label: 'RANDOM MATCH', id: 'watch-random', run: watchRandom },
+    { label: 'PLAYER 1 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch1, onChange: (v) => ((setup.watch1 = v), saveSetup()) },
+    { label: 'PLAYER 2 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch2, onChange: (v) => ((setup.watch2 = v), saveSetup()) },
+    { label: 'BACK', run: showTitle },
+  ]);
+}
+
+/** CPU VS CPU between two different fighters picked at random, on a random stage. */
+function watchRandom(): void {
+  ladder = null;
+  const a = Math.floor(Math.random() * FIGHTER_IDS.length);
+  const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
+  start('watch', FIGHTER_IDS[b], STAGE_IDS[Math.floor(Math.random() * STAGE_IDS.length)], undefined, FIGHTER_IDS[a]);
 }
 
 function startArcade(): void {
@@ -511,6 +538,7 @@ function showTitle(): void {
     { label: 'LESSONS', id: 'lessons', run: showLessons },
     { label: 'COMBO SCHOOL', id: 'school', run: showSchool },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
+    { label: 'CPU VS CPU', id: 'play-watch', run: showWatch },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
     moveList,
     { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
@@ -686,8 +714,14 @@ function pause(on: boolean): void {
     { label: 'RESUME', run: () => pause(false) },
     s.options.mode === 'replay'
       ? { label: 'FROM THE START', run: () => (seekReplay(0), pause(false)) }
-      : { label: 'RESTART', run: () => (ladder ? nextShow() : play(s.options.mode)) },
+      : { label: 'RESTART', run: () => (ladder ? nextShow() : s.options.mode === 'watch' ? restartWatch(s) : play(s.options.mode)) },
   ];
+  if (s.options.mode === 'watch') {
+    rows.push(
+      { label: 'SPEED', options: SPEEDS.map(speedName), value: watchSpeed, onChange: (v) => ((watchSpeed = v), clock.reset()) },
+      { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
+    );
+  }
   if (s.training) {
     rows.push(
       { label: 'RESET POSITIONS (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
@@ -705,6 +739,17 @@ function pause(on: boolean): void {
   rows.push({ label: 'SETTINGS', run: () => showSettings(() => pause(true)) });
   rows.push({ label: 'QUIT TO TITLE', run: startDemo });
   pauseMenu.show('PAUSED', rows);
+}
+
+/** A speed as the menu shows it. */
+function speedName(x: number): string {
+  return x === 1 ? 'NORMAL' : x === 0.5 ? 'HALF' : `×${x}`;
+}
+
+/** CPU VS CPU again with the same two fighters and stage (a random match keeps its own). */
+function restartWatch(s: Session): void {
+  const o = s.options;
+  start('watch', o.p2, o.stage ?? STAGE_IDS[0], undefined, o.p1);
 }
 
 /** One menu choice over a list of values: the row shows `names`, and changing it sets the value. */
@@ -772,6 +817,15 @@ function results(winner: number): void {
     arcadeResult(winner);
     return;
   }
+  if (session!.options.mode === 'watch') {
+    const s = session!;
+    pauseMenu.show(label, [
+      { label: 'REMATCH', id: 'rematch', run: () => (pauseMenu.hide(), restartWatch(s)) },
+      { label: 'RANDOM MATCH', id: 'watch-random', run: () => (pauseMenu.hide(), watchRandom()) },
+      { label: 'TITLE', run: startDemo },
+    ]);
+    return;
+  }
   const r = lastReplay;
   pauseMenu.show(label, [
     { label: 'REMATCH', id: 'rematch', run: () => (pauseMenu.hide(), play(session!.options.mode)) },
@@ -798,6 +852,7 @@ window.addEventListener('keydown', (e) => {
     }
     return;
   }
+  if (session?.options.mode === 'watch' && !paused && e.code === 'KeyB') arena.showBoxes = !arena.showBoxes;
   if (!session?.training || paused) return;
   if (e.code === 'KeyR') {
     session.reset();
@@ -889,7 +944,7 @@ renderer.setAnimationLoop((now) => {
     coldOpenHeld = bits;
   } else if (!paused && !over && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
-    const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : school?.session === s ? SHOWCASE_SPEEDS[schoolSpeed] : 1;
+    const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'watch' ? SPEEDS[watchSpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : school?.session === s ? SHOWCASE_SPEEDS[schoolSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
     stepped = n;
     for (let i = 0; i < n; i++) {
