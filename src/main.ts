@@ -226,7 +226,7 @@ window.addEventListener('gamepadconnected', refreshTouch);
 window.addEventListener('gamepaddisconnected', refreshTouch);
 
 // The chosen fighters and CPU level, remembered between visits.
-const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0, watch1: 1, watch2: 1 };
+const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0, watch1: 1, watch2: 1, watchView: 0, endless: 0 };
 try {
   Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) ?? '{}'));
 } catch {
@@ -263,6 +263,15 @@ const SHOWCASE_SPEEDS = [1, 0.5, 0.25] as const;
 let showcaseSpeed = 0;
 /** CPU VS CPU can run at the replays' speeds. */
 let watchSpeed = 0;
+/** Seconds of the winner on screen before the endless channel's next match (0: not waiting), and that match's winner. */
+const ENDLESS_WAIT = 5;
+let endlessLeft = 0;
+let endlessWinner = -1;
+
+/** CPU VS CPU seen on the living room's TV, from the sofa, instead of full screen. */
+function watchingTv(): boolean {
+  return setup.watchView === 1 && session?.options.mode === 'watch';
+}
 /** Where a showcase goes back to: the training session it was opened from (or the title), on this fighter's move list. */
 let showcaseReturn: { training: Session | null; fighter: string } | null = null;
 /** The showcase caption, rebuilt only when the step changes. */
@@ -308,6 +317,7 @@ function begin(s: Session): Session {
 }
 
 function startDemo(): void {
+  endlessLeft = 0;
   demo = true;
   over = false;
   paused = false;
@@ -340,6 +350,7 @@ function play(mode: Mode): void {
 }
 
 function start(mode: Mode, p2: string, stage: string, level?: CpuLevel, p1 = FIGHTER_IDS[setup.p1]): void {
+  endlessLeft = 0;
   demo = false;
   over = false;
   paused = false;
@@ -372,8 +383,18 @@ function showWatch(): void {
     { label: 'RANDOM MATCH', id: 'watch-random', run: watchRandom },
     { label: 'PLAYER 1 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch1, onChange: (v) => ((setup.watch1 = v), saveSetup()) },
     { label: 'PLAYER 2 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch2, onChange: (v) => ((setup.watch2 = v), saveSetup()) },
+    ...watchRows(),
     { label: 'BACK', run: showTitle },
   ]);
+}
+
+/** CPU VS CPU's view and endless channel, on its menu and when paused. */
+function watchRows(): Parameters<Menu['show']>[1] {
+  return [
+    { label: 'VIEW', options: ['FULL SCREEN', 'ON THE TV'], value: setup.watchView, onChange: (v) => ((setup.watchView = v), saveSetup()) },
+    // The next random match after each one, with no results menu: the channel never goes off air.
+    { label: 'ENDLESS', options: ['OFF', 'ON'], value: setup.endless, onChange: (v) => ((setup.endless = v), saveSetup()) },
+  ];
 }
 
 /** CPU VS CPU between two different fighters picked at random, on a random stage. */
@@ -720,6 +741,7 @@ function pause(on: boolean): void {
     rows.push(
       { label: 'SPEED', options: SPEEDS.map(speedName), value: watchSpeed, onChange: (v) => ((watchSpeed = v), clock.reset()) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
+      ...watchRows(),
     );
   }
   if (s.training) {
@@ -801,6 +823,15 @@ function trainingLine(s: Session): string {
   return line.text;
 }
 
+/** The endless channel stopped between matches: the results menu after all. */
+function stopEndless(): void {
+  endlessLeft = 0;
+  const e = setup.endless;
+  setup.endless = 0;
+  results(endlessWinner);
+  setup.endless = e;
+}
+
 function results(winner: number): void {
   over = true;
   touch.clear();
@@ -818,6 +849,12 @@ function results(winner: number): void {
     return;
   }
   if (session!.options.mode === 'watch') {
+    // The endless channel moves on by itself, after a moment on the winner.
+    if (setup.endless === 1) {
+      endlessLeft = ENDLESS_WAIT;
+      endlessWinner = winner;
+      return;
+    }
     const s = session!;
     pauseMenu.show(label, [
       { label: 'REMATCH', id: 'rematch', run: () => (pauseMenu.hide(), restartWatch(s)) },
@@ -834,7 +871,13 @@ function results(winner: number): void {
   ]);
 }
 
-pauseBtn.addEventListener('click', () => pause(!paused));
+pauseBtn.addEventListener('click', () => (endlessLeft > 0 ? stopEndless() : pause(!paused)));
+// On the TV the pause button is hidden: a tap anywhere pauses (or stops the endless channel between matches).
+renderer.domElement.addEventListener('pointerdown', () => {
+  if (!watchingTv() || paused) return;
+  if (endlessLeft > 0) stopEndless();
+  else pause(true);
+});
 window.addEventListener('keydown', (e) => {
   // The performance overlay, anywhere.
   if (e.code === 'Backquote' && !e.repeat) {
@@ -930,7 +973,12 @@ renderer.setAnimationLoop((now) => {
       if (k === 'pause' && !over) pause(false);
       else pauseMenu.key(k);
     } else if (titleMenu.open && demo) titleMenu.key(k);
-    else if (k === 'pause') pause(true);
+    else if (k === 'pause') endlessLeft > 0 ? stopEndless() : pause(true);
+  }
+  // The endless channel's next match, once the winner has had a moment.
+  if (endlessLeft > 0 && (endlessLeft -= Math.min(0.1, (now - lastFrame) / 1000)) <= 0) {
+    endlessLeft = 0;
+    watchRandom();
   }
   const s = session;
   if (!s) return;
@@ -987,12 +1035,16 @@ renderer.setAnimationLoop((now) => {
   }
   const m = session!.match;
   const title = document.body.dataset.scene === 'title';
+  // The title, or CPU VS CPU watched on the TV: from the sofa, its overlays hidden (style.css).
+  const tvWatch = watchingTv();
+  const sofa = title || tvWatch;
+  if ((document.body.dataset.tv === '1') !== tvWatch) document.body.dataset.tv = tvWatch ? '1' : '0';
   // The title's TV: settles in, and a match starting pushes in through the glass (cut with Reduce Motion).
   const dt = Math.min(0.1, (now - lastFrame) / 1000);
   lastFrame = now;
   const still = reducedMotion(settings, systemReduceMotion);
-  if (still) tvView = title ? 1 : 0;
-  else tvView = title ? Math.min(1, tvView + dt / 0.5) : Math.max(0, tvView - dt / (room.ready ? 0.8 : 0.55));
+  if (still) tvView = sofa ? 1 : 0;
+  else tvView = sofa ? Math.min(1, tvView + dt / 0.5) : Math.max(0, tvView - dt / (room.ready ? 0.8 : 0.55));
   // On the room's TV the fight is framed 4:3.
   const tv = room.ready && tvView > 0;
   if (tv !== onTv) {
@@ -1031,14 +1083,14 @@ renderer.setAnimationLoop((now) => {
   post.crt = room.ready ? 0 : tvView;
   // The cold open plays in the studio before the lights bang on: half lit.
   // The shader TV dims the demo behind the menu; the room is dark enough already.
-  post.dim = title ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
-  post.saturation = title ? 0.85 : 1;
+  post.dim = sofa ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
+  post.saturation = sofa ? 0.85 : 1;
   post.tear = glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
   // The shockwave, an ender's zoom and the meter spotlight: on screen only, not on the title's TV.
   const fx = arena.impact(m);
-  const quiet = onTv || title;
+  const quiet = onTv || sofa;
   post.shockX = fx.shockX;
   post.shockY = fx.shockY;
   post.shockR = fx.shockR;
@@ -1053,7 +1105,7 @@ renderer.setAnimationLoop((now) => {
     // The fight on the TV, the room round it; leaving, the push ends in a burst of static as the picture takes the screen.
     room.drawTv(renderer, arena.scene, arena.camera);
     room.update(1 - tvView, arena.tone(screenTone), glitch.impact, still);
-    if (!title && !still) post.tear = Math.max(post.tear, 0.5 * Math.max(0, 1 - tvView / 0.15));
+    if (!sofa && !still) post.tear = Math.max(post.tear, 0.5 * Math.max(0, 1 - tvView / 0.15));
     post.grade = ROOM_GRADE;
     post.render(room.scene, room.camera, now);
     post.grade = arena.grade;

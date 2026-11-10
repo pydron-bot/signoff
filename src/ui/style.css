@@ -651,6 +651,14 @@ body {
   pointer-events: none;
 }
 
+/* CPU VS CPU on the living room's TV: only the picture, the room and the sound. */
+body[data-tv='1'] .hud,
+body[data-tv='1'] .cold-open,
+body[data-tv='1'] .input-display,
+body[data-tv='1'] .pause-btn {
+  display: none !important;
+}
+
 .pause-btn {
   position: fixed;
   left: 50%;
