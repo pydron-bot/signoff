@@ -519,12 +519,27 @@ body {
   left: 50%;
   top: calc(env(safe-area-inset-top) + 64px);
   transform: translateX(-50%);
+  max-width: min(90vw, 720px);
+  width: max-content;
   padding: 4px 10px;
   background: rgba(0, 0, 0, 0.55);
   font-size: 0.75rem;
-  white-space: pre;
+  white-space: pre-line;
   text-align: center;
   text-shadow: none;
+}
+
+/* Training's frame meter: P1 above, P2 below, newest on the right. */
+.hud-frames {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 44px);
+  transform: translateX(-50%);
+  width: 320px;
+  height: 32px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
 }
 
 .pause-btn {
@@ -999,6 +1014,14 @@ body {
   padding: 0 0.6rem;
   color: #ffd75e;
   letter-spacing: 0.1em;
+}
+
+.movelist-try {
+  margin-left: 0.4rem;
+}
+
+.movelist-try.cleared {
+  color: #3fd17a;
 }
 
 .movelist-legend {

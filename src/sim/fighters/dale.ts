@@ -8,19 +8,19 @@ import { box, interactMove, move, normal, projectile, rerun, Script, strike, tab
 
 const moves = table(
   // Standing
-  normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP' } }),
+  normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], height: 'high', damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP' } }),
   // Angled up: his anti-air, and what follows a launch.
-  normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [1.0, 2.0], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
+  normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [0.75, 2.0], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
   normal('s.FK', { name: 'Front Kick', startup: 11, active: 3, recovery: 13, reach: [0.2, 1.5], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
   // The longest poke in the game: the umbrella, held out at arm's length.
-  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [1.0, 1.4], damage: 70, hitstun: 22, blockstun: 15, push: 0.07 }),
+  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [0.75, 1.4], damage: 80, hitstun: 22, blockstun: 15, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.7, 0.95], damage: 25, hitstun: 15, blockstun: 11, chain: { FK: 'c.FP FK' } }),
-  normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [1.0, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
-  normal('c.FK', { name: 'Shin Poke', stance: 'crouch', startup: 8, active: 2, recovery: 14, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 10 }),
+  normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
+  normal('c.FK', { name: 'Shin Poke', stance: 'crouch', startup: 8, active: 2, recovery: 14, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 42, hitstun: 16, blockstun: 10 }),
   normal('c.BK', { name: 'Ground Fog', stance: 'crouch', startup: 12, active: 3, recovery: 24, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normal
-  normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [1.0, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
+  normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
   // Steps back as it kicks: makes room for the forecast.
   move('b.FK', {
     name: 'Step Back Kick',
@@ -37,27 +37,27 @@ const moves = table(
   normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Jumping Boot', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
   // String steps
-  normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], damage: 35, hitstun: 18, blockstun: 14, chain: { BK: 'FP FP BK' } }),
+  normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], height: 'high', damage: 35, hitstun: 18, blockstun: 14, chain: { BK: 'FP FP BK' } }),
   normal('FP FP BK', { name: 'Front Moves In', startup: 12, active: 3, recovery: 20, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 0, blockstun: 18, push: 0.07, knockdown: true }),
-  normal('FP BP', { name: 'Cloud Cover', startup: 9, active: 3, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.4], damage: 50, hitstun: 20, blockstun: 13 }),
+  normal('FP BP', { name: 'Cloud Cover', startup: 9, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.4], damage: 50, hitstun: 20, blockstun: 13 }),
   normal('BP FK', { name: 'High Pressure', startup: 10, active: 3, recovery: 18, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 55, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK FK' } }),
   normal('BP FK FK', { name: 'Scattered Showers', startup: 11, active: 2, recovery: 16, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 45, hitstun: 18, blockstun: 13 }),
-  normal('FK BP', { name: 'Doppler', startup: 16, active: 2, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 14 }),
+  normal('FK BP', { name: 'Doppler', startup: 16, active: 2, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 14 }),
   normal('c.FP FK', { name: 'Ground Frost', stance: 'crouch', startup: 9, active: 2, recovery: 20, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 10 }),
-  normal('f.BP BP', { name: 'Thunderhead', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.9, 1.4], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
+  normal('f.BP BP', { name: 'Thunderhead', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.4], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
   // Specials
   move('Cold Front', {
     name: 'Cold Front',
     kind: 'special',
     total: 48,
     boost: 'Cold Front+',
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 40, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 50, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
   }),
   move('Cold Front+', {
     name: 'Cold Front (boosted)',
     kind: 'special',
     total: 48,
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 38, hitstun: 20, blockstun: 16, push: 0.04, chip: 7 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.04, chip: 7 } }) }],
   }),
   move('Pressure Drop', {
     name: 'Pressure Drop',
@@ -81,21 +81,30 @@ const moves = table(
     kind: 'special',
     total: 45,
     boost: 'Isobar Lasso+',
-    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 40, hitstun: 28, blockstun: 12, push: 0, pull: 0.8 })],
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 40, hitstun: 28, blockstun: 18, push: 0, pull: 0.8 })],
   }),
   move('Isobar Lasso+', {
     name: 'Isobar Lasso (boosted)',
     kind: 'special',
     total: 45,
-    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.8, 1.4], damage: 55, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 55, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
   }),
   // A rising, invulnerable reversal: wins against pressure, loses badly if blocked.
   move('Heat Lightning', {
     name: 'Heat Lightning',
     kind: 'special',
     total: 40,
+    boost: 'Heat Lightning+',
     invuln: [1, 7],
-    hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.8, 2.2], damage: 75, hitstun: 0, blockstun: 14, launch: 0.2 })],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.75, 2.2], damage: 85, hitstun: 0, blockstun: 14, launch: 0.2 })],
+  }),
+  // Boosted: invulnerable longer, and on a juggled body it strikes them back up (his second relaunch, so his third bar buys something).
+  move('Heat Lightning+', {
+    name: 'Heat Lightning (boosted)',
+    kind: 'special',
+    total: 40,
+    invuln: [1, 9],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.95], at: [0.75, 2.3], damage: 55, hitstun: 0, blockstun: 16, launch: 0.2 })],
   }),
   // In the air: the umbrella opens and he hangs there, dropping hail on the way down.
   move('Downpour', {
@@ -184,13 +193,13 @@ export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
   style: 'zoner',
-  health: 830,
+  health: 900,
   walkFwd: fx(0.04),
-  walkBack: fx(0.035),
+  walkBack: fx(0.042),
   jumpVy: fx(0.2),
   jumpVx: fx(0.055),
   dash: { frames: 16, speed: fx(0.08) },
-  backdash: { frames: 20, speed: fx(0.075) },
+  backdash: { frames: 20, speed: fx(0.085) },
   hurt: { stand: box(-0.3, 0.3, 0, 1.8), crouch: box(-0.3, 0.35, 0, 1.1), air: box(-0.3, 0.3, 0.2, 1.6), juggle: box(-0.8, 0.6, 0.2, 0.9) },
   pushW: fx(0.3),
   pushH: fx(1.6),

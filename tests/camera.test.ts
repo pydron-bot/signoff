@@ -22,7 +22,7 @@ function settled(m: MatchState, aspect: number, reduceMotion = false, buttons = 
 }
 
 function hit(weight: HitWeight): SimEvent {
-  return { type: 'hit', attacker: 0, defender: 1, move: 's.FP', damage: 50, height: 'mid', counter: false, combo: 1, weight, dir: 1, x: 0, y: fx(1.2) };
+  return { type: 'hit', attacker: 0, defender: 1, move: 's.FP', damage: 50, height: 'mid', counter: false, combo: 1, weight, dir: 1, x: 0, y: fx(1.2), crouched: false };
 }
 
 describe('camera framing', () => {

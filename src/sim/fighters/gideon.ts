@@ -20,35 +20,36 @@ function plate(speed: number, back: number, damage: number) {
     hits: 2,
     rehit: 14,
     collects: true,
-    effect: { damage, hitstun: 18, blockstun: 14, push: 0.03, chip: 6 },
+    // Skimmed at chest height: duck it.
+    effect: { damage, height: 'high', hitstun: 18, blockstun: 14, push: 0.03, chip: 6 },
   });
 }
 
 const moves = table(
   // Standing: middle of the road in everything; good reach, fair speed.
-  normal('s.FP', { name: 'Hand Raised', startup: 7, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.2, 1.5], damage: 32, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
-  normal('s.BP', { name: 'Good Book', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.55], damage: 62, hitstun: 21, blockstun: 15, chain: { BP: 'BP BP' } }),
+  normal('s.FP', { name: 'Hand Raised', startup: 7, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.2, 1.5], height: 'high', damage: 32, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
+  normal('s.BP', { name: 'Good Book', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.55], damage: 62, hitstun: 21, blockstun: 15, chain: { BP: 'BP BP' } }),
   normal('s.FK', { name: 'Testify', startup: 9, active: 3, recovery: 13, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'FK BK' } }),
-  normal('s.BK', { name: 'Pulpit Kick', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.45], at: [0.8, 1.35], damage: 75, hitstun: 22, blockstun: 16, push: 0.07 }),
+  normal('s.BK', { name: 'Pulpit Kick', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.45], at: [0.75, 1.35], damage: 75, hitstun: 22, blockstun: 16, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Kneel', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.6, 0.9], damage: 26, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
-  normal('c.BP', { name: 'Rapture', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [1.0, 2.0], damage: 68, hitstun: 24, blockstun: 12, launch: 0.17 }),
+  normal('c.BP', { name: 'Rapture', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [0.75, 2.0], damage: 68, hitstun: 24, blockstun: 12, launch: 0.17 }),
   normal('c.FK', { name: 'Low Offering', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 36, hitstun: 16, blockstun: 11 }),
   normal('c.BK', { name: 'Bow Down', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
-  normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [1.0, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
+  normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [0.75, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'j.BK' } }),
   normal('j.BP', { name: 'Descending Book', kind: 'air', startup: 8, active: 5, recovery: 7, reach: [0.1, 0.95], at: [0.6, 1.2], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 48, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Ascension Kick', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 62, hitstun: 20, blockstun: 12 }),
   // String steps
-  normal('FP FP', { name: 'Amen', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.15, 1.5], damage: 32, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
-  normal('FP FP BP', { name: 'Hallelujah', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.9, 1.6], damage: 65, hitstun: 0, blockstun: 17, push: 0.07, knockdown: true }),
+  normal('FP FP', { name: 'Amen', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.15, 1.5], height: 'high', damage: 32, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
+  normal('FP FP BP', { name: 'Hallelujah', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.6], damage: 65, hitstun: 0, blockstun: 17, push: 0.07, knockdown: true }),
   normal('FP FK', { name: 'Sermon', startup: 9, active: 2, recovery: 15, reach: [0.2, 1.3], at: [0, 0.35], height: 'low', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'FK BK' } }),
-  normal('BP BP', { name: 'Chapter and Verse', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.25], at: [1.0, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BK: 'BP BP BK' } }),
-  normal('BP BP BK', { name: 'Born Again', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.35], at: [0.8, 1.6], damage: 70, hitstun: 0, blockstun: 17, launch: 0.15 }),
-  normal('FK BK', { name: 'Altar Call', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.45], at: [0.9, 1.4], damage: 62, hitstun: 20, blockstun: 16 }),
+  normal('BP BP', { name: 'Chapter and Verse', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.25], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BK: 'BP BP BK' } }),
+  normal('BP BP BK', { name: 'Born Again', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.35], at: [0.75, 1.6], damage: 70, hitstun: 0, blockstun: 17, launch: 0.15 }),
+  normal('FK BK', { name: 'Altar Call', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.45], at: [0.75, 1.4], damage: 62, hitstun: 20, blockstun: 16 }),
   normal('c.FP FK', { name: 'Humble Sweep', stance: 'crouch', startup: 10, active: 2, recovery: 19, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 42, hitstun: 16, blockstun: 10 }),
   // Specials
   move('Collection Plate', {
@@ -69,14 +70,31 @@ const moves = table(
     name: 'Laying On of Hands',
     kind: 'special',
     total: 36,
+    boost: 'Laying On of Hands+',
     tithe: { cost: 1, into: 'Laying On of Hands (healing)' },
-    hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], height: 'high', damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
   }),
   move('Laying On of Hands (healing)', {
     name: 'Laying On of Hands (healing)',
     kind: 'special',
     total: 46,
-    hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], height: 'high', damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
+    heal: { frame: 24, amount: 90 },
+    boost: 'Laying On of Hands (healing)+',
+  }),
+  // Boosted (1 bar): both hands, and the spirit lifts them off their feet; on a juggled body, back up again. Paid in Signal, not donations.
+  move('Laying On of Hands+', {
+    name: 'Laying On of Hands (boosted)',
+    kind: 'special',
+    total: 36,
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.05], at: [0.75, 1.8], damage: 62, hitstun: 0, blockstun: 14, push: 0.05, launch: 0.17 })],
+  }),
+  // The same with a donation spent: it heals him as well.
+  move('Laying On of Hands (healing)+', {
+    name: 'Laying On of Hands (healing, boosted)',
+    kind: 'special',
+    total: 46,
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.05], at: [0.75, 1.8], damage: 62, hitstun: 0, blockstun: 14, push: 0.05, launch: 0.17 })],
     heal: { frame: 24, amount: 90 },
   }),
   // A blast all round him, front and back. With two donations, the sky opens.
@@ -84,8 +102,17 @@ const moves = table(
     name: 'Fire and Brimstone',
     kind: 'special',
     total: 50,
+    boost: 'Fire and Brimstone+',
     tithe: { cost: 2, into: 'Fire and Brimstone (blessed)' },
     hits: [strike({ frames: [18, 21], reach: [-1.2, 1.2], at: [0, 1.8], damage: 70, hitstun: 0, blockstun: 14, chip: 12, knockdown: true })],
+  }),
+  // Boosted (1 bar, when there aren't two donations to spend): the sky opens a little way, and a juggled body goes back up.
+  move('Fire and Brimstone+', {
+    name: 'Fire and Brimstone (boosted)',
+    kind: 'special',
+    total: 50,
+    armor: [4, 17],
+    hits: [strike({ frames: [18, 21], reach: [-1.6, 1.6], at: [0, 2.0], damage: 80, hitstun: 0, blockstun: 16, chip: 16, launch: 0.17 })],
   }),
   move('Fire and Brimstone (blessed)', {
     name: 'Fire and Brimstone (blessed)',

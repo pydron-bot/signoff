@@ -8,7 +8,7 @@ import { fx } from '../src/sim/fixed';
 import { place, ready } from './sim-helpers';
 
 function hit(weight: HitWeight, defender = 1): SimEvent {
-  return { type: 'hit', attacker: 1 - defender, defender, move: 's.FP', damage: 40, height: 'mid', counter: false, combo: 1, weight, dir: 1, x: 0, y: fx(1) };
+  return { type: 'hit', attacker: 1 - defender, defender, move: 's.FP', damage: 40, height: 'mid', counter: false, combo: 1, weight, dir: 1, x: 0, y: fx(1), crouched: false };
 }
 
 /** A director whose dice always come up `roll`. */

@@ -10,7 +10,8 @@ export type SimEvent =
   | { type: 'roundStart'; round: number; segment: number }
   | { type: 'fight'; round: number }
   /** `dir` is the way the blow travels (+1 toward +x); `weight` how hard it lands. */
-  | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; weight: HitWeight; dir: number; x: Fx; y: Fx }
+  /** `crouched`: the defender was crouching as it landed (a hit knocks them upright, so only the first shows it). */
+  | { type: 'hit'; attacker: number; defender: number; move: string; damage: number; height: Height; counter: boolean; combo: number; weight: HitWeight; dir: number; x: Fx; y: Fx; crouched: boolean }
   | { type: 'block'; attacker: number; defender: number; move: string; chip: number; x: Fx; y: Fx }
   /** The round's first hit: the attacker gets a bar. */
   | { type: 'firstHit'; player: number }
@@ -29,6 +30,8 @@ export type SimEvent =
   | { type: 'reversal'; player: number }
   | { type: 'punish'; player: number }
   | { type: 'delayedGetup'; player: number }
+  /** A high or a throw went over `player`, ducking. */
+  | { type: 'ducked'; player: number; move: string }
   | { type: 'special'; player: number; move: string }
   | { type: 'boost'; player: number; move: string }
   | { type: 'projectileClash'; x: Fx; y: Fx }

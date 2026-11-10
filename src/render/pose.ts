@@ -31,6 +31,11 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
 export const STAND_INS: Readonly<Record<string, string>> = {
+  // Boosted specials added in 0.49.0 (step 27): the plain move's clip, the same length.
+  'dale:Heat Lightning+': 'Heat Lightning',
+  'gideon:Laying On of Hands+': 'Laying On of Hands',
+  'gideon:Laying On of Hands (healing)+': 'Laying On of Hands (healing)',
+  'gideon:Fire and Brimstone+': 'Fire and Brimstone',
   // Picking up and throwing a prop (the boombox, step 14).
   interact_throw: 'interact',
   // Hit reactions (step 22): the two they refine.
@@ -101,12 +106,13 @@ type HitEvent = Extract<SimEvent, { type: 'hit' }>;
  * The reaction to a hit on a standing or crouching fighter (docs/BLENDER-TODO.md,
  * step 22): by where it landed, how hard, and how long the stun. Light and
  * medium hits alternate between two versions down a combo, so a string
- * doesn't replay one jolt. `f` is the fighter hit, after the hit.
+ * doesn't replay one jolt. `f` is the fighter hit, after the hit (a hit
+ * knocks a croucher upright, so the event says whether they were down).
  */
 export function hitReaction(e: HitEvent, f: FighterState, finisher: boolean): string {
   // A finisher's blows: always heavy, head and body in turn (their contact height isn't a strike's).
   if (finisher) return e.height === 'low' ? 'hit_legs' : e.combo % 2 === 0 ? 'hit_body_heavy' : 'hit_head_heavy';
-  if (f.crouching) return 'hit_crouch';
+  if (e.crouched) return 'hit_crouch';
   if (f.timer >= STAGGER_STUN) return 'stagger';
   const stand = fighterData(f.fighter).hurt.stand;
   const at = (toFloat(e.y) - toFloat(f.y)) / toFloat(stand.y + stand.h);

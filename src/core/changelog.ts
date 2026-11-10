@@ -14,6 +14,50 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.49.0',
+    date: '2026-11-10',
+    title: 'Every Bar Counts',
+    notes: [
+      "Meter now pays for everyone: Dale's Heat Lightning boosts into a second relaunch, and Gideon can spend a bar on Laying On of Hands or Fire and Brimstone when he hasn't the donations.",
+      'Dale is sturdier (900 health), backs away quicker and hits harder with Cold Front, Heat Lightning and his long pokes; his plain Isobar Lasso is safer when blocked.',
+      "Rox's jab is +3 on block, as intended, and her Leg Warmer Lariat and Star Jump hit a little lighter.",
+    ],
+  },
+  {
+    version: '0.48.0',
+    date: '2026-11-10',
+    title: 'The Programme Director Is Watching',
+    notes: [
+      'The CPU fights like a player now: when its first hit lands it carries on into the combos from the move list, punishes what it blocks and what it sees whiff, and times its attacks on your getup (and waits out a delayed one).',
+      'It spends meter with purpose: Tape Skip to get away with an unsafe move or keep a combo going, and Cut Away to break a long combo when the round is at stake.',
+      'It learns you over a match: what you do after blocking, how you get up, how often you jump or throw. Throw after every blocked string and it starts ducking them. It blocks low projectiles and the moves it knows go low.',
+      "The last fight in Arcade is against the Programme Director's own CPU: it converts nearly every opening and reads your habits fastest.",
+    ],
+  },
+  {
+    version: '0.47.0',
+    date: '2026-11-10',
+    title: 'Rehearsal',
+    notes: [
+      "Training's dummy plays like an opponent: it can block everything, only after the first hit, at random or flawlessly; stand, crouch or duck; and answer after blocking, after being hit or on getting up with a jab, a throw, a reversal, a boosted special, a jump, a backdash or a delayed getup. Set its meter and let it Cut Away.",
+      'Take control of the dummy and record up to ten seconds into one of three slots, then have it play the recording on a loop, from every reset, or as its answer, from either side. Reset can go to the middle, either wall, or a moment you saved.',
+      'A frame meter in Training shows each fighter’s last 80 frames as startup, active, recovery, hitstun and blockstun.',
+      'Every combo guide is a trial: press TRY beside WATCH in the move list. If you drop it, it tells you where and whether you were early or late. Cleared trials are ticked and counted on the fighter select.',
+      'New on the title: twelve short lessons, from blocking high and low to landing a Stage Sign-Off, played as your own fighter.',
+    ],
+  },
+  {
+    version: '0.46.0',
+    date: '2026-11-10',
+    title: 'Duck!',
+    notes: [
+      "Highs: standing jabs (all but Mumbles'), their strings' next steps and a few blows thrown at the head go over anyone ducking. DUCKED says so. Everything else reaches every crouching fighter, even Mumbles.",
+      'A plain throw goes over a neutral duck (crouching without Block), and the whiff can be punished; crouch-blocking is still thrown, and command grabs take a duck.',
+      'A forward dash can be cancelled into Block, a normal, a throw or a special after its first 6 frames: dash, Block, dash to close in under a guard.',
+      'A hit knocks a crouching fighter upright, so a combo plays the same however it began. Training has a DUCK dummy.',
+    ],
+  },
+  {
     version: '0.45.0',
     date: '2026-11-10',
     title: 'Through the Glass',

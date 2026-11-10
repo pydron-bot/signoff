@@ -5,8 +5,12 @@
  */
 import type { Fx } from './fixed';
 
-/** Unblockable hits can only be avoided (jumped, dodged), never blocked. */
-export type Height = 'mid' | 'low' | 'overhead' | 'unblockable';
+/**
+ * Unblockable hits can only be avoided (jumped, dodged), never blocked. A
+ * high is blocked like a mid but goes over anyone ducking (docs/DESIGN.md,
+ * Movement and defence).
+ */
+export type Height = 'high' | 'mid' | 'low' | 'overhead' | 'unblockable';
 export type Attack = 'FP' | 'BP' | 'FK' | 'BK';
 export const ATTACKS: readonly Attack[] = ['FP', 'BP', 'FK', 'BK'];
 /** The direction held with Special (or the motion that stands for it). */

@@ -10,6 +10,7 @@ import { finisherData } from '../sim/finisher';
 import { BAR, DONATIONS_MAX, STEPS_PER_SECOND, fighterData, stageData, type FinisherKind, type MatchState, type SimEvent } from '../sim';
 import { segmentData } from '../sim/stages';
 import type { Advantage } from '../game/advantage';
+import { METER_STEPS, type FrameMeter } from '../game/frameMeter';
 import { FIGHTER_COLORS } from '../core/fighterLook';
 import { tickerText } from './ticker';
 
@@ -18,6 +19,11 @@ const DRAIN_HOLD = 32;
 const DRAIN_RATE = 0.012;
 /** How long the fighters' lower thirds stay up at the start of a match (steps). */
 const INTRO_STEPS = 100;
+/** The frame meter's cell colours, by Cell: none, free, startup, active, recovery, hitstun, blockstun, moving, down. */
+const CELL_COLORS = ['', '#3a3d4a', '#3fd17a', '#ff4d5e', '#4d8dff', '#ffd75e', '#ff9a3c', '#7fd6e0', '#8a6fb0'];
+/** A frame meter cell in CSS pixels (the canvas is drawn at twice that). */
+const CELL_W = 4;
+const CELL_H = 7;
 
 /** Fake ads for the commercial break, by stage and the segment coming up. */
 const ADS: Readonly<Record<string, readonly (readonly [string, string])[]>> = {
@@ -73,6 +79,9 @@ export class Hud {
   private readonly captionSub: HTMLElement;
   private readonly breakCard: HTMLElement;
   private readonly training: HTMLElement;
+  private readonly meterCanvas: HTMLCanvasElement;
+  private readonly meterCtx: CanvasRenderingContext2D | null;
+  private meterVersion = -1;
   private readonly warning: HTMLElement;
   private readonly counter: HTMLElement;
   private readonly ticker: HTMLElement;
@@ -113,6 +122,13 @@ export class Hud {
     this.breakCard.hidden = true;
     this.training = div('hud-training');
     this.training.hidden = true;
+    // Training's frame meter: two strips of cells, redrawn only when they change.
+    this.meterCanvas = document.createElement('canvas');
+    this.meterCanvas.className = 'hud-frames';
+    this.meterCanvas.width = METER_STEPS * CELL_W * 2;
+    this.meterCanvas.height = (CELL_H * 2 + 2) * 2;
+    this.meterCanvas.hidden = true;
+    this.meterCtx = this.meterCanvas.getContext('2d');
     this.warning = div('hud-warning');
     this.warning.hidden = true;
     this.counter = div('hud-counter');
@@ -125,7 +141,7 @@ export class Hud {
     this.ticker.hidden = true;
     const meters = div('hud-meters');
     meters.append(this.sides[0].meter, this.sides[1].meter);
-    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, meters, this.sides[0].combo, this.sides[1].combo, this.sides[0].intro, this.sides[1].intro);
+    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, this.meterCanvas, meters, this.sides[0].combo, this.sides[1].combo, this.sides[0].intro, this.sides[1].intro);
     parent.append(this.root);
   }
 
@@ -209,6 +225,26 @@ export class Hud {
     this.lastCoins = [-1, -1];
     this.lastSecs = -1;
     this.lastAdv = undefined;
+    this.meterVersion = -1;
+    this.meterCanvas.hidden = true;
+  }
+
+  /** Training's frame meter (null hides it). Redrawn only when it has changed. */
+  frames(fm: FrameMeter | null): void {
+    const show = fm !== null && !this.training.hidden;
+    if (this.meterCanvas.hidden === show) this.meterCanvas.hidden = !show;
+    if (!show || fm.version === this.meterVersion || !this.meterCtx) return;
+    this.meterVersion = fm.version;
+    const g = this.meterCtx;
+    g.clearRect(0, 0, this.meterCanvas.width, this.meterCanvas.height);
+    for (let side = 0; side < 2; side++) {
+      const cells = fm.cells[side];
+      const y = side * (CELL_H + 2) * 2;
+      for (let k = 0; k < fm.length; k++) {
+        g.fillStyle = CELL_COLORS[cells[k]];
+        g.fillRect(k * CELL_W * 2, y, CELL_W * 2 - 2, CELL_H * 2);
+      }
+    }
   }
 
   hide(): void {
@@ -304,6 +340,9 @@ export class Hud {
         case 'delayedGetup':
           this.callout(e.player, 'STAYED DOWN');
           break;
+        case 'ducked':
+          this.callout(e.player, 'DUCKED');
+          break;
         case 'guardCrush':
           this.say('GUARD CRUSHED', '', 40);
           break;
@@ -371,7 +410,8 @@ export class Hud {
   }
 
   /** Every frame: touches the DOM only where something changed. */
-  update(m: MatchState, adv: Advantage | null, trainingLine: string): void {
+  /** `advantage`: the frame advantage readout above the line (training's own tools, not trials and lessons). */
+  update(m: MatchState, adv: Advantage | null, trainingLine: string, advantage = true): void {
     for (let i = 0; i < 2; i++) {
       const f = m.fighters[i];
       const s = this.sides[i];
@@ -415,7 +455,7 @@ export class Hud {
       this.lastAdv = adv;
       this.lastLine = trainingLine;
       const a = adv ? `${adv.move} on ${adv.kind}: ${adv.frames > 0 ? '+' : ''}${adv.frames}` : 'Hit or block for frame advantage';
-      this.training.textContent = `${a}\n${trainingLine}`;
+      this.training.textContent = advantage ? `${a}\n${trainingLine}` : trainingLine;
     }
   }
 }

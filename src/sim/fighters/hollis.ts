@@ -14,31 +14,31 @@ import { box, interactMove, move, normal, rerun, Script, strike, table, technica
 const moves = table(
   // Standing
   // Grabs a fistful of collar and hauls them in: on hit they end up in Clocking In's reach.
-  normal('s.FP', { name: 'Collar Grab', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.0], at: [1.2, 1.55], damage: 40, hitstun: 17, blockstun: 13, pull: 0.75, chain: { FP: 'FP FP' } }),
+  normal('s.FP', { name: 'Collar Grab', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.0], at: [1.2, 1.55], height: 'high', damage: 40, hitstun: 17, blockstun: 13, pull: 0.75, chain: { FP: 'FP FP' } }),
   // Heavy enough to stagger: the one normal in the game that links (into the jab).
-  normal('s.BP', { name: 'Nightstick', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 75, hitstun: 28, blockstun: 15, push: 0.02, chain: { FP: 'BP FP' } }),
+  normal('s.BP', { name: 'Nightstick', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.15], at: [1.1, 1.5], height: 'high', damage: 75, hitstun: 28, blockstun: 15, push: 0.02, chain: { FP: 'BP FP' } }),
   // A knee to the gut, up close: short, but it staggers long enough to link the jab.
-  normal('s.FK', { name: 'Knee', startup: 9, active: 3, recovery: 15, reach: [0.15, 0.85], at: [0.8, 1.35], damage: 66, hitstun: 24, blockstun: 15, push: 0.02, chain: { FK: 'FK FK' } }),
+  normal('s.FK', { name: 'Knee', startup: 9, active: 3, recovery: 15, reach: [0.15, 0.85], at: [0.75, 1.35], damage: 66, hitstun: 24, blockstun: 15, push: 0.02, chain: { FK: 'FK FK' } }),
   // Walks through a poke: one hit of armour on the way.
-  normal('s.BK', { name: 'Door Kick', startup: 15, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0.8, 1.3], damage: 95, hitstun: 23, blockstun: 17, push: 0.08, armor: [1, 14] }),
+  normal('s.BK', { name: 'Door Kick', startup: 15, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0.75, 1.3], damage: 95, hitstun: 23, blockstun: 17, push: 0.08, armor: [1, 14] }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 8, active: 2, recovery: 10, reach: [0.2, 0.95], at: [0.7, 1.0], damage: 35, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
   // Comes up through a jump-in: armoured while he rises.
-  normal('c.BP', { name: 'Rising Clothesline', stance: 'crouch', startup: 11, active: 4, recovery: 22, reach: [0.1, 0.85], at: [1.0, 2.0], damage: 85, hitstun: 0, blockstun: 12, launch: 0.17, armor: [1, 10] }),
+  normal('c.BP', { name: 'Rising Clothesline', stance: 'crouch', startup: 11, active: 4, recovery: 22, reach: [0.1, 0.85], at: [0.75, 2.0], damage: 85, hitstun: 0, blockstun: 12, launch: 0.17, armor: [1, 10] }),
   normal('c.FK', { name: 'Toe Stomp', stance: 'crouch', startup: 9, active: 2, recovery: 16, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 45, hitstun: 16, blockstun: 10 }),
   normal('c.BK', { name: 'Floor Sweep', stance: 'crouch', startup: 14, active: 3, recovery: 26, reach: [0.2, 1.4], at: [0, 0.3], height: 'low', damage: 85, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
   // Barges forward behind his shoulder and through a poke, down onto them.
-  normal('f.BP', { name: 'Shoulder Check', startup: 22, active: 2, recovery: 18, reach: [0.2, 1.05], at: [1.0, 1.7], height: 'overhead', damage: 85, hitstun: 22, blockstun: 15, armor: [1, 16], motion: [{ frames: [4, 20], vx: 0.05 }] }),
+  normal('f.BP', { name: 'Shoulder Check', startup: 22, active: 2, recovery: 18, reach: [0.2, 1.05], at: [0.75, 1.7], height: 'overhead', damage: 85, hitstun: 22, blockstun: 15, armor: [1, 16], motion: [{ frames: [4, 20], vx: 0.05 }] }),
   // A stiff arm into the chest: slow, but it crushes a guard (and he can't be jabbed out of the stagger).
-  normal('f.FK', { name: 'Stiff Arm', startup: 20, active: 3, recovery: 20, reach: [0.2, 1.05], at: [0.9, 1.6], damage: 55, hitstun: 20, blockstun: 14, push: 0.04, guardCrush: true }),
+  normal('f.FK', { name: 'Stiff Arm', startup: 20, active: 3, recovery: 20, reach: [0.2, 1.05], at: [0.75, 1.6], damage: 55, hitstun: 20, blockstun: 14, push: 0.04, guardCrush: true }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Chop', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 8, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 65, hitstun: 19, blockstun: 12 }),
   normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 7, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Body Drop', kind: 'air', startup: 10, active: 6, recovery: 8, reach: [-0.3, 1.0], at: [0, 0.5], height: 'overhead', damage: 80, hitstun: 20, blockstun: 13 }),
   // String steps
-  normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP', FK: 'FP FP FK' } }),
+  normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], height: 'high', damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP', FK: 'FP FP FK' } }),
   // The string's grab: catches them still reeling from the pat down (never if they blocked it).
   move('FP FP FK', {
     name: "Cuff 'Em",
@@ -46,8 +46,8 @@ const moves = table(
     total: 34,
     throwData: { frames: [8, 9], range: fx(1.2), damage: 110, untechable: true, reeling: true },
   }),
-  normal('FP FP BP', { name: 'Lights Out', startup: 14, active: 3, recovery: 22, reach: [0.2, 1.3], at: [0.9, 1.4], damage: 90, hitstun: 0, blockstun: 18, push: 0.08, knockdown: true }),
-  normal('BP FP', { name: 'Night Watch', startup: 9, active: 2, recovery: 14, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'BP FP BK', FK: 'BP FP FK' } }),
+  normal('FP FP BP', { name: 'Lights Out', startup: 14, active: 3, recovery: 22, reach: [0.2, 1.3], at: [0.75, 1.4], damage: 90, hitstun: 0, blockstun: 18, push: 0.08, knockdown: true }),
+  normal('BP FP', { name: 'Night Watch', startup: 9, active: 2, recovery: 14, reach: [0.2, 1.15], at: [1.1, 1.5], height: 'high', damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'BP FP BK', FK: 'BP FP FK' } }),
   // The other grab ender: hands patting them down, then a wrist lock (never if they blocked).
   move('BP FP FK', {
     name: 'Frisk',
@@ -57,7 +57,7 @@ const moves = table(
   }),
   normal('BP FP BK', { name: 'Lockup', startup: 16, active: 3, recovery: 22, reach: [0.2, 1.4], at: [0, 0.35], height: 'low', damage: 80, hitstun: 0, blockstun: 14, knockdown: true }),
   // The other knee: he walks into it.
-  normal('FK FK', { name: 'Patrol', startup: 11, active: 3, recovery: 16, reach: [0.15, 0.9], at: [0.8, 1.35], damage: 58, hitstun: 20, blockstun: 15, motion: [{ frames: [2, 10], vx: 0.03 }] }),
+  normal('FK FK', { name: 'Patrol', startup: 11, active: 3, recovery: 16, reach: [0.15, 0.9], at: [0.75, 1.35], damage: 58, hitstun: 20, blockstun: 15, motion: [{ frames: [2, 10], vx: 0.03 }] }),
   normal('c.FP FK', { name: 'Sweep the Floor', stance: 'crouch', startup: 10, active: 2, recovery: 22, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 50, hitstun: 16, blockstun: 10 }),
   // Specials
   move('Clocking In', {
@@ -78,13 +78,13 @@ const moves = table(
     kind: 'special',
     total: 37,
     boost: 'Flashlight+',
-    hits: [strike({ frames: [14, 17], reach: [0.4, 2.2], at: [1.2, 1.7], damage: 50, hitstun: 30, blockstun: 14, armorBreak: true })],
+    hits: [strike({ frames: [14, 17], reach: [0.4, 2.2], at: [1.2, 1.7], height: 'high', damage: 50, hitstun: 30, blockstun: 14, armorBreak: true })],
   }),
   move('Flashlight+', {
     name: 'Flashlight (boosted)',
     kind: 'special',
     total: 37,
-    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.9, 1.8], damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
+    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.75, 1.8], damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
   }),
   move('Key Ring', {
     name: 'Key Ring',
@@ -99,7 +99,7 @@ const moves = table(
     total: 40,
     hits: [
       strike({ frames: [12, 14], reach: [0.4, 1.9], at: [0, 0.4], height: 'low', damage: 55, hitstun: 20, blockstun: 12 }),
-      strike({ frames: [20, 22], reach: [0.4, 1.9], at: [0.8, 1.5], damage: 60, hitstun: 0, blockstun: 14, launch: 0.15 }),
+      strike({ frames: [20, 22], reach: [0.4, 1.9], at: [0.75, 1.5], damage: 60, hitstun: 0, blockstun: 14, launch: 0.15 }),
     ],
   }),
   // Walks through one hit to get in.

@@ -382,6 +382,10 @@ export class Sound {
         case 'reversal':
           this.tone(440, 0.2, 0.08, 'sawtooth', 880);
           break;
+        case 'ducked':
+          // The blow whistles over their head.
+          this.noise(0.12, 1800, 0.07, 'bandpass');
+          break;
         case 'superReady':
           // The test tone coming back on: Technical Difficulties is there again.
           this.tone(1000, 0.25, 0.06, 'sine');

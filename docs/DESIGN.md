@@ -51,7 +51,8 @@ watching can be pulled through the screen.
   contestant who won. Winning means becoming the next one.
 
 **Arcade** (in now): your fighter against everyone else in turn, listed as
-the night's schedule, easy to hard, with three continues; winning plays the
+the night's schedule, easy to hard and the Programme Director's own CPU
+(DIRECTOR) last, with three continues; winning plays the
 ending, the opening titles of the show you won.
 
 Story mode is told as a night of TV: each chapter is a programme in the
@@ -109,10 +110,27 @@ meter. Every number below is a starting value to tune.
 
 - Walk, jump (neutral, forward, back), crouch, a forward dash and a
   backdash. No sidestep: the 3D is for looks.
-- Block is a held button. Standing blocks mids and overheads; crouching
-  blocks mids and lows. Blocked specials do small chip damage.
+- **Dash cancel (0.46.0).** After its first 6 frames a forward dash can be
+  cancelled into Block (it stops dead, guarding), a normal, a throw or a
+  special, but not a jump or another dash: dash, Block, dash is how to
+  close in under a guard. Backdashes and Tape Skip's dash run their course.
+- Block is a held button. Standing blocks highs, mids and overheads;
+  crouching blocks mids and lows. Blocked specials do small chip damage.
+- **Highs and ducking (0.46.0).** Every hit has a height: high, mid, low,
+  overhead or unblockable. A high goes over anyone ducking (crouching,
+  crouch-blocking, or in a crouching move) and says DUCKED; everything
+  else reaches every crouching fighter, the smallest included (a test
+  checks every box). Every standing jab but Mumbles' (thrown at his own
+  height) is a high, with its string's next step and a few moves thrown at
+  the head (Rox's claps and High Kick, Hollis's Nightstick and Flashlight,
+  Gideon's laying on of hands and collection plate). So the fastest,
+  most plus button can be ducked and punished, and the crouching jab is
+  the safe one. A hit knocks a croucher upright, so the rest of a combo
+  meets a standing body whichever way it began.
 - Throw: a button pair at close range; tech it with the same pair within 10
-  frames.
+  frames. A plain throw is a high: a neutral duck (crouching without
+  Block) goes under it and can punish the whiff, but crouch-blocking is
+  thrown. Command grabs and string grabs take a duck too.
 - **Defence (0.30.0).** A *flawless block* is Block pressed within 4
   frames of the hit landing: no chip, 6 frames less blockstun (so the
   blocker can punish more) and a little meter. A *delayed getup*: hold Down
@@ -218,6 +236,15 @@ worth a bar.
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
 | Cut Away | All 3 bars (a full meter) | Combo breaker: knocks the opponent away mid-combo; once per round |
 
+**Meter has to pay (0.49.0).** Beside the damage ceilings, the combo
+search (`npm run combos`) holds a floor: each bar spent, from none to one
+and from one to three, must add at least 4% to a fighter's best human
+combo. Dale's third bar and all of Gideon's added nothing, so Dale's
+Heat Lightning boosts (invulnerable longer, a second relaunch) and
+Gideon's Laying On of Hands and Fire and Brimstone boost for a bar
+(beside their donation versions: with two donations the blessed Fire and
+Brimstone is free; without, a bar opens the sky a little way).
+
 **Technical Difficulties.** Below 30% health, a fighter can launch their
 comeback super. If it connects, the screen tears, the broadcast "loses
 signal", and a short cinematic attack deals about 30% damage, and it's spent
@@ -230,6 +257,67 @@ Every move is data: startup, active and recovery frames, hitboxes and
 hurtboxes per frame, damage, hitstun and blockstun, cancel windows. Inputs
 are buffered for 8 frames so specials and strings come out reliably on touch
 screens.
+
+### Rehearsal: training, trials and lessons (0.47.0)
+
+- **The dummy** (`src/game/dummy.ts`), set from Training's DUMMY page.
+  GUARD: none, all, after the first hit, random or flawless (it may peek
+  at the attacker's move to block the right height; the CPU may not).
+  STANCE: stand (blocks whatever height each hit needs), crouch (blocks
+  crouching, so overheads hit it) or duck (down without Block, so highs and
+  throws go over). It answers after a block, after a hit and on getting
+  up with nothing, a jab, a throw, a reversal (a special with an
+  invincible start, else armour, else the fastest), a boosted special, a
+  jump, a backdash or the recording; getting up also offers staying down.
+  Its meter is held at empty, one bar or full, or refilled at rest, and
+  with Cut Away on it breaks a combo from the second hit.
+- **Record and play back.** RECORD hands the player the dummy for up to
+  ten seconds into one of three slots, stored relative to facing in the
+  replays' run-length format; PLAYBACK plays it on a loop or once from
+  every reset, and any answer can be the recording. RESET TO is round
+  start, the middle, the dummy's back to either wall, or a moment kept with
+  SAVE THIS MOMENT.
+- **The frame meter** (`src/game/frameMeter.ts`) draws each fighter's last
+  80 frames (startup, active, recovery, hitstun, blockstun), leaving out
+  the frames both spend frozen in a hit's freeze.
+- **Trials.** Every combo guide is a trial (TRY beside WATCH in the move
+  list, `src/game/trials.ts`), built from the guide when it's opened so it
+  follows the moves. It ticks each move as it lands in the same combo; on
+  a drop it names the step and says whether the press was early or late
+  against the guide. Cleared trials are kept in `signoff.trials`, ticked in
+  the move list and counted on the fighter select.
+- **Lessons.** LESSONS on the title offers twelve drills
+  (`src/game/lessons.ts`): block high then low, anti-air, punish a blocked
+  sweep, flawless block, break a throw, duck a throw and launch, stay down,
+  boost a special, Tape Skip, Cut Away, Technical Difficulties and a
+  Sign-Off, each a start, a dummy script and a test over the simulation's
+  events, played as the player's fighter against Rox and kept in
+  `signoff.lessons` once cleared. Every lesson carries the presses that
+  clear it, and a test plays them for every fighter, so a lesson that
+  can't be cleared fails the build.
+
+### The CPU (0.48.0)
+
+The CPU (`src/ai/`) sends input frames like a player and sees only what
+is on screen, a reaction time late (24, 15 and 10 frames for easy,
+normal and hard). When an opener it lands connects (a jab, a low, an
+overhead or its launcher), it carries on with that fighter's combo guide
+from the move list, press by press at the guide's timing, from the range
+the guide was measured to hold at, and lets go when it sees the combo
+drop; it chases anti-airs with a jump cancel. It punishes by the frames:
+the launcher route when there's time, else the jab route, else nothing,
+for moves it sees whiff and for unsafe moves it blocks. It spends Tape
+Skip on unsafe moves and to extend, and saves a full meter for Cut Away
+once its health is at stake. It dashes in behind Block, blocks
+projectiles by where they fly and moves it knows go low, ducks throws it
+expects, and times a strike or a throw for the first frame of a getup,
+keyed on seeing the getup start. It counts the opponent's habits over
+the match (the answer to a blocked attack, what they do on getting up,
+how often they jump or throw projectiles) and plays against the
+strongest. Easy does none of this, normal converts about a third of the
+time and hard most of the time. DIRECTOR, Arcade's last fight only, has
+hard's reactions, converts nearly always and adapts fastest. Everything
+is seeded, so a match replays from its seed.
 
 ## Roster
 
@@ -508,6 +596,16 @@ is pure, deterministic code that knows nothing about rendering.
   without a rewrite.
 - The CPU opponent sends inputs through the same interface as a player, so
   it can't cheat by reading state the player can't see.
+
+**Balance is measured.** `npm run combos` holds every fighter's combos
+between the floor and the ceilings above. `npm run matchups` plays the
+CPU against itself over every pair (100 seeds each, studio rules, the
+stages in turn) and writes `docs/MATCHUPS.md`: win rates, round length
+and time-outs, damage by source, how often each mechanic is used and
+each fighter's most damaging moves. It fails on a matchup worse than
+30:70, rounds averaging under 25 or over 50 seconds, or more than 10% of
+rounds timing out. The CPU isn't the truth about a matchup, but the
+bench catches a fighter falling off a cliff after a change.
 
 **Moves as data.** Each fighter is a data file: every move's frames,
 hitboxes, hurtboxes, damage, stun and cancel windows. Training mode shows

@@ -9,11 +9,15 @@ import type { CpuLevel } from './ai/cpu';
 import { Sound, type SoundMode } from './audio/sound';
 import { BUILD_ID } from './core/build';
 import { VERSION } from './core/changelog';
-import { GUIDE_DUMMY } from './game/comboGuides';
+import { GUIDE_DUMMY, guides } from './game/comboGuides';
+import { Cleared } from './game/cleared';
+import { ANSWERS, GUARDS, METER_LEVELS, PLAYBACKS, SLOTS, STANCES, WAKEUPS, dummySummary } from './game/dummy';
+import { LESSONS, LESSONS_KEY, lessonLine } from './game/lessons';
+import { TRIALS_KEY, trialCount, trialId, trialLine } from './game/trials';
 import { FixedStep } from './game/loop';
 import { SlowMo } from './game/slowMo';
 import { parseReplay, type Replay } from './game/replay';
-import { DUMMIES, PRACTICES, Session, type Mode } from './game/session';
+import { CONTROLS, POSITIONS, PRACTICES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
 import { Arena } from './render/arena';
@@ -35,10 +39,18 @@ import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
+// The menu's levels; the DIRECTOR plays only Arcade's last fight (arcade.ts).
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 /** Cancellations players have found (signoff.found). */
 const found = loadFound();
+/** Trials and lessons cleared (signoff.trials, signoff.lessons). */
+const trialsDone = new Cleared(TRIALS_KEY);
+const lessonsDone = new Cleared(LESSONS_KEY);
+/** The trial being played, as trialsDone keeps it. */
+let trialKey = '';
+/** Training's frame meter, on or off. */
+let frameMeterOn = true;
 const SETUP_KEY = 'signoff.setup';
 const REPLAY_KEY = 'signoff.replay';
 /** Seconds the replay's back and forward buttons skip. */
@@ -427,17 +439,33 @@ replayBar.onAction = replayAction;
 replayBar.onSeek = (f) => seekReplay(f);
 
 const names = FIGHTER_IDS.map((id) => `${fighterData(id).name} · ${fighterData(id).style}`);
+/** Player 1's choices, with the trials each has cleared. */
+function playerNames(): string[] {
+  return FIGHTER_IDS.map((id, k) => {
+    const [n, of] = trialCount(trialsDone, id);
+    return `${names[k]} · trials ${n}/${of}`;
+  });
+}
+
+/** The lessons, as the player's fighter (from the title). */
+function showLessons(): void {
+  titleMenu.show(`LESSONS · AS ${fighterData(FIGHTER_IDS[setup.p1]).name.toUpperCase()}`, [
+    ...LESSONS.map((l) => ({ label: `${lessonsDone.has(l.id) ? '✓ ' : ''}${l.name.toUpperCase()}`, id: `lesson-${l.id}`, run: () => startLesson(l.id) })),
+    { label: 'BACK', run: showTitle },
+  ]);
+}
 
 function showTitle(): void {
   titleMenu.show('', [
     { label: 'ARCADE', id: 'play-arcade', run: startArcade },
     { label: 'VS CPU', id: 'play-cpu', run: () => play('cpu') },
     { label: 'TRAINING', id: 'play-training', run: () => play('training') },
+    { label: 'LESSONS', id: 'lessons', run: showLessons },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
     { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) },
     { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
-    { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
+    { label: 'PLAYER 1', options: playerNames(), value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'STAGE', options: STAGE_IDS.map((id) => STAGES[id].name.toUpperCase()), value: setup.stage, onChange: (v) => ((setup.stage = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
@@ -455,6 +483,7 @@ function showMoves(first: string, frames: boolean, back: () => void, watch = fal
   pauseMenu.hide();
   moveListPanel.onClose = back;
   moveListPanel.onWatch = showcase;
+  moveListPanel.onTry = startTrial;
   moveListPanel.show(FIGHTER_IDS, Math.max(0, FIGHTER_IDS.indexOf(first)), frames, watch);
 }
 
@@ -478,7 +507,44 @@ function showcase(fighter: string, guide: number): void {
   document.body.dataset.scene = 'showcase';
 }
 
-/** Back from a showcase to the move list it was opened from. */
+/** Trials and lessons: a training session of their own, straight from a menu. */
+function drill(s: Session): void {
+  ladder = null;
+  demo = false;
+  over = false;
+  paused = false;
+  arcadeCard.hide();
+  endColdOpen();
+  session = begin(s);
+  trialKey = s.tracker ? trialId(s.options.p1, s.tracker.trial.name) : '';
+  title.hidden = true;
+  titleMenu.hide();
+  pauseMenu.hide();
+  hud.start(s.match, true);
+  setTouch(true);
+  pauseBtn.hidden = false;
+  replayBar.show(false);
+  document.body.dataset.scene = 'fight';
+}
+
+/** A combo guide as a trial: its start, against its dummy. */
+function startTrial(fighter: string, guide: number): void {
+  drill(new Session({ mode: 'training', p1: fighter, p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, guide, trial: true }));
+}
+
+/** Steps before each lesson attempt begins. */
+const LESSON_LEAD = 45;
+
+/** A lesson, as player 1's fighter. */
+function startLesson(id: string): void {
+  const s = new Session({ mode: 'training', p1: FIGHTER_IDS[setup.p1], p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, lesson: id });
+  // A moment to read the caption before each attempt.
+  s.lesson!.lead = LESSON_LEAD;
+  s.lesson!.restart();
+  drill(s);
+}
+
+/** Back from a showcase to the move list it was opened from (or the trial it was watched from). */
 function leaveShowcase(): void {
   const r = showcaseReturn;
   showcaseReturn = null;
@@ -489,7 +555,7 @@ function leaveShowcase(): void {
     setTouch(true);
     document.body.dataset.scene = 'fight';
     pause(true);
-    showMoves(r.fighter, true, () => pause(true), true);
+    if (r.training.freePlay) showMoves(r.fighter, true, () => pause(true), true);
   } else {
     startDemo();
     showMoves(r?.fighter ?? FIGHTER_IDS[setup.p1], false, showTitle, true);
@@ -499,6 +565,7 @@ function leaveShowcase(): void {
 function pause(on: boolean): void {
   if (!session || demo || over) return;
   paused = on;
+  menuEpoch++;
   sound.pauseMusic(on);
   touch.clear();
   clock.reset();
@@ -507,6 +574,35 @@ function pause(on: boolean): void {
     return;
   }
   const s = session;
+  // Pausing ends a recording and keeps it.
+  s.dummy.stopRecording();
+  if (s.tracker) {
+    const t = s.tracker.trial;
+    const next = (t.guide + 1) % guides(t.fighter).length;
+    pauseMenu.show(`TRIAL · ${t.name.toUpperCase()}`, [
+      { label: 'RESUME', run: () => pause(false) },
+      { label: 'TRY AGAIN (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
+      { label: 'WATCH IT', run: () => showcase(t.fighter, t.guide) },
+      { label: 'NEXT TRIAL', id: 'next-trial', run: () => startTrial(t.fighter, next) },
+      { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(t.fighter, true, () => pause(true), true) },
+      { label: 'SETTINGS', run: () => showSettings(() => pause(true)) },
+      { label: 'QUIT TO TITLE', run: startDemo },
+    ]);
+    return;
+  }
+  if (s.lesson) {
+    const l = s.lesson.lesson;
+    const next = LESSONS[(LESSONS.indexOf(l) + 1) % LESSONS.length];
+    pauseMenu.show(`LESSON · ${l.name.toUpperCase()}`, [
+      { label: 'RESUME', run: () => pause(false) },
+      { label: 'TRY AGAIN (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
+      { label: `NEXT: ${next.name.toUpperCase()}`, id: 'next-lesson', run: () => startLesson(next.id) },
+      { label: 'ALL LESSONS', run: () => (startDemo(), showLessons()) },
+      { label: 'SETTINGS', run: () => showSettings(() => pause(true)) },
+      { label: 'QUIT TO TITLE', run: startDemo },
+    ]);
+    return;
+  }
   if (s.options.mode === 'showcase') {
     pauseMenu.show(s.guide?.name.toUpperCase() ?? 'COMBO', [
       { label: 'RESUME', run: () => pause(false) },
@@ -526,17 +622,66 @@ function pause(on: boolean): void {
   if (s.training) {
     rows.push(
       { label: 'RESET POSITIONS (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
+      { label: 'RESET TO', options: ['ROUND START', 'MIDDLE', 'DUMMY AT LEFT WALL', 'DUMMY AT RIGHT WALL', s.hasSaved ? 'SAVED MOMENT' : 'SAVED (NONE YET)'], value: POSITIONS.indexOf(s.position), onChange: (v) => (s.setPosition(POSITIONS[v]), hud.start(s.match, true)) },
+      { label: 'SAVE THIS MOMENT', run: () => (s.saveMoment(), pause(true)) },
+      { label: 'DUMMY', id: 'dummy-settings', run: () => showDummy(s) },
       { label: 'SEGMENT', options: STAGES[s.match.stage].segments.map((g, k) => `${k + 1} ${g.name.toUpperCase()}`), value: s.match.segment, onChange: (v) => s.setSegment(v) },
-      { label: 'DUMMY', options: ['STAND', 'BLOCK ALL', 'CROUCH BLOCK', 'CPU'], value: DUMMIES.indexOf(s.dummy), onChange: (v) => (s.dummy = DUMMIES[v]) },
       // Finisher practice: one hit wins the match, then Stay tuned with no time limit (or a cancellation), and again.
       { label: 'FINISHERS', options: ['OFF', 'PRACTISE', 'AT THE WALL'], value: PRACTICES.indexOf(s.practice), onChange: (v) => (s.setPractice(PRACTICES[v]), hud.start(s.match, true)) },
       { label: 'HIT BOXES (B)', options: ['OFF', 'ON'], value: arena.showBoxes ? 1 : 0, onChange: (v) => (arena.showBoxes = v === 1) },
+      { label: 'FRAME METER', options: ['OFF', 'ON'], value: frameMeterOn ? 1 : 0, onChange: (v) => (frameMeterOn = v === 1) },
     );
   }
   rows.splice(1, 0, { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(s.match.fighters[0].fighter, s.training, () => pause(true), s.training) });
   rows.push({ label: 'SETTINGS', run: () => showSettings(() => pause(true)) });
   rows.push({ label: 'QUIT TO TITLE', run: startDemo });
   pauseMenu.show('PAUSED', rows);
+}
+
+/** One menu choice over a list of values: the row shows `names`, and changing it sets the value. */
+function pick<T>(label: string, values: readonly T[], names: readonly string[], value: T, set: (v: T) => void): Parameters<Menu['show']>[1][number] {
+  return { label, options: names, value: Math.max(0, values.indexOf(value)), onChange: (v) => set(values[v]) };
+}
+
+const ANSWER_NAMES = ['NOTHING', 'JAB', 'THROW', 'REVERSAL', 'BOOSTED SPECIAL', 'JUMP', 'BACKDASH', 'RECORDING'];
+
+/** Training's dummy: how it guards, answers, spends meter, and what it plays back. */
+function showDummy(s: Session): void {
+  const d = s.dummy.settings;
+  const slots = Array.from({ length: SLOTS }, (_, k) => `${k + 1}${s.dummy.slots[k] ? ` (${(s.dummy.slots[k]!.frames / 60).toFixed(1)} S)` : ' (EMPTY)'}`);
+  pauseMenu.show('DUMMY', [
+    pick('PLAYED BY', CONTROLS, ['DUMMY', 'CPU'], s.control, (v) => (s.control = v)),
+    pick('GUARD', GUARDS, ['NONE', 'ALL', 'AFTER FIRST HIT', 'RANDOM', 'FLAWLESS'], d.guard, (v) => (d.guard = v)),
+    pick('STANCE', STANCES, ['STAND', 'CROUCH', 'DUCK'], d.stance, (v) => (d.stance = v)),
+    pick('AFTER BLOCK', ANSWERS, ANSWER_NAMES, d.afterBlock, (v) => (d.afterBlock = v)),
+    pick('AFTER HIT', ANSWERS, ANSWER_NAMES, d.afterHit, (v) => (d.afterHit = v)),
+    pick('GETTING UP', WAKEUPS, [...ANSWER_NAMES, 'STAY DOWN'], d.wakeup, (v) => (d.wakeup = v)),
+    pick('METER', METER_LEVELS, ['EMPTY', '1 BAR', 'FULL', 'REFILL AT REST'], d.meter, (v) => (d.meter = v)),
+    pick('CUT AWAY', [false, true], ['OFF', 'ON'], d.cutAway, (v) => (d.cutAway = v)),
+    pick('SLOT', [0, 1, 2], slots, d.slot, (v) => (d.slot = v)),
+    { label: 'RECORD (UP TO 10 S)', id: 'dummy-record', run: () => (s.dummy.startRecording(), pause(false)) },
+    pick('PLAYBACK', PLAYBACKS, ['OFF', 'LOOP', 'ON RESET'], d.playback, (v) => ((d.playback = v), s.reset())),
+    { label: 'BACK', run: () => pause(true) },
+  ]);
+}
+
+/** Training's readout line, rebuilt only when what it says has changed. */
+const line = { s: null as Session | null, key: 0, text: '' };
+/** Counts pauses: the dummy's settings only change in a menu. */
+let menuEpoch = 0;
+function trainingLine(s: Session): string {
+  const d = s.dummy;
+  const key = s.tracker ? s.tracker.version : s.lesson ? s.lesson.version : d.recording ? 1e6 + Math.floor(d.recorded / 6) : s.practice !== 'off' ? -2 : -10 - menuEpoch;
+  if (line.s === s && line.key === key) return line.text;
+  line.s = s;
+  line.key = key;
+  if (s.tracker) line.text = trialLine(s.tracker);
+  else if (s.lesson) line.text = lessonLine(s.lesson);
+  else if (d.recording)
+    line.text = d.recorded ? `● REC ${(d.recorded / 60).toFixed(1)} s of 10 · Esc stops` : `Recording slot ${d.settings.slot + 1}: you play the dummy, from your first press · Esc stops`;
+  else if (s.practice !== 'off') line.text = 'Finishers: one hit wins, then take your time · R reset · Esc menu';
+  else line.text = `${s.control === 'cpu' ? 'Dummy: the CPU' : dummySummary(d.settings)} · R reset · B boxes · Esc menu`;
+  return line.text;
 }
 
 function results(winner: number): void {
@@ -680,8 +825,10 @@ renderer.setAnimationLoop((now) => {
       else readInputs();
       const resets = s.resets;
       s.tick(frame[0], frame[1], ev);
-      // Finisher practice started over: a clean picture for the next one.
+      // Finisher practice, a trial or a lesson started over: a clean picture for the next one.
       if (s.resets !== resets) hud.start(s.match, true);
+      if (s.tracker?.state === 'cleared') trialsDone.mark(trialKey);
+      if (s.lesson?.result === 'pass') lessonsDone.mark(s.lesson.lesson.id);
       arena.step(s.match, ev);
       inputSides(s);
       for (let i = 0; i < 2; i++) if (sides[i]) inputDisplays[i].log.push(s.inputs[i], s.match.fighters[i].facing);
@@ -726,7 +873,8 @@ renderer.setAnimationLoop((now) => {
   }
   arena.render(m);
   if (!demo) {
-    hud.update(m, s.adv.last, s.training ? (s.practice !== 'off' ? `Finishers: one hit wins, then take your time · R reset · Esc menu` : `Dummy: ${s.dummy} · R reset · B boxes · Esc menu`) : s.guideRun ? showcaseCaption(s) : '');
+    hud.update(m, s.adv.last, s.training ? trainingLine(s) : s.guideRun ? showcaseCaption(s) : '', !s.training || s.freePlay);
+    hud.frames(s.training && frameMeterOn ? s.frames : null);
     const p1 = m.fighters[0];
     touch.setTD(canTD(p1));
     touch.setInteract(propInReach(m, p1) >= 0);

@@ -52,10 +52,14 @@ export interface FighterState {
   airSpecialUsed: boolean;
   /** The jump being taken off is a jump cancel's hop. */
   hop: boolean;
+  /** In a dash: frames until it can be cancelled (Tape Skip's never can). */
+  dashFree: number;
   move: string;
   moveFrame: number;
   /** One bit per hit of the current move that has connected. */
   hitMask: number;
+  /** The current move has gone over a ducking opponent (said once a move). */
+  ducked: boolean;
   contact: 'none' | 'hit' | 'block';
   armorUsed: boolean;
   throwBack: boolean;
@@ -188,9 +192,11 @@ export function createFighter(id: string, side: 0 | 1): FighterState {
     airAttackUsed: false,
     airSpecialUsed: false,
     hop: false,
+    dashFree: 0,
     move: '',
     moveFrame: 0,
     hitMask: 0,
+    ducked: false,
     contact: 'none',
     armorUsed: false,
     throwBack: false,
