@@ -853,6 +853,8 @@ function startActionReplay(winner: number): boolean {
   actionReplay = new ActionReplay(clip);
   replayWinner = winner;
   over = true;
+  // The match's own captions and end card make way for the replay's display.
+  hud.hide();
   rewindLeft = reducedMotion(settings, systemReduceMotion) ? 0.01 : REWIND;
   arena.flip.start(['◀◀ REW'], false, REWIND);
   return true;
