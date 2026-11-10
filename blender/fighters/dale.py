@@ -269,7 +269,91 @@ def _heat_lightning_plus(st, base, mv, fit):
             (15, land), (18, land), (28, lerp_pose(land, base, 0.55).shaped(fist_L=0.6)), (total, base)]
 
 
+def _both_hands(p):
+    """The lead hand on the umbrella too, a fist's width up the cane from the rear."""
+    r = p.parts["hand_R"]
+    a = r["aim"]
+    return p.but(hand_L={**r, "pos": tuple(c - 0.1 * d for c, d in zip(r["pos"], a))}).shaped(fist_L=1.0)
+
+
+def _brolly(fit, base, target, both=False):
+    """The pose with the umbrella's tip at target (fwd, up), from the rear hand."""
+    p = fit.fit(base, "hand.R", (target[0] - 0.05, target[0] + 0.05, target[1] - 0.05, target[1] + 0.05), report=False,
+                tx=target[0], ty=target[1], extra=UMBRELLA).shaped(fist_R=1.0)
+    return _both_hands(p) if both else p
+
+
+def _low_pressure(st, base, mv, fit):
+    """Low Pressure (air, step 28): the umbrella snapped shut and raised in
+    both hands, hanging (1–5), then driven straight down like a spear, the
+    tip leading under him, the legs folded up behind out of its way."""
+    s, k = st.s, st.k
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    raised = base.but(chest=(-8, -20, 0), head=(-6, -6, 0),
+                      hand_R={"pos": s((-0.06, 0.2, 1.95)), "aim": (0, 0.15, -1), "hint": (0, 1, 0)}).shaped(fist_R=1.0, jaw=0.4)
+    raised = _both_hands(raised).but(foot_L={"pos": s((0.1, 0.1, 0.42)), "turn": (30, -15, 0)}, foot_R={"pos": s((-0.1, -0.02, 0.4)), "turn": (30, -40, 0)})
+    legs = {"foot_L": {"pos": s((0.1, -0.22, 0.4)), "turn": (70, -10, 0)}, "foot_R": {"pos": s((-0.1, -0.3, 0.46)), "turn": (70, -30, 0)},
+            "knee_L": s((0.1, 0.5, 0.5)), "knee_R": s((-0.1, 0.45, 0.55))}
+    lean = base.but(chest=(30, -10, 0), spine=(14, -10, 0), head=(30, 0, 0), hips={"offset": (0, 0, 0), "turn": (10, st.hips_yaw, 0)}, **legs)
+    spear = _brolly(fit, lean, ((x0 + x1) * 0.4, y0 + 0.08), both=True).shaped(jaw=0.9)
+    return [(3, raised), (5, toward(raised, base, -0.05)), (7, spear), (total - 2, spear.but(head=(26, 0, 0))), (total, lerp_pose(spear, base, 0.5))]
+
+
+def _updraft(st, base, mv, fit):
+    """Updraft (j.FK FP, step 28): the umbrella hooked up under them, low and
+    forward on 5 to high on 8; hanging, no drift."""
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    low = _brolly(fit, base.but(chest=(14, -20, 0)), (x0 + 0.5 * (x1 - x0), y0 + 0.2))
+    high = _brolly(fit, base.but(chest=(-10, -30, 0), head=(-12, 0, 0)), (x0 + 0.45 * (x1 - x0), y1 - 0.15))
+    drawn = _brolly(fit, base.but(chest=(20, 0, 0)), (0.05, 0.1))
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, added(high, chest=(-4, 0, 0))), (mv["total"], base)]
+
+
+def _downburst(st, base, mv, fit):
+    """Downburst (j.BP BK, step 28): the umbrella raised over his head in both
+    hands and swung down through the whole spike box, high on 6 to low on 9."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    up = _both_hands(base.but(chest=(-14, -10, 0), head=(-10, 0, 0),
+                              hand_R={"pos": s((-0.04, -0.12, 1.98)), "aim": (0, -0.6, 0.8), "hint": (0, 1, 0)}).shaped(fist_R=1.0, jaw=0.5))
+    high = _brolly(fit, base.but(chest=(-6, -10, 0)), (x0 + 0.5 * (x1 - x0), y1 - 0.15), both=True).shaped(jaw=0.9)
+    low = _brolly(fit, base.but(chest=(34, -10, 0), spine=(12, -10, 0), head=(24, 0, 0)), (x0 + 0.5 * (x1 - x0), y0 + 0.15), both=True).shaped(jaw=0.9)
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
+def _thunderclap(st, base, mv, fit):
+    """Thunderclap (Isobar Lasso BP, step 28): out of the lasso's reel-in, the
+    umbrella swept up from low under their chin, onto his toes, and held
+    high; it puts them on the floor."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    toes = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
+    crouch = st.base(drop=st.drop + 0.14).but(chest=(24, 10, 0), spine=(10, 6, 0), head=(-4, -6, 0))
+    drawn = _brolly(fit, crouch, (-0.25, 0.15)).shaped(jaw=0.3)
+    rise = base.but(root={"offset": (0, 0, 0.04 * k)}, chest=(-8, -40, 0), spine=(-2, -30, 0), head=(-10, -10, 0), **toes)
+    hit = _brolly(fit, crouch.but(chest=(6, -20, 0)), (x0 + 0.55 * (x1 - x0), y0 + 0.3), both=True)
+    top = _brolly(fit, rise, (x0 + 0.4 * (x1 - x0), y1 - 0.12), both=True).shaped(jaw=0.9)
+    over = _brolly(fit, rise.but(chest=(-14, -40, 0)), (0.3, 2.2), both=True)
+    return [(4, drawn), (h0 - 3, toward(drawn, base, -0.05)), (h0, hit), (h1, top), (h1 + 4, over), (h1 + 8, over),
+            (h1 + 14, lerp_pose(over.but(root={"offset": (0, 0, 0)}, foot_L=base.parts["foot_L"], foot_R=base.parts["foot_R"]), base, 0.5)), (total, base)]
+
+
+def _held(show):
+    return {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": show}
+
+
 OVERRIDES = {
+    # The specials pass (step 28): the umbrella's tip makes every hit.
+    "Low Pressure": {"limb": "hand.R", "keys": _low_pressure, "held": _held((2, 34))},
+    "j.FK FP": {"limb": "hand.R", "keys": _updraft, "held": _held((2, 13))},
+    "j.BP BK": {"limb": "hand.R", "keys": _downburst, "held": _held((2, 16))},
+    "Isobar Lasso BP": {"limb": "hand.R", "keys": _thunderclap, "held": _held((2, 26))},
     # Air specials (step 26): the umbrella held overhead, hail from the free hand.
     "Downpour": {"keys": _downpour(False), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 16)}},
     "Downpour+": {"keys": _downpour(True), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 20)}},
