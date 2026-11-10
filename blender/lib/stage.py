@@ -52,12 +52,15 @@ def build(mod, out_dir, art_dir):
 
     mod.build(make)
 
+    # Every atlas at PNG's strongest (lossless) compression: the stages run
+    # close to their 2 MB with the light maps.
+    bpy.context.scene.render.image_settings.compression = 100
     dense = {m["name"] for m in p.meta if m["name"].startswith(getattr(mod, "DENSE", ()))}
     unwrap(objs, dense, p.meta)
     for mi, size in ATLAS.items():
         if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
             atlas, glow, strength = paint(objs, p.meta, mi, size, art_dir / "textures" / f"stage-{mod.ID}_{p.materials[mi].name}.png",
-                                          glow=getattr(mod, "EMISSION", {}))
+                                          glow=getattr(mod, "EMISSION", {}), glow_max=getattr(mod, "GLOW_SIZE", None))
             use_atlas(p.materials[mi], atlas)
             if glow is not None:
                 use_glow(p.materials[mi], glow, strength)

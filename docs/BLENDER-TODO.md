@@ -1115,20 +1115,22 @@ the GLBs can carry the new objects and the game will ignore them.
 
 **A. Foreground silhouettes (every stage)**
 
+*Done (Nov 9): all four stages (`blender/lib/foreground.py`). Notes under* Foreground (Nov 9, art side) *in Feedback.*
+
 Studio kit between the camera and the fight, at the edges of the frame,
 which the game draws as near-black shapes against the lit set. As the
 camera tracks and pulls back, they slide past faster than the set does.
 
-- [ ] `fg_left`, `fg_right` in each stage GLB: a studio camera on its
+- [x] `fg_left`, `fg_right` in each stage GLB: a studio camera on its
   pedestal (Weather, News), a boom mic and its stand (Burn: a speaker stack
   and a mic stand; Kitchen: a second camera and a cue-card stand). Each at
   x = ∓6.2, z = +2.5 to +3.5, 1.6–2.2 m tall, in `props`. Keep them below
   half the screen's height when the camera is closest (6.4 m back, looking
   at 1.15 m): no higher than 2.2 m, and never between x = −4.5 and 4.5.
-- [ ] `fg_top`: something hanging into the top of the frame from the grid
+- [x] `fg_top`: something hanging into the top of the frame from the grid
   (a lamp on its yoke, a boom's tip, the hood's edge in Kitchen) at z = +2,
   y = 4.2 to 5.
-- [ ] Under 400 triangles each; one material (`props`).
+- [x] Under 400 triangles each; one material (`props`).
 
 **B. The audience in the dark**
 
@@ -1754,3 +1756,10 @@ worked into the move data, and the table above updates itself.
   - The Oven's orange mostly lands on the counter top and the wall: the counter is between the oven and the floor, so it doesn't pour across the floor the way the spec describes. A lamp low in front of the counter could fake it; say if it's wanted.
   - Weather's map header is the brightest thing the wash hits (it's nearest the lamp).
   - Budget: the light maps are big for their content (noisy gradients), so Kitchen's are 512² in steps of 4 (of 255) and Burn's in steps of 2 (`LIGHT_SIZE`, `LIGHT_STEP` in the stage modules). With them: Weather 1.65 MB, Burn 1.87, News 1.19, Kitchen 2.08 (of 2 MiB; the test counts 2,097,152 bytes). Kitchen has no room left: anything new there will need its set atlas trimmed.
+- **Foreground (Nov 9, art side).** Step 24 A done for all four stages; `npm test` passing. Notes for the game side:
+  - Weather: `fg_left` a pedestal camera, `fg_right` a boom mic on its stand, `fg_top` a boom's tip reaching in from the right. News: the camera, the boom, a Fresnel on its yoke. Burn: a PA speaker stack, a vocal mic stand, a Fresnel. Kitchen: the camera, a cue-card easel, the edge of a second hood.
+  - Origins: `fg_left`/`fg_right` on the floor under their middle at x = ∓6.2, z = +3.0; `fg_top` at its pipe, y = 5.0, z = +2.0 (Weather x = 4.4, News −2.5, Burn 2.5, Kitchen −3.0), hanging down to 4.2. Nothing of `fg_left`/`fg_right` comes inside |x| = 4.7.
+  - 24–240 triangles each, in `props`. The cameras' tally lights glow (`fg_cam_tally`, 2): if the game draws these as flat near-black, that's lost; worth keeping as the one lit point on the silhouette.
+  - With the game's 30° lens they're out of frame until the camera pulls back past about 13 m; at 16 m they sit at the frame's edges, the cameras about a third of the height. Checked from about the game camera with them drawn black, not in a match.
+  - They're in the props AO layout's white corner like the effects (no AO): they move with nothing, and the game draws them dark anyway.
+  - Kitchen's glow atlas went to 512² (`GLOW_SIZE`) to make room under 2 MB; every stage atlas is now saved at PNG's strongest compression (lossless).

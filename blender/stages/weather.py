@@ -18,6 +18,7 @@ import math
 
 import numpy as np
 
+from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area, spot
 from lib.texture import bright
@@ -72,6 +73,7 @@ LIGHTS = [
 
 # What gives off light (step 23 C): part name → strength, or a rule.
 EMISSION = {
+    "fg_cam_tally": 2,
     "tv_screen": 1.5,
     "lamp_lensring": 3,
     "(camera|dolly)_tally": 2,
@@ -435,6 +437,9 @@ def build(make):
     make("seg_flood", flood)
     make("prop_dolly_left", dolly_obj(1), at=(-4.6, -0.2, 0))
     make("prop_dolly_right", dolly_obj(-1), at=(4.6, -0.2, 0))
+    make("fg_left", lambda p: fg.camera(p, "fg_cam", 1), at=(-6.2, 3.0, 0))
+    make("fg_right", lambda p: fg.boom(p, "fg_boom", -1), at=(6.2, 3.0, 0))
+    make("fg_top", lambda p: fg.boom_tip(p, "fg_tip", -1), at=(4.4, 2.0, 5.0))
     make("fx_lightning", lightning)
     make("fx_scorch", lambda p: disc(p, "scorch", 0.6, 0.006, (62, 54, 50), scorch, n=24))
     make("fx_paper", lambda p: sheet(p, "paper", 0, 0, 0.3, 0, 1))
