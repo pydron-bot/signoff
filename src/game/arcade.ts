@@ -28,10 +28,10 @@ export function createLadder(fighter: string): Ladder {
   return { fighter, opponents, at: 0, continues: CONTINUES, state: 'fight' };
 }
 
-/** The CPU gets harder each fight: easy first, hard for the last. */
+/** The CPU gets harder each fight: easy first, hard for the one before last, and the last is the DIRECTOR's. */
 export function levelFor(l: Ladder): CpuLevel {
   const last = l.opponents.length - 1;
-  return l.at === 0 ? 'easy' : l.at >= last ? 'hard' : 'normal';
+  return l.at === 0 ? 'easy' : l.at >= last ? 'director' : l.at === last - 1 ? 'hard' : 'normal';
 }
 
 export function opponent(l: Ladder): string {

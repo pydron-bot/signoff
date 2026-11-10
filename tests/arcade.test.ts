@@ -20,7 +20,10 @@ describe('arcade', () => {
       expect(l.state).toBe('won');
       expect(new Set(seen).size).toBe(Object.keys(FIGHTERS).length - 1);
       expect(levels[0]).toBe('easy');
-      expect(levels[levels.length - 1]).toBe('hard');
+      expect(levels[levels.length - 2]).toBe('hard');
+      // The DIRECTOR plays only the last fight.
+      expect(levels[levels.length - 1]).toBe('director');
+      expect(levels.filter((v) => v === 'director').length).toBe(1);
     }
   });
 
