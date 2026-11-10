@@ -26,6 +26,16 @@ const FOCUS_SUPER = 34;
 const FOCUS_IN = 3;
 const FOCUS_OUT = 8;
 const FOCUS_RADIUS = 0.2;
+/** An ender's colour drain: steps (about its freeze, longer on a counter), the last few fading, and the clear radius round the blow. */
+const DRAIN_STEPS = 14;
+const DRAIN_COUNTER = 4;
+const DRAIN_FADE = 4;
+const DRAIN_RADIUS = 0.12;
+/** Speed lines: steps and strength for a wall splat, Tape Skip, a teleport and a jump cancel. */
+const SPEED_WALL = [16, 1] as const;
+const SPEED_SKIP = [12, 0.7] as const;
+const SPEED_TELEPORT = [8, 0.6] as const;
+const SPEED_JUMP = [8, 0.45] as const;
 
 /** What the post pass needs from this, in its own terms (uv 0..1, radius and strength). */
 export interface ImpactTarget {
@@ -38,10 +48,17 @@ export interface ImpactTarget {
   focusY: number;
   focusR: number;
   focus: number;
+  drainX: number;
+  drainY: number;
+  drainR: number;
+  drain: number;
+  speedX: number;
+  speedY: number;
+  speed: number;
 }
 
 export class ImpactScreen {
-  /** Drops the ripple and the blur (they move the picture); the spotlight stays. */
+  /** Drops the ripple, the blur and the speed lines (they move the picture); the spotlight and the drain stay. */
   reduceMotion = false;
   private readonly shockAt = new THREE.Vector3();
   private shockLeft = 0;
@@ -52,13 +69,48 @@ export class ImpactScreen {
   private focusPlayer = 0;
   private focusLeft = 0;
   private focusLife = 1;
+  private readonly drainAt = new THREE.Vector3();
+  private drainLeft = 0;
+  /** Speed lines: from a point, or from a fighter (-1: the point), steps left, life and strength. */
+  private readonly speedAt = new THREE.Vector3();
+  private speedPlayer = -1;
+  private speedLeft = 0;
+  private speedLife = 1;
+  private speedPower = 0;
   private readonly at = new THREE.Vector3();
-  private readonly out: ImpactTarget = { shockX: 0.5, shockY: 0.5, shockR: 0, shock: 0, zoom: 0, focusX: 0.5, focusY: 0.5, focusR: FOCUS_RADIUS, focus: 0 };
+  private readonly out: ImpactTarget = {
+    shockX: 0.5,
+    shockY: 0.5,
+    shockR: 0,
+    shock: 0,
+    zoom: 0,
+    focusX: 0.5,
+    focusY: 0.5,
+    focusR: FOCUS_RADIUS,
+    focus: 0,
+    drainX: 0.5,
+    drainY: 0.5,
+    drainR: DRAIN_RADIUS,
+    drain: 0,
+    speedX: 0.5,
+    speedY: 0.5,
+    speed: 0,
+  };
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
-      if (e.type === 'hit' && e.weight >= 2) this.shock(toFloat(e.x) - e.dir * 0.2, toFloat(e.y), e.weight === 3 || e.counter ? 3 : 2);
-      else if (e.type === 'relaunch' && e.how !== 'special') this.shock(toFloat(e.x), Math.max(0.2, toFloat(e.y)), 2);
+      if (e.type === 'hit' && e.weight >= 2) {
+        this.shock(toFloat(e.x) - e.dir * 0.2, toFloat(e.y), e.weight === 3 || e.counter ? 3 : 2);
+        if (e.weight === 3) {
+          this.drainAt.set(toFloat(e.x) - e.dir * 0.2, toFloat(e.y), 0);
+          this.drainLeft = DRAIN_STEPS + (e.counter ? DRAIN_COUNTER : 0);
+        }
+      } else if (e.type === 'relaunch' && e.how !== 'special') {
+        this.shock(toFloat(e.x), Math.max(0.2, toFloat(e.y)), 2);
+        if (e.how === 'wall') this.speedFrom(-1, toFloat(e.x), Math.max(0.6, toFloat(e.y)), SPEED_WALL);
+      } else if (e.type === 'tapeSkip') this.speedFrom(e.player, 0, 0, SPEED_SKIP);
+      else if (e.type === 'teleport') this.speedFrom(e.player, 0, 0, SPEED_TELEPORT);
+      else if (e.type === 'jumpCancel') this.speedFrom(e.player, 0, 0, SPEED_JUMP);
       else if (e.type === 'stageCue') this.shock(toFloat(e.x), 0.4, 3);
       else if (e.type === 'boost' || e.type === 'cutAway') this.focusOn(e.player, FOCUS_BOOST);
       else if (e.type === 'superStart') this.focusOn(e.player, FOCUS_SUPER);
@@ -75,6 +127,15 @@ export class ImpactScreen {
     if (weight === 3) this.zoomLeft = ZOOM_STEPS;
   }
 
+  private speedFrom(player: number, x: number, y: number, [steps, power]: readonly [number, number]): void {
+    // A weaker burst doesn't cut a stronger one short.
+    if (this.speedLeft > 0 && this.speedPower * (this.speedLeft / this.speedLife) > power) return;
+    this.speedPlayer = player;
+    this.speedAt.set(x, y, 0);
+    this.speedLife = this.speedLeft = steps;
+    this.speedPower = power;
+  }
+
   private focusOn(player: number, steps: number): void {
     this.focusPlayer = player;
     this.focusLife = this.focusLeft = Math.max(steps, this.focusLeft);
@@ -84,16 +145,34 @@ export class ImpactScreen {
     if (this.shockLeft > 0) this.shockLeft--;
     if (this.zoomLeft > 0) this.zoomLeft--;
     if (this.focusLeft > 0) this.focusLeft--;
+    if (this.drainLeft > 0) this.drainLeft--;
+    if (this.speedLeft > 0) this.speedLeft--;
   }
 
   clear(): void {
-    this.shockLeft = this.zoomLeft = this.focusLeft = 0;
+    this.shockLeft = this.zoomLeft = this.focusLeft = this.drainLeft = this.speedLeft = 0;
   }
 
   /** After the camera is placed: where on screen it all is, for the post pass. */
   project(m: MatchState, camera: THREE.Camera): ImpactTarget {
     const o = this.out;
-    o.shock = o.zoom = o.focus = 0;
+    o.shock = o.zoom = o.focus = o.drain = o.speed = 0;
+    if (this.drainLeft > 0) {
+      this.at.copy(this.drainAt).project(camera);
+      o.drainX = (this.at.x + 1) / 2;
+      o.drainY = (this.at.y + 1) / 2;
+      o.drain = Math.min(1, this.drainLeft / DRAIN_FADE);
+    }
+    if (this.speedLeft > 0 && !this.reduceMotion) {
+      if (this.speedPlayer >= 0) {
+        const f = m.fighters[this.speedPlayer];
+        this.at.set(toFloat(f.x), toFloat(f.y) + 1.0, 0);
+      } else this.at.copy(this.speedAt);
+      this.at.project(camera);
+      o.speedX = (this.at.x + 1) / 2;
+      o.speedY = (this.at.y + 1) / 2;
+      o.speed = this.speedPower * Math.min(1, this.speedLeft / 5);
+    }
     if (this.shockLeft > 0 && !this.reduceMotion) {
       this.at.copy(this.shockAt).project(camera);
       o.shockX = (this.at.x + 1) / 2;

@@ -266,6 +266,9 @@ let showcaseSpeed = 0;
 let watchSpeed = 0;
 /** Seconds of the winner on screen before the endless channel's next match (0: not waiting), and that match's winner. */
 const ENDLESS_WAIT = 5;
+/** A KO catches the tape: its frame drawn torn, then held this many frames before the slow motion rolls on (not with Reduce Motion). */
+const TAPE_CATCH = 4;
+let tapeCatch = 0;
 let endlessLeft = 0;
 let endlessWinner = -1;
 /** The endless channel keeps the screen on (not while paused: someone's there). */
@@ -1023,6 +1026,7 @@ renderer.setAnimationLoop((now) => {
       slowMo.step(s.match, ev);
       for (const e of ev) {
         // A cancellation a player landed is found: the move list shows it from now on.
+        if (e.type === 'ko' && !demo && !reducedMotion(settings, systemReduceMotion)) tapeCatch = TAPE_CATCH + 1;
         if (e.type === 'finisher' && e.kind === 'cancellation' && humanSide(s.options.mode, e.player)) markFound(found, s.match.fighters[e.player].fighter, e.id);
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();
@@ -1089,7 +1093,7 @@ renderer.setAnimationLoop((now) => {
   // The shader TV dims the demo behind the menu; the room is dark enough already.
   post.dim = sofa ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
   post.saturation = sofa ? 0.85 : 1;
-  post.tear = glitch.tear;
+  post.tear = tapeCatch > TAPE_CATCH ? 1 : glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
   // The shockwave, an ender's zoom and the meter spotlight: on screen only, not on the title's TV.
@@ -1104,6 +1108,18 @@ renderer.setAnimationLoop((now) => {
   post.focusY = fx.focusY;
   post.focusR = fx.focusR;
   post.focus = quiet ? 0 : fx.focus;
+  post.drainX = fx.drainX;
+  post.drainY = fx.drainY;
+  post.drainR = fx.drainR;
+  post.drain = quiet ? 0 : fx.drain;
+  post.speedX = fx.speedX;
+  post.speedY = fx.speedY;
+  post.speed = quiet ? 0 : fx.speed;
+  // The tape catching: after the torn frame, the picture holds (nothing drawn keeps the last frame up).
+  if (tapeCatch > 0 && tapeCatch-- <= TAPE_CATCH) {
+    perf.frame(now, stepped);
+    return;
+  }
   renderer.info.reset();
   if (onTv) {
     // The fight on the TV, the room round it; leaving, the push ends in a burst of static as the picture takes the screen.

@@ -112,6 +112,8 @@ uniform float uCrt;
 uniform vec4 uShock;
 uniform float uZoom;
 uniform vec4 uFocus;
+uniform vec4 uDrain;
+uniform vec4 uSpeed;
 varying vec2 vUv;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
@@ -186,6 +188,13 @@ void main() {
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = max(mix(vec3(l), col, uSaturation), 0.0);
 
+  // An ender's freeze: the colour drains from everything but the blow.
+  if (uDrain.w > 0.0) {
+    float k = smoothstep(uDrain.z, uDrain.z + 0.15, length((vUv - uDrain.xy) * vec2(aspect, 1.0)));
+    float ld = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(col, vec3(ld) * vec3(0.95, 0.97, 1.05), uDrain.w * k);
+  }
+
   // An impact frame: the picture blown out to a hard negative for a moment.
   if (uImpact > 0.0) {
     float k = smoothstep(0.12, 0.3, l);
@@ -198,6 +207,14 @@ void main() {
     float lf = dot(col, vec3(0.2126, 0.7152, 0.0722));
     col = mix(col, vec3(lf) * vec3(0.85, 0.9, 1.1), uFocus.w * k * 0.7);
     col *= 1.0 - uFocus.w * (0.15 + 0.55 * k);
+  }
+
+  // Speed lines: thin rays rushing out from the action, only toward the edges, new ones each tape frame.
+  if (uSpeed.w > 0.0) {
+    vec2 sv = (vUv - uSpeed.xy) * vec2(aspect, 1.0);
+    float ray = step(0.86, hash(floor(atan(sv.y, sv.x) * 70.0) + frame * 3.1));
+    float edge = smoothstep(0.3, 0.75, length(sv));
+    col = mix(col, vec3(0.95, 0.97, 1.0), ray * edge * uSpeed.w * 0.5);
   }
 
   vec2 vig = vUv - 0.5;
@@ -256,6 +273,15 @@ export class Post {
   focusY = 0.5;
   focusR = 0.2;
   focus = 0;
+  /** An ender's freeze draining the colour from all but the blow: its centre (uv), clear radius (of the screen's height) and strength, 0 to 1. */
+  drainX = 0.5;
+  drainY = 0.5;
+  drainR = 0.12;
+  drain = 0;
+  /** Speed lines out from a point (uv), 0 to 1. */
+  speedX = 0.5;
+  speedY = 0.5;
+  speed = 0;
   /** Grain flickers each frame; Reduce Motion keeps it still. */
   stillGrain = false;
   /** The segment's colour grade: the arena's, which the stage sets. */
@@ -312,6 +338,8 @@ export class Post {
         uShock: { value: new THREE.Vector4() },
         uZoom: { value: 0 },
         uFocus: { value: new THREE.Vector4() },
+        uDrain: { value: new THREE.Vector4() },
+        uSpeed: { value: new THREE.Vector4() },
       },
     });
   }
@@ -389,6 +417,8 @@ export class Post {
     (u.uShock.value as THREE.Vector4).set(this.shockX, this.shockY, this.shockR, this.shock * 0.8);
     u.uZoom.value = this.zoom;
     (u.uFocus.value as THREE.Vector4).set(this.focusX, this.focusY, this.focusR, this.focus);
+    (u.uDrain.value as THREE.Vector4).set(this.drainX, this.drainY, this.drainR, this.drain);
+    (u.uSpeed.value as THREE.Vector4).set(this.speedX, this.speedY, 0, this.speed);
     // The chain adds four levels together.
     u.uBloom.value = g.bloom / LEVELS;
     (u.uLift.value as THREE.Vector3).set(...g.lift);

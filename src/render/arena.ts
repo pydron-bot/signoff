@@ -479,6 +479,11 @@ export class Arena {
       }
     }
     const c = this.rig.shot;
+    const fov = this.rig.fov;
+    if (this.camera.fov !== fov) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
     this.camera.position.set(c.x, c.y, c.z);
     this.camera.lookAt(c.tx, c.ty, 0);
     if (c.roll !== 0) this.camera.rotateZ(c.roll);
