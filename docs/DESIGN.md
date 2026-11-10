@@ -374,7 +374,9 @@ searched to win that matchup, so the winner's play is never made worse to
 even things up (Gus against Rox mixes up more and throws less; Gideon
 presses Hollis instead of waiting; Rox stays out of Mumbles' reach and
 uses her specials; Mumbles strings Margaret rather than spending
-specials into her counter; Rox goes low on Margaret). On defence it
+specials into her counter, and mixes her up (0.51.0); Rox goes low on
+Margaret; since 0.51.0 Margaret goes low on Dale and Hollis spends his
+specials on Rox). On defence it
 learns what the opponent does to its getup and ducks a habitual throw
 (throws are highs), keeps its guard a moment after a blockstun when the
 attacker can carry on, and guards a projectile it sees coming from

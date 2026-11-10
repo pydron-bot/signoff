@@ -43,6 +43,9 @@ describe.each(Object.values(FIGHTERS).map((f) => [f.name, f.id] as const))('%s',
       t.steps.forEach((s, k) => {
         expect(co[k].tip.length, `${c.name} step ${k}`).toBeGreaterThan(0);
         if (s.move === 'Jump Cancel') expect(co[k].how).toBe('jumpCancel');
+        // After an air string's spike, the next hit catches the bounce.
+        const prev = t.steps.slice(0, k).reverse().find((x) => x.id);
+        if (k > 0 && s.id && prev && FIGHTERS[id].moves[prev.id].stance === 'air' && FIGHTERS[id].moves[prev.id].hits.some((h) => h.groundBounce) && FIGHTERS[id].moves[s.id].stance !== 'air') expect(co[k].how).toBe('bounce');
       });
     }
   });

@@ -97,8 +97,8 @@ const moves = table(
     chain: { BP: 'Isobar Lasso BP' },
     cancel: [22, 30],
   }),
-  // The lasso's follow-up: a clap of thunder under the chin, up into a juggle.
-  followUp('Isobar Lasso BP', { name: 'Thunderclap', startup: 9, active: 3, recovery: 20, reach: [0.1, 0.95], at: [0.75, 2.0], damage: 38, hitstun: 0, blockstun: 12, launch: 0.16 }),
+  // The lasso's follow-up: a clap of thunder under the chin that puts them down.
+  followUp('Isobar Lasso BP', { name: 'Thunderclap', startup: 9, active: 3, recovery: 20, reach: [0.1, 0.95], at: [0.75, 2.0], damage: 50, hitstun: 0, blockstun: 12, knockdown: true }),
   // A rising, invulnerable reversal: wins against pressure, loses badly if blocked.
   move('Heat Lightning', {
     name: 'Heat Lightning',

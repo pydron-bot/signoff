@@ -1390,7 +1390,7 @@ first frames should blend out of it.
 
 - [ ] `dale:Isobar Lasso BP` *Thunderclap* (31 frames; stand-in `c.BP`):
   from the lasso's reel-in, the umbrella brought up under their chin, a
-  rising launcher (hits 9–11, up to 2.0 m).
+  rising blow that puts them on the floor (hits 9–11, up to 2.0 m).
 - [ ] `rox:Star Jump BK` *And Down* (31 frames, crouching; stand-in
   `c.BK`): landing from the Star Jump straight into a low sweep.
 - [ ] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `s.FK`):

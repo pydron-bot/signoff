@@ -3,7 +3,7 @@ import type { ComboGuide } from './comboGuides';
 
 export const COMBO_ROUTES: Readonly<Record<string, readonly ComboGuide[]>> = {
   dale: [
-    { name: 'From your jab', bars: 0, presses: [[0, 'FP'], [11, 'BP'], [27, 'b SP'], [55, 'BP'], [104, 'SP']] },
+    { name: 'From your jab', bars: 0, presses: [[0, 'FP'], [11, 'BP'], [27, 'SP']] },
     { name: 'From a low', bars: 0, presses: [[0, 'd FK'], [12, 'SP']] },
     { name: 'From your overhead', bars: 0, presses: [[0, 'f BP'], [24, 'BP'], [48, 'BK'], [78, 'b SP'], [109, 'BP']] },
     { name: 'Punish', bars: 0, presses: [[0, 'd BP'], [29, 'd BP'], [42, 'BK'], [70, 'f SP']] },

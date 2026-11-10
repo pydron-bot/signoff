@@ -151,8 +151,8 @@ export function coaching(t: Trial): Coaching[] {
     else if (mv.kind === 'special') c = { how: 'cancel', tip: `${s.input} as the hit lands: it cancels the move (press it in the freeze; the buffer keeps it)` };
     else if (mv.kind === 'air' && prev?.kind === 'air' && Object.values(prev.chain).includes(mv.id)) c = { how: 'airString', tip: `${s.input} as the last one lands: you hang in the air while the string connects` };
     else if (mv.kind === 'air') c = { how: 'air', tip: `${s.input} straight after take-off, to meet them as they rise` };
-    else if (s.wait) c = { how: 'wait', tip: `let them fall, then ${s.input}: too soon and it goes under them` };
     else if (prev && prev.hits.some((h) => h.groundBounce) && prev.stance === 'air') c = { how: 'bounce', tip: `they bounce off the floor: land, then ${s.input} as they come back up` };
+    else if (s.wait) c = { how: 'wait', tip: `let them fall, then ${s.input}: too soon and it goes under them` };
     else if (prev && Object.values(prev.chain).includes(mv.id)) c = { how: 'string', tip: `${s.input} as the hit lands: the string carries on` };
     else if (opens(prev)) c = { how: 'juggle', tip: `${s.input} as they go up: any normal follows a launcher` };
     else c = { how: 'link', tip: `${s.input} just as ${prev?.name ?? 'it'} finishes: a link is rhythm, not speed` };
