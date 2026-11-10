@@ -24,6 +24,7 @@ import math
 
 import numpy as np
 
+from lib import clutter as C
 from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area
@@ -590,3 +591,7 @@ def build(make):
     make("fx_shard", shard)
     make("fx_shatter", shatter)
     make("fx_mark", mark)
+    # Set dressing the game knocks about (step 30), each round its middle.
+    make("clutter_dumbbell", C.dumbbell)
+    make("clutter_bottle", C.bottle)
+    make("clutter_towel", C.towel)

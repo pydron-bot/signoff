@@ -5,6 +5,7 @@
 // checked for the objects, materials and lights the game reads.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CLUTTER } from '../src/render/clutterData';
 import { FG_INNER, FG_Z, SEATS } from '../src/render/depth';
 import { ART_PENDING } from '../src/render/pose';
 import { FIGHTERS, STAGES } from '../src/sim';
@@ -398,6 +399,42 @@ stageChecks('kitchen', ['set', 'seg_prep', 'seg_grease', 'seg_oven', 'prop_pot',
   prop_pot: { at: propX('kitchen', 'pot'), size: [0.6, 0.45] },
   prop_knives: { at: propX('kitchen', 'knives'), size: [0.3, 0.5] },
 });
+
+/**
+ * The knocked-about set dressing (docs/BLENDER-TODO.md, step 30;
+ * src/render/clutterData.ts): every kind a stage lists is `clutter_<id>`
+ * in its GLB, at the origin, built round its middle, in the `props`
+ * material only, and the size the game's physics thinks it is.
+ */
+for (const [id, spec] of Object.entries(CLUTTER)) {
+  const path = `public/assets/stages/${id}.glb`;
+  describe.skipIf(!existsSync(path))(`${id}.glb set dressing`, () => {
+    const g = existsSync(path) ? readGlb(path) : ({} as ReturnType<typeof readGlb>);
+    for (const k of spec.kinds) {
+      it(`clutter_${k.id}: ${k.size.join(' × ')} m round its middle, in props`, () => {
+        const node = g.nodes.find((n) => n.name === `clutter_${k.id}`);
+        expect(node, `clutter_${k.id}`).toBeDefined();
+        for (const v of node!.translation ?? [0, 0, 0]) expect(Math.abs(v)).toBeLessThan(1e-4);
+        const mesh = g.meshes[node!.mesh!];
+        const lo = [Infinity, Infinity, Infinity];
+        const hi = [-Infinity, -Infinity, -Infinity];
+        for (const pr of mesh.primitives) {
+          expect(g.materials![pr.material!].name).toBe('props');
+          const a = g.accessors[pr.attributes.POSITION];
+          for (let i = 0; i < 3; i++) {
+            lo[i] = Math.min(lo[i], a.min![i]);
+            hi[i] = Math.max(hi[i], a.max![i]);
+          }
+        }
+        for (let i = 0; i < 3; i++) {
+          expect(hi[i] - lo[i], `clutter_${k.id} size ${'xyz'[i]}`).toBeGreaterThan(k.size[i] * 0.85);
+          expect(hi[i] - lo[i], `clutter_${k.id} size ${'xyz'[i]}`).toBeLessThan(k.size[i] * 1.15);
+          expect(Math.abs(hi[i] + lo[i]) / 2, `clutter_${k.id} middle ${'xyz'[i]}`).toBeLessThan(0.02);
+        }
+      });
+    }
+  });
+}
 
 /**
  * Baked light on the sets (docs/BLENDER-TODO.md, step 23), once a stage has
