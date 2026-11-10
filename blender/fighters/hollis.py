@@ -191,6 +191,35 @@ class STANCE(Stance):
             elbow_L=self.s((0.4, 0.3, 1.1)), elbow_R=self.s((-0.4, 0.3, 1.1)),
             chest=(-4, -10, 0), head=(-8, 0, 0))
 
+    def intro_keys(self, relaxed, base):
+        """Checks his watch (the lead wrist up, head down to it), then
+        cracks his knuckles, twice, and squares up (step 16 C)."""
+        watch = self.base(drop=0.02).but(
+            chest=(8, -16, 0), head=(26, -8, 0),
+            hand_L={"pos": self.s((0.04, 0.34, 1.32)), "aim": (-0.9, 0.2, 0.3), "hint": (0, 0, 1)}, elbow_L=self.s((0.5, 0.3, 1.1)),
+            hand_R={"pos": self.s((-0.24, 0.02, 0.9)), "aim": (-0.1, 0.05, -1)}).shaped(fist_L=0.6)
+
+        def knuckles(push):
+            return self.base(drop=0.03).but(
+                chest=(6 + 4 * push, -18, 0), head=(4, -6, 0),
+                hand_L={"pos": self.s((0.04, 0.3 + 0.12 * push, 1.24)), "aim": (-0.6, 0.6, 0.2), "hint": (0, 0, 1)},
+                hand_R={"pos": self.s((-0.04, 0.3 + 0.12 * push, 1.22)), "aim": (0.6, 0.6, 0.2), "hint": (0, 0, 1)},
+            ).shaped(fist_L=1.0, fist_R=0.6, jaw=0.2 * push)
+
+        return [(1, relaxed), (16, watch), (34, watch.but(head=(24, -2, 0))), (44, knuckles(0)), (50, knuckles(1)), (56, knuckles(0)), (62, knuckles(1)),
+                (80, base), (90, base)]
+
+    def win_keys(self, base):
+        """Arms folded, a slow shake of the head, then a thumb jerked over his
+        shoulder: move along (step 16 C)."""
+        folded = self.win().shaped(win=0.4)
+        thumb = self.base(drop=0.0).but(
+            chest=(-4, -14, 0), head=(-8, 10, 0),
+            hand_L={"pos": self.s((0.26, -0.22, 1.56)), "aim": (0.1, -1, 0.3), "hint": (1, 0, 0)}, elbow_L=self.s((0.6, 0.4, 1.2)),
+            hand_R=folded.parts["hand_R"], elbow_R=folded.parts["elbow_R"]).shaped(win=0.4, fist_L=1.0, point_L=0.0)
+        return [(1, base), (18, folded), (34, folded.but(head=(-8, 26, 0))), (46, folded.but(head=(-8, -26, 0))), (58, folded.but(head=(-8, 20, 0))),
+                (70, folded), (84, thumb), (88, thumb.but(hand_L={**thumb.parts["hand_L"], "pos": self.s((0.28, -0.3, 1.6))})), (94, thumb), (120, thumb)]
+
     def win_2(self, base):
         """End of shift: checks his watch, then a long yawn."""
         belt = {"pos": self.s((-0.24, 0.02, 1.0)), "aim": (0, -0.2, -1)}

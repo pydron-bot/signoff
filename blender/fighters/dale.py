@@ -189,6 +189,18 @@ class STANCE(Stance):
             hand_L={"pos": self.s((0.42, 0.08, 1.58 + 0.06 * t)), "aim": (1, 0.15, 0.45), "hint": (0, 1, 0)},
         ).shaped(fist_L=1.0, point_L=1.0, win=0.6)
 
+    def win_keys(self, base):
+        """The fist up, then turned to the camera (his right): a finger
+        pointed down the lens, a hand on his hip. "Back to you." (step 16 C)"""
+        up = self.win().shaped(win=1.0, fist_L=1.0)
+        point = self.base(drop=0.01).but(
+            chest=(-4, -46, 0), head=(-6, -24, 0),
+            hand_L={"pos": self.s((-0.06, 0.44, 1.5)), "aim": (-0.8, 0.5, 0.15), "hint": (0, 0, 1)},
+            hand_R={"pos": self.s((-0.22, 0.0, 1.0)), "aim": (0.1, -0.4, -1)}, elbow_R=self.s((-0.5, -0.1, 1.15)),
+        ).shaped(win=1.0, fist_L=1.0, point_L=1.0, fist_R=0.2)
+        jab = point.but(hand_L={**point.parts["hand_L"], "pos": self.s((-0.12, 0.5, 1.52))})
+        return [(1, base), (16, up), (40, self.win(1).shaped(win=1.0, fist_L=1.0)), (50, point), (55, jab), (60, point), (112, point.but(head=(-4, -26, 4))), (120, point)]
+
     def win_2(self, base):
         """"…and that's the forecast": hand on hip, clicking the map along."""
         def present(click=0.0):

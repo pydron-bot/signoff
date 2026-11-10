@@ -183,6 +183,48 @@ class STANCE(Stance):
             hand_R={"pos": self.s((-0.42, 0.05, 1.98 - 0.03 * t)), "aim": (-0.5, 0, 1)},
             chest=(-8, -10, 0), head=(-14, 0, 0))
 
+    def intro_keys(self, relaxed, base):
+        """"Are you READY?!": a finger at the camera (her right), a hand on
+        her hip, then two big claps overhead and into her stance (step 16 C)."""
+        point = self.base(drop=0.04).but(
+            chest=(-2, -50, 0), head=(-6, -30, 0),
+            hand_L={"pos": self.s((-0.04, 0.46, 1.5)), "aim": (-0.8, 0.5, 0.2), "hint": (0, 0, 1)},
+            hand_R={"pos": self.s((-0.22, 0.0, 1.0)), "aim": (0.1, -0.4, -1)}, elbow_R=self.s((-0.5, -0.1, 1.15)),
+        ).shaped(win=0.6, fist_L=1.0, point_L=1.0, fist_R=0.2)
+        jab = point.but(hand_L={**point.parts["hand_L"], "pos": self.s((-0.1, 0.52, 1.52))})
+
+        def hands(apart, up, opened):
+            return self.base(drop=0.03).but(
+                chest=(-6, -20, 0), head=(-12, -10, 0),
+                hand_L={"pos": self.s((apart, 0.12, up)), "aim": (0.1 if apart < 0.1 else 0.5, 0.1, 1), "hint": (-1, 0, 0)},
+                hand_R={"pos": self.s((-apart, 0.12, up)), "aim": (-0.1 if apart < 0.1 else -0.5, 0.1, 1), "hint": (1, 0, 0)},
+            ).shaped(win=0.8, fist_L=0.0, fist_R=0.0, open_L=opened, open_R=opened)
+
+        wide, clap = hands(0.36, 1.86, 0.9), hands(0.03, 2.0, 0.2)
+        return [(1, relaxed), (14, point), (22, jab), (28, point), (38, wide), (42, clap), (48, wide), (52, clap), (64, clap), (80, base), (90, base)]
+
+    def win_keys(self, base):
+        """Arms up in a V, pumping them on her toes to the beat, then a
+        finger at the camera to finish (step 16 C)."""
+        v = self.win().shaped(win=1.0, fist_L=1.0, fist_R=1.0)
+        pump = self.win().but(
+            hips={"offset": (0, 0, 0.03 * self.k), "turn": (0, self.hips_yaw, 0)},
+            hand_L={"pos": self.s((0.34, 0.12, 1.66)), "aim": (0.4, 0.2, 1)},
+            hand_R={"pos": self.s((-0.34, 0.12, 1.66)), "aim": (-0.4, 0.2, 1)},
+            elbow_L=self.s((0.7, 0.2, 1.4)), elbow_R=self.s((-0.7, 0.2, 1.4)),
+            foot_L=moved(base.parts["foot_L"], (0, 0, 0.03 * self.k), (26, base.parts["foot_L"]["turn"][1], 0)),
+            foot_R=moved(base.parts["foot_R"], (0, 0, 0.03 * self.k), (26, base.parts["foot_R"]["turn"][1], 0)),
+        ).shaped(win=1.0, fist_L=1.0, fist_R=1.0)
+        point = self.base(drop=0.02).but(
+            chest=(-4, -50, 0), head=(-8, -28, 0),
+            hand_L={"pos": self.s((-0.04, 0.46, 1.52)), "aim": (-0.8, 0.5, 0.2), "hint": (0, 0, 1)},
+            hand_R={"pos": self.s((-0.22, 0.0, 1.0)), "aim": (0.1, -0.4, -1)}, elbow_R=self.s((-0.5, -0.1, 1.15)),
+        ).shaped(win=1.0, fist_L=1.0, point_L=1.0, fist_R=0.2)
+        keys = [(1, base), (14, v)]
+        for i, f in enumerate(range(22, 78, 8)):
+            keys.append((f, pump if i % 2 == 0 else v))
+        return keys + [(88, point), (120, point.but(head=(-6, -30, 6)))]
+
     def win_2(self, base):
         """Hands on hips, marching it out: high knees, and… hold."""
         def march(knee=None):
