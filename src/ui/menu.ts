@@ -55,6 +55,15 @@ export class Menu {
       e.type = 'button';
       e.className = isChoice(r) ? 'menu-row menu-choice' : 'menu-row menu-action';
       if (!isChoice(r) && r.id) e.id = r.id;
+      // A choice is its label, then the value between arrows: the value alone gives way (an ellipsis) when the row is narrow, so the arrows stay.
+      if (isChoice(r)) {
+        const label = document.createElement('span');
+        label.className = 'menu-label';
+        label.textContent = r.label;
+        const value = document.createElement('span');
+        value.className = 'menu-value';
+        e.append(label, arrow('‹'), value, arrow('›'));
+      }
       e.addEventListener('click', () => {
         this.focus = i;
         if (isChoice(r)) this.change(1);
@@ -99,10 +108,21 @@ export class Menu {
   private paint(): void {
     this.rows.forEach((r, i) => {
       const e = this.els[i];
-      e.textContent = isChoice(r) ? `${r.label}   ‹ ${r.options[r.value]} ›` : r.label;
+      if (isChoice(r)) {
+        const value = e.children[2] as HTMLElement;
+        value.textContent = r.options[r.value];
+        value.title = r.options[r.value];
+      } else e.textContent = r.label;
       e.classList.toggle('focus', i === this.focus);
       // Moving with keys or a pad: keep the row in view when the menu scrolls (Settings on a phone).
       if (i === this.focus) e.scrollIntoView?.({ block: 'nearest' });
     });
   }
+}
+
+function arrow(c: string): HTMLSpanElement {
+  const a = document.createElement('span');
+  a.className = 'menu-arrow';
+  a.textContent = c;
+  return a;
 }

@@ -439,12 +439,10 @@ replayBar.onAction = replayAction;
 replayBar.onSeek = (f) => seekReplay(f);
 
 const names = FIGHTER_IDS.map((id) => `${fighterData(id).name} · ${fighterData(id).style}`);
-/** Player 1's choices, with the trials each has cleared. */
-function playerNames(): string[] {
-  return FIGHTER_IDS.map((id, k) => {
-    const [n, of] = trialCount(trialsDone, id);
-    return `${names[k]} · trials ${n}/${of}`;
-  });
+/** The move list's row on the title, with the trials player 1's fighter has cleared (they're played from there). */
+function moveListLabel(): string {
+  const [n, of] = trialCount(trialsDone, FIGHTER_IDS[setup.p1]);
+  return `MOVE LIST · TRIALS ${n}/${of}`;
 }
 
 /** The lessons, as the player's fighter (from the title). */
@@ -456,6 +454,7 @@ function showLessons(): void {
 }
 
 function showTitle(): void {
+  const moveList = { label: moveListLabel(), id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) };
   titleMenu.show('', [
     { label: 'ARCADE', id: 'play-arcade', run: startArcade },
     { label: 'VS CPU', id: 'play-cpu', run: () => play('cpu') },
@@ -463,9 +462,10 @@ function showTitle(): void {
     { label: 'LESSONS', id: 'lessons', run: showLessons },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
-    { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) },
+    moveList,
     { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
-    { label: 'PLAYER 1', options: playerNames(), value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup()) },
+    // The move list's trial count follows player 1's fighter (the menu repaints labels after a change).
+    { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup(), (moveList.label = moveListLabel())) },
     { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
     { label: 'STAGE', options: STAGE_IDS.map((id) => STAGES[id].name.toUpperCase()), value: setup.stage, onChange: (v) => ((setup.stage = v), saveSetup()) },
     { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
