@@ -7,7 +7,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData, HitData } from '../types';
-import { box, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove, type BlowSpec } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove, type BlowSpec } from './build';
 
 /** Eight kicks three frames apart; the last one knocks down (or launches, boosted). */
 function countOfEight(damage: number, boosted: boolean): HitData[] {
@@ -90,10 +90,13 @@ const moves = table(
     cancel: [11, 17],
   }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.75], at: [0.6, 1.1], height: 'overhead', damage: 55, hitstun: 17, blockstun: 11, chain: { FK: 'j.FK' } }),
-  normal('j.BP', { name: 'Jumping Elbow', kind: 'air', startup: 6, active: 5, recovery: 6, reach: [0.1, 0.8], at: [0.8, 1.3], height: 'overhead', damage: 71, hitstun: 18, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 63, hitstun: 17, blockstun: 11 }),
+  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.75], at: [0.6, 1.1], height: 'overhead', damage: 42, hitstun: 17, blockstun: 11, chain: { FK: 'j.FK' } }),
+  normal('j.BP', { name: 'Jumping Elbow', kind: 'air', startup: 6, active: 5, recovery: 6, reach: [0.1, 0.8], at: [0.8, 1.3], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12, chain: { FP: 'j.BP FP' } }),
+  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 17, blockstun: 11, chain: { BK: 'j.FK BK' } }),
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 7, active: 6, recovery: 7, reach: [-0.6, 0.95], at: [0.1, 0.6], height: 'overhead', damage: 87, hitstun: 19, blockstun: 12 }),
+  // Air string steps: a clap overhead, then a heel dropped like a weight to bounce them off the mat.
+  airStep('j.BP FP', { name: 'Air Clap', damage: 32, chain: { BK: 'j.FK BK' } }),
+  airSpike('j.FK BK', { name: 'Heel Drop', damage: 32 }),
   // String steps
   normal('FP FP', { name: 'Warm-Up', startup: 6, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.1, 1.45], height: 'high', damage: 36, hitstun: 15, blockstun: 11, motion: stepIn(6), chain: { FK: 'FP FP FK' } }),
   normal('FP FP FK', { name: 'Reps', startup: 8, active: 3, recovery: 14, reach: [0.2, 1.15], at: [0.55, 0.9], damage: 55, hitstun: 18, blockstun: 18, motion: stepIn(8), chain: { BK: 'FP FP FK BK', FK: 'FP FP FK FK' } }),
@@ -149,6 +152,9 @@ const moves = table(
   // A hop forward into an overhead: safe, and her answer to crouch-blocking.
   move('Star Jump', {
     name: 'Star Jump',
+    // Landing from it: BK goes low, FP goes up. Overhead, then low or mid, both to the floor.
+    chain: { BK: 'Star Jump BK', FP: 'Star Jump FP' },
+    cancel: [19, 26],
     kind: 'special',
     total: 34,
     boost: 'Star Jump+',
@@ -163,6 +169,8 @@ const moves = table(
     motion: [{ frames: [3, 18], vx: 0.07 }],
     hits: [strike({ frames: [16, 18], reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 70, hitstun: 0, blockstun: 18, knockdown: true })],
   }),
+  followUp('Star Jump BK', { name: 'And Down', stance: 'crouch', startup: 9, active: 3, recovery: 20, reach: [0.2, 1.1], at: [0, 0.3], height: 'low', damage: 45, hitstun: 0, blockstun: 10, knockdown: true }),
+  followUp('Star Jump FP', { name: 'Reach for the Sky', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 45, hitstun: 0, blockstun: 11, knockdown: true }),
   // In the air: a beat's pause, then down at an angle, heel first. Blocked, she lands in front of them.
   move('Aerobic Dive', {
     name: 'Aerobic Dive',
@@ -184,6 +192,28 @@ const moves = table(
     dive: { frame: 6, vx: 0.11, vy: -0.13 },
     landing: 12,
     hits: [strike({ frames: [7, 38], reach: [0, 0.8], at: [-0.1, 0.5], height: 'overhead', damage: 50, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
+  }),
+  // Down + Special in the air: straight down into the splits, a heel each side.
+  move('Splits Drop', {
+    name: 'Splits Drop',
+    kind: 'special',
+    stance: 'air',
+    total: 34,
+    boost: 'Splits Drop+',
+    hover: [1, 4],
+    dive: { frame: 5, vx: 0, vy: -0.18 },
+    landing: 14,
+    hits: [strike({ frames: [6, 32], reach: [-0.7, 0.8], at: [-0.1, 0.45], height: 'overhead', damage: 50, hitstun: 0, blockstun: 12, knockdown: true })],
+  }),
+  move('Splits Drop+', {
+    name: 'Splits Drop (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 34,
+    hover: [1, 4],
+    dive: { frame: 5, vx: 0, vy: -0.18 },
+    landing: 14,
+    hits: [strike({ frames: [6, 32], reach: [-0.8, 0.9], at: [-0.1, 0.5], height: 'overhead', damage: 45, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
   }),
   throwMove(110),
   interactMove(),
@@ -270,8 +300,12 @@ export const ROX: FighterData = {
     b: {},
   },
   specials: { n: 'Star Jump', f: 'Grapevine', b: 'Leg Warmer Lariat', d: 'Count of Eight' },
-  airSpecials: { n: 'Aerobic Dive' },
-  airStrings: [{ name: 'Jumping Jacks', path: ['j.FP', 'FK'], safe: false }],
+  airSpecials: { n: 'Aerobic Dive', d: 'Splits Drop' },
+  airStrings: [
+    { name: 'Jumping Jacks', path: ['j.FP', 'FK'], safe: false },
+    { name: 'Star Drop', path: ['j.FP', 'FK', 'BK'], safe: false },
+    { name: 'High Energy', path: ['j.BP', 'FP', 'BK'], safe: false },
+  ],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

@@ -34,7 +34,8 @@ describe('replays', () => {
   });
 
   it('are small: a few kilobytes as JSON', () => {
-    const { replay } = record('rox', 'hollis', 5);
+    // A long match (seed 4 goes the distance with the 0.51.0 moves).
+    const { replay } = record('rox', 'hollis', 4);
     expect(replay.frames).toBeGreaterThan(3000);
     expect(JSON.stringify(replay).length).toBeLessThan(40_000);
   });

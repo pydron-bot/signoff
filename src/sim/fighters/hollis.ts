@@ -9,7 +9,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const moves = table(
   // Standing
@@ -34,10 +34,13 @@ const moves = table(
   normal('f.FK', { name: 'Stiff Arm', startup: 20, active: 3, recovery: 20, reach: [0.2, 1.05], at: [0.75, 1.6], damage: 55, hitstun: 20, blockstun: 14, push: 0.04, guardCrush: true }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Chop', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
-  normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 8, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 65, hitstun: 19, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 7, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
+  normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 8, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 65, hitstun: 19, blockstun: 12, chain: { BK: 'j.BP BK' } }),
+  normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 7, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12, chain: { BP: 'j.FK BP' } }),
   normal('j.BK', { name: 'Body Drop', kind: 'air', startup: 10, active: 6, recovery: 8, reach: [-0.3, 1.0], at: [0, 0.5], height: 'overhead', damage: 80, hitstun: 20, blockstun: 13 }),
   // String steps
+  // Air string steps: the nightstick swung up under them, then both fists brought down like a door.
+  airStep('j.FK BP', { name: 'Baton Swing', damage: 38, startup: 6, chain: { BK: 'j.BP BK' } }),
+  airSpike('j.BP BK', { name: 'Hammer Fist', damage: 45 }),
   normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], height: 'high', damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP', FK: 'FP FP FK' } }),
   // The string's grab: catches them still reeling from the pat down (never if they blocked it).
   move('FP FP FK', {
@@ -88,6 +91,9 @@ const moves = table(
   }),
   move('Key Ring', {
     name: 'Key Ring',
+    // BP as it lands: the chain yanks them in and up.
+    chain: { BP: 'Key Ring BP' },
+    cancel: [15, 22],
     kind: 'special',
     total: 32,
     boost: 'Key Ring+',
@@ -103,6 +109,7 @@ const moves = table(
     ],
   }),
   // Walks through one hit to get in.
+  followUp('Key Ring BP', { name: 'Yank', startup: 9, active: 3, recovery: 18, reach: [0.3, 1.9], at: [0, 1.5], damage: 22, hitstun: 0, blockstun: 12, launch: 0.13, pull: 0.8 }),
   move('Night Shift', {
     name: 'Night Shift',
     kind: 'special',
@@ -139,6 +146,30 @@ const moves = table(
     hover: [1, 22],
     landing: 8,
     hits: [strike({ frames: [12, 16], reach: [0.2, 2.5], at: [-1.9, 0.5], height: 'overhead', damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
+  }),
+  // Down + Special in the air: all of him, elbow first, through anything on the way (armoured).
+  move('Elbow Drop', {
+    name: 'Elbow Drop',
+    kind: 'special',
+    stance: 'air',
+    total: 36,
+    boost: 'Elbow Drop+',
+    armor: [1, 10],
+    hover: [1, 6],
+    dive: { frame: 7, vx: 0.03, vy: -0.16 },
+    landing: 14,
+    hits: [strike({ frames: [8, 34], reach: [-0.2, 0.8], at: [-0.2, 0.6], height: 'overhead', damage: 70, hitstun: 0, blockstun: 14, knockdown: true })],
+  }),
+  move('Elbow Drop+', {
+    name: 'Elbow Drop (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 36,
+    armor: [1, 14],
+    hover: [1, 6],
+    dive: { frame: 7, vx: 0.03, vy: -0.16 },
+    landing: 14,
+    hits: [strike({ frames: [8, 34], reach: [-0.25, 0.9], at: [-0.2, 0.7], height: 'overhead', damage: 60, hitstun: 0, blockstun: 16, knockdown: true, groundBounce: true })],
   }),
   throwMove(130),
   interactMove(),
@@ -206,8 +237,12 @@ export const HOLLIS: FighterData = {
     b: {},
   },
   specials: { n: 'Night Shift', f: 'Clocking In', b: 'Flashlight', d: 'Key Ring' },
-  airSpecials: { n: 'Searchlight' },
-  airStrings: [{ name: 'Lights Out Chop', path: ['j.FP', 'BP'], safe: false }],
+  airSpecials: { n: 'Searchlight', d: 'Elbow Drop' },
+  airStrings: [
+    { name: 'Lights Out Chop', path: ['j.FP', 'BP'], safe: false },
+    { name: 'Lockdown', path: ['j.FP', 'BP', 'BK'], safe: false },
+    { name: 'Beat Cop', path: ['j.FK', 'BP', 'BK'], safe: false },
+  ],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

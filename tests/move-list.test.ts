@@ -9,8 +9,10 @@ describe('move list', () => {
     it(`${f.name}: every special, string and finisher, with its input`, () => {
       const list = moveList(f.id);
       const section = (t: string) => list.find((s) => s.title.startsWith(t))!.rows;
-      expect(section('Specials').map((r) => r.name).sort()).toEqual(Object.values(f.specials).map((id) => f.moves[id].name).sort());
-      expect(section('Specials').every((r) => r.input.endsWith('SP'))).toBe(true);
+      // The specials, each followed by its follow-ups (a button as it plays).
+      const ground = Object.values(f.specials).flatMap((id) => [id, ...Object.values(f.moves[id].chain)] as string[]);
+      expect(section('Specials').map((r) => r.name).sort()).toEqual(ground.map((id) => f.moves[id].name).sort());
+      for (const r of section('Specials')) expect(r.input).toMatch(/^([←→↓] )?SP( › (FP|BP|FK|BK))?$/);
       expect(section('Strings').map((r) => r.name)).toEqual(f.strings.map((s) => s.name));
       for (const r of section('Strings')) expect(r.input).toMatch(/^(↓ |→ |← )?(FP|BP|FK|BK)( · (FP|BP|FK|BK))+$/);
       // The air specials and air strings.
@@ -32,7 +34,9 @@ describe('move list', () => {
       const combos = section('Combos');
       expect(combos.length).toBeGreaterThanOrEqual(1);
       combos.forEach((r, k) => {
-        expect(r.input).toMatch(/^(wait\u00a0)?[↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?( › (wait\u00a0)?[↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?)+$/);
+        // A step is a press (a direction and a button, a boost as SP SP) or a jump (↑, ↗ or ↖ alone).
+        const step = '(wait\u00a0)?([↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?|[↑↗↖])';
+        expect(r.input).toMatch(new RegExp(`^${step}( › ${step})+$`));
         expect(r.notes).toMatch(/^\d+ hits · \d+% · (no meter|\d bars?)$/);
         expect(r.watch).toBe(k);
       });

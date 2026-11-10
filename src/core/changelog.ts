@@ -14,6 +14,21 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.51.0',
+    date: '2026-11-10',
+    title: 'Combo School',
+    notes: [
+      'Combo School, on the title: every combo in the move list taught a part at a time. A coach over the fight shows the next press and how it works, a timing bar from the last hit with the moment to press marked, and how many frames early or late you were when it drops; practise at half or quarter speed, watch the part, and land it three times to pass.',
+      'More specials for everyone. Down + Special in the air drops straight onto them (Low Pressure, Splits Drop, Puppet Drop, Elbow Drop, Cut to Commercial, Belly Flop, Fall from Grace). Each fighter has a follow-up: press a button while the special plays (Thunderclap, And Down and Reach for the Sky, Boo!, Yank, And Now This, Fan the Flames, Slain in the Spirit). Gideon casts them out with Begone (back + Special).',
+      'Two more air strings each, three hits long and ending in a spike that bounces them off the floor for more. Air strings hang in the air now: a step that chains or hits a body in the air stops your fall, so they land in full off a jump cancel.',
+      'New combos in the move list: Into the air (a jump cancel into an air string), Jump in, Air with a bar, and one with a follow-up.',
+      "Balance for the air: once a combo is jump-cancelled its damage scaling bottoms out at 20% instead of 30%, and a follow-up counts as its special when a combo repeats it. Rox's jumping jab, kick and elbow hit lighter; Dale's boosted Heat Lightning hits harder and his boosted lasso lighter. The CPU has new matchup knowledge: Margaret goes low on Dale, Hollis spends his specials on Rox, and Mumbles mixes Margaret up.",
+      'Heavy hits and enders now send a shockwave through the picture from where they land, and an ender rushes the picture in toward the blow.',
+      'Every blow throws light: a glow at the contact and a pool on the floor, amber on a counter hit. The one hit jolts in the freeze, and counter hits flash warm.',
+      'Heavy attacks sweep a bright arc in the fighter\'s colour, and a body hitting the floor or the wall sends a ring across it and kicks up dust. Spending meter (a boost, Cut Away, Technical Difficulties) drops the studio into shadow round the fighter for a moment. Reduce Motion drops the effects that move the picture.',
+    ],
+  },
+  {
     version: '0.50.0',
     date: '2026-11-10',
     title: 'Even Odds',

@@ -216,6 +216,26 @@ export function normal(id: string, s: NormalSpec): MoveData {
   });
 }
 
+/**
+ * A special's follow-up: Special, then this button as the special plays (it
+ * comes out whether the special hit or not, as a string's next step does).
+ * One hit, kind special, and the end of the line: no cancel (a launcher has
+ * to be followed up by a link, never a jump cancel).
+ */
+export function followUp(id: string, s: Omit<NormalSpec, 'kind' | 'chain'>): MoveData {
+  return normal(id, { ...s, kind: 'special' });
+}
+
+/** An air string's ender: the body spiked into the floor, to bounce back up into a juggle (once a combo; else it knocks down). */
+export function airSpike(id: string, s: { name: string; damage: number; startup?: number; reach?: readonly [number, number]; at?: readonly [number, number] }): MoveData {
+  return normal(id, { name: s.name, kind: 'air', startup: s.startup ?? 6, active: 4, recovery: 9, reach: s.reach ?? [0, 1.0], at: s.at ?? [-0.3, 1.8], height: 'overhead', damage: s.damage, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true });
+}
+
+/** An air string's middle step: reaches high, to meet a body juggled above. */
+export function airStep(id: string, s: { name: string; damage: number; chain: Partial<Record<Attack, string>>; startup?: number; reach?: readonly [number, number] }): MoveData {
+  return normal(id, { name: s.name, kind: 'air', startup: s.startup ?? 5, active: 4, recovery: 7, reach: s.reach ?? [0.1, 0.95], at: [0.3, 1.7], height: 'overhead', damage: s.damage, hitstun: 18, blockstun: 12, chain: s.chain });
+}
+
 export function throwMove(damage: number): MoveData {
   return move('throw', {
     name: 'Throw',
@@ -249,6 +269,9 @@ export function table(...moves: MoveData[]): Record<string, MoveData> {
   }
   // A boost target is a boosted special: it relaunches a juggled body.
   for (const m of moves) if (m.boost && t[m.boost]) t[m.boost] = { ...t[m.boost], boosted: true };
+  // A special's chain is its follow-up: it counts as the (plain) special for repeat scaling.
+  // (Where two versions of a special share one, it's the first's.)
+  for (const m of moves) if (m.kind === 'special') for (const next of Object.values(m.chain)) if (t[next!] && !t[next!].followOf) t[next!] = { ...t[next!], followOf: m.id.endsWith('+') ? m.id.slice(0, -1) : m.id };
   return t;
 }
 

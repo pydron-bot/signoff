@@ -6,7 +6,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 /** Flambé: a patch of fire on the floor ahead of him that burns for a while. Blocked low. */
 function flambe(x: number, hits: number, wide: number) {
@@ -59,10 +59,13 @@ const moves = table(
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Spoon', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.85], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
-  normal('j.BP', { name: 'Jumping Skillet', kind: 'air', startup: 9, active: 5, recovery: 7, reach: [0.1, 1.1], at: [0.7, 1.3], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Clog', kind: 'air', startup: 7, active: 7, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 45, hitstun: 18, blockstun: 12 }),
+  normal('j.BP', { name: 'Jumping Skillet', kind: 'air', startup: 9, active: 5, recovery: 7, reach: [0.1, 1.1], at: [0.7, 1.3], height: 'overhead', damage: 60, hitstun: 18, blockstun: 12, chain: { BK: 'j.BP BK' } }),
+  normal('j.FK', { name: 'Jumping Clog', kind: 'air', startup: 7, active: 7, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 45, hitstun: 18, blockstun: 12, chain: { FP: 'j.FK FP' } }),
   normal('j.BK', { name: 'Jumping Cleaver', kind: 'air', startup: 10, active: 5, recovery: 8, reach: [0.1, 1.2], at: [0.3, 0.9], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
   // String steps
+  // Air string steps: a ladle hooked up under the chin, then the skillet brought down flat, and they bounce.
+  airStep('j.FK FP', { name: 'Ladle Hook', damage: 40, startup: 6, chain: { BK: 'j.BP BK' } }),
+  airSpike('j.BP BK', { name: 'Skillet Spike', damage: 48 }),
   normal('FP FP', { name: 'Season', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.5], height: 'high', damage: 35, hitstun: 17, blockstun: 14, chain: { BK: 'FP FP BK' } }),
   normal('FP FP BK', { name: 'Chef\'s Kiss', startup: 14, active: 3, recovery: 20, reach: [0.3, 1.75], at: [0.75, 1.5], damage: 70, hitstun: 0, blockstun: 17, push: 0.08, knockdown: true }),
   normal('FP BP', { name: 'Sear', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.5], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BK: 'BP BK' } }),
@@ -73,6 +76,9 @@ const moves = table(
   // Specials
   move('Flambé', {
     name: 'Flambé',
+    // BP while it burns: the skillet fanned through the flames, and up they go.
+    chain: { BP: 'Flambé BP' },
+    cancel: [17, 24],
     kind: 'special',
     total: 42,
     boost: 'Flambé+',
@@ -85,6 +91,7 @@ const moves = table(
     spawns: [{ frame: 16, projectile: flambe(1.9, 5, 0.75) }],
   }),
   // Tenderise: three blows with the mallet; blocked, the last one breaks the guard.
+  followUp('Flambé BP', { name: 'Fan the Flames', startup: 10, active: 3, recovery: 20, reach: [0.2, 1.6], at: [0.4, 1.6], damage: 50, hitstun: 0, blockstun: 14, launch: 0.15 }),
   move('Tenderise', {
     name: 'Tenderise',
     kind: 'special',
@@ -144,7 +151,7 @@ const moves = table(
     stance: 'crouch',
     hits: [
       strike({ frames: [12, 13], reach: [0.2, 2.0], at: [0, 0.35], height: 'low', damage: 45, hitstun: 20, blockstun: 12 }),
-      strike({ frames: [20, 22], reach: [0.2, 2.1], at: [0, 0.35], height: 'low', damage: 65, hitstun: 0, blockstun: 12, knockdown: true }),
+      strike({ frames: [20, 22], reach: [0.2, 2.1], at: [0, 0.35], height: 'low', damage: 72, hitstun: 0, blockstun: 12, knockdown: true }),
     ],
     hurt: [{ frames: [12, 30], box: box(0.2, 1.9, 0, 0.35) }],
   }),
@@ -170,6 +177,29 @@ const moves = table(
       { frame: 10, projectile: cleaver(0.11, -0.06, 42) },
       { frame: 14, projectile: cleaver(0.08, -0.09, 42) },
     ],
+  }),
+  // Down + Special in the air: the whole chef, belly first.
+  move('Belly Flop', {
+    name: 'Belly Flop',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    boost: 'Belly Flop+',
+    hover: [1, 6],
+    dive: { frame: 7, vx: 0.05, vy: -0.15 },
+    landing: 16,
+    hits: [strike({ frames: [8, 36], reach: [-0.4, 0.9], at: [-0.2, 0.7], height: 'overhead', damage: 75, hitstun: 0, blockstun: 14, knockdown: true })],
+  }),
+  move('Belly Flop+', {
+    name: 'Belly Flop (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    armor: [1, 10],
+    hover: [1, 6],
+    dive: { frame: 7, vx: 0.05, vy: -0.15 },
+    landing: 16,
+    hits: [strike({ frames: [8, 36], reach: [-0.45, 1.0], at: [-0.2, 0.8], height: 'overhead', damage: 65, hitstun: 0, blockstun: 16, knockdown: true, groundBounce: true })],
   }),
   throwMove(110),
   interactMove(),
@@ -246,8 +276,12 @@ export const GUS: FighterData = {
     b: { BP: 'b.BP' },
   },
   specials: { n: 'Tenderise', f: 'Flambé', b: 'Mise en Place', d: 'Chop Chop' },
-  airSpecials: { n: 'Cleaver Toss' },
-  airStrings: [{ name: 'Spoon and Skillet', path: ['j.FP', 'BP'], safe: false }],
+  airSpecials: { n: 'Cleaver Toss', d: 'Belly Flop' },
+  airStrings: [
+    { name: 'Spoon and Skillet', path: ['j.FP', 'BP'], safe: false },
+    { name: 'Spoon, Skillet, Spike', path: ['j.FP', 'BP', 'BK'], safe: false },
+    { name: 'Tasting Menu', path: ['j.FK', 'FP', 'BK'], safe: false },
+  ],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

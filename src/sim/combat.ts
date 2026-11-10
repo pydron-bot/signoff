@@ -36,6 +36,7 @@ import {
   METER_SCALE_MIN,
   METER_SCALE_STEP,
   SCALE_MIN,
+  CHASED_SCALE_MIN,
   SCALE_STEP,
   TD_CINEMATIC_FRAMES,
   THROWER_FRAMES,
@@ -186,11 +187,13 @@ function isCounter(f: FighterState): boolean {
 
 /**
  * Repeat scaling: the % of damage a move keeps for its earlier uses in this
- * combo (REPEAT_KEEP for each). A boosted special counts as its plain move.
- * A move's first connecting hit records the use.
+ * combo (REPEAT_KEEP for each). A boosted special counts as its plain move,
+ * and a follow-up as the special it follows. A move's first connecting hit
+ * records the use.
  */
-function repeatKeep(d: FighterState, moveId: string, fresh: boolean): number {
-  const id = moveId.endsWith('+') ? moveId.slice(0, -1) : moveId;
+function repeatKeep(d: FighterState, fighter: string, moveId: string, fresh: boolean): number {
+  // Stage props hit through here too: their ids aren't moves.
+  const id = fighterData(fighter).moves[moveId]?.followOf ?? (moveId.endsWith('+') ? moveId.slice(0, -1) : moveId);
   let uses = 0;
   for (let k = 0; k < d.comboMoves.length; k++) if (d.comboMoves[k] === id) uses++;
   if (fresh) d.comboMoves.push(id);
@@ -479,10 +482,12 @@ export function applyHit(
     return;
   }
 
-  const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
+  const scale = Math.max(d.chased ? CHASED_SCALE_MIN : SCALE_MIN, 100 - SCALE_STEP * d.combo);
+  // An air normal that hits a body in the air holds its attacker up, so an air string keeps meeting the body it juggles.
+  if (!projectile && wasAir && kind === 'air' && a.vy < 0) a.vy = 0;
   const relaunching = relaunch && wasAir;
-  const keep = repeatKeep(d, moveId, fresh);
+  const keep = repeatKeep(d, a.fighter, moveId, fresh);
   // Caught in a move's recovery (it whiffed or was blocked): a punish, worth more.
   const dm = d.mode === 'move' ? moveOf(d) : null;
   const punish = d.combo === 0 && dm !== null && dm.startup > 0 && d.moveFrame > dm.lastActive;

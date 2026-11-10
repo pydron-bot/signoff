@@ -5,7 +5,8 @@
  * one last shader puts it on screen as a tape would: sharp brightness with
  * the colour smeared sideways, a tracking tear and a colour split on big
  * hits, the glow, a highlight roll-off, the segment's grade, a vignette, a little
- * grain and the flash of an impact frame. On the title, the picture is a CRT
+ * grain and the flash of an impact frame; a heavy hit's shockwave and an
+ * ender's zoom blur, and the spotlight on a fighter spending meter. On the title, the picture is a CRT
  * in a dark room at 3:33 a.m. (the tube's bulge, its bezel, its glow on the
  * dark), and starting a match pushes in through the glass. The scan lines stay in CSS so they
  * cover the HUD too. About 9 draw calls, all full-screen and most of them
@@ -108,6 +109,9 @@ uniform float uSaturation;
 uniform float uContrast;
 uniform float uGrain;
 uniform float uCrt;
+uniform vec4 uShock;
+uniform float uZoom;
+uniform vec4 uFocus;
 varying vec2 vUv;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
@@ -135,7 +139,23 @@ void main() {
   float tear = uTear * ((hash(line * 0.37 + frame) - 0.5) * 0.012 + inBand * 0.035 * (hash(frame) - 0.3));
   uv.x += jitter + tear;
 
+  // A heavy blow's shockwave: a ring running out from the contact bends the picture as it passes.
+  float aspect = uTexel.y / uTexel.x;
+  vec2 fromHit = uv - uShock.xy;
+  if (uShock.w > 0.0) {
+    float dist = length(fromHit * vec2(aspect, 1.0));
+    float ring = dist - uShock.z;
+    float wave = ring * exp(-ring * ring * 900.0);
+    uv -= normalize(fromHit + 1e-6) * wave * uShock.w;
+  }
+
   vec3 c0 = texture2D(tScene, uv).rgb;
+  if (uZoom > 0.0) {
+    // An ender's zoom blur, toward the contact: the picture rushing in on it.
+    vec3 acc = c0;
+    for (int i = 1; i <= 4; i++) acc += texture2D(tScene, uv - fromHit * uZoom * float(i) * 0.022).rgb;
+    c0 = acc * 0.2;
+  }
   vec3 col = c0;
   if (uVhs > 0.0) {
     // Composite video: brightness keeps its detail, colour is carried on a narrow band and smears, lagging to the right.
@@ -170,6 +190,14 @@ void main() {
   if (uImpact > 0.0) {
     float k = smoothstep(0.12, 0.3, l);
     col = mix(col, vec3(1.0 - k) * vec3(1.0, 0.92, 0.95), uImpact);
+  }
+
+  // Spending meter: the set drops into shadow round the fighter, who stays lit, and the colour drains from the dark.
+  if (uFocus.w > 0.0) {
+    float k = smoothstep(uFocus.z, uFocus.z + 0.35, length((vUv - uFocus.xy) * vec2(aspect, 1.0)));
+    float lf = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(col, vec3(lf) * vec3(0.85, 0.9, 1.1), uFocus.w * k * 0.7);
+    col *= 1.0 - uFocus.w * (0.15 + 0.55 * k);
   }
 
   vec2 vig = vUv - 0.5;
@@ -216,6 +244,18 @@ export class Post {
   saturation = 1;
   /** The title's TV, 0 off to 1: the picture on a CRT in a dark room. */
   crt = 0;
+  /** A shockwave from a heavy hit: its centre (uv, 0 to 1), how far it has run (of the screen's height) and how hard it bends, 0 to 1 (src/render/impact.ts). */
+  shockX = 0.5;
+  shockY = 0.5;
+  shockR = 0;
+  shock = 0;
+  /** An ender's zoom blur toward the shock's centre, 0 to 1. */
+  zoom = 0;
+  /** The spotlight on a fighter spending meter: its centre (uv), radius (of the screen's height) and strength, 0 to 1. */
+  focusX = 0.5;
+  focusY = 0.5;
+  focusR = 0.2;
+  focus = 0;
   /** Grain flickers each frame; Reduce Motion keeps it still. */
   stillGrain = false;
   /** The segment's colour grade: the arena's, which the stage sets. */
@@ -269,6 +309,9 @@ export class Post {
         uContrast: { value: 1 },
         uGrain: { value: 0.02 },
         uCrt: { value: 0 },
+        uShock: { value: new THREE.Vector4() },
+        uZoom: { value: 0 },
+        uFocus: { value: new THREE.Vector4() },
       },
     });
   }
@@ -343,6 +386,9 @@ export class Post {
     u.uImpact.value = this.impact;
     u.uDim.value = this.dim;
     u.uCrt.value = this.crt;
+    (u.uShock.value as THREE.Vector4).set(this.shockX, this.shockY, this.shockR, this.shock * 0.8);
+    u.uZoom.value = this.zoom;
+    (u.uFocus.value as THREE.Vector4).set(this.focusX, this.focusY, this.focusR, this.focus);
     // The chain adds four levels together.
     u.uBloom.value = g.bloom / LEVELS;
     (u.uLift.value as THREE.Vector3).set(...g.lift);

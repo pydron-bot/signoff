@@ -6,45 +6,45 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 
 | Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dale Storm | 0 | frame-perfect | 5 | 29.1% | 4 | →BP › →BP BP › ↓BP › BK › Heat Lightning |
+| Dale Storm | 0 | frame-perfect | 7 | 30.0% | 1 | Low Pressure › ↓BP › →BP › →BP BP › BP › BP FK › BP FK FK |
 | Dale Storm | 0 | human | 4 | 25.1% | 26 | →BP › →BP BP › BK › Heat Lightning |
-| Dale Storm | 1 | frame-perfect | 9 | 39.5% | 1 | →BP › →BP BP › ↓BP › BK › Heat Lightning+ › BP › BP FK › BP FK FK › Heat Lightning |
-| Dale Storm | 1 | human | 7 | 38.0% | 7 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › Heat Lightning |
-| Dale Storm | 3 | frame-perfect | 14 | 46.6% | 1 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › BP FK › Heat Lightning+ › ↓BP › FP › FP FP › Heat Lightning+ › FK › Heat Lightning |
-| Dale Storm | 3 | human | 9 | 42.3% | 6 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › FP › FP BP › Heat Lightning+ › Isobar Lasso+ |
-| Rox Vega | 0 | frame-perfect | 17 | 31.1% | 2 | ↓BP › →FK › →FK BK › FK › FK FK › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
+| Dale Storm | 1 | frame-perfect | 9 | 41.4% | 1 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › ↓BP › BP › BP FK › Heat Lightning |
+| Dale Storm | 1 | human | 7 | 38.8% | 7 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › Heat Lightning |
+| Dale Storm | 3 | frame-perfect | 12 | 47.1% | 1 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › ↓BP › BP › BP FK › Heat Lightning+ › BK › Heat Lightning+ › ↓BK |
+| Dale Storm | 3 | human | 10 | 43.9% | 5 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › Heat Lightning+ › BP › BP FK › Heat Lightning+ |
+| Rox Vega | 0 | frame-perfect | 17 | 33.0% | 1 | j.BP › ↓BP › →FK › →FK BK › →BP › ↓FK › Leg Warmer Lariat ×2 › FK › Count of Eight ×8 |
 | Rox Vega | 0 | human | 17 | 30.0% | 10 | ↓BP › FP › FK › FK FK › FK FK BP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
-| Rox Vega | 1 | frame-perfect | 5 | 31.6% | 2 | ↓BP › Star Jump+ › j.FP › j.FK › Aerobic Dive |
-| Rox Vega | 1 | human | 11 | 37.2% | 6 | ↓BP › Star Jump+ › →FK › →FK BK › FK › Leg Warmer Lariat ×3 › BP ×2 › BP BP |
-| Rox Vega | 3 | frame-perfect | 14 | 51.1% | 2 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › →FK › →FK BK › FP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight+ › →BP |
-| Rox Vega | 3 | human | 9 | 45.8% | 3 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › j.FP › j.FK › Aerobic Dive+ › j.BK › Aerobic Dive |
-| Hollis Bey | 0 | frame-perfect | 4 | 24.4% | 3 | ↓BP › BP › BP FP › BP FP BK |
-| Hollis Bey | 0 | human | 3 | 23.4% | 26 | ↓BP › BK › Night Shift |
-| Hollis Bey | 1 | frame-perfect | 5 | 38.1% | 1 | ↓BP › BK › Key Ring+ › →BP › Night Shift |
-| Hollis Bey | 1 | human | 5 | 37.4% | 9 | ↓BP › BK › Key Ring+ › BP › Night Shift |
-| Hollis Bey | 3 | frame-perfect | 9 | 50.9% | 3 | ↓BP › BK › Night Shift+ › BP › BP FP › Flashlight+ › FK › Key Ring+ › ↓BK |
-| Hollis Bey | 3 | human | 7 | 47.1% | 7 | ↓BP › BK › Key Ring+ › BP › BP FP › Night Shift+ › Flashlight+ |
-| Mister Mumbles | 0 | frame-perfect | 5 | 29.4% | 1 | ↓BP › ←BP › BP › BP FK › Hand Puppet |
-| Mister Mumbles | 0 | human | 6 | 26.0% | 8 | FK › FK FK › FK FK FK › BP › FK › Hand Puppet |
-| Mister Mumbles | 1 | frame-perfect | 7 | 40.5% | 1 | ↓BP › Knock-Knock+ › BP › FK › FK FK › FK FK FK › FP |
-| Mister Mumbles | 1 | human | 4 | 33.7% | 7 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet |
-| Mister Mumbles | 3 | frame-perfect | 11 | 50.0% | 1 | ↓BP › Knock-Knock+ › FK › FK FK › FK FK FK › FP › Hand Puppet+ › ←BP › Hand Puppet+ › BP › BP FK |
-| Mister Mumbles | 3 | human | 7 | 49.6% | 7 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet+ › BP › Hand Puppet+ › j.BK |
-| Margaret Okafor | 0 | frame-perfect | 10 | 30.5% | 4 | →BP › Breaking › BP › BP BP › BP BP BK › BP › BP BP › BP BP BK › →FK › Breaking |
-| Margaret Okafor | 0 | human | 7 | 30.3% | 12 | →BP › Breaking › BP › BP BP › BP BP BK › BK › Lead Story |
+| Rox Vega | 1 | frame-perfect | 14 | 38.7% | 3 | ↓BP › Star Jump+ › →FK › →FK BK › FK › FK FK › Leg Warmer Lariat ×2 › BK ×2 › Count of Eight ×4 |
+| Rox Vega | 1 | human | 10 | 36.2% | 7 | ↓BP › Star Jump+ › →FK › →FK BK › FK › Leg Warmer Lariat ×3 › BK ×2 |
+| Rox Vega | 3 | frame-perfect | 13 | 50.7% | 2 | ↓BP › Star Jump+ › j.BK › Splits Drop+ › →FK › →FK BK › →BP › Leg Warmer Lariat ×2 › BK ×2 › Count of Eight+ › Aerobic Dive |
+| Rox Vega | 3 | human | 13 | 49.7% | 3 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › FK › Leg Warmer Lariat ×2 › BK ×2 › Count of Eight+ › FP › FP FP › FP FP FK |
+| Hollis Bey | 0 | frame-perfect | 5 | 27.0% | 2 | ↓BP ×2 › FK › FK FK › Night Shift |
+| Hollis Bey | 0 | human | 5 | 26.9% | 7 | ↓BP ×2 › BP › BP FP › Night Shift |
+| Hollis Bey | 1 | frame-perfect | 6 | 40.1% | 3 | ↓BP › BK › Night Shift+ › BP › BP FP › BP FP BK |
+| Hollis Bey | 1 | human | 7 | 41.7% | 9 | ↓BP › BK › Night Shift+ › j.BP › j.BP BK › BP › Key Ring |
+| Hollis Bey | 3 | frame-perfect | 9 | 51.7% | 1 | ↓BP › BK › Night Shift+ › BP › BP FP › Flashlight+ › j.BK › Elbow Drop+ › ↓BK |
+| Hollis Bey | 3 | human | 9 | 48.5% | 5 | ↓BP › BK › Key Ring+ › BP › BP FP › Night Shift+ › BK › Key Ring+ › FK |
+| Mister Mumbles | 0 | frame-perfect | 13 | 31.0% | 2 | j.BP › FK › FK FK › FK FK FK › j.FP › j.BP › j.BP FK › ↓BP ×2 › FP › FP FP › FP FP FP › Hand Puppet |
+| Mister Mumbles | 0 | human | 7 | 27.7% | 4 | j.BP › j.BP FK › BP › FP › FP FP › FP FP FP › FP FP FP BK |
+| Mister Mumbles | 1 | frame-perfect | 7 | 40.6% | 3 | ↓BP › Knock-Knock+ › j.BP › j.BP FK › BP › BP FK › Hand Puppet |
+| Mister Mumbles | 1 | human | 7 | 39.0% | 4 | ↓BP › Knock-Knock+ › j.FK › j.BK › Puppet Drop › FP › FP FP |
+| Mister Mumbles | 3 | frame-perfect | 7 | 50.0% | 3 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet+ › j.FK › j.BK › Puppet Drop+ |
+| Mister Mumbles | 3 | human | 7 | 49.1% | 6 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet+ › j.BP › j.BP FK › Cut the Strings+ |
+| Margaret Okafor | 0 | frame-perfect | 11 | 31.5% | 4 | j.BK › Cut to Commercial › ↓BP › BP › BP BP › BP BP BK › ↓BP › FP › FP FP › Breaking › Breaking BK |
+| Margaret Okafor | 0 | human | 10 | 31.1% | 8 | j.BK › Cut to Commercial › Breaking › BP › BP BP › BP BP BK › BP › BP BP › BP BP BK › BK |
 | Margaret Okafor | 1 | frame-perfect | 9 | 39.4% | 14 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FP › FP FP › Breaking |
 | Margaret Okafor | 1 | human | 9 | 39.4% | 14 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FP › FP FP › Breaking |
-| Margaret Okafor | 3 | frame-perfect | 11 | 47.5% | 1 | ↓BP › BK › Lead Story+ › →BP › Breaking+ › BP › BP BP › BP BP BK › Breaking+ › FP › FP FK |
-| Margaret Okafor | 3 | human | 12 | 45.5% | 13 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FP › FP FP › Breaking+ › BK › Breaking+ › FK |
-| Chef Gus Lamarre | 0 | frame-perfect | 9 | 27.3% | 1 | Cleaver Toss › ↓BP › BK › Flambé ×2 › FP › FP FP › Flambé › Chop Chop |
-| Chef Gus Lamarre | 0 | human | 7 | 23.9% | 7 | ↓BP › BK › Flambé ×2 › ↓FP › Flambé › BP |
-| Chef Gus Lamarre | 1 | frame-perfect | 7 | 35.2% | 21 | ↓BP › BK › Chop Chop+ › →BP › Tenderise ×3 |
-| Chef Gus Lamarre | 1 | human | 7 | 34.5% | 23 | ↓BP › BK › Chop Chop+ › BP › Tenderise ×3 |
-| Chef Gus Lamarre | 3 | frame-perfect | 5 | 36.0% | 22 | ↓BP › BK › Chop Chop+ › →BP › Tenderise+ |
-| Chef Gus Lamarre | 3 | human | 9 | 41.4% | 16 | ↓BP › BK › Chop Chop+ › FP › FP BP › Tenderise+ › BP › Chop Chop+ › BK |
-| Rev. Gideon Price | 0 | frame-perfect | 7 | 28.2% | 7 | BP › BP BP › BP BP BK › ↓BP › BK › Collection Plate ×2 |
-| Rev. Gideon Price | 0 | human | 7 | 29.1% | 10 | BP › BP BP › BP BP BK › BK › Collection Plate ×2 › Fire and Brimstone (blessed) |
-| Rev. Gideon Price | 1 | frame-perfect | 8 | 39.2% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › ↓BP › ↓FK |
+| Margaret Okafor | 3 | frame-perfect | 13 | 46.1% | 2 | ↓BP › Lead Story+ › BP › BP BP › BP BP BK › ↓BP › FK › Breaking+ › BK › Breaking+ › FP › FP FP › Breaking |
+| Margaret Okafor | 3 | human | 11 | 45.5% | 6 | ↓BP › Lead Story+ › BP › BP BP › BP BP BK › FK › Breaking+ › BK › Breaking+ › ↓BP › j.FK |
+| Chef Gus Lamarre | 0 | frame-perfect | 7 | 27.1% | 2 | j.BP › Cleaver Toss › ↓BP › BK › Flambé › FK › Chop Chop |
+| Chef Gus Lamarre | 0 | human | 7 | 26.6% | 6 | j.BP › j.BP BK › ↓BP › BK › Tenderise ×3 |
+| Chef Gus Lamarre | 1 | frame-perfect | 7 | 35.9% | 1 | ↓BP › BK › Chop Chop+ › j.FK › j.FK FP › j.BP BK › Belly Flop |
+| Chef Gus Lamarre | 1 | human | 7 | 35.0% | 23 | ↓BP › BK › Chop Chop+ › BP › Tenderise ×3 |
+| Chef Gus Lamarre | 3 | frame-perfect | 9 | 44.6% | 1 | ↓BP › BK › Chop Chop+ › j.FK › j.FK FP › Belly Flop+ › ←BP › Tenderise+ › ↓BK |
+| Chef Gus Lamarre | 3 | human | 9 | 41.9% | 16 | ↓BP › BK › Chop Chop+ › FP › FP BP › Tenderise+ › BP › Chop Chop+ › BK |
+| Rev. Gideon Price | 0 | frame-perfect | 6 | 29.6% | 19 | ↓BP › BP › BP BP › BP BP BK › BK › Begone |
+| Rev. Gideon Price | 0 | human | 6 | 29.6% | 19 | ↓BP › BP › BP BP › BP BP BK › BK › Begone |
+| Rev. Gideon Price | 1 | frame-perfect | 8 | 39.5% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › Laying On of Hands › Laying On of Hands BK |
 | Rev. Gideon Price | 1 | human | 6 | 35.4% | 7 | ↓BP › Fire and Brimstone+ › BP › BP BP › BP BP BK › FK |
-| Rev. Gideon Price | 3 | frame-perfect | 11 | 46.8% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › FK › Laying On of Hands+ › FP › Laying On of Hands+ › BK |
-| Rev. Gideon Price | 3 | human | 6 | 43.9% | 8 | ↓BP › Fire and Brimstone+ › BP › BP BP › Laying On of Hands+ › Rapture+ |
+| Rev. Gideon Price | 3 | frame-perfect | 11 | 47.6% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › FK › Laying On of Hands+ › FP › Laying On of Hands+ › Begone |
+| Rev. Gideon Price | 3 | human | 6 | 45.7% | 8 | ↓BP › Fire and Brimstone+ › Rapture+ › BP › BP BP › Laying On of Hands+ |

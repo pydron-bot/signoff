@@ -52,6 +52,8 @@ export const COUNTER_READ_STOP = 12;
 /** Each further hit in a combo does 10% less, down to 30%. */
 export const SCALE_STEP = 10;
 export const SCALE_MIN = 30;
+/** Once a combo has been jump-cancelled, its scaling bottoms out lower: the air adds style, not damage. */
+export const CHASED_SCALE_MIN = 20;
 /** Each earlier use of the same move in a combo keeps only this % of its damage again, so repeating a move soon isn't worth it. */
 export const REPEAT_KEEP = 60;
 /** The attacker's meter gain falls this % per hit of a combo, down to METER_SCALE_MIN %, so a combo can't pay for its own relaunches. */

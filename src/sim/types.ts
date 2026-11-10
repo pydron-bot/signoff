@@ -129,6 +129,8 @@ export interface MoveData {
   readonly boost?: string;
   /** Set on boosted versions: hitting a juggled body relaunches it. */
   readonly boosted?: boolean;
+  /** Set on a special's follow-up: the special it follows (it counts as that special for repeat scaling). */
+  readonly followOf?: string;
   readonly throwData?: ThrowData;
   /** On this frame the fighter reappears behind the opponent, or well back from them. */
   readonly teleport?: { readonly frame: number; readonly to: 'behind' | 'away' };

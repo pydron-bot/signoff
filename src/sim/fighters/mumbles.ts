@@ -7,7 +7,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const decoy = (hits: number, life: number) =>
   projectile({ at: [0.9, 0], speed: [0, 0], size: [-0.25, 0.25, 0, 1.2], life, hits, decoy: true, effect: { damage: 0, hitstun: 1, blockstun: 1 } });
@@ -37,10 +37,13 @@ const moves = table(
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Bonk', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.85], at: [0.3, 0.8], height: 'overhead', damage: 53, hitstun: 16, blockstun: 11, chain: { BP: 'j.BP' } }),
-  normal('j.BP', { name: 'Jumping Clap', kind: 'air', startup: 5, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.4, 0.9], height: 'overhead', damage: 73, hitstun: 17, blockstun: 11 }),
-  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 4, active: 8, recovery: 5, reach: [0.1, 0.95], at: [0, 0.5], height: 'overhead', damage: 62, hitstun: 16, blockstun: 11, chain: { BK: 'j.BK' } }),
+  normal('j.BP', { name: 'Jumping Clap', kind: 'air', startup: 5, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.4, 0.9], height: 'overhead', damage: 73, hitstun: 17, blockstun: 11, chain: { FK: 'j.BP FK' } }),
+  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 4, active: 8, recovery: 5, reach: [0.1, 0.95], at: [0, 0.5], height: 'overhead', damage: 62, hitstun: 16, blockstun: 11, chain: { BK: 'j.BK', FP: 'j.FK FP' } }),
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 6, active: 6, recovery: 7, reach: [-0.5, 1.0], at: [0, 0.45], height: 'overhead', damage: 87, hitstun: 18, blockstun: 12 }),
   // String steps
+  // Air string steps: his jaw clacking at them, then he sits down on them, hard, and they bounce.
+  airStep('j.FK FP', { name: 'Clackety-Clack', damage: 32, startup: 4, chain: { FK: 'j.BP FK' } }),
+  airSpike('j.BP FK', { name: 'Pratfall', damage: 33, startup: 5 }),
   normal('FP FP', { name: 'Ha-Ha', startup: 7, active: 2, recovery: 10, reach: [0.15, 1.0], at: [0.75, 1.15], damage: 39, hitstun: 15, blockstun: 11, chain: { FP: 'FP FP FP' } }),
   normal('FP FP FP', { name: 'Ha-Ha-Ha', startup: 9, active: 2, recovery: 12, reach: [0.15, 1.1], at: [0.75, 1.2], damage: 48, hitstun: 16, blockstun: 12, chain: { BK: 'FP FP FP BK' } }),
   normal('FP FP FP BK', { name: 'Punchline', startup: 12, active: 3, recovery: 22, reach: [-0.5, 1.25], at: [0.4, 1.0], damage: 98, hitstun: 0, blockstun: 13, push: 0.07, knockdown: true }),
@@ -68,6 +71,9 @@ const moves = table(
   }),
   move('Strings Attached', {
     name: 'Strings Attached',
+    // Back on stage behind them: FP for a scare.
+    chain: { FP: 'Strings Attached FP' },
+    cancel: [21, 26],
     kind: 'special',
     total: 27,
     boost: 'Strings Attached+',
@@ -84,6 +90,7 @@ const moves = table(
     teleport: { frame: 14, to: 'behind' },
     hits: [strike({ frames: [24, 26], reach: [0.15, 1.0], at: [0.6, 1.3], damage: 50, hitstun: 0, blockstun: 12, knockdown: true })],
   }),
+  followUp('Strings Attached FP', { name: 'Boo!', startup: 6, active: 3, recovery: 14, reach: [0.15, 1.0], at: [0.6, 1.3], damage: 40, hitstun: 20, blockstun: 12 }),
   move('Exit Stage Left', {
     name: 'Exit Stage Left',
     kind: 'special',
@@ -133,6 +140,28 @@ const moves = table(
     dive: { frame: 16, vx: 0, vy: -0.12 },
     landing: 10,
     hits: [strike({ frames: [17, 32], reach: [-0.3, 0.6], at: [-0.1, 0.5], height: 'overhead', damage: 60, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
+  }),
+  // Down + Special in the air: the strings let go and he drops on them like dead weight; he's up first.
+  move('Puppet Drop', {
+    name: 'Puppet Drop',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    boost: 'Puppet Drop+',
+    hover: [1, 3],
+    dive: { frame: 4, vx: 0.03, vy: -0.16 },
+    landing: 8,
+    hits: [strike({ frames: [5, 30], reach: [-0.3, 0.6], at: [-0.1, 0.5], height: 'overhead', damage: 35, hitstun: 17, blockstun: 12 })],
+  }),
+  move('Puppet Drop+', {
+    name: 'Puppet Drop (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 32,
+    hover: [1, 3],
+    dive: { frame: 4, vx: 0.03, vy: -0.16 },
+    landing: 8,
+    hits: [strike({ frames: [5, 30], reach: [-0.35, 0.7], at: [-0.1, 0.55], height: 'overhead', damage: 30, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
   }),
   throwMove(85),
   interactMove(),
@@ -203,10 +232,12 @@ export const MUMBLES: FighterData = {
     b: { BP: 'b.BP', FP: 'b.FP' },
   },
   specials: { n: 'Hand Puppet', f: 'Strings Attached', b: 'Exit Stage Left', d: 'Knock-Knock' },
-  airSpecials: { n: 'Cut the Strings' },
+  airSpecials: { n: 'Cut the Strings', d: 'Puppet Drop' },
   airStrings: [
     { name: 'Pat-a-Cake', path: ['j.FP', 'BP'], safe: false },
     { name: 'Hopscotch', path: ['j.FK', 'BK'], safe: false },
+    { name: 'Pratfall', path: ['j.FP', 'BP', 'FK'], safe: false },
+    { name: 'Encore', path: ['j.FK', 'FP', 'FK'], safe: false },
   ],
   throwMove: 'throw',
   superMove: 'td',

@@ -152,9 +152,32 @@ meter. Every number below is a starting value to tune.
   cancels into a special. A **jump cancel**: a launcher (or bounce) that
   hits can be cancelled into a hop (75% of a jump) with Up, which meets the
   body on the way up, so a juggle can go into the air. Once a combo, and it
-  counts as two more hits for damage scaling: the air adds style, not
-  damage. The combo search (`npm run combos`) tries jump cancels and air
-  attacks too, so the damage ceilings cover them.
+  counts as two more hits for damage scaling, and from then on the
+  combo's scaling bottoms out at 20% instead of 30% (0.51.0): the air adds
+  style, not damage. The combo search (`npm run combos`) tries jump
+  cancels and air attacks too, so the damage ceilings cover them (since
+  0.51.0 for real: before, the search took a jump cancel's extra scaling
+  for a dropped combo and never kept one).
+- **The specials pass (0.51.0).** Every fighter has a second air special,
+  on Down + Special in the air (a drop straight onto them: Dale's Low
+  Pressure, Rox's Splits Drop, Mumbles' Puppet Drop, Hollis's armoured
+  Elbow Drop, Margaret's Cut to Commercial, Gus's Belly Flop, Gideon's
+  Fall from Grace), each with a boosted version that ground-bounces; a
+  **follow-up special**: a button pressed while a special plays brings out
+  its follow-up, hit or not, like a string's next step, and ends there (no
+  cancel: a launching follow-up is followed up by a link) (Dale's lasso into
+  Thunderclap, Rox's Star Jump into a low or a mid, Mumbles' Strings
+  Attached into Boo!, Hollis's Key Ring into Yank, Margaret's Breaking
+  into And Now This, Gus's Flambé into Fan the Flames, Gideon's Laying On
+  of Hands into Slain in the Spirit); and Gideon has a fourth ground
+  special, Begone (back + Special, a wall bounce). Each fighter has two
+  more **air strings**, three hits long, whose middle step reaches high (to
+  meet a body juggled above) and whose last is a **spike**: it slams them
+  into the floor and they bounce back up into a juggle (the combo's one
+  ground bounce). **The air float:** an air normal that chains, or that hits
+  a body in the air, stops its attacker falling, so an air string hangs in
+  the air with the body it juggles; a test lands every spiked air string in
+  full off a jump cancel, for every fighter.
 - **Input display.** Recent inputs scroll down the side of the screen, newest
   on top with the frames each was held (Settings: off, in Training and combo
   showcases, or always; versus and replays show both players).
@@ -175,6 +198,12 @@ meter. Every number below is a starting value to tune.
 - **Combo guides.** The move list shows each fighter's combos (no meter,
   one bar, full meter), found by searching the simulation for routes a
   person can land, and WATCH plays one on a loop, slowed down if you like.
+  Since 0.51.0 each fighter also has *Into the air* (a jump cancel off the
+  launcher into an air string), *Jump in* (an air string from a jump, into
+  the bounce and a ground combo), *Air, one bar* and *Follow-up* (a
+  special's follow-up in the middle of it); they come after the others, so
+  the CPU's routes, which take the first guide for each opener, are as
+  they were.
 - Combos aim at the length of a modern Mortal Kombat combo, 10 or more hits
   and about 30% without meter, 35 to 40% with a bar, without assists:
   - **Juggles wind down on their own.** No hard limit: each juggle hit pops
@@ -196,8 +225,8 @@ meter. Every number below is a starting value to tune.
   - **Repeats scale harder** (as in MK1, where a move used again in a
     combo takes more scaling): each earlier use of the same move in the
     combo keeps only 60% of its damage again (60%, 36%, 22%...), on top of
-    the usual scaling. A boosted special counts as its plain move. A
-    multi-hit move counts once.
+    the usual scaling. A boosted special counts as its plain move, and a
+    follow-up as the special it follows. A multi-hit move counts once.
   - **Meter scaling.** The attacker earns 15% less Signal for each hit of
     a combo (down to 10%), so a combo can't pay for its own relaunches.
     The defender's gain isn't scaled, which keeps Cut Away in reach.
@@ -222,8 +251,10 @@ meter. Every number below is a starting value to tune.
   combos with his Hand Puppet; Margaret has the best all-round normals
   (fast, long enough, safe), a step-in kick, and a stagger (Breaking) that
   leaves time for a normal after it.
-- Specials: 4 to 6 per fighter, entered as direction + Special (or classic
-  motions on keyboard and gamepad, see Controls).
+- Specials: 6 to 8 per fighter (on the ground, in the air and as
+  follow-ups), entered as direction + Special (or classic motions on
+  keyboard and gamepad, see Controls), a follow-up as a button while its
+  special plays.
 
 ### Signal meter
 
@@ -295,6 +326,21 @@ screens.
   `signoff.lessons` once cleared. Every lesson carries the presses that
   clear it, and a test plays them for every fighter, so a lesson that
   can't be cleared fails the build.
+- **Combo School (0.51.0).** COMBO SCHOOL on the title teaches every combo
+  guide a part at a time (`src/game/comboSchool.ts`): a course per guide,
+  easiest first (fewest steps, no meter, the air last), each cut into
+  parts (the first three moves, then three more, to the whole combo), and
+  a part passes after three clean landings. Over the fight a coach
+  (`src/ui/schoolPanel.ts`) shows the next press and how it's done (a
+  string, a link, a cancel, a follow-up, a jump cancel, an air string, a
+  boost, a wait...) with a tip worked out from the moves, a timing bar from
+  the last hit with the guide's moment marked and your press marked as you
+  make it, how the last attempt dropped (by how many frames early or late),
+  and the landings left. The pause menu watches the part, slows the
+  practice to half or a quarter speed, and goes on to the next part or
+  course. The last part is the whole combo, so passing it clears its trial
+  too. Passed parts are kept in `signoff.school`. Built from the guides
+  when it opens, so it follows the moves.
 
 ### The CPU (0.48.0)
 
@@ -328,7 +374,9 @@ searched to win that matchup, so the winner's play is never made worse to
 even things up (Gus against Rox mixes up more and throws less; Gideon
 presses Hollis instead of waiting; Rox stays out of Mumbles' reach and
 uses her specials; Mumbles strings Margaret rather than spending
-specials into her counter; Rox goes low on Margaret). On defence it
+specials into her counter, and mixes her up (0.51.0); Rox goes low on
+Margaret; since 0.51.0 Margaret goes low on Dale and Hollis spends his
+specials on Rox). On defence it
 learns what the opponent does to its getup and ducks a habitual throw
 (throws are highs), keeps its guard a moment after a blockstun when the
 attacker can carry on, and guards a projectile it sees coming from
@@ -475,6 +523,16 @@ more it reacts to a big one than a small one.
   outline, so they stand out from busy sets; a soft contact shadow that
   falls away from the key light and shrinks as they leave the floor; and
   their reflections in the floor (and in Burn's mirrors).
+- **The impact pass** (`docs/VISUALS.md`): heavy hits and enders send a
+  shockwave out from the contact that bends the picture (an ender adds a
+  zoom blur toward it); every blow throws light, a glow at the contact and
+  a pool on the floor (amber on a counter); the defender jolts side to side
+  in the freeze; heavy strikes draw a swing arc in the fighter's colour over
+  their hitbox; a knockdown, ground bounce or wall splat sends a ring
+  across the floor (or up the wall) and kicks up dust; and spending meter (a
+  boost, Cut Away, Technical Difficulties) drops the set into shadow round
+  the fighter. All of it is pooled, costs nothing at rest, and Reduce Motion
+  drops the parts that move the picture.
 - **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
   Skip) trail a cyan and a magenta afterimage a few frames behind, like a
   tape's colour lagging; an ender or a KO lands on two frames of negative.
@@ -573,6 +631,8 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
 | Block | Large button under the right thumb | L | RB |
 | Special (direction + Special) | Button above the diamond | O | RT |
 | Boosted special | Double-tap Special, or Special then tap the meter (1 bar); in a combo both can come before the special starts | O O | RT RT |
+| Follow-up special | The follow-up's button while its special plays (e.g. → Special, then BP) | O, then the button | RT, then the button |
+| Air special on Down | Down + Special while jumping (other directions give the first air special) | S + O in the air | Down + RT in the air |
 | Throw | Small button beside Block | U + J | LB |
 | Interact with the stage | Button that appears only near an object | ; | LT |
 | Tape Skip / Cut Away | Tap the meter (Cut Away when being hit) | Space | Y + B |

@@ -37,12 +37,19 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
   gideon: {
     hollis: { ...EVEN, string: 1.6, throw: 1.6, approach: 1.6, retreat: 0.6, wait: 0.6 },
   },
+  // 0.51.0: the new moves moved three matchups past 70:30.
+  margaret: {
+    dale: { ...EVEN, low: 1.6 },
+  },
+  hollis: {
+    rox: { ...EVEN, special: 2.5 },
+  },
   rox: {
     mumbles: { ...EVEN, string: 2.5, throw: 0.6, special: 2.5, approach: 0.6, guard: 0.6 },
     margaret: { ...EVEN, low: 1.6 },
   },
   mumbles: {
-    margaret: { ...EVEN, string: 1.6, special: 0.6 },
+    margaret: { ...EVEN, string: 1.6, special: 0.6, mix: 1.6 },
   },
 };
 

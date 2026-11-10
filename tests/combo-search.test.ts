@@ -7,7 +7,7 @@
 // the move list's combo guides instead (src/game/comboRoutes.ts).
 import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, GUIDE_HEALTH, guideStart, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
+import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, GUIDE_HEALTH, guideStart, isJump, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
 import { BAR, FIGHTERS, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
 
 const RUN = process.env.COMBOS === '1';
@@ -22,10 +22,11 @@ const BUTTONS = ['FP', 'BP', 'FK', 'BK'] as const;
 /** Presses relative to the moment chosen: [frames later, press] (see pressBits). */
 type Press = [number, string][];
 const DELAYS = [0, 2, 4, 6, 8, 10, 12, 14, 17, 20, 24, 28, 33, 40];
-const BEAM = 12;
+/** Wider for the ceilings (every route), narrower for the guides (forgiving ones, which are plenty). */
+const BEAM = RUN ? 24 : 20;
 const DEPTH = 30;
 
-function actions(id: string, meter: boolean): Press[] {
+function actions(id: string, meter: boolean, air = RUN): Press[] {
   const f = FIGHTERS[id];
   const out: Press[] = [];
   for (const b of BUTTONS) {
@@ -38,13 +39,15 @@ function actions(id: string, meter: boolean): Press[] {
     out.push([[0, sp]]);
     if (meter && f.moves[mv as string]?.boost) out.push([[0, sp], [3, 'SP']]);
   }
-  // The ceilings also cover the air: a jump cancel (or a jump) and an air normal or the air special on the way.
-  // Not for the guides, which stay on the ground.
-  if (RUN) {
+  // The ceilings also cover the air: a jump cancel (or a jump) and an air normal or an air special on the way.
+  // Only the air guides take to the air; the others stay on the ground.
+  if (air) {
     for (const k of [6, 10, 14]) {
-      for (const b of BUTTONS) out.push([[0, 'u f'], [k, b]]);
-      out.push([[0, 'u f'], [k, 'SP']]);
-      if (meter) out.push([[0, 'u f'], [k, 'SP'], [k + 3, 'SP']]);
+      for (const up of RUN ? ['u f'] : ['u', 'u f']) {
+        for (const b of BUTTONS) out.push([[0, up], [k, b]]);
+        out.push([[0, up], [k, 'SP']], [[0, up], [k, 'd SP']]);
+        if (meter) out.push([[0, up], [k, 'SP'], [k + 3, 'SP']]);
+      }
     }
   }
   return out;
@@ -73,7 +76,8 @@ function expand(n: Node, press: Press, delay: number): Node | null {
     step(m, p ? pressBits(p, a.facing) : 0, 0, ev);
     for (const e of ev) {
       if (e.type !== 'hit' || e.attacker !== 0) continue;
-      if (e.combo !== n.combo + 1) return null;
+      // The same combo while the count rises (a jump cancel adds to it, for scaling); a new one starts again at 1.
+      if (e.combo <= n.combo) return null;
       if (t >= delay) return { m, dmg: n.dmg + e.damage, moves: [...n.moves, e.move], inputs, t: n.t + t + 1, combo: e.combo };
     }
     if (t > delay + 4 && n.combo > 0 && m.fighters[1].combo === 0) return null;
@@ -88,6 +92,9 @@ function start(id: string, bars: number): MatchState {
   return m;
 }
 
+/** A neutral jump point blank, an air normal on the way down: the jump-in (the ceilings open with it too). */
+const JUMP_INS: Press[] = BUTTONS.flatMap((b) => [12, 16, 20, 24, 28].map((k): Press => [[0, 'u'], [k, b]]));
+
 /** For the human-safe search: every press must also work this many frames early and late. */
 const SLACK = 3;
 
@@ -95,13 +102,18 @@ const SLACK = 3;
  * The best route. With `safe`, only presses a person can make reliably: the
  * same hit must follow when the press comes SLACK frames early or late.
  */
-function best(id: string, bars: number, safe = false, pool: Node[] = [], openers?: readonly string[]): Node {
+function best(id: string, bars: number, safe = false, pool: Node[] = [], openers?: readonly (string | Press)[], air = RUN, prefer?: (n: Node) => boolean): Node {
   let frontier: Node[] = [{ m: start(id, bars), dmg: 0, moves: [], inputs: [], t: 0, combo: 0 }];
   let top = frontier[0];
   for (let d = 0; d < DEPTH && frontier.length; d++) {
     const kids = new Map<string, Node>();
     for (const n of frontier) {
-      const acts = d === 0 && openers ? openers.map((p): Press => [[0, p]]) : actions(id, n.m.fighters[0].meter >= BAR && bars > 0);
+      const acts =
+        d === 0 && openers
+          ? openers.map((p): Press => (typeof p === 'string' ? [[0, p]] : p))
+          : d === 0 && RUN
+            ? [...actions(id, bars > 0, air), ...JUMP_INS]
+            : actions(id, n.m.fighters[0].meter >= BAR && bars > 0, air);
       for (const press of acts) {
         for (const delay of d === 0 ? [0] : DELAYS) {
           const c = expand(n, press, delay);
@@ -119,7 +131,9 @@ function best(id: string, bars: number, safe = false, pool: Node[] = [], openers
         }
       }
     }
-    frontier = [...kids.values()].sort((x, y) => y.dmg + y.m.fighters[0].meter * 0.08 - (x.dmg + x.m.fighters[0].meter * 0.08)).slice(0, BEAM);
+    // A guide that has to take a certain way (into the air) keeps the routes that do ahead of the rest, though they do less.
+    const score = (n: Node) => n.dmg + n.m.fighters[0].meter * 0.08 + (prefer?.(n) ? 1e6 : 0);
+    frontier = [...kids.values()].sort((x, y) => score(y) - score(x)).slice(0, BEAM);
   }
   return top;
 }
@@ -148,7 +162,8 @@ function prune(id: string, bars: number, inputs: readonly [number, string][]): [
 function forgiving(id: string, bars: number, inputs: readonly [number, string][]): boolean {
   const hits = replay(id, bars, inputs);
   return inputs.every(([t, p], k) => {
-    if (k === 0 || (p === 'SP' && t - inputs[k - 1][0] <= 3)) return true;
+    // A jump-in's attack is timed by eye, against the fall: it's the opener's, not a press to hold to the frame.
+    if (k === 0 || (p === 'SP' && t - inputs[k - 1][0] <= 3) || (k === 1 && isJump(inputs[0][1]))) return true;
     return [-2, 2].every((d) => replay(id, bars, inputs.map(([u, q], i): [number, string] => [i >= k ? u + d : u, q])) === hits);
   });
 }
@@ -161,10 +176,11 @@ function forgiving(id: string, bars: number, inputs: readonly [number, string][]
 function humanRoute(id: string, bars: number, pool: Node[], avoid: ReadonlySet<string> = new Set(), keep?: (n: Node) => boolean, minHits = 3): Node | null {
   const seen = new Set<string>();
   const timings = new Map<string, number>();
-  const sorted = pool.sort((x, y) => y.dmg - x.dmg);
+  // Only routes that are the guide's kind are candidates (the air ones do less, and would sink below the rest).
+  const sorted = (keep ? pool.filter(keep) : pool).sort((x, y) => y.dmg - x.dmg);
   let first: Node | null = null;
   let checked = 0;
-  for (const n of sorted.slice(0, 4000)) {
+  for (const n of sorted.slice(0, RUN ? 8000 : 4000)) {
     // The same moves at other timings are other candidates (one may be forgiving where another isn't), a few of each.
     const key = n.inputs.map(([t, p]) => `${t}${p}`).join('|');
     const moves = n.moves.join('|');
@@ -172,7 +188,8 @@ function humanRoute(id: string, bars: number, pool: Node[], avoid: ReadonlySet<s
     if (first && n.dmg < first.dmg * 0.8) break;
     seen.add(key);
     timings.set(moves, (timings.get(moves) ?? 0) + 1);
-    if (++checked > 300) break;
+    // The ceilings' human routes look further: falling back to an unforgiving one would misread the meter floor.
+    if (++checked > (RUN ? 900 : 300)) break;
     const inputs = prune(id, bars, n.inputs);
     if (!forgiving(id, bars, inputs)) continue;
     const found = { ...n, inputs };
@@ -180,6 +197,11 @@ function humanRoute(id: string, bars: number, pool: Node[], avoid: ReadonlySet<s
     first ??= found;
   }
   return first;
+}
+
+/** A special's follow-up: a special that another special chains into. */
+function isFollowUp(fighter: string, id: string): boolean {
+  return Object.values(FIGHTERS[fighter].moves).some((mv) => mv.kind === 'special' && Object.values(mv.chain).includes(id));
 }
 
 /** A boost: Special again just after one. */
@@ -264,7 +286,8 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
         const h = human ?? top;
         row(b, 'frame-perfect');
         row(h, human ? 'human' : 'human (none forgiving)');
-        (humanPct[f.id] ??= {})[bars] = (h.dmg * 100) / health;
+        // The floor compares routes a person can land: an unforgiving fallback would misread it.
+        if (human) (humanPct[f.id] ??= {})[bars] = (h.dmg * 100) / health;
         // The search is a beam, not every route, so either can come out ahead.
         expect((Math.max(b.dmg, h.dmg) * 100) / health).toBeLessThanOrEqual(CEILING[bars]);
       }, 120_000);
@@ -276,9 +299,9 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
       const p = humanPct[id];
       if (!p || id in METER_EXEMPT) continue;
       // The search is a beam: three bars can't do worse than one, as the one-bar route is still there.
-      const three = Math.max(p[3], p[1]);
-      if (p[1] - p[0] < METER_FLOOR) short.push(`${id}: one bar adds ${(p[1] - p[0]).toFixed(1)}%`);
-      if (three - p[1] < METER_FLOOR) short.push(`${id}: three bars add ${(three - p[1]).toFixed(1)}% to one`);
+      const three = Math.max(p[3] ?? 0, p[1] ?? 0);
+      if (p[0] !== undefined && p[1] !== undefined && p[1] - p[0] < METER_FLOOR) short.push(`${id}: one bar adds ${(p[1] - p[0]).toFixed(1)}%`);
+      if (p[1] !== undefined && three - p[1] < METER_FLOOR) short.push(`${id}: three bars add ${(three - p[1]).toFixed(1)}% to one`);
     }
     expect(short).toEqual([]);
   });
@@ -300,16 +323,26 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
 describe.skipIf(!GUIDES)('combo guides (npm run combos:guides)', () => {
   const guides: Record<string, ComboGuide[]> = {};
   for (const f of Object.values(FIGHTERS)) {
-    it(`${f.name}: at least five guides, each its own way in or out`, () => {
+    it(`${f.name}: at least five guides, each its own way in or out, and the air`, () => {
       const o = openers(f.id);
       const starts = [o.jab, o.low, ...(o.overhead ? [o.overhead] : []), o.punish];
-      const plan: { name: string; bars: number; from: string[] }[] = [
+      const f0 = FIGHTERS[f.id];
+      const jumped = (n: Node) => n.inputs.some(([, p]) => p.startsWith('u'));
+      const aloft = (n: Node) => n.moves.some((id) => f0.moves[id].stance === 'air');
+      const followUp = (n: Node) => n.moves.some((id) => isFollowUp(f.id, id));
+      const plan: { name: string; bars: number; from: (string | Press)[]; air?: boolean; want?: (n: Node) => boolean; prefer?: (n: Node) => boolean }[] = [
         { name: 'From your jab', bars: 0, from: [o.jab] },
         { name: 'From a low', bars: 0, from: [o.low] },
         ...(o.overhead ? [{ name: 'From your overhead', bars: 0, from: [o.overhead] }] : []),
         { name: 'Punish', bars: 0, from: [o.punish] },
         { name: 'One bar', bars: 1, from: starts },
         { name: 'Full meter', bars: 3, from: starts },
+        // The air: a jump cancel off the launcher into an air string, a jump-in, and a bar spent up there.
+        { name: 'Into the air', bars: 0, from: [o.punish], air: true, want: (n) => jumped(n) && aloft(n), prefer: jumped },
+        { name: 'Jump in', bars: 0, from: JUMP_INS, air: true, want: aloft },
+        { name: 'Air, one bar', bars: 1, from: [o.punish], air: true, want: (n) => jumped(n) && aloft(n) && boosts(n.inputs), prefer: jumped },
+        // A special's follow-up in the middle of it.
+        { name: 'Follow-up', bars: 0, from: [o.jab, o.low, o.punish], want: followUp, prefer: followUp },
       ];
       const list: ComboGuide[] = (guides[f.id] = []);
       const enders = new Set<string>();
@@ -317,18 +350,23 @@ describe.skipIf(!GUIDES)('combo guides (npm run combos:guides)', () => {
       let lastMetered = 0;
       for (const g of plan) {
         const pool: Node[] = [];
-        best(f.id, g.bars, true, pool, g.from);
+        best(f.id, g.bars, true, pool, g.from, g.air ?? false, g.prefer);
         // Meter has to buy something: a boost, more than any guide without it, and a full meter clearly more than one bar.
-        const keep = g.bars ? (n: Node) => boosts(n.inputs) && n.dmg > meterless && n.dmg > lastMetered + 30 : undefined;
+        // The air and follow-up guides show a way to play, so they only have to be that.
+        const keep = g.want ?? (g.bars ? (n: Node) => boosts(n.inputs) && n.dmg > meterless && n.dmg > lastMetered + 30 : undefined);
         // A confirm into a special (two hits) is a combo worth knowing from a low or an overhead.
         const h = humanRoute(f.id, g.bars, pool, enders, keep, 2);
         if (!h) continue;
         enders.add(h.moves[h.moves.length - 1]);
-        if (g.bars) lastMetered = h.dmg;
-        else meterless = Math.max(meterless, h.dmg);
+        if (!g.want) {
+          if (g.bars) lastMetered = h.dmg;
+          else meterless = Math.max(meterless, h.dmg);
+        }
         list.push({ name: g.name, bars: g.bars, presses: h.inputs });
       }
       expect(list.length).toBeGreaterThanOrEqual(5);
+      // Every fighter shows the air: a jump cancel into an air string, and a jump-in (a follow-up where one combos).
+      expect(list.map((g) => g.name)).toEqual(expect.arrayContaining(['Into the air', 'Jump in']));
     }, 600_000);
   }
   it('writes src/game/comboRoutes.ts', () => {
