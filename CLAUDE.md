@@ -17,6 +17,7 @@ npm run dev            # vite --host, port 5174 (Curbside has 5173)
 npm test               # vitest
 npm run combos         # best combos per fighter (frame-perfect and human), checked against damage ceilings; writes docs/COMBOS.md
 npm run combos:guides  # five or six forgiving guides per fighter (jab, low, overhead, punish, meter); rewrites the move list's combo guides (src/game/comboRoutes.ts) after changing moves
+npm run matchups       # the CPU against itself over every pair; writes docs/MATCHUPS.md, fails on a matchup worse than 30:70 or rounds too short or long
 npm run docs:clips     # rewrite the clip table in docs/BLENDER-TODO.md after changing moves
 node tools/audio-import.mjs <folder>  # recordings (WAV) into public/assets/audio as AAC (needs ffmpeg)
 npm run audio:index    # list the recordings for the game; update the shot list in docs/AUDIO-TODO.md and the page at /signoff/recording/

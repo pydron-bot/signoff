@@ -235,6 +235,15 @@ worth a bar.
 | Tape Skip | 1 bar | Cancels any move's recovery into a quick dash: extends combos or makes a blocked move safe |
 | Cut Away | All 3 bars (a full meter) | Combo breaker: knocks the opponent away mid-combo; once per round |
 
+**Meter has to pay (0.49.0).** Beside the damage ceilings, the combo
+search (`npm run combos`) holds a floor: each bar spent, from none to one
+and from one to three, must add at least 4% to a fighter's best human
+combo. Dale's third bar and all of Gideon's added nothing, so Dale's
+Heat Lightning boosts (invulnerable longer, a second relaunch) and
+Gideon's Laying On of Hands and Fire and Brimstone boost for a bar
+(beside their donation versions: with two donations the blessed Fire and
+Brimstone is free; without, a bar opens the sky a little way).
+
 **Technical Difficulties.** Below 30% health, a fighter can launch their
 comeback super. If it connects, the screen tears, the broadcast "loses
 signal", and a short cinematic attack deals about 30% damage, and it's spent
@@ -525,6 +534,16 @@ is pure, deterministic code that knows nothing about rendering.
   without a rewrite.
 - The CPU opponent sends inputs through the same interface as a player, so
   it can't cheat by reading state the player can't see.
+
+**Balance is measured.** `npm run combos` holds every fighter's combos
+between the floor and the ceilings above. `npm run matchups` plays the
+CPU against itself over every pair (100 seeds each, studio rules, the
+stages in turn) and writes `docs/MATCHUPS.md`: win rates, round length
+and time-outs, damage by source, how often each mechanic is used and
+each fighter's most damaging moves. It fails on a matchup worse than
+30:70, rounds averaging under 25 or over 50 seconds, or more than 10% of
+rounds timing out. The CPU isn't the truth about a matchup, but the
+bench catches a fighter falling off a cliff after a change.
 
 **Moves as data.** Each fighter is a data file: every move's frames,
 hitboxes, hurtboxes, damage, stun and cancel windows. Training mode shows

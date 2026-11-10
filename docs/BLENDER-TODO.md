@@ -1317,6 +1317,35 @@ the loser in any segment, not only the one whose hazard they belong to. No
 new art is needed; if a piece looks wrong outside its own segment's
 lighting, that's the thing to fix.
 
+### 27. Competitive pass: boxes, ducking, three boosts (Nov 10, game side)
+
+**Hitboxes moved, clips didn't.** Every mid and overhead now reaches the
+lowest crouching head in the roster (Mumbles, 0.80 m), so about ninety
+boxes start lower (0.75 m) than before; the clip table below has the new
+boxes. No move's length changed, so every clip still plays. Where a
+strike now plainly aims over a croucher's head, it's a *high* (the
+standing jabs but Mumbles', the jab strings' second steps, Rox's claps and
+High Kick, Hollis's Nightstick and Flashlight, Gideon's palm): those
+should look high, and the others shouldn't look as if they'd miss someone
+crouching. Worth a look in the viewer with a crouching opponent.
+
+**A hit knocks a croucher upright.** `hit_crouch` plays for the first hit
+on a crouching fighter only; the rest of the combo uses the standing
+reactions.
+
+**Three new boosted specials** play the plain move's clip until theirs
+land (`STAND_INS` in `src/render/pose.ts`; same lengths):
+
+- [ ] `dale:Heat Lightning+` (40 frames; stand-in `Heat Lightning`): the
+  same rising strike, but with the lightning crackling round him from the
+  start (invulnerable 1–9), and higher.
+- [ ] `gideon:Laying On of Hands+` and `Laying On of Hands (healing)+` (36
+  and 46 frames; stand-ins the plain ones): both hands, a mid this time
+  (y 0.75–1.8), lifting them off their feet on 10–12.
+- [ ] `gideon:Fire and Brimstone+` (50 frames; stand-in `Fire and
+  Brimstone`): between the plain and the blessed one: a smaller column of
+  fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows).
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
