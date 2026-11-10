@@ -172,6 +172,8 @@ export class Session {
       this.showcase(ev);
       return;
     }
+    // A lesson holds still a moment before each attempt.
+    if (this.lesson?.holding()) return;
     let in1 = this.cpu1 ? this.cpu1.next(m) : p1;
     let in2 = o.mode === 'versus' ? p2 : o.mode !== 'training' || this.control === 'cpu' ? this.cpu!.next(m) : this.lesson ? this.lesson.dummy(m) : this.dummy.next(m);
     if (this.dummy.recording) {

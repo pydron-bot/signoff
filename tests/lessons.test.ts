@@ -62,6 +62,19 @@ describe('lessons', () => {
     expect(s.match.phase).toBe('stayTuned');
   });
 
+  it('holds still before each attempt when asked to', () => {
+    const l = lesson('getup')!;
+    const s = new Session({ mode: 'training', p1: 'dale', p2: 'rox', level: 'normal', seed: 1, lesson: l.id });
+    s.lesson!.lead = 30;
+    s.lesson!.restart();
+    const ev: SimEvent[] = [];
+    for (let t = 0; t < 30; t++) s.tick(0, 0, ev);
+    expect(s.match.fighters[0].mode).toBe('down');
+    expect(s.lesson!.attempt.t).toBe(0);
+    for (let t = 1; t <= l.time + 1 && s.lesson!.result === null; t++) s.tick(scriptInput(l.solution('dale'), t, 1), 0, ev);
+    expect(s.lesson!.result).toBe('pass');
+  });
+
   it('the caption says how it went', () => {
     const run = new LessonRun(lesson('block')!);
     expect(lessonLine(run)).toContain('BLOCK HIGH, THEN LOW');

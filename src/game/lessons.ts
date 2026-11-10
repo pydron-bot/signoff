@@ -327,6 +327,9 @@ export class LessonRun {
   /** null while the attempt goes on. */
   result: Verdict = null;
   passes = 0;
+  /** Steps each attempt holds still before it begins, for a person to read the caption. */
+  lead = 0;
+  private wait = 0;
   /** Bumped on every change, so a caption can tell when to rebuild. */
   version = 0;
 
@@ -339,7 +342,15 @@ export class LessonRun {
     a.n = 0;
     a.seen = false;
     this.result = null;
+    this.wait = this.lead;
     this.version++;
+  }
+
+  /** Before an attempt: true while it should still hold still (counting down). */
+  holding(): boolean {
+    if (this.wait === 0) return false;
+    this.wait--;
+    return true;
   }
 
   /** The dummy's input for the coming step. */
