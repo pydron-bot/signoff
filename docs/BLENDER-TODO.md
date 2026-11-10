@@ -1109,14 +1109,14 @@ the fighters' reflections read over it.
   iPhone size and on desktop, with the performance overlay (` key): the
   draw calls mustn't change.
 
-### 24. Depth: the studio round the fight, and the room at 3:33 a.m. (Nov 9, spec; game side to follow)
+### 24. Depth: the studio round the fight, and the room at 3:33 a.m. (Nov 9, spec; game side in, 0.45.0)
 
 0.34.0 gives each set haze, light beams and dust, and the title shows the
 game on a CRT drawn by the shader. What's still flat is the space: every set
 is a floor and a back wall, with nothing between the camera and the
 fighters and nothing at the sides. This step adds three things to model. The
-game side isn't written yet; it will be built to these names. Until then
-the GLBs can carry the new objects and the game will ignore them.
+game side is in (0.45.0), built to these names; notes under *Depth (Nov 10,
+game side)* in Feedback.
 
 **A. Foreground silhouettes (every stage)**
 
@@ -1790,6 +1790,10 @@ worked into the move data, and the table above updates itself.
   - The streetlight is a small spot in the window's reveal (in front of the painted street, which would shadow one further out), shining down through the blinds: bars across the coffee table, the rug and the floor, in `room-light.png`, named in a one-segment `lights` rig (`lightMapFile`, `lightMap` 1.5) like the stages. The street outside glows (0.8, the lamp 3), and so does the VCR's clock (1.5), at 3:33.
   - Light from the screen is left to the game, as the spec says. In my renders a dim blue point light at the screen with the light map doubled read right; the scale question from *Light maps* applies here too.
   - The font in `lib/paint.py` gained `X` and `:` (EXIT, 3:33).
+- **Depth (Nov 10, game side).** Step 24 is in the game (0.45.0); `tests/assets.test.ts` checks the names, the side pieces' reach and the seats. Notes for the art side:
+  - Foreground (`src/render/depth.ts`): drawn in the near-black `0x0b0b10` with the atlas dropped, so only the emission (the tally lights) shows on them. A side piece hides while its inner edge (taken as |x| = 4.7, z = 3) would fall in front of a fighter, seen from the camera: close in past a wall with the touch buttons up, or a KO's swing. Keep `fg_left` and `fg_right` outside that (the test checks).
+  - Audience: in Arcade the fighters beaten so far sit on the seats in the order `seat_2`, `seat_5`, `seat_1`, `seat_4`, `seat_3`, `seat_6`, each root at the empty with its turn, playing `sit_audience` (now a loop in `LOOPS`) a little out of step with each other. They're drawn without rim, outline or reflections, their colour scaled to 0.12 and lit like the set (its falloff), so they read as shapes in the dark; and only while the camera can see their seat.
+  - The living room (`src/render/room.ts`): the fight is drawn at 4:3 (512 × 384) onto `screen`, the room lit by a point light 0.3 m in front of the glass in the picture's colour (the segment's key and ambient), flickering a little and flaring on hits, plus `room-light.png` at the rig's 1.5. The title rests 45% of the way from `camera_start` to `camera_end` (position, turn and lens), as at the sofa the TV sits small behind the menu; START pushes on to `camera_end`, then narrows the lens until the screen fills the width and cuts to the fight through a tear. The shader TV stands in until the room loads.
 - **Air specials (Nov 10, art side).** Step 26 done: all fourteen clips at their exact lengths, every strike in its box, `npm test` passing; the fourteen entries are out of `ART_PENDING` in `src/render/pose.ts`. Notes for the game side:
   - Dale, Downpour: hand-keyed (`_downpour`); the umbrella (the `umbrella` key, shown 1–16, 1–20 boosted) held straight up over his head, the free hand winding up and hurling down and forward on 12 (and 15 and 18 boosted). The umbrella is the closed one from s.BK: it doesn't open.
   - Rox, Aerobic Dive: hand-keyed (`_dive`); arms up for the beat's pause (1–5), then heel first from 7 (the lead foot makes the hit), the other leg tucked, the arms swept back, held to the end.

@@ -25,7 +25,7 @@ export interface Pose {
 }
 
 /** State clips that loop. */
-export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch_idle', 'dazed']);
+export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch_idle', 'dazed', 'sit_audience']);
 /**
  * Clips asked of the art that may not be in a GLB yet, and what stands in
  * for them meanwhile (docs/BLENDER-TODO.md).

@@ -20,6 +20,7 @@ import { Arena } from './render/arena';
 import { powerOn } from './render/look';
 import { setOutlineSize } from './render/outline';
 import { Post } from './render/post';
+import { ROOM_GRADE, Room, TV_ASPECT } from './render/room';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, canTD, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
 import { Hud } from './ui/hud';
@@ -27,7 +28,7 @@ import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 import { ArcadeCard } from './ui/arcadeCard';
 import { LABELS, MUSIC_VOLUME, touchShown, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
-import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
+import { afterMatch, beaten, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
 import { PerfOverlay } from './ui/perfOverlay';
@@ -56,6 +57,13 @@ const post = new Post(renderer);
 
 const arena = new Arena();
 post.grade = arena.grade;
+/** The title's living room; the shader TV stands in until it loads. */
+const room = new Room(post.hdr);
+void room.load().then(() => room.ready && post.compileScene(room.scene, room.camera));
+/** The title's TV, 0 off to 1 on (the push in through the glass runs it down), and whether the fight is drawn onto it. */
+let tvView = 0;
+let onTv = false;
+const screenTone = new THREE.Color();
 const systemReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const settings = loadSettings();
 const sound = new Sound();
@@ -263,8 +271,10 @@ function inputSides(s: Session | null): boolean[] {
 
 function begin(s: Session): Session {
   for (const d of inputDisplays) d.clear();
+  // Arcade's beaten fighters watch from the bleachers.
+  const seated = ladder && s.options.mode === 'cpu' ? beaten(ladder) : [];
   // Compile the models' shaders as they arrive, not on their first frame.
-  void arena.setFighters(s.match).then(() => post.compileScene(arena.scene, arena.camera));
+  void Promise.all([arena.setFighters(s.match), arena.setAudience(seated)]).then(() => post.compileScene(arena.scene, arena.camera));
   clock.reset();
   return s;
 }
@@ -626,7 +636,8 @@ function resize(): void {
   post.setSize(w * pr, h * pr, pr >= 2 ? 0.75 : 1);
   setOutlineSize(h * pr * post.drawScale);
   arena.setPixelHeight(h * pr * post.drawScale);
-  arena.resize(w, h);
+  if (!onTv) arena.resize(w, h);
+  room.resize(w, h);
   layoutTouch();
 }
 window.addEventListener('resize', resize);
@@ -699,6 +710,20 @@ renderer.setAnimationLoop((now) => {
     if (replaying && session === s && !over && s.replayFrame >= s.replayFrames) results(s.match.matchWinner < 2 ? s.match.matchWinner : -1);
   }
   const m = session!.match;
+  const title = document.body.dataset.scene === 'title';
+  // The title's TV: settles in, and a match starting pushes in through the glass (cut with Reduce Motion).
+  const dt = Math.min(0.1, (now - lastFrame) / 1000);
+  lastFrame = now;
+  const still = reducedMotion(settings, systemReduceMotion);
+  if (still) tvView = title ? 1 : 0;
+  else tvView = title ? Math.min(1, tvView + dt / 0.5) : Math.max(0, tvView - dt / (room.ready ? 0.8 : 0.55));
+  // On the room's TV the fight is framed 4:3.
+  const tv = room.ready && tvView > 0;
+  if (tv !== onTv) {
+    onTv = tv;
+    if (tv) arena.resize(TV_ASPECT, 1);
+    else arena.resize(window.innerWidth, window.innerHeight);
+  }
   arena.render(m);
   if (!demo) {
     hud.update(m, s.adv.last, s.training ? (s.practice !== 'off' ? `Finishers: one hit wins, then take your time · R reset · Esc menu` : `Dummy: ${s.dummy} · R reset · B boxes · Esc menu`) : s.guideRun ? showcaseCaption(s) : '');
@@ -716,20 +741,24 @@ renderer.setAnimationLoop((now) => {
     inputDisplays[i].update();
   }
   if (replaying && session === s) replayBar.update(s.replayFrame, s.replayFrames, replayPaused || over, SPEEDS[replaySpeed]);
-  const title = document.body.dataset.scene === 'title';
-  // The title's TV: settles in, and a match starting pushes in through the glass (cut with Reduce Motion).
-  const dt = Math.min(0.1, (now - lastFrame) / 1000);
-  lastFrame = now;
-  if (reducedMotion(settings, systemReduceMotion)) post.crt = title ? 1 : 0;
-  else post.crt = title ? Math.min(1, post.crt + dt / 0.5) : Math.max(0, post.crt - dt / 0.55);
+  post.crt = room.ready ? 0 : tvView;
   // The cold open plays in the studio before the lights bang on: half lit.
-  post.dim = title ? 0.8 : coldOpen.active ? 0.55 : powerOn(m);
+  // The shader TV dims the demo behind the menu; the room is dark enough already.
+  post.dim = title ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
   post.saturation = title ? 0.85 : 1;
   post.tear = glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
   renderer.info.reset();
-  post.render(arena.scene, arena.camera, now);
+  if (onTv) {
+    // The fight on the TV, the room round it; leaving, the push ends in a burst of static as the picture takes the screen.
+    room.drawTv(renderer, arena.scene, arena.camera);
+    room.update(1 - tvView, arena.tone(screenTone), glitch.impact, still);
+    if (!title && !still) post.tear = Math.max(post.tear, 0.5 * Math.max(0, 1 - tvView / 0.15));
+    post.grade = ROOM_GRADE;
+    post.render(room.scene, room.camera, now);
+    post.grade = arena.grade;
+  } else post.render(arena.scene, arena.camera, now);
   perf.frame(now, stepped);
 });
 

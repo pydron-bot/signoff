@@ -11,6 +11,7 @@ import { publicUrl } from '../core/paths';
 import { FIGHTERS } from '../sim';
 import { STEPS_PER_SECOND } from '../sim/constants';
 import { addRim } from './fighterLight';
+import { addSetLight } from './look';
 import { addOutline } from './outline';
 import { FLOOR, MIRROR, addReflection } from './reflection';
 import { HELD_STAND_INS, LOOPS, standIn } from './pose';
@@ -109,8 +110,11 @@ export class FighterModel {
   /**
    * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
    * that trail a fast move, src/render/echo.ts): no rim, reflections or outline.
+   * `shade`: a copy in the dark (the audience, src/render/depth.ts), its
+   * colour scaled by this; no rim, reflections or outline either.
    */
-  constructor(art: FighterArt, ghost?: THREE.Material) {
+  constructor(art: FighterArt, ghost?: THREE.Material, shade?: number) {
+    const plain = ghost !== undefined || shade !== undefined;
     this.art = art;
     const model = SkeletonUtils.clone(art.scene);
     // The model faces glTF +z: a quarter turn faces it along +x.
@@ -135,7 +139,12 @@ export class FighterModel {
         mat.emissive.setHex(0);
         mat.emissiveMap = null;
         mat.emissiveIntensity = 1;
-        addRim(mat, this.wear);
+        if (shade === undefined) addRim(mat, this.wear);
+        else {
+          // Lit as the set is, falling off into the dark past the walls.
+          mat.color.multiplyScalar(shade);
+          addSetLight(mat);
+        }
         swapped.set(src, mat);
         this.materials.push(mat);
       }
@@ -143,11 +152,11 @@ export class FighterModel {
     });
     this.root.add(model);
     // Reflections in the floor and Burn's mirrors: copies on the same skeleton.
-    this.floorCopies = ghost ? [] : addReflection(model, FLOOR);
-    this.mirrorCopies = ghost ? [] : addReflection(model, MIRROR);
+    this.floorCopies = plain ? [] : addReflection(model, FLOOR);
+    this.mirrorCopies = plain ? [] : addReflection(model, MIRROR);
     this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies].map((c) => c.material as THREE.Material);
     // A dark line round the fighter (after the reflections, so they aren't outlined).
-    this.outline = ghost ? [] : addOutline(model);
+    this.outline = plain ? [] : addOutline(model);
     for (const c of this.outline) c.visible = true;
     if (this.outline.length) this.reflectionMaterials.push(this.outline[0].material as THREE.Material);
     // GLTFLoader drops the dot from bone names (hand.L is handL).
