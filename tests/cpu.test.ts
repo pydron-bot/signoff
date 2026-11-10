@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { Cpu, type CpuLevel } from '../src/ai/cpu';
 import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_THROW, Habits, WAKE_ATTACK, type Glimpse } from '../src/ai/habits';
 import { routeAfter, routeOf, routesFor } from '../src/ai/routes';
+import { CHOICES, leanOf } from '../src/ai/lean';
 import { ReplayPlayer } from '../src/game/replay';
 import { Session } from '../src/game/session';
 import { guides } from '../src/game/comboGuides';
@@ -255,6 +256,18 @@ describe('the CPU is fair and deterministic', () => {
       }
       expect(m.phase).toBe('over');
       expect(n).toBeGreaterThan(500);
+    }
+  });
+});
+
+describe('leans', () => {
+  it('every fighter has a lean with a positive weight on every kind of choice', () => {
+    for (const id of Object.keys(FIGHTERS)) {
+      const lean = leanOf(id);
+      for (const c of CHOICES) {
+        expect(lean[c], `${id}.${c}`).toBeGreaterThan(0);
+        expect(lean[c], `${id}.${c}`).toBeLessThanOrEqual(5);
+      }
     }
   });
 });
