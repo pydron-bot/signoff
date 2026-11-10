@@ -317,6 +317,29 @@ class Stance:
             knee_L=self.s((self.lead_foot[0] - 0.04, 0.8, 0.5)), knee_R=self.s((self.rear_foot[0] + 0.04, 0.7, 0.5)),
         ).shaped(hurt=0.75, ko=0.45 + 0.25 * buckle, jaw=0.75 + 0.2 * buckle, fist_L=0.0, fist_R=0.0, open_L=0.25, open_R=0.25)
 
+    # The audience's benches stand this high over the step the feet rest on
+    # (lib/audience.py RISE); the root is on the seat, under the pelvis.
+    bench = 0.42
+
+    def sit_audience(self, t):
+        """Beaten, in the studio audience (t: 0…1 round the loop; step 24 B):
+        sitting on a bench, hands on knees, slumped, staring at the fight,
+        swaying very slightly. The root is on the seat, so the hips drop onto
+        it and the feet reach down to the step (a short fighter's dangle)."""
+        k, sw, up = self.k, math.sin(2 * math.pi * t), math.cos(2 * math.pi * t)
+        lean = (26 + 2 * up, 2 * sw, 0)
+        return self.base(drop=0).but(
+            hips={"offset": (0.008 * k * sw, -0.03 * k, -0.85 * k), "turn": (0, 0, 1.5 * sw)},
+            spine=(14, sw, 0), chest=lean, shoulder_L=(32 + 2 * up, 2 * sw, 0), shoulder_R=(32 + 2 * up, 2 * sw, 0),
+            neck=(10, 0, 0), head=(-6 + 2 * up, 3 * sw, -2 * sw),
+            foot_L={"pos": (0.15 * k, 0.48 * k, -self.bench + 0.09 * k), "turn": (0, 4, 0)},
+            foot_R={"pos": (-0.15 * k, 0.46 * k, -self.bench + 0.09 * k), "turn": (0, -4, 0)},
+            toe_L=(0, 4, 0), toe_R=(0, -4, 0),
+            knee_L=self.s((0.17, 0.9, 0.2)), knee_R=self.s((-0.17, 0.9, 0.2)),
+            hand_L={"pos": self.s((0.16, 0.36, 0.16)), "aim": (0.05, 0.45, -1)},
+            hand_R={"pos": self.s((-0.16, 0.35, 0.16)), "aim": (-0.05, 0.45, -1)},
+        ).shaped(hurt=0.25, jaw=0.15, fist_L=0.0, fist_R=0.0, open_L=0.15, open_R=0.15)
+
     # Lying back in the air (launched, and the start of ko): the body is
     # posed as if standing, curled, then the root tips it onto its back
     # (head behind) and juggle_shift (fit by fighter.fit_juggle to the
@@ -699,6 +722,8 @@ def state_clips(rig, st, data):
     clip("ko", 90, [(1, hit_high), (6, st.aloft()), (14, st.aloft(8).shaped(ko=0.4)), (24, out_cold),
                     (29, out_cold.but(root={"offset": (0, 0.85 * k, 0.18 * k), "turn": (-94, 0, 0)})), (34, out_cold), (90, out_cold)])
     clip("dazed", 60, [(1 + round(7.5 * i), st.dazed(i / 8)) for i in range(9)], loop=True)
+    # Beaten, in the studio audience (step 24 B): seated on the empty the stage gives.
+    clip("sit_audience", 60, [(1 + 15 * i, st.sit_audience(i / 4)) for i in range(5)], loop=True)
     # Picking up the stage's prop and hurling it (Feel the Burn's boombox):
     # grab it low by 4, overhead by 6, let go forward on 8 (the game launches
     # it then), follow through and back to stance.
@@ -869,7 +894,7 @@ class Fitter:
         return self.chamber(base, limb, high=True).but(**{f"foot_{s}": {"pos": (sx * k, 0.5 * k, 1.45 * k), "aim": (0, 0.8, 0.6), "hint": (0, -0.6, 0.8)}})
 
 
-def move_clips(rig, st, data, overrides):
+def move_clips(rig, st, data, overrides, skip=frozenset()):
     """One clip per move in the data. overrides[move id] tunes a move: limb,
     alt (limbs taking turns on multi-hit moves), prop (a weapon or effect
     makes the hit, so the limb only points at it), style (hop, spin,
@@ -879,12 +904,15 @@ def move_clips(rig, st, data, overrides):
     giving [(frame, pose)] that replaces the generated keys over its frames:
     hand-keyed poses for a move people watch), tx / ty (where to aim the
     strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
-    over frames show, whose tip, `reach` metres past the hand, makes the hit)."""
+    over frames show, whose tip, `reach` metres past the hand, makes the hit).
+    Moves in `skip` (their art is owed: ART_PENDING) get no clip."""
     fitter = Fitter(rig, st)
     strikes = {}
     out = []
     k = st.k
     for mid, mv in data["moves"].items():
+        if mid in skip:
+            continue
         spec = overrides.get(mid, overrides.get(mid.rstrip("+"), {}))
         total = mv["total"]
         base = base_for(st, mv)

@@ -114,14 +114,14 @@ def _face_parts(me):
     return a
 
 
-def paint(objects, meta, mi, size, path, seed=1987, glow=None):
+def paint(objects, meta, mi, size, path, seed=1987, glow=None, glow_max=None):
     """Rasterise material mi's faces of every object into a size² atlas,
     paint it, and save it as PNG at `path`. Returns the Blender image.
 
     glow: {part name regex: strength, or f(Texels) → strengths, the Texels'
     colours being the painted ones} for what
     gives off light (step 23 C). With it, returns (image, emission image,
-    strength): the emission atlas (`<path>_glow.png`, at most GLOW_MAX²) is each glowing texel's
+    strength): the emission atlas (`<path>_glow.png`, at most glow_max², GLOW_MAX by default) is each glowing texel's
     painted colour scaled by its strength over the material's strongest, and
     the material's emission strength is that strongest; None if nothing in
     this material glows."""
@@ -156,7 +156,7 @@ def paint(objects, meta, mi, size, path, seed=1987, glow=None):
     e = _dilate(e, owner >= 0, 6)
     # At most 1024² (on the same UVs): the bloom softens it anyway, and a
     # stage's 2048² of flames is half a megabyte.
-    while e.shape[0] > GLOW_MAX:
+    while e.shape[0] > (glow_max or GLOW_MAX):
         e = (e[0::2, 0::2] + e[1::2, 0::2] + e[0::2, 1::2] + e[1::2, 1::2]) / 4
     return out, _save(np.clip(e, 0, 255), Path(path).with_name(Path(path).stem + "_glow.png")), strongest
 

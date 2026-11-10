@@ -53,6 +53,8 @@ const STATE_CLIPS: Record<string, { frames?: number; loop?: boolean }> = {
   thrown: { frames: 24 },
   ko: { frames: 90 },
   dazed: { frames: 60, loop: true },
+  // Beaten fighters in the studio audience (step 24 B), on a stage's seat_* empties.
+  sit_audience: { frames: 60, loop: true },
   win: { frames: 120 },
   intro: { frames: 90 },
   win_2: { frames: 120 },
