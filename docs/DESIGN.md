@@ -257,6 +257,44 @@ hurtboxes per frame, damage, hitstun and blockstun, cancel windows. Inputs
 are buffered for 8 frames so specials and strings come out reliably on touch
 screens.
 
+### Rehearsal: training, trials and lessons (0.47.0)
+
+- **The dummy** (`src/game/dummy.ts`), set from Training's DUMMY page.
+  GUARD: none, all, after the first hit, random or flawless (it may peek
+  at the attacker's move to block the right height; the CPU may not).
+  STANCE: stand (blocks whatever height each hit needs), crouch (blocks
+  crouching, so overheads hit it) or duck (down without Block, so highs and
+  throws go over). It answers after a block, after a hit and on getting
+  up with nothing, a jab, a throw, a reversal (a special with an
+  invincible start, else armour, else the fastest), a boosted special, a
+  jump, a backdash or the recording; getting up also offers staying down.
+  Its meter is held at empty, one bar or full, or refilled at rest, and
+  with Cut Away on it breaks a combo from the second hit.
+- **Record and play back.** RECORD hands the player the dummy for up to
+  ten seconds into one of three slots, stored relative to facing in the
+  replays' run-length format; PLAYBACK plays it on a loop or once from
+  every reset, and any answer can be the recording. RESET TO is round
+  start, the middle, the dummy's back to either wall, or a moment kept with
+  SAVE THIS MOMENT.
+- **The frame meter** (`src/game/frameMeter.ts`) draws each fighter's last
+  80 frames (startup, active, recovery, hitstun, blockstun), leaving out
+  the frames both spend frozen in a hit's freeze.
+- **Trials.** Every combo guide is a trial (TRY beside WATCH in the move
+  list, `src/game/trials.ts`), built from the guide when it's opened so it
+  follows the moves. It ticks each move as it lands in the same combo; on
+  a drop it names the step and says whether the press was early or late
+  against the guide. Cleared trials are kept in `signoff.trials`, ticked in
+  the move list and counted on the fighter select.
+- **Lessons.** LESSONS on the title offers twelve drills
+  (`src/game/lessons.ts`): block high then low, anti-air, punish a blocked
+  sweep, flawless block, break a throw, duck a throw and launch, stay down,
+  boost a special, Tape Skip, Cut Away, Technical Difficulties and a
+  Sign-Off, each a start, a dummy script and a test over the simulation's
+  events, played as the player's fighter against Rox and kept in
+  `signoff.lessons` once cleared. Every lesson carries the presses that
+  clear it, and a test plays them for every fighter, so a lesson that
+  can't be cleared fails the build.
+
 ## Roster
 
 Version 1 ships 8 fighters; the first playable has 2 with opposite styles,
