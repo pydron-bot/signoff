@@ -14,7 +14,7 @@ import { TrainingDummy } from './dummy';
 import { FrameMeter } from './frameMeter';
 import { LessonRun, lesson } from './lessons';
 import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
-import { TrialTracker, trial } from './trials';
+import { TrialTracker, trial, trialOf } from './trials';
 
 /** demo: CPU against CPU, behind the title screen. replay: a recorded match played back. showcase: a combo guide played on a loop. */
 export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay' | 'showcase';
@@ -54,6 +54,8 @@ export interface SessionOptions {
   replay?: Replay;
   /** For mode 'showcase', or a training trial: which of p1's combo guides. */
   guide?: number;
+  /** The combo itself, when it isn't the whole guide (a part of one, in Combo School). */
+  guideData?: ComboGuide;
   /** Training: the guide is a trial to clear (from the guide's start, against its dummy). */
   trial?: boolean;
   /** Training: a lesson (lessons.ts) by id. */
@@ -102,10 +104,10 @@ export class Session {
     this.player = o.mode === 'replay' && o.replay ? new ReplayPlayer(o.replay) : null;
     this.dummy = new TrainingDummy(o.seed);
     if (o.mode === 'showcase') {
-      this.guide = guides(o.p1)[o.guide ?? 0] ?? null;
+      this.guide = o.guideData ?? guides(o.p1)[o.guide ?? 0] ?? null;
       this.guideRun = this.guide ? runGuide(o.p1, this.guide) : null;
     }
-    const tr = o.mode === 'training' && o.trial ? trial(o.p1, o.guide ?? 0) : null;
+    const tr = o.mode === 'training' && o.trial ? (o.guideData ? trialOf(o.p1, o.guideData, o.guide ?? 0) : trial(o.p1, o.guide ?? 0)) : null;
     const ls = o.mode === 'training' && o.lesson ? lesson(o.lesson) : null;
     if (tr) this.tracker = new TrialTracker(tr);
     if (ls) this.lesson = new LessonRun(ls);

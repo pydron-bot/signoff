@@ -25,6 +25,8 @@ export interface Connection {
   id: string;
   offset: number;
   press: number;
+  /** The step of the guide's run its first hit lands on. */
+  hit: number;
 }
 
 export interface Trial {
@@ -70,7 +72,7 @@ export function trialOf(fighter: string, g: ComboGuide, k: number): Trial {
       let j = -1;
       for (let i = 0; i < steps.length; i++) if (steps[i].at <= t && steps[i].id === e.move) j = i;
       const prev = conns.length ? conns[conns.length - 1].step : -1;
-      if (j > prev) conns.push({ step: j, id: e.move, offset: lastHit < 0 ? 0 : Math.max(0, startAt[j] - lastHit), press: lastHit < 0 ? 0 : steps[j].at - lastHit });
+      if (j > prev) conns.push({ step: j, id: e.move, offset: lastHit < 0 ? 0 : Math.max(0, startAt[j] - lastHit), press: lastHit < 0 ? 0 : steps[j].at - lastHit, hit: t });
       lastHit = t;
     }
   }

@@ -151,7 +151,7 @@ const moves = table(
     stance: 'crouch',
     hits: [
       strike({ frames: [12, 13], reach: [0.2, 2.0], at: [0, 0.35], height: 'low', damage: 45, hitstun: 20, blockstun: 12 }),
-      strike({ frames: [20, 22], reach: [0.2, 2.1], at: [0, 0.35], height: 'low', damage: 65, hitstun: 0, blockstun: 12, knockdown: true }),
+      strike({ frames: [20, 22], reach: [0.2, 2.1], at: [0, 0.35], height: 'low', damage: 72, hitstun: 0, blockstun: 12, knockdown: true }),
     ],
     hurt: [{ frames: [12, 30], box: box(0.2, 1.9, 0, 0.35) }],
   }),

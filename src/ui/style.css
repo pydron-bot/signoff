@@ -550,6 +550,94 @@ body {
   text-shadow: none;
 }
 
+/* Combo School's coach, under the readout: the next press, a tip, a timing bar and the clean landings left. */
+.school {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 112px);
+  transform: translateX(-50%);
+  width: min(86vw, 460px);
+  padding: 6px 10px 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border-left: 3px solid #40e8ff;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+.school.dropped {
+  border-left-color: #ff2a3a;
+}
+.school.passed {
+  border-left-color: #f5d742;
+}
+.school-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.school-next {
+  color: #9a968a;
+  letter-spacing: 0.08em;
+}
+.school-key {
+  font-size: 1.35rem;
+  font-weight: bold;
+  color: #fff;
+}
+.school-how {
+  color: #40e8ff;
+  letter-spacing: 0.06em;
+}
+.school.dropped .school-how {
+  color: #ff6a74;
+}
+.school-reps {
+  margin-left: auto;
+  color: #f5d742;
+  letter-spacing: 0.15em;
+}
+.school-tip {
+  margin-top: 2px;
+  color: #d8d4c6;
+}
+.school-bar {
+  position: relative;
+  height: 8px;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.school-bar.off {
+  visibility: hidden;
+}
+.school-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(64, 232, 255, 0.55);
+}
+.school-cursor,
+.school-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+}
+.school-mark {
+  background: #f5d742;
+  width: 4px;
+  margin-left: -2px;
+}
+@media (max-height: 430px) {
+  .school {
+    top: calc(env(safe-area-inset-top) + 96px);
+    padding: 4px 8px 6px;
+  }
+  .school-key {
+    font-size: 1.1rem;
+  }
+}
+
 /* Training's frame meter: P1 above, P2 below, newest on the right. */
 .hud-frames {
   position: absolute;

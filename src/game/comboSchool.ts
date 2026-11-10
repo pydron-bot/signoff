@@ -10,7 +10,7 @@
 import { fighterData, type MoveData } from '../sim';
 import { guides, type ComboGuide, type GuideStep } from './comboGuides';
 import { Cleared } from './cleared';
-import { trialOf, type Trial } from './trials';
+import { trialOf, type Trial, type TrialTracker } from './trials';
 
 /** Clean landings that pass a part. */
 export const REPS = 3;
@@ -129,22 +129,22 @@ export function coaching(t: Trial): Coaching[] {
   const f = fighterData(t.fighter);
   const out: Coaching[] = [];
   let prev: MoveData | null = null;
-  let airborne = false;
+  // The jump that started it was a jump, not a jump cancel; and whether they're up in a juggle.
+  let jumped = false;
+  let juggling = false;
   t.steps.forEach((s: GuideStep, k) => {
     const mv = s.id ? f.moves[s.id] : null;
     const plain = mv && mv.id.endsWith('+') ? f.moves[mv.id.slice(0, -1)] : mv;
     let c: Coaching;
-    if (s.move === 'Jump Cancel') {
-      c = { how: 'jumpCancel', tip: `${s.input} as the launcher connects: a hop that meets them on the way up` };
-      airborne = true;
-    } else if (s.move === 'Jump') {
+    if (s.move === 'Jump Cancel') c = { how: 'jumpCancel', tip: `${s.input} as the launcher connects: a hop that meets them on the way up` };
+    else if (s.move === 'Jump') {
       c = { how: 'jump', tip: `${s.input} to jump; the attack comes on the way down` };
-      airborne = true;
+      jumped = k === 0;
     } else if (!mv) c = { how: 'link', tip: `${s.input}` };
     else if (k === 0) c = { how: 'opener', tip: `${mv.name} starts it: land it point blank` };
-    else if (k === 1 && airborne && mv.stance === 'air' && out[0].how === 'jump') c = { how: 'jumpIn', tip: `${s.input} on the way down, close to them: the jump-in` };
+    else if (k === 1 && jumped && mv.stance === 'air') c = { how: 'jumpIn', tip: `${s.input} on the way down, close to them: the jump-in` };
     else if (s.input.endsWith('SP SP')) {
-      const relaunch = prev !== null && airborne;
+      const relaunch = juggling;
       c = relaunch ? { how: 'relaunch', tip: `SP SP quickly (1 bar): the boost pops them back up` } : { how: 'boost', tip: `SP SP quickly (1 bar): the boosted ${plain!.name}` };
     } else if (mv.kind === 'special' && mv.stance === 'air') c = { how: 'airSpecial', tip: `${s.input} in the air, once a jump: ${mv.name}` };
     else if (mv.kind === 'special' && prev?.kind === 'special' && Object.values(prev.chain).includes(mv.id)) c = { how: 'followUp', tip: `${s.input} while ${prev.name} plays: its follow-up comes out` };
@@ -156,7 +156,10 @@ export function coaching(t: Trial): Coaching[] {
     else if (prev && Object.values(prev.chain).includes(mv.id)) c = { how: 'string', tip: `${s.input} as the hit lands: the string carries on` };
     else if (opens(prev)) c = { how: 'juggle', tip: `${s.input} as they go up: any normal follows a launcher` };
     else c = { how: 'link', tip: `${s.input} just as ${prev?.name ?? 'it'} finishes: a link is rhythm, not speed` };
-    if (mv && mv.stance !== 'air' && s.move !== 'Jump Cancel' && c.how !== 'airSpecial') airborne = mv.kind === 'normal' && opens(mv) ? airborne : false;
+    // Up in a juggle after a launcher or a bounce, until something puts them down for good.
+    const last = mv?.hits[mv.hits.length - 1];
+    if (mv && opens(mv)) juggling = true;
+    else if (last?.knockdown) juggling = false;
     out.push(c);
     if (mv) prev = mv;
   });
@@ -167,4 +170,37 @@ export function coaching(t: Trial): Coaching[] {
 export function framesText(n: number): string {
   const a = Math.abs(n);
   return `${a} frame${a === 1 ? '' : 's'} ${n < 0 ? 'early' : 'late'}`;
+}
+
+/** The step to press next, and when: steps after the last hit landed, as the guide does it. */
+export interface Cue {
+  step: number;
+  at: number;
+}
+
+/**
+ * The next step of an attempt under way (null before the opener lands or
+ * once it's over). A jump already taken (`aloft`) is passed over to the
+ * attack that follows it.
+ */
+export function nextCue(tr: TrialTracker, aloft: boolean): Cue | null {
+  if (tr.state !== 'going' || tr.landed === 0) return null;
+  const t = tr.trial;
+  let k = tr.stepsDone;
+  while (aloft && k < t.steps.length && isJumpStep(t.steps[k])) k++;
+  if (k >= t.steps.length) return null;
+  return { step: k, at: t.steps[k].at - t.conns[tr.landed - 1].hit };
+}
+
+function isJumpStep(s: GuideStep): boolean {
+  return s.move === 'Jump' || s.move === 'Jump Cancel';
+}
+
+/** The school's line over the fight: the course and part, and the presses (ticked, the next in brackets). */
+export function schoolLine(c: Course, part: number, tr: TrialTracker, cue: Cue | null): string {
+  const { steps } = tr.trial;
+  const done = tr.state === 'cleared' ? steps.length : tr.stepsDone;
+  const at = tr.state === 'dropped' ? tr.dropStep : (cue?.step ?? done);
+  const presses = steps.map((s, i) => (i < done || (cue && i < cue.step) ? `✓${s.input}` : i === at ? `[${s.input}]` : s.input)).join(' › ');
+  return `COMBO SCHOOL · ${c.name.toUpperCase()} · PART ${part + 1} OF ${c.parts.length}\n${presses}`;
 }

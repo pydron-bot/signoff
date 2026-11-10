@@ -264,6 +264,7 @@ are authored facing right with the left foot and left hand leading.
 > 12. ~~**Step 25, the fighting styles pilot**~~ *done (Nov 10): Rox's and Hollis's normals and their timing profiles; out of `ART_PENDING`.*
 > 13. ~~**Step 26, air specials**~~ *done (Nov 10): all fourteen clips.*
 > 14. **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
+> 15. **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1392,8 +1393,9 @@ first frames should blend out of it.
   rising launcher (hits 9–11, up to 2.0 m).
 - [ ] `rox:Star Jump BK` *And Down* (31 frames, crouching; stand-in
   `c.BK`): landing from the Star Jump straight into a low sweep.
-- [ ] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `c.BP`):
-  landing from the Star Jump straight into an uppercut, up on her toes.
+- [ ] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `s.FK`):
+  landing from the Star Jump straight into an uppercut, up on her toes,
+  that puts them on the floor.
 - [ ] `mumbles:Strings Attached FP` *Boo!* (22 frames; stand-in `s.BP`):
   back on stage behind them, arms up, jaw dropped wide: a scare that hits
   (6–8).

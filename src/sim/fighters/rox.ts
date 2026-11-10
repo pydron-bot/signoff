@@ -96,7 +96,7 @@ const moves = table(
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 7, active: 6, recovery: 7, reach: [-0.6, 0.95], at: [0.1, 0.6], height: 'overhead', damage: 87, hitstun: 19, blockstun: 12 }),
   // Air string steps: a clap overhead, then a heel dropped like a weight to bounce them off the mat.
   airStep('j.BP FP', { name: 'Air Clap', damage: 32, chain: { BK: 'j.FK BK' } }),
-  airSpike('j.FK BK', { name: 'Heel Drop', damage: 40 }),
+  airSpike('j.FK BK', { name: 'Heel Drop', damage: 32 }),
   // String steps
   normal('FP FP', { name: 'Warm-Up', startup: 6, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.1, 1.45], height: 'high', damage: 36, hitstun: 15, blockstun: 11, motion: stepIn(6), chain: { FK: 'FP FP FK' } }),
   normal('FP FP FK', { name: 'Reps', startup: 8, active: 3, recovery: 14, reach: [0.2, 1.15], at: [0.55, 0.9], damage: 55, hitstun: 18, blockstun: 18, motion: stepIn(8), chain: { BK: 'FP FP FK BK', FK: 'FP FP FK FK' } }),
@@ -152,7 +152,7 @@ const moves = table(
   // A hop forward into an overhead: safe, and her answer to crouch-blocking.
   move('Star Jump', {
     name: 'Star Jump',
-    // Landing from it: BK goes low, FP goes up. Overhead, then low or a launcher.
+    // Landing from it: BK goes low, FP goes up. Overhead, then low or mid, both to the floor.
     chain: { BK: 'Star Jump BK', FP: 'Star Jump FP' },
     cancel: [19, 26],
     kind: 'special',
@@ -170,7 +170,7 @@ const moves = table(
     hits: [strike({ frames: [16, 18], reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 70, hitstun: 0, blockstun: 18, knockdown: true })],
   }),
   followUp('Star Jump BK', { name: 'And Down', stance: 'crouch', startup: 9, active: 3, recovery: 20, reach: [0.2, 1.1], at: [0, 0.3], height: 'low', damage: 45, hitstun: 0, blockstun: 10, knockdown: true }),
-  followUp('Star Jump FP', { name: 'Reach for the Sky', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 34, hitstun: 0, blockstun: 11, launch: 0.16 }),
+  followUp('Star Jump FP', { name: 'Reach for the Sky', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 45, hitstun: 0, blockstun: 11, knockdown: true }),
   // In the air: a beat's pause, then down at an angle, heel first. Blocked, she lands in front of them.
   move('Aerobic Dive', {
     name: 'Aerobic Dive',

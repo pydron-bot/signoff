@@ -80,7 +80,7 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   'rox:Splits Drop': 'j.BK',
   'rox:Splits Drop+': 'j.BK',
   'rox:Star Jump BK': 'c.BK',
-  'rox:Star Jump FP': 'c.BP',
+  'rox:Star Jump FP': 's.FK',
   'rox:j.BP FP': 'j.FP',
   'rox:j.FK BK': 'j.FK',
   'mumbles:Puppet Drop': 'Cut the Strings',

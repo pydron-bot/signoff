@@ -56,6 +56,10 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     expect(followUps(f).length).toBeGreaterThanOrEqual(1);
   });
 
+  it('a follow-up counts as its special for repeat scaling', () => {
+    for (const x of followUps(f)) expect(f.moves[x.next].followOf).toBe(followUps(f).find((y) => y.next === x.next)!.special.replace(/\+$/, ''));
+  });
+
   it('Down + Special in the air starts the down air special; anything else the neutral one', () => {
     for (const [held, want] of [
       [DOWN, f.airSpecials.d],

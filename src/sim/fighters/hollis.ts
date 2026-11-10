@@ -109,7 +109,7 @@ const moves = table(
     ],
   }),
   // Walks through one hit to get in.
-  followUp('Key Ring BP', { name: 'Yank', startup: 9, active: 3, recovery: 18, reach: [0.3, 1.9], at: [0, 1.5], damage: 30, hitstun: 0, blockstun: 12, launch: 0.15, pull: 0.8 }),
+  followUp('Key Ring BP', { name: 'Yank', startup: 9, active: 3, recovery: 18, reach: [0.3, 1.9], at: [0, 1.5], damage: 22, hitstun: 0, blockstun: 12, launch: 0.13, pull: 0.8 }),
   move('Night Shift', {
     name: 'Night Shift',
     kind: 'special',

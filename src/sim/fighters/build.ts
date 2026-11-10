@@ -270,6 +270,9 @@ export function table(...moves: MoveData[]): Record<string, MoveData> {
   }
   // A boost target is a boosted special: it relaunches a juggled body.
   for (const m of moves) if (m.boost && t[m.boost]) t[m.boost] = { ...t[m.boost], boosted: true };
+  // A special's chain is its follow-up: it counts as the (plain) special for repeat scaling.
+  // (Where two versions of a special share one, it's the first's.)
+  for (const m of moves) if (m.kind === 'special') for (const next of Object.values(m.chain)) if (t[next!] && !t[next!].followOf) t[next!] = { ...t[next!], followOf: m.id.endsWith('+') ? m.id.slice(0, -1) : m.id };
   return t;
 }
 

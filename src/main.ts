@@ -9,10 +9,12 @@ import type { CpuLevel } from './ai/cpu';
 import { Sound, type SoundMode } from './audio/sound';
 import { BUILD_ID } from './core/build';
 import { VERSION } from './core/changelog';
-import { GUIDE_DUMMY, guides } from './game/comboGuides';
+import { GUIDE_DUMMY, guides, type ComboGuide } from './game/comboGuides';
 import { Cleared } from './game/cleared';
 import { ANSWERS, GUARDS, METER_LEVELS, PLAYBACKS, SLOTS, STANCES, WAKEUPS, dummySummary } from './game/dummy';
 import { LESSONS, LESSONS_KEY, lessonLine } from './game/lessons';
+import { REPS, SCHOOL_KEY, coaching, coursePassed, courses, nextCue, partGuide, schoolId, schoolLine, type Coaching, type Course } from './game/comboSchool';
+import { SchoolPanel } from './ui/schoolPanel';
 import { TRIALS_KEY, trialCount, trialId, trialLine } from './game/trials';
 import { FixedStep } from './game/loop';
 import { SlowMo } from './game/slowMo';
@@ -49,6 +51,12 @@ const trialsDone = new Cleared(TRIALS_KEY);
 const lessonsDone = new Cleared(LESSONS_KEY);
 /** The trial being played, as trialsDone keeps it. */
 let trialKey = '';
+/** Combo School's passed parts (signoff.school), and the part being practised: its course, how each step is done, and its session. */
+const schoolDone = new Cleared(SCHOOL_KEY);
+let school: { course: Course; part: number; coach: Coaching[]; session: Session } | null = null;
+/** Combo School can be practised slowed down. */
+let schoolSpeed = 0;
+let schoolShown = false;
 /** Training's frame meter, on or off. */
 let frameMeterOn = true;
 const SETUP_KEY = 'signoff.setup';
@@ -113,6 +121,9 @@ pauseBtn.hidden = true;
 document.body.append(pauseBtn);
 const replayBar = new ReplayBar(document.body);
 const moveListPanel = new MoveListPanel(document.body);
+const schoolPanel = new SchoolPanel(document.body);
+/** What counts as a press on Combo School's timing bar: an attack, Special, or Up (a jump cancel). */
+const SCHOOL_PRESS = Input.FP | Input.BP | Input.FK | Input.BK | Input.SPECIAL | Input.UP;
 const arcadeCard = new ArcadeCard(document.body);
 const perf = new PerfOverlay(document.body, renderer);
 perf.note = () => `POST ${post.hdr ? 'HDR' : '8-BIT'} ×${post.drawScale}`;
@@ -453,6 +464,44 @@ function showLessons(): void {
   ]);
 }
 
+/** Combo School, as player 1's fighter: a course for every combo guide, easiest first. */
+function showSchool(): void {
+  const id = FIGHTER_IDS[setup.p1];
+  const cs = courses(id);
+  titleMenu.show(`COMBO SCHOOL · ${fighterData(id).name.toUpperCase()}`, [
+    ...cs.map((c, k) => {
+      const n = coursePassed(schoolDone, c);
+      const meter = c.bars ? ` · ${c.bars} BAR${c.bars > 1 ? 'S' : ''}` : '';
+      return { label: `${n === c.parts.length ? '✓ ' : ''}${c.name.toUpperCase()}${meter} · ${n}/${c.parts.length}`, id: `school-${k}`, run: () => showCourse(c) };
+    }),
+    { label: 'FIGHTER', options: names, value: setup.p1, onChange: (v: number) => ((setup.p1 = v), saveSetup(), showSchool()) },
+    { label: 'BACK', run: showTitle },
+  ]);
+}
+
+/** One course: its parts (each a few more moves of the combo), and the whole combo to watch first. */
+function showCourse(c: Course): void {
+  titleMenu.show(`${fighterData(c.fighter).name.toUpperCase()} · ${c.name.toUpperCase()}`, [
+    ...c.parts.map((moves, p) => ({
+      label: `${schoolDone.has(schoolId(c.fighter, c.name, p)) ? '✓ ' : ''}PART ${p + 1}: ${p === c.parts.length - 1 ? `THE WHOLE COMBO (${moves} MOVES)` : `THE FIRST ${moves} MOVES`}`,
+      id: `school-part-${p}`,
+      run: () => startSchool(c, p),
+    })),
+    { label: 'WATCH IT', run: () => showcase(c.fighter, c.guide) },
+    { label: 'BACK', run: showSchool },
+  ]);
+}
+
+/** A part of a course, as a trial with its coach: its start, against its dummy. */
+function startSchool(c: Course, part: number): void {
+  const data = partGuide(c.fighter, c.guide, c.parts[part]);
+  const s = new Session({ mode: 'training', p1: c.fighter, p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, guide: c.guide, guideData: data, trial: true });
+  drill(s);
+  // Only the whole combo counts as the move list's trial.
+  trialKey = part === c.parts.length - 1 ? trialId(c.fighter, c.name) : '';
+  school = { course: c, part, coach: coaching(s.tracker!.trial), session: s };
+}
+
 function showTitle(): void {
   const moveList = { label: moveListLabel(), id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) };
   titleMenu.show('', [
@@ -460,6 +509,7 @@ function showTitle(): void {
     { label: 'VS CPU', id: 'play-cpu', run: () => play('cpu') },
     { label: 'TRAINING', id: 'play-training', run: () => play('training') },
     { label: 'LESSONS', id: 'lessons', run: showLessons },
+    { label: 'COMBO SCHOOL', id: 'school', run: showSchool },
     { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
     ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
     moveList,
@@ -487,8 +537,8 @@ function showMoves(first: string, frames: boolean, back: () => void, watch = fal
   moveListPanel.show(FIGHTER_IDS, Math.max(0, FIGHTER_IDS.indexOf(first)), frames, watch);
 }
 
-/** Plays one of a fighter's combo guides on a loop, against a standing dummy. */
-function showcase(fighter: string, guide: number): void {
+/** Plays one of a fighter's combo guides (or a part of one) on a loop, against a standing dummy. */
+function showcase(fighter: string, guide: number, data?: ComboGuide): void {
   showcaseReturn = { training: session?.training ? session : null, fighter };
   ladder = null;
   demo = false;
@@ -496,7 +546,7 @@ function showcase(fighter: string, guide: number): void {
   paused = false;
   showcaseSpeed = 0;
   caption = { step: -2, text: '' };
-  session = begin(new Session({ mode: 'showcase', p1: fighter, p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, guide }));
+  session = begin(new Session({ mode: 'showcase', p1: fighter, p2: GUIDE_DUMMY, level: 'normal', seed: 1, studio: true, guide, guideData: data }));
   title.hidden = true;
   titleMenu.hide();
   pauseMenu.hide();
@@ -510,6 +560,7 @@ function showcase(fighter: string, guide: number): void {
 /** Trials and lessons: a training session of their own, straight from a menu. */
 function drill(s: Session): void {
   ladder = null;
+  school = null;
   demo = false;
   over = false;
   paused = false;
@@ -576,6 +627,24 @@ function pause(on: boolean): void {
   const s = session;
   // Pausing ends a recording and keeps it.
   s.dummy.stopRecording();
+  if (school && school.session === s) {
+    const { course: c, part } = school;
+    const last = part === c.parts.length - 1;
+    const next = courses(c.fighter).find((x) => x.guide !== c.guide && coursePassed(schoolDone, x) < x.parts.length);
+    pauseMenu.show(`${c.name.toUpperCase()} · PART ${part + 1}/${c.parts.length}`, [
+      { label: 'RESUME', run: () => pause(false) },
+      { label: 'TRY AGAIN (R)', run: () => (s.reset(), hud.start(s.match, true), pause(false)) },
+      { label: 'WATCH THIS PART', run: () => showcase(c.fighter, c.guide, partGuide(c.fighter, c.guide, c.parts[part])) },
+      { label: 'SPEED', options: ['FULL', 'HALF', 'QUARTER'], value: schoolSpeed, onChange: (v) => ((schoolSpeed = v), clock.reset()) },
+      last
+        ? { label: next ? `NEXT: ${next.name.toUpperCase()}` : 'ALL COURSES', id: 'school-next', run: () => (next ? startSchool(next, 0) : (startDemo(), showSchool())) }
+        : { label: `NEXT: PART ${part + 2}`, id: 'school-next', run: () => startSchool(c, part + 1) },
+      { label: 'ALL COURSES', run: () => (startDemo(), showSchool()) },
+      { label: 'MOVE LIST', id: 'move-list', run: () => showMoves(c.fighter, true, () => pause(true), false) },
+      { label: 'QUIT TO TITLE', run: startDemo },
+    ]);
+    return;
+  }
   if (s.tracker) {
     const t = s.tracker.trial;
     const next = (t.guide + 1) % guides(t.fighter).length;
@@ -608,7 +677,7 @@ function pause(on: boolean): void {
       { label: 'RESUME', run: () => pause(false) },
       { label: 'SPEED', options: ['FULL', 'HALF', 'QUARTER'], value: showcaseSpeed, onChange: (v) => ((showcaseSpeed = v), clock.reset()) },
       { label: 'FROM THE START', run: () => (s.reset(), (s.guideFrame = 0), arena.resync(), pause(false)) },
-      { label: 'BACK TO MOVE LIST', id: 'showcase-back', run: leaveShowcase },
+      { label: showcaseReturn?.training?.tracker ? 'BACK TO PRACTICE' : 'BACK TO MOVE LIST', id: 'showcase-back', run: leaveShowcase },
       { label: 'QUIT TO TITLE', run: startDemo },
     ]);
     return;
@@ -671,11 +740,14 @@ const line = { s: null as Session | null, key: 0, text: '' };
 let menuEpoch = 0;
 function trainingLine(s: Session): string {
   const d = s.dummy;
-  const key = s.tracker ? s.tracker.version : s.lesson ? s.lesson.version : d.recording ? 1e6 + Math.floor(d.recorded / 6) : s.practice !== 'off' ? -2 : -10 - menuEpoch;
+  const sc = school && school.session === s ? school : null;
+  const cue = sc ? nextCue(s.tracker!, s.match.fighters[0].y > 0 || s.match.fighters[0].mode === 'prejump') : null;
+  const key = sc ? -1e7 - s.tracker!.version * 100 - (cue?.step ?? 99) : s.tracker ? s.tracker.version : s.lesson ? s.lesson.version : d.recording ? 1e6 + Math.floor(d.recorded / 6) : s.practice !== 'off' ? -2 : -10 - menuEpoch;
   if (line.s === s && line.key === key) return line.text;
   line.s = s;
   line.key = key;
-  if (s.tracker) line.text = trialLine(s.tracker);
+  if (sc) line.text = schoolLine(sc.course, sc.part, s.tracker!, cue);
+  else if (s.tracker) line.text = trialLine(s.tracker);
   else if (s.lesson) line.text = lessonLine(s.lesson);
   else if (d.recording)
     line.text = d.recorded ? `● REC ${(d.recorded / 60).toFixed(1)} s of 10 · Esc stops` : `Recording slot ${d.settings.slot + 1}: you play the dummy, from your first press · Esc stops`;
@@ -817,7 +889,7 @@ renderer.setAnimationLoop((now) => {
     coldOpenHeld = bits;
   } else if (!paused && !over && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
-    const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : 1;
+    const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : school?.session === s ? SHOWCASE_SPEEDS[schoolSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
     stepped = n;
     for (let i = 0; i < n; i++) {
@@ -827,7 +899,9 @@ renderer.setAnimationLoop((now) => {
       s.tick(frame[0], frame[1], ev);
       // Finisher practice, a trial or a lesson started over: a clean picture for the next one.
       if (s.resets !== resets) hud.start(s.match, true);
-      if (s.tracker?.state === 'cleared') trialsDone.mark(trialKey);
+      if (s.tracker?.state === 'cleared' && trialKey) trialsDone.mark(trialKey);
+      // A part of a course passes after REPS clean landings.
+      if (school?.session === s && s.tracker!.clears >= REPS) schoolDone.mark(schoolId(school.course.fighter, school.course.name, school.part));
       if (s.lesson?.result === 'pass') lessonsDone.mark(s.lesson.lesson.id);
       arena.step(s.match, ev);
       inputSides(s);
@@ -882,6 +956,16 @@ renderer.setAnimationLoop((now) => {
       arena.screenRects(m, window.innerWidth, window.innerHeight, bodyRects);
       touch.fadeOver(bodyRects);
     }
+  }
+  // Combo School's coach, over its own practice only.
+  const sc = !demo && !paused && school?.session === s ? school : null;
+  if ((sc !== null) !== schoolShown) {
+    schoolShown = sc !== null;
+    schoolPanel.show(schoolShown);
+  }
+  if (sc) {
+    const a = m.fighters[0];
+    schoolPanel.update(s.tracker!, sc.coach, nextCue(s.tracker!, a.y > 0 || a.mode === 'prejump'), s.inputs[0], SCHOOL_PRESS, schoolDone.has(schoolId(sc.course.fighter, sc.course.name, sc.part)));
   }
   inputSides(session);
   for (let i = 0; i < 2; i++) {

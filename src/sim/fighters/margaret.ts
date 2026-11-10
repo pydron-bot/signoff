@@ -84,7 +84,7 @@ const moves = table(
     ],
   }),
   // The counter: she reads the next strike off the teleprompter and answers it.
-  followUp('Breaking BK', { name: 'And Now This', startup: 10, active: 3, recovery: 20, reach: [0.2, 1.3], at: [0.75, 1.6], damage: 34, hitstun: 0, blockstun: 12, launch: 0.16 }),
+  followUp('Breaking BK', { name: 'And Now This', startup: 10, active: 3, recovery: 20, reach: [0.2, 1.3], at: [0.75, 1.6], damage: 26, hitstun: 0, blockstun: 12, launch: 0.14 }),
   move('Teleprompter', {
     name: 'Teleprompter',
     kind: 'special',
