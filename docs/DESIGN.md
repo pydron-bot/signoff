@@ -383,6 +383,14 @@ ENDLESS gives the winner five seconds, then starts the next random match
 with no results menu; a tap or Esc between matches stops it. While it
 runs (not paused) a screen wake lock keeps the display on (0.57.0,
 `src/core/screenAwake.ts`).
+After each watched match that ended on a KO, the action replay (0.58.0,
+`src/game/actionReplay.ts`): the picture rewinds with REW on the set's
+green display, then the deciding blow plays again at half speed from 2.5
+seconds before it (the inputs and a saved state each second are kept, and
+the sim replays them exactly); any button or a tap skips it. The endless
+channel moves on with a channel change: static, the tuner's click, and CH 0
+with the new pairing on the display. On the TV, everything sounds like a
+TV across the room (a low-pass on the output).
 
 **Styles and leans (0.50.0).** Each style's choices (strings, throws,
 specials, pokes, lows, approaching, retreating, waiting, guarding,
@@ -552,6 +560,15 @@ more it reacts to a big one than a small one.
   boost, Cut Away, Technical Difficulties) drops the set into shadow round
   the fighter. All of it is pooled, costs nothing at rest, and Reduce Motion
   drops the parts that move the picture.
+- **Light, colour and the lens** (0.58.0, `docs/VISUALS.md`): blows,
+  lightning, projectiles and burning specials light the set and the
+  fighters (four point lights at most, in the shaders); an ender's freeze
+  drains the colour from all but the blow, knocks the camera back against
+  it before it leans, and narrows the lens a moment; speed lines rush to
+  the edges on wall splats, Tape Skip, teleports and jump cancels; a KO's
+  frame tears and holds like the tape catching; and Technical
+  Difficulties (or a boost, briefly) cuts to a close-up of the fighter's
+  face in a band of colour bars.
 - **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
   Skip) trail a cyan and a magenta afterimage a few frames behind, like a
   tape's colour lagging; an ender or a KO lands on two frames of negative.

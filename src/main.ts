@@ -20,6 +20,7 @@ import { TRIALS_KEY, trialCount, trialId, trialLine } from './game/trials';
 import { FixedStep } from './game/loop';
 import { SlowMo } from './game/slowMo';
 import { parseReplay, type Replay } from './game/replay';
+import { ActionReplay, ReplayTape } from './game/actionReplay';
 import { CONTROLS, POSITIONS, PRACTICES, Session, type Mode } from './game/session';
 import { initKeyboard, keyboardInput, menuPresses, padCount, padInput } from './input/devices';
 import { TouchControls } from './input/touch';
@@ -269,6 +270,14 @@ const ENDLESS_WAIT = 5;
 /** A KO catches the tape: its frame drawn torn, then held this many frames before the slow motion rolls on (not with Reduce Motion). */
 const TAPE_CATCH = 4;
 let tapeCatch = 0;
+/** CPU VS CPU's tape of the match, for the action replay of the deciding blow after it; the replay playing, its seconds of rewind, and the match's winner. */
+let tape = new ReplayTape();
+let actionReplay: ActionReplay | null = null;
+let rewindLeft = 0;
+let replayWinner = -1;
+/** The action replay runs at this speed, after this many seconds of rewinding. */
+const ACTION_SPEED = 0.5;
+const REWIND = 0.7;
 let endlessLeft = 0;
 let endlessWinner = -1;
 /** The endless channel keeps the screen on (not while paused: someone's there). */
@@ -324,6 +333,7 @@ function begin(s: Session): Session {
 
 function startDemo(): void {
   endlessLeft = 0;
+  actionReplay = null;
   demo = true;
   over = false;
   paused = false;
@@ -357,6 +367,8 @@ function play(mode: Mode): void {
 
 function start(mode: Mode, p2: string, stage: string, level?: CpuLevel, p1 = FIGHTER_IDS[setup.p1]): void {
   endlessLeft = 0;
+  actionReplay = null;
+  tape = new ReplayTape();
   demo = false;
   over = false;
   paused = false;
@@ -386,7 +398,7 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel, p1 = FIG
 function showWatch(): void {
   titleMenu.show('CPU VS CPU', [
     { label: 'START', id: 'watch-start', run: () => play('watch') },
-    { label: 'RANDOM MATCH', id: 'watch-random', run: watchRandom },
+    { label: 'RANDOM MATCH', id: 'watch-random', run: () => watchRandom() },
     { label: 'PLAYER 1 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch1, onChange: (v) => ((setup.watch1 = v), saveSetup()) },
     { label: 'PLAYER 2 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch2, onChange: (v) => ((setup.watch2 = v), saveSetup()) },
     ...watchRows(),
@@ -404,11 +416,16 @@ function watchRows(): Parameters<Menu['show']>[1] {
 }
 
 /** CPU VS CPU between two different fighters picked at random, on a random stage. */
-function watchRandom(): void {
+function watchRandom(flip = false): void {
   ladder = null;
   const a = Math.floor(Math.random() * FIGHTER_IDS.length);
   const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
   start('watch', FIGHTER_IDS[b], STAGE_IDS[Math.floor(Math.random() * STAGE_IDS.length)], undefined, FIGHTER_IDS[a]);
+  if (flip) {
+    // The endless channel moving on: static, the tuner's click, and what's on now.
+    arena.flip.start(['CH 0', `${fighterData(FIGHTER_IDS[a]).name} vs ${fighterData(FIGHTER_IDS[b]).name}`.toUpperCase()]);
+    sound.channelChange();
+  }
 }
 
 function startArcade(): void {
@@ -829,6 +846,27 @@ function trainingLine(s: Session): string {
   return line.text;
 }
 
+/** After a watched match: the deciding blow again (false if there's none to show: it went to time). */
+function startActionReplay(winner: number): boolean {
+  const clip = tape.clip();
+  if (!clip) return false;
+  actionReplay = new ActionReplay(clip);
+  replayWinner = winner;
+  over = true;
+  rewindLeft = reducedMotion(settings, systemReduceMotion) ? 0.01 : REWIND;
+  arena.flip.start(['◀◀ REW'], false, REWIND);
+  return true;
+}
+
+/** The action replay over (or skipped): on to the results, or the endless channel's next match. */
+function endActionReplay(): void {
+  actionReplay = null;
+  rewindLeft = 0;
+  arena.flip.stop();
+  arena.resync();
+  results(replayWinner);
+}
+
 /** The endless channel stopped between matches: the results menu after all. */
 function stopEndless(): void {
   endlessLeft = 0;
@@ -877,11 +915,12 @@ function results(winner: number): void {
   ]);
 }
 
-pauseBtn.addEventListener('click', () => (endlessLeft > 0 ? stopEndless() : pause(!paused)));
+pauseBtn.addEventListener('click', () => (actionReplay ? endActionReplay() : endlessLeft > 0 ? stopEndless() : pause(!paused)));
 // On the TV the pause button is hidden: a tap anywhere pauses (or stops the endless channel between matches).
 renderer.domElement.addEventListener('pointerdown', () => {
   if (!watchingTv() || paused) return;
-  if (endlessLeft > 0) stopEndless();
+  if (actionReplay) endActionReplay();
+  else if (endlessLeft > 0) stopEndless();
   else pause(true);
 });
 window.addEventListener('keydown', (e) => {
@@ -979,18 +1018,44 @@ renderer.setAnimationLoop((now) => {
       if (k === 'pause' && !over) pause(false);
       else pauseMenu.key(k);
     } else if (titleMenu.open && demo) titleMenu.key(k);
-    else if (k === 'pause') endlessLeft > 0 ? stopEndless() : pause(true);
+    else if (k === 'pause') actionReplay ? endActionReplay() : endlessLeft > 0 ? stopEndless() : pause(true);
   }
   // The endless channel's next match, once the winner has had a moment.
   if (endlessLeft > 0 && (endlessLeft -= Math.min(0.1, (now - lastFrame) / 1000)) <= 0) {
     endlessLeft = 0;
-    watchRandom();
+    watchRandom(true);
   }
   awake.want(setup.endless === 1 && session?.options.mode === 'watch' && !paused);
   const s = session;
   if (!s) return;
   const replaying = s.options.mode === 'replay';
-  if (coldOpen.active && !paused) {
+  const ar = actionReplay;
+  if (ar && !paused) {
+    // The action replay: rewinding (the last picture, torn), then the blow again in slow motion.
+    if (rewindLeft > 0) {
+      if ((rewindLeft -= Math.min(0.1, (now - lastFrame) / 1000)) <= 0) {
+        rewindLeft = 0;
+        arena.resync();
+        slowMo.clear();
+        clock.reset();
+        arena.flip.start(['▶ REPLAY'], false, 600);
+      }
+    } else {
+      const n = clock.advance(now * ACTION_SPEED);
+      stepped = n;
+      for (let i = 0; i < n; i++) {
+        if (!ar.tick(ev)) {
+          endActionReplay();
+          break;
+        }
+        arena.step(ar.match, ev);
+        sound.onEvents(ar.match, ev);
+        glitch.onEvents(ev);
+        glitch.step();
+        ev.length = 0;
+      }
+    }
+  } else if (coldOpen.active && !paused) {
     // Any new press skips it (not one still held from the menu).
     readInputs();
     const bits = frame[0] | frame[1];
@@ -1006,7 +1071,10 @@ renderer.setAnimationLoop((now) => {
       if (demo) frame[0] = frame[1] = 0;
       else readInputs();
       const resets = s.resets;
+      const watching = s.options.mode === 'watch';
+      if (watching) tape.before(s.match);
       s.tick(frame[0], frame[1], ev);
+      if (watching) tape.after(s.inputs[0], s.inputs[1], ev);
       // Finisher practice, a trial or a lesson started over: a clean picture for the next one.
       if (s.resets !== resets) hud.start(s.match, true);
       if (s.tracker?.state === 'cleared' && trialKey) trialsDone.mark(trialKey);
@@ -1025,11 +1093,12 @@ renderer.setAnimationLoop((now) => {
       glitch.step();
       slowMo.step(s.match, ev);
       for (const e of ev) {
-        // A cancellation a player landed is found: the move list shows it from now on.
         if (e.type === 'ko' && !demo && !reducedMotion(settings, systemReduceMotion)) tapeCatch = TAPE_CATCH + 1;
+        // A cancellation a player landed is found: the move list shows it from now on.
         if (e.type === 'finisher' && e.kind === 'cancellation' && humanSide(s.options.mode, e.player)) markFound(found, s.match.fighters[e.player].fighter, e.id);
         if (e.type !== 'matchOver') continue;
         if (demo) startDemo();
+        else if (s.options.mode === 'watch' && startActionReplay(e.winner)) break;
         else {
           if (!replaying) keepReplay(s.recording());
           results(e.winner);
@@ -1041,7 +1110,8 @@ renderer.setAnimationLoop((now) => {
     // A replay that stops short of its match's end (it shouldn't) still ends.
     if (replaying && session === s && !over && s.replayFrame >= s.replayFrames) results(s.match.matchWinner < 2 ? s.match.matchWinner : -1);
   }
-  const m = session!.match;
+  // The action replay's match once it's rolling (the last picture while it rewinds).
+  const m = actionReplay && rewindLeft <= 0 ? actionReplay.match : session!.match;
   const title = document.body.dataset.scene === 'title';
   // The title, or CPU VS CPU watched on the TV: from the sofa, its overlays hidden (style.css).
   const tvWatch = watchingTv();
@@ -1060,7 +1130,9 @@ renderer.setAnimationLoop((now) => {
     if (tv) arena.resize(TV_ASPECT, 1);
     else arena.resize(window.innerWidth, window.innerHeight);
   }
-  arena.render(m);
+  arena.render(m, dt);
+  // On the TV, it sounds like a TV across the room.
+  sound.setMuffled(tvWatch);
   if (!demo) {
     hud.update(m, s.adv.last, s.training ? trainingLine(s) : s.guideRun ? showcaseCaption(s) : '', !s.training || s.freePlay);
     hud.frames(s.training && frameMeterOn ? s.frames : null);
@@ -1093,7 +1165,7 @@ renderer.setAnimationLoop((now) => {
   // The shader TV dims the demo behind the menu; the room is dark enough already.
   post.dim = sofa ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
   post.saturation = sofa ? 0.85 : 1;
-  post.tear = tapeCatch > TAPE_CATCH ? 1 : glitch.tear;
+  post.tear = tapeCatch > TAPE_CATCH || rewindLeft > 0 ? 1 : glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
   // The shockwave, an ender's zoom and the meter spotlight: on screen only, not on the title's TV.

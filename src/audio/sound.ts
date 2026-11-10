@@ -40,10 +40,17 @@ const VOICE_JITTER = 0.04;
 /** Damage from which a swing's whoosh is the heavy one. */
 const HEAVY_SWING = 60;
 
+/** The output's low-pass: open, and muffled like a TV across the room. */
+const OPEN_HZ = 20000;
+const MUFFLED_HZ = 1700;
+
 export class Sound {
   mode: SoundMode = 'on';
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  /** A low-pass after everything: wide open, or closed down to a TV across the room (setMuffled). */
+  private muffle: BiquadFilterNode | null = null;
+  private muffled = false;
   private noiseBuf: AudioBuffer | null = null;
   private music: Music | null = null;
   /** The cue for the round on air, to pick up again after a pause. */
@@ -84,7 +91,11 @@ export class Sound {
     comp.ratio.value = 5;
     comp.attack.value = 0.002;
     comp.release.value = 0.18;
-    this.master.connect(comp).connect(this.ctx.destination);
+    this.muffle = this.ctx.createBiquadFilter();
+    this.muffle.type = 'lowpass';
+    this.muffle.Q.value = 0.5;
+    this.muffle.frequency.value = this.muffled ? MUFFLED_HZ : OPEN_HZ;
+    this.master.connect(this.muffle).connect(comp).connect(this.ctx.destination);
     const len = this.ctx.sampleRate;
     this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
@@ -140,6 +151,21 @@ export class Sound {
     if (!this.music) return;
     if (on) this.music.stop(0.15);
     else if (this.cue && this.live) this.playMusic(this.cue.stage, this.cue.segment, 0.1);
+  }
+
+  /** Everything as if from a TV across the room (CPU VS CPU on the TV), or as normal. */
+  setMuffled(on: boolean): void {
+    if (on === this.muffled) return;
+    this.muffled = on;
+    if (this.muffle && this.ctx) this.muffle.frequency.setTargetAtTime(on ? MUFFLED_HZ : OPEN_HZ, this.ctx.currentTime, 0.12);
+  }
+
+  /** A channel changing: a burst of static and the click of the tuner. */
+  channelChange(): void {
+    if (!this.live) return;
+    this.tone(1400, 0.03, 0.12, 'square');
+    this.noise(0.55, 4200, 0.22, 'highpass', 0.6, 0.02);
+    this.noise(0.45, 900, 0.1, 'bandpass', 0.8, 0.02);
   }
 
   private get live(): boolean {

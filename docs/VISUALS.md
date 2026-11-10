@@ -79,36 +79,51 @@ medium, heavy, ender) and counter hits, as the freeze and shake already do.
   say *this costs something*. Done in the composite (no extra pass). It
   doesn't move the picture, so it stays with Reduce Motion.
 
-## 3. Camera (proposed)
+## 3. Camera (done in 0.58.0, but for the launcher tilt-up)
 
-- **Directional kick** (small). The camera already leans the way a blow
-  travels; on enders, a 2–3 frame translate *against* the blow before the
-  lean (a recoil) makes it feel like the camera was hit too. Pure maths in
-  `camera.ts`. Off with Reduce Motion.
+- **Directional kick** (done). On enders the camera is knocked 0.16 m
+  *against* the blow for 3 steps before it leans with it, then springs
+  back. Pure maths in `camera.ts`. Off with Reduce Motion.
 - **Launcher tilt-up** (small). On a launch, the look target rises ahead
   of the body for 10 frames so the juggle is framed before it happens.
-- **Ender FOV punch** (small). A 2–3° FOV narrowing on enders and wall
-  splats, easing back over 12 frames: reads as a zoom without moving the
-  camera. One `updateProjectionMatrix` a frame while it runs.
-- **Super cut-in** (medium). On Technical Difficulties and boosts, a
-  one-frame cut to a close-up of the fighter's face from a fixed side
-  camera, framed by colour bars, before the cinematic. Needs a second
-  camera and a scissored render of the fighter only: about 5 draw calls
-  for 15 frames. Strongly on-theme (a broadcast cut).
+- **Ender FOV punch** (done). 2.5° narrower on enders, wall splats and a
+  super's hit, easing back over 12 steps (`CameraRig.fov`). One
+  `updateProjectionMatrix` a frame while it runs.
+- **Super cut-in** (done, `src/render/cutIn.ts`). On Technical
+  Difficulties (32 steps) and boosts (16), a band across the top slides in
+  from the fighter's side with a close-up of their face from a second
+  camera, framed in colour bars. The close-up is drawn into the post pass's
+  buffer through the target's viewport and scissor, so the tape look covers
+  it; the composite draws the bars. The whole scene again, scissored: a
+  dozen or so draw calls while it shows.
 
-## 4. Screen-space (proposed)
+## 4. Screen-space (done in 0.58.0)
 
-- **Speed lines on wall splats and dashes** (small). Radial streaks in
-  the composite (a few lines of noise along the radial direction), masked
-  to the edges of the screen. No extra pass.
-- **Hit-pause desaturation** (small). During an ender's freeze, drain the
-  colour from everything but the contact (the spotlight's mask, centred on
-  the hit). Reuses the focus uniforms.
-- **KO "last frame" hold** (small). On the KO's first slow-motion frame,
-  hold one frame of the picture with a heavy tracking tear, then let it
-  roll: like the tape catching. Uses the existing tear and a held frame.
+- **Speed lines** (done). Thin rays out from the action toward the
+  screen's edges, new each tape frame, in the composite: on wall splats,
+  Tape Skip, teleports and jump cancels (not dashes: the CPU dashes too
+  often for them to mean anything). Off with Reduce Motion.
+- **Hit-pause desaturation** (done). An ender's freeze drains the colour
+  from everything but a circle round the contact (`uDrain`); a counter's a
+  little longer. Stays with Reduce Motion (it doesn't move).
+- **KO "last frame" hold** (done). The KO's frame is drawn with a full
+  tracking tear, then held for four frames (nothing drawn keeps it up)
+  before the slow motion rolls: the tape catching. Off with Reduce Motion.
 - **Chromatic flash on counters** (done in part: the colour split exists;
   could key on counters only).
+
+## 4b. Light from the fight (done in 0.58.0)
+
+- **The fight lights the set** (`src/render/setFlash.ts`). Blows flash at
+  the contact (bigger the heavier, amber on a counter), blocks give a cool
+  blink, a lightning strike lights the whole studio, and projectiles and
+  burning specials carry their light with them: Flambé, Fan the Flames and
+  Fire and Brimstone burn orange and flicker, Heat Lightning crackles, the
+  flashlight and Searchlight throw a cool beam, Cold Front and the hail
+  glow icy, Live Feed flickers like a screen, the collection plate glints.
+  The four brightest at any moment are point lights in a few lines of the
+  set's and fighters' Lambert shaders (shared uniforms, so nothing
+  recompiles); the fighters take 60% of it. Fixed cost, every frame.
 
 ## 5. Character shading (proposed)
 
