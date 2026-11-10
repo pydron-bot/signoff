@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.42.0',
+    date: '2026-11-10',
+    title: 'Clear Picture',
+    notes: [
+      'With the touch buttons on screen, the camera keeps the fight beside them: the fighters sit a little off-centre, and at the wall on the buttons\' side the camera looks past it, so a fighter pinned there stands clear of the buttons.',
+      'A touch button with a fighter behind it fades so the fight shows through. It still works, and still lights while held.',
+    ],
+  },
+  {
     version: '0.41.0',
     date: '2026-11-10',
     title: 'Studio Audience',

@@ -34,6 +34,11 @@ const LOOK_Y = 1.15;
 const TILT = 0.065;
 /** Of the frame's half-width, how much may pass beyond a wall. */
 const PAST_WALL = 0.2;
+/** With touch buttons up, how far the fighters move off them: of the frame's half-width per share of its width the buttons take, and at most. */
+const BUTTONS_SHIFT = 0.7;
+const BUTTONS_MAX = 0.25;
+/** On the buttons' side, the wall may move in by twice their share (they cover that much of the half-width), up to this much past it in all. */
+const PAST_BUTTONS = 0.75;
 
 /** By hit weight (light, medium, heavy, ender): trauma added, lean the way the blow travels (m), and push in (m). */
 const TRAUMA = [0.18, 0.28, 0.45, 0.62] as const;
@@ -72,6 +77,8 @@ export class CameraRig {
   aspect = 16 / 9;
   /** Drops the shake, the lean, the push-ins and the KO swing; framing stays. */
   reduceMotion = false;
+  /** The touch buttons' share of the screen's width: positive on the right, negative on the left, 0 with none up. */
+  buttons = 0;
   readonly shot: Shot = { x: 0, y: LOOK_Y + NEAR * TILT, z: NEAR, tx: 0, ty: LOOK_Y, roll: 0 };
   private fx = 0;
   private fy = LOOK_Y;
@@ -109,8 +116,10 @@ export class CameraRig {
     const gap = Math.abs(ax - bx);
     const near = finisher ? FINISH_NEAR : NEAR;
     const room = finisher ? FINISH_ROOM : SIDE_ROOM;
-    let z = Math.min(FAR, Math.max(near, (gap + 2 * room) / (2 * TAN * this.aspect))) + high;
-    let x = (ax + bx) / 2;
+    // The fighters sit off-centre, away from the touch buttons, pulling back far enough to fit beside them.
+    const bias = Math.sign(this.buttons) * Math.min(BUTTONS_MAX, Math.abs(this.buttons) * BUTTONS_SHIFT);
+    let z = Math.min(FAR, Math.max(near, (gap + 2 * room) / (2 * TAN * this.aspect * (1 - Math.abs(bias))))) + high;
+    let x = (ax + bx) / 2 + bias * halfView(z, this.aspect);
     let y = (finisher ? 1.05 : LOOK_Y) + high * 0.6;
     // The establishing shot: done by the last third of the intro.
     const left = m.phase === 'intro' && !this.reduceMotion ? Math.max(0, (m.phaseTimer - INTRO_FRAMES / 3) / (INTRO_FRAMES * (2 / 3))) : 0;
@@ -125,10 +134,13 @@ export class CameraRig {
       y += (toFloat(l.y) + 0.9 - y) * 0.4 * k;
       z *= 1 - KO_CLOSER * k;
     }
-    // Stop short of the walls, letting a little past them show.
+    // Stop short of the walls, letting a little past them show; on the buttons' side, as much more as they
+    // cover, so a fighter at that wall stands beside them. The sets run on a few metres past their walls.
     const halfWidth = toFloat(segmentData(m.stage, m.segment).halfWidth);
-    const reach = Math.max(0, halfWidth - z * TAN * this.aspect * (1 - PAST_WALL));
-    x = Math.max(-reach, Math.min(reach, x));
+    const half = halfView(z, this.aspect);
+    const reach = Math.max(0, halfWidth - half * (1 - PAST_WALL));
+    const reachButtons = Math.max(0, halfWidth - half * (1 - Math.min(PAST_BUTTONS, PAST_WALL + 2 * Math.abs(this.buttons))));
+    x = Math.max(this.buttons < 0 ? -reachButtons : -reach, Math.min(this.buttons > 0 ? reachButtons : reach, x));
     if (this.snap) {
       this.fx = x;
       this.fy = y;

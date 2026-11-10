@@ -34,6 +34,8 @@ const PROJECTILE = 0x9fe8ff;
 /** The hit flash by weight (light, medium, heavy, ender): steps, and how bright. */
 const FLASH_STEPS = [3, 4, 6, 8] as const;
 const FLASH = [0x303030, 0x404040, 0x585858, 0x707070] as const;
+/** Room around a hurtbox for arms, legs and hair, metres: what the touch buttons fade over (screenRects). */
+const LIMB_ROOM = 0.2;
 
 /**
  * How an effect mesh is placed: on a projectile (its look), stretched over
@@ -169,6 +171,11 @@ export class Arena {
   set reduceMotion(on: boolean) {
     this.rig.reduceMotion = on;
   }
+  /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
+  set buttons(share: number) {
+    this.rig.buttons = share;
+  }
+  private readonly corner = new THREE.Vector3();
   showBoxes = false;
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
@@ -362,6 +369,41 @@ export class Arena {
     this.camera.position.set(c.x, c.y, c.z);
     this.camera.lookAt(c.tx, c.ty, 0);
     if (c.roll !== 0) this.camera.rotateZ(c.roll);
+  }
+
+  /**
+   * Where each fighter's body is on screen, after render(): left, top, right,
+   * bottom in CSS pixels of a w × h view, for each fighter, into `out` (8
+   * numbers). The hurtbox with some room for limbs; one off screen is empty.
+   */
+  screenRects(m: MatchState, w: number, h: number, out: Float32Array): void {
+    this.camera.updateMatrixWorld();
+    for (let i = 0; i < 2; i++) {
+      const f = m.fighters[i];
+      const o = i * 4;
+      if (!this.fighters[i].group.visible) {
+        out.fill(0, o, o + 4);
+        continue;
+      }
+      const b = hurtBox(f);
+      const bx = toFloat(b.x);
+      const bw = toFloat(b.w);
+      const x0 = toFloat(f.x) + (f.facing > 0 ? bx : -bx - bw) - LIMB_ROOM;
+      const x1 = x0 + bw + 2 * LIMB_ROOM;
+      const y0 = toFloat(f.y) + toFloat(b.y);
+      const y1 = y0 + toFloat(b.h) + LIMB_ROOM;
+      out[o] = out[o + 1] = Infinity;
+      out[o + 2] = out[o + 3] = -Infinity;
+      for (let k = 0; k < 4; k++) {
+        const c = this.corner.set(k & 1 ? x1 : x0, k & 2 ? y1 : y0, 0).project(this.camera);
+        const sx = ((c.x + 1) / 2) * w;
+        const sy = ((1 - c.y) / 2) * h;
+        out[o] = Math.min(out[o], sx);
+        out[o + 1] = Math.min(out[o + 1], sy);
+        out[o + 2] = Math.max(out[o + 2], sx);
+        out[o + 3] = Math.max(out[o + 3], sy);
+      }
+    }
   }
 
   /** Shows the fx mesh for a fighter's move in `slot`, if it has one and the art is loaded. */

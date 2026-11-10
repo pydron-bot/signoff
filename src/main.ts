@@ -98,6 +98,12 @@ const perf = new PerfOverlay(document.body, renderer);
 perf.note = () => `POST ${post.hdr ? 'HDR' : '8-BIT'} ×${post.drawScale}`;
 initKeyboard();
 
+/** The touch buttons moved, resized or came and went: the camera frames the fight beside them. */
+function layoutTouch(): void {
+  touch.relayout();
+  arena.buttons = touch.share();
+}
+
 /** Puts the settings into effect everywhere they matter. */
 function applySettings(): void {
   const rm = reducedMotion(settings, systemReduceMotion);
@@ -112,6 +118,7 @@ function applySettings(): void {
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
   touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
   touch.root.dataset.side = String(settings.touchSide);
+  layoutTouch();
   if (perf.shown !== (settings.perf === 1)) perf.show(settings.perf === 1);
 }
 applySettings();
@@ -178,6 +185,7 @@ function setTouch(inMatch: boolean): void {
 /** Shows or hides the touch buttons for the screen, the settings and the pads connected now. */
 function refreshTouch(): void {
   touch.show(touchInMatch && touchShown(settings, touchUi, padCount(), session?.options.mode === 'versus'));
+  layoutTouch();
 }
 // A pad plugged in or out mid-match: the buttons follow.
 window.addEventListener('gamepadconnected', refreshTouch);
@@ -577,6 +585,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 const frame = [0, 0];
+/** Both fighters on screen, for fading the touch buttons over them. */
+const bodyRects = new Float32Array(8);
 
 /** This step's input frames for both players, into `frame`. */
 function readInputs(): void {
@@ -617,6 +627,7 @@ function resize(): void {
   setOutlineSize(h * pr * post.drawScale);
   arena.setPixelHeight(h * pr * post.drawScale);
   arena.resize(w, h);
+  layoutTouch();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -694,6 +705,10 @@ renderer.setAnimationLoop((now) => {
     const p1 = m.fighters[0];
     touch.setTD(canTD(p1));
     touch.setInteract(propInReach(m, p1) >= 0);
+    if (touch.shown) {
+      arena.screenRects(m, window.innerWidth, window.innerHeight, bodyRects);
+      touch.fadeOver(bodyRects);
+    }
   }
   inputSides(session);
   for (let i = 0; i < 2; i++) {
