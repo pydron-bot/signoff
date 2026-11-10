@@ -71,18 +71,26 @@ export function guideInput(g: ComboGuide, t: number, facing: number): number {
 
 const ARROW: Readonly<Record<string, string>> = { f: '→', b: '←', d: '↓', u: '↑' };
 
-/** A press as the move list writes it: arrows for directions, SP for Special. */
+/** A press as the move list writes it: arrows for directions (a jump forward as one), SP for Special. */
 export function pressText(press: string): string {
   return press
+    .replace(/^u f\b/, '↗')
+    .replace(/^u b\b/, '↖')
     .split(' ')
     .map((p) => ARROW[p] ?? p)
     .join('');
 }
 
+/** A press of directions alone, with Up: a jump (or, out of a launcher, a jump cancel). */
+export function isJump(press: string): boolean {
+  const parts = press.split(' ');
+  return parts.includes('u') && parts.every((p) => p === 'u' || p === 'f' || p === 'b');
+}
+
 export interface GuideStep {
   /** As the move list writes it, a boost as "SP SP". */
   input: string;
-  /** The move it brings out, and its id (a boosted special's own id, as hit events name it). */
+  /** The move it brings out, and its id (a boosted special's own id, as hit events name it); a jump is "Jump" or "Jump Cancel", with no id. */
   move: string;
   id: string;
   /** Pressed while they're in the air and well after the last hit: wait for the fall. */
@@ -122,7 +130,12 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
     // A boost: Special again just after a special.
     const boost = presses.length && presses.every(([, p]) => p === 'SP') && steps.length && steps[steps.length - 1].input.endsWith('SP') && t - steps[steps.length - 1].at <= 8;
     if (boost) steps[steps.length - 1].input += ' SP';
-    else for (const [, p] of presses) steps.push({ input: pressText(p), move: '', id: '', wait: d.y > 0 && t - lastHit > 14, at: t });
+    else
+      for (const [, p] of presses) {
+        // A jump (a direction alone) brings out no move: out of a launcher it's the jump cancel.
+        const jump = isJump(p);
+        steps.push({ input: pressText(p), move: jump ? (a.mode === 'move' ? 'Jump Cancel' : 'Jump') : '', id: '', wait: d.y > 0 && t - lastHit > 14, at: t });
+      }
     ev.length = 0;
     step(m, guideInput(g, t, a.facing), 0, ev);
     for (const e of ev) {

@@ -121,8 +121,13 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     expect(kind(f.superMove)).toBe('super');
     expect(kind(f.interactMove)).toBe('interact');
     for (const mv of moves) {
-      // A ground string chains into normals, an air string into jumping normals.
-      for (const next of Object.values(mv.chain)) expect(kind(next), `${mv.id} chains to ${next}`).toBe(mv.kind === 'air' ? 'air' : 'normal');
+      // A ground string chains into normals, an air string into jumping normals, a special into its follow-up (a special).
+      for (const next of Object.values(mv.chain)) expect(kind(next), `${mv.id} chains to ${next}`).toBe(mv.kind === 'air' ? 'air' : mv.kind === 'special' ? 'special' : 'normal');
+      // A follow-up chains from a special on the ground, never into another follow-up.
+      if (mv.kind === 'special' && Object.keys(mv.chain).length) {
+        expect(mv.stance, `${mv.id} has a follow-up`).not.toBe('air');
+        for (const next of Object.values(mv.chain)) expect(Object.keys(f.moves[next].chain), next).toEqual([]);
+      }
       if (mv.boost) {
         const b = f.moves[mv.boost];
         expect(b, mv.boost).toBeDefined();
@@ -141,8 +146,8 @@ describe.each(roster.map((f) => [f.name, f] as const))('%s', (_name, f) => {
     for (const s of f.strings) expect(stringMoves(f, s), s.name).not.toBeNull();
   });
 
-  it('has an air string or two, each starting from a jumping normal and chaining through real moves', () => {
-    expect(f.airStrings.length).toBeGreaterThanOrEqual(1);
+  it('has three air strings or more, each starting from a jumping normal and chaining through real moves', () => {
+    expect(f.airStrings.length).toBeGreaterThanOrEqual(3);
     for (const s of f.airStrings) {
       expect(Object.values(f.normals.j), s.name).toContain(s.path[0]);
       expect(stringMoves(f, s), s.name).not.toBeNull();

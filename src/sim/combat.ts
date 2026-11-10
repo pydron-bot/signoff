@@ -481,6 +481,8 @@ export function applyHit(
 
   const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
+  // An air normal that hits a body in the air holds its attacker up, so an air string keeps meeting the body it juggles.
+  if (!projectile && wasAir && kind === 'air' && a.vy < 0) a.vy = 0;
   const relaunching = relaunch && wasAir;
   const keep = repeatKeep(d, moveId, fresh);
   // Caught in a move's recovery (it whiffed or was blocked): a punish, worth more.

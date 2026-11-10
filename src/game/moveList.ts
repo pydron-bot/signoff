@@ -129,6 +129,11 @@ export function moveList(fighter: string, found: (id: string) => boolean = () =>
     const m = f.moves[id];
     const boost = m.boost ? f.moves[m.boost] : null;
     specials.push({ name: m.name, input: `${DIR[dir]}SP`, notes: [traits(m), boost ? `SP again: ${traits(boost) || 'stronger'}` : ''].filter(Boolean).join(' · '), frames: frames(m) });
+    // Its follow-ups: a button as it plays, hit or not.
+    for (const [btn, next] of Object.entries(m.chain)) {
+      const fu = f.moves[next!];
+      specials.push({ name: fu.name, input: `${DIR[dir]}SP › ${btn}`, notes: [`after ${m.name}`, traits(fu)].filter(Boolean).join(' · '), frames: frames(fu) });
+    }
   }
 
   const strings: MoveRow[] = f.strings.map((s) => {

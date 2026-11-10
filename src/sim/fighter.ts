@@ -531,6 +531,10 @@ function moveControl(m: MatchState, i: number, ev: SimEvent[]): void {
     if (atk && next) {
       consume(inp, ATTACK_BITS[atk]);
       startMove(f, next);
+      // An air string holds its attacker up: each step it chains into stops the fall, so the steps meet the body they juggle.
+      if (air && f.vy < 0) f.vy = 0;
+      // A special's follow-up is a special too: it's announced like one.
+      if (moveOf(f).kind === 'special') ev.push({ type: 'special', player: i, move: next });
     } else if (!air && atk && f.contact === 'hit' && opensJuggle(mv)) {
       // A launcher (or a bounce) that connects cancels into any normal, to follow them up into the air.
       consume(inp, ATTACK_BITS[atk]);

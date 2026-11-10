@@ -216,6 +216,27 @@ export function normal(id: string, s: NormalSpec): MoveData {
   });
 }
 
+/**
+ * A special's follow-up: Special, then this button as the special plays (it
+ * comes out whether the special hit or not, as a string's next step does).
+ * One hit, kind special; a launcher keeps a cancel window, to follow them up.
+ */
+export function followUp(id: string, s: Omit<NormalSpec, 'kind' | 'chain'>): MoveData {
+  const mv = normal(id, { ...s, kind: 'special' });
+  const last = s.startup + s.active - 1;
+  return s.launch === undefined ? mv : { ...mv, cancel: [last + 1, last + CANCEL_LATE] };
+}
+
+/** An air string's ender: the body spiked into the floor, to bounce back up into a juggle (once a combo; else it knocks down). */
+export function airSpike(id: string, s: { name: string; damage: number; startup?: number; reach?: readonly [number, number]; at?: readonly [number, number] }): MoveData {
+  return normal(id, { name: s.name, kind: 'air', startup: s.startup ?? 6, active: 4, recovery: 9, reach: s.reach ?? [0, 1.0], at: s.at ?? [-0.3, 1.8], height: 'overhead', damage: s.damage, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true });
+}
+
+/** An air string's middle step: reaches high, to meet a body juggled above. */
+export function airStep(id: string, s: { name: string; damage: number; chain: Partial<Record<Attack, string>>; startup?: number; reach?: readonly [number, number] }): MoveData {
+  return normal(id, { name: s.name, kind: 'air', startup: s.startup ?? 5, active: 4, recovery: 7, reach: s.reach ?? [0.1, 0.95], at: [0.3, 1.7], height: 'overhead', damage: s.damage, hitstun: 18, blockstun: 12, chain: s.chain });
+}
+
 export function throwMove(damage: number): MoveData {
   return move('throw', {
     name: 'Throw',

@@ -7,7 +7,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 /** The plate: out, back, and a donation each time it connects. */
 function plate(speed: number, back: number, damage: number) {
@@ -39,11 +39,14 @@ const moves = table(
   // Command normals
   normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [0.75, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'j.BK' } }),
-  normal('j.BP', { name: 'Descending Book', kind: 'air', startup: 8, active: 5, recovery: 7, reach: [0.1, 0.95], at: [0.6, 1.2], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12 }),
+  normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'j.BK', BP: 'j.BP' } }),
+  normal('j.BP', { name: 'Descending Book', kind: 'air', startup: 8, active: 5, recovery: 7, reach: [0.1, 0.95], at: [0.6, 1.2], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12, chain: { FP: 'j.BP FP', BK: 'j.BP BK' } }),
   normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 48, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Ascension Kick', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 62, hitstun: 20, blockstun: 12 }),
   // String steps
+  // Air string steps: a blessing raised under them, then the book brought down from on high, and they bounce.
+  airStep('j.BP FP', { name: 'Benediction', damage: 40, chain: { BK: 'j.BP BK' } }),
+  airSpike('j.BP BK', { name: 'Smite from Above', damage: 45 }),
   normal('FP FP', { name: 'Amen', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.15, 1.5], height: 'high', damage: 32, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
   normal('FP FP BP', { name: 'Hallelujah', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.6], damage: 65, hitstun: 0, blockstun: 17, push: 0.07, knockdown: true }),
   normal('FP FK', { name: 'Sermon', startup: 9, active: 2, recovery: 15, reach: [0.2, 1.3], at: [0, 0.35], height: 'low', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'FK BK' } }),
@@ -68,6 +71,9 @@ const moves = table(
   // A palm to the forehead. With a donation to spend, it heals him too.
   move('Laying On of Hands', {
     name: 'Laying On of Hands',
+    // BK while they're still under his hand: slain in the spirit, up they go.
+    chain: { BK: 'Laying On of Hands BK' },
+    cancel: [13, 20],
     kind: 'special',
     total: 36,
     boost: 'Laying On of Hands+',
@@ -76,6 +82,8 @@ const moves = table(
   }),
   move('Laying On of Hands (healing)', {
     name: 'Laying On of Hands (healing)',
+    chain: { BK: 'Laying On of Hands BK' },
+    cancel: [13, 20],
     kind: 'special',
     total: 46,
     hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], height: 'high', damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
@@ -83,6 +91,7 @@ const moves = table(
     boost: 'Laying On of Hands (healing)+',
   }),
   // Boosted (1 bar): both hands, and the spirit lifts them off their feet; on a juggled body, back up again. Paid in Signal, not donations.
+  followUp('Laying On of Hands BK', { name: 'Slain in the Spirit', startup: 9, active: 3, recovery: 20, reach: [0.2, 1.1], at: [0.75, 1.6], damage: 40, hitstun: 0, blockstun: 12, launch: 0.16 }),
   move('Laying On of Hands+', {
     name: 'Laying On of Hands (boosted)',
     kind: 'special',
@@ -122,6 +131,24 @@ const moves = table(
     hits: [strike({ frames: [18, 22], reach: [-2.2, 2.2], at: [0, 2.4], damage: 110, hitstun: 0, blockstun: 16, chip: 22, launch: 0.18 })],
   }),
   // In the air: arms out, hanging there, and the light goes off all round him. Pops them up.
+  // Back + Special: a palm to the forehead that casts them out (off the wall, near one).
+  move('Begone', {
+    name: 'Begone',
+    kind: 'special',
+    total: 40,
+    boost: 'Begone+',
+    hits: [strike({ frames: [13, 15], reach: [0.2, 1.25], at: [0.75, 1.6], damage: 70, hitstun: 0, blockstun: 16, push: 0.08, knockdown: true, wallBounce: true })],
+    hurt: [{ frames: [13, 26], box: box(0.2, 1.1, 1.0, 1.6) }],
+  }),
+  // Boosted: he takes a hit to do it, and casts them up instead.
+  move('Begone+', {
+    name: 'Begone (boosted)',
+    kind: 'special',
+    total: 40,
+    armor: [1, 12],
+    hits: [strike({ frames: [13, 15], reach: [0.2, 1.3], at: [0.75, 1.7], damage: 60, hitstun: 0, blockstun: 18, push: 0.06, launch: 0.17 })],
+    hurt: [{ frames: [13, 26], box: box(0.2, 1.1, 1.0, 1.6) }],
+  }),
   move('Rapture', {
     name: 'Rapture',
     kind: 'special',
@@ -141,6 +168,29 @@ const moves = table(
     hover: [1, 26],
     landing: 6,
     hits: [strike({ frames: [14, 20], reach: [-1.5, 1.5], at: [-1.0, 2.2], damage: 70, hitstun: 0, blockstun: 14, chip: 12, launch: 0.18 })],
+  }),
+  // Down + Special in the air: he hangs there, arms wide, then comes down on them like judgement.
+  move('Fall from Grace', {
+    name: 'Fall from Grace',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    boost: 'Fall from Grace+',
+    hover: [1, 8],
+    dive: { frame: 9, vx: 0.06, vy: -0.15 },
+    landing: 12,
+    hits: [strike({ frames: [10, 36], reach: [-0.3, 0.8], at: [-0.2, 0.7], height: 'overhead', damage: 55, hitstun: 0, blockstun: 12, knockdown: true })],
+  }),
+  move('Fall from Grace+', {
+    name: 'Fall from Grace (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 38,
+    armor: [1, 8],
+    hover: [1, 8],
+    dive: { frame: 9, vx: 0.06, vy: -0.15 },
+    landing: 12,
+    hits: [strike({ frames: [10, 36], reach: [-0.35, 0.9], at: [-0.2, 0.8], height: 'overhead', damage: 50, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
   }),
   throwMove(105),
   interactMove(),
@@ -209,9 +259,13 @@ export const GIDEON: FighterData = {
     f: { BP: 'f.BP' },
     b: {},
   },
-  specials: { n: 'Fire and Brimstone', f: 'Collection Plate', d: 'Laying On of Hands' },
-  airSpecials: { n: 'Rapture' },
-  airStrings: [{ name: 'Hallelujah', path: ['j.FP', 'BK'], safe: false }],
+  specials: { n: 'Fire and Brimstone', f: 'Collection Plate', b: 'Begone', d: 'Laying On of Hands' },
+  airSpecials: { n: 'Rapture', d: 'Fall from Grace' },
+  airStrings: [
+    { name: 'Hallelujah', path: ['j.FP', 'BK'], safe: false },
+    { name: 'Hallelujah Chorus', path: ['j.FP', 'BP', 'BK'], safe: false },
+    { name: 'Benediction', path: ['j.BP', 'FP', 'BK'], safe: false },
+  ],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',

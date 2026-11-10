@@ -9,17 +9,22 @@
  * against the guide's timing. No DOM here.
  */
 import { Input, moveData, step, type MatchState, type SimEvent } from '../sim';
-import { guideInput, guides, guideStart, runGuide, type GuideStep } from './comboGuides';
+import { guideInput, guides, guideStart, runGuide, type ComboGuide, type GuideStep } from './comboGuides';
 import { Cleared } from './cleared';
 
 const { FP, BP, FK, BK, SPECIAL, THROW } = Input;
 const PRESS_BITS = FP | BP | FK | BK | SPECIAL | THROW;
 
-/** One move landing in the combo: the step that brought it out, the id its hits carry, and (from the guide's run) steps from the hit before it to that move starting. */
+/**
+ * One move landing in the combo: the step that brought it out, the id its
+ * hits carry, and (from the guide's run) steps from the hit before it to that
+ * move starting, and to its press (negative: pressed before that hit landed).
+ */
 export interface Connection {
   step: number;
   id: string;
   offset: number;
+  press: number;
 }
 
 export interface Trial {
@@ -35,7 +40,11 @@ export interface Trial {
 /** The trial for a fighter's guide `k` (null if there's no such guide). */
 export function trial(fighter: string, k: number): Trial | null {
   const g = guides(fighter)[k];
-  if (!g) return null;
+  return g ? trialOf(fighter, g, k) : null;
+}
+
+/** The trial for any combo written as a guide (a part of one, in Combo School); `k` is the guide it comes from. */
+export function trialOf(fighter: string, g: ComboGuide, k: number): Trial {
   const { steps, end } = runGuide(fighter, g);
   const m = guideStart(fighter, g.bars);
   const a = m.fighters[0];
@@ -50,7 +59,7 @@ export function trial(fighter: string, k: number): Trial | null {
     step(m, guideInput(g, t, a.facing), 0, ev);
     // A move starting is the first pressed step not yet under way (as runGuide names them); a boost isn't a new one.
     if (a.mode === 'move' && (a.move !== move || a.moveFrame < frame) && moveData(fighter, move || a.move).boost !== a.move) {
-      const j = steps.findIndex((s, i) => s.at <= t && startAt[i] < 0);
+      const j = steps.findIndex((s, i) => s.at <= t && startAt[i] < 0 && s.id !== '');
       if (j >= 0) startAt[j] = t;
     }
     move = a.mode === 'move' ? a.move : '';
@@ -61,7 +70,7 @@ export function trial(fighter: string, k: number): Trial | null {
       let j = -1;
       for (let i = 0; i < steps.length; i++) if (steps[i].at <= t && steps[i].id === e.move) j = i;
       const prev = conns.length ? conns[conns.length - 1].step : -1;
-      if (j > prev) conns.push({ step: j, id: e.move, offset: lastHit < 0 ? 0 : Math.max(0, startAt[j] - lastHit) });
+      if (j > prev) conns.push({ step: j, id: e.move, offset: lastHit < 0 ? 0 : Math.max(0, startAt[j] - lastHit), press: lastHit < 0 ? 0 : steps[j].at - lastHit });
       lastHit = t;
     }
   }
@@ -96,6 +105,8 @@ export class TrialTracker {
   version = 0;
   /** Times it's been cleared since the trial opened. */
   clears = 0;
+  /** On a drop judged early or late: by how many steps against the guide's timing (0 when it can't tell). */
+  missBy = 0;
   private t = 0;
   private lastHit = -1;
   private lastStart = -1;
@@ -108,6 +119,11 @@ export class TrialTracker {
   private held = 0;
 
   constructor(readonly trial: Trial) {}
+
+  /** Steps since the last move of the combo landed (-1 when no attempt is going). */
+  get sinceHit(): number {
+    return this.state === 'going' ? this.t - this.lastHit : -1;
+  }
 
   /** Back to the start of an attempt (the match was reset). */
   restart(): void {
@@ -177,6 +193,7 @@ export class TrialTracker {
   }
 
   private drop(why: Miss): void {
+    if (why === 'wrong') this.missBy = 0;
     this.state = 'dropped';
     this.dropStep = this.trial.conns[this.landed].step;
     this.miss = why;
@@ -191,8 +208,10 @@ export class TrialTracker {
   private timing(): Miss {
     const want = this.trial.conns[this.landed];
     const id = this.startMove;
+    this.missBy = 0;
     if (this.lastStart > this.lastHit && id && (id === want.id || moveData(this.trial.fighter, id).boost === want.id)) {
       const off = this.lastStart - this.lastHit;
+      this.missBy = off - want.offset;
       return off < want.offset ? 'early' : off > want.offset ? 'late' : 'missed';
     }
     return this.presses > this.starts ? 'early' : 'late';

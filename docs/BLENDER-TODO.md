@@ -263,6 +263,7 @@ are authored facing right with the left foot and left hand leading.
 > 11. ~~**Step 24, depth**~~ *done (Nov 9): the foreground, the audience (and `sit_audience`) and the living room; the game side follows.*
 > 12. ~~**Step 25, the fighting styles pilot**~~ *done (Nov 10): Rox's and Hollis's normals and their timing profiles; out of `ART_PENDING`.*
 > 13. ~~**Step 26, air specials**~~ *done (Nov 10): all fourteen clips.*
+> 14. **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1346,6 +1347,104 @@ land (`STAND_INS` in `src/render/pose.ts`; same lengths):
   Brimstone`): between the plain and the blessed one: a smaller column of
   fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows).
 
+### 28. The specials pass (Nov 10, game side)
+
+Every fighter has more specials now, and air strings made for juggles.
+Each new move plays a stand-in from the fighter's own clips until its clip
+lands (`STAND_INS` in `src/render/pose.ts`, in brackets below); frames,
+hitboxes, hovers and dives are in the clip table under *Move clips*. The
+boosted clip (`+`) can be the plain one with more on it, as elsewhere.
+
+**Air specials on Down** (Down + Special in the air). Each hangs a beat,
+then drops; they read best with a clear windup pose in the hang and a
+committed, straight-line fall.
+
+- [ ] `dale:Low Pressure`, `Low Pressure+` (36 frames; stand-in `j.FK`):
+  the umbrella snapped shut and pointed straight down like a spear, both
+  hands on it; hang 1–5, straight down from 6; the tip leads (hit box
+  under and just in front of him).
+- [ ] `rox:Splits Drop`, `Splits Drop+` (34 frames; stand-in `j.BK`):
+  hang 1–4 knees tucked, then straight down into the full splits, a heel
+  each side (box from 0.7 m behind to 0.8 m in front, at the feet).
+- [ ] `mumbles:Puppet Drop`, `Puppet Drop+` (32 frames; stand-in `Cut the
+  Strings`): the strings go slack and he drops like dead weight, limbs
+  loose, feet first, from 4; he lands first and is up quickly.
+- [ ] `hollis:Elbow Drop`, `Elbow Drop+` (36 frames; stand-in `j.BK`):
+  hang 1–6 with the elbow raised high (armoured 1–10, 1–14 boosted:
+  glows), then all of him down, elbow first, from 7.
+- [ ] `margaret:Cut to Commercial`, `Cut to Commercial+` (32 frames;
+  stand-in `j.FK`): a quick tuck 1–4, then straight down heel first from
+  5, the cue cards held out for balance.
+- [ ] `gus:Belly Flop`, `Belly Flop+` (38 frames; stand-in `j.BK`): arms
+  and legs spread 1–6, then down belly first, a little forward, from 7;
+  a big, flat landing (16 frames of landing lag; boosted armoured 1–10).
+- [ ] `gideon:Fall from Grace`, `Fall from Grace+` (38 frames; stand-in
+  `Rapture`): hangs arms wide, head back 1–8 (armoured 1–8 boosted), then
+  comes down on them, a little forward, from 9, the book raised in both
+  hands.
+
+**Follow-ups** (Special, then a button as it plays: the special's
+`cancel` window). Each starts from the end pose of its special, so the
+first frames should blend out of it.
+
+- [ ] `dale:Isobar Lasso BP` *Thunderclap* (31 frames; stand-in `c.BP`):
+  from the lasso's reel-in, the umbrella brought up under their chin, a
+  rising launcher (hits 9–11, up to 2.0 m).
+- [ ] `rox:Star Jump BK` *And Down* (31 frames, crouching; stand-in
+  `c.BK`): landing from the Star Jump straight into a low sweep.
+- [ ] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `c.BP`):
+  landing from the Star Jump straight into an uppercut, up on her toes.
+- [ ] `mumbles:Strings Attached FP` *Boo!* (22 frames; stand-in `s.BP`):
+  back on stage behind them, arms up, jaw dropped wide: a scare that hits
+  (6–8).
+- [ ] `hollis:Key Ring BP` *Yank* (29 frames; stand-in `Key Ring`): the
+  key ring's chain wrenched back with both hands, pulling them in and up
+  (hits 9–11, from the floor to 1.5 m, out to 1.9 m).
+- [ ] `margaret:Breaking BK` *And Now This* (32 frames; stand-in `c.BP`):
+  from the stagger strike into a rising kick, a launcher (hits 10–12).
+- [ ] `gus:Flambé BP` *Fan the Flames* (32 frames; stand-in `s.BP`): the
+  skillet swept up through the fire, a launcher with long reach (out to
+  1.6 m, 10–12). The fire effect can be reused on the skillet.
+- [ ] `gideon:Laying On of Hands BK` *Slain in the Spirit* (31 frames;
+  stand-in `c.BP`): from the hand on their forehead, a push up and back, a
+  launcher (10–12).
+
+**Gideon's Begone** (back + Special):
+
+- [ ] `gideon:Begone`, `Begone+` (40 frames; stand-in `Laying On of
+  Hands`): a palm thrust to the forehead with the whole body behind it,
+  hits 13–15 (y 0.75–1.6, out to 1.25 m); boosted, he's armoured 1–12
+  (glows) and the palm drives up.
+
+**Air string steps.** Air strings now end in a spike that bounces the body
+off the floor, with middle steps that reach high (to meet a body juggled
+above). The attacker stops falling as each step chains and as it hits a
+body in the air, so these play hanging in the air: they shouldn't drift
+down in the clip.
+
+- [ ] `dale:j.FK FP` *Updraft*, `dale:j.BP BK` *Downburst* (15 and 18
+  frames; stand-in `j.BP`): the umbrella hooked up under them, then
+  swung down from overhead with both hands.
+- [ ] `rox:j.BP FP` *Air Clap*, `rox:j.FK BK` *Heel Drop* (stand-ins
+  `j.FP`, `j.FK`): a clap overhead; an axe kick, heel straight down.
+- [ ] `mumbles:j.FK FP` *Clackety-Clack*, `mumbles:j.BP FK` *Pratfall*
+  (stand-ins `j.FP`, `j.BK`): his jaw clacking at them; sitting down on
+  them, hard.
+- [ ] `hollis:j.FK BP` *Baton Swing*, `hollis:j.BP BK` *Hammer Fist*
+  (stand-in `j.BP`): the nightstick swung up; both fists brought down.
+- [ ] `margaret:j.BK FP` *Wire Copy*, `margaret:j.BP BK` *Headline Drop*
+  (stand-ins `j.FP`, `j.BP`): cue cards flicked up; brought down edge
+  first.
+- [ ] `gus:j.FK FP` *Ladle Hook*, `gus:j.BP BK` *Skillet Spike* (stand-ins
+  `j.FP`, `j.BP`): a ladle hooked up; the skillet brought down flat.
+- [ ] `gideon:j.BP FP` *Benediction*, `gideon:j.BP BK` *Smite from Above*
+  (stand-ins `j.FP`, `j.BP`): a blessing raised under them; the book
+  brought down from on high.
+
+A spike's hit box reaches from 0.3 m below the feet to 1.8 m above them,
+so the swing starts high over the head and finishes low: the limb should
+pass through both ends of that during the active frames (6–9).
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -1398,7 +1497,7 @@ are the specials (`+` is the boosted version, which can share most of the
 plain one), `interact` is kicking a stage prop.
 <!-- clips:start (generated by `npm run docs:clips`; do not edit by hand) -->
 
-#### Dale Storm (`dale`): 35 move clips
+#### Dale Storm (`dale`): 40 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1416,6 +1515,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Hammer | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Knee | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
 | `j.BK` | Jumping Boot | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `j.FK FP` | Updraft | air | air | 15 | 5–8: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP BK` | Downburst | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Five-Day Outlook | normal | stand | 21 | 8–9: x 0.20…1.15, y 1.10…1.45 (high) |
 | `FP FP BK` | Front Moves In | normal | stand | 34 | 12–14: x 0.20…1.35, y 0.70…1.20 (mid) |
 | `FP BP` | Cloud Cover | normal | stand | 27 | 9–11: x 0.20…1.20, y 0.75…1.40 (mid) |
@@ -1430,15 +1531,18 @@ plain one), `interact` is kicking a stage prop.
 | `Pressure Drop+` | Pressure Drop (boosted) | special | stand | 44 | 18: spawns projectile at x 1.60, y 3.00; 22: spawns projectile at x 2.40, y 3.00; 26: spawns projectile at x 3.20, y 3.00 |
 | `Isobar Lasso` | Isobar Lasso | special | stand | 45 | 18–21: x 0.60…2.60, y 0.75…1.40 (mid) |
 | `Isobar Lasso+` | Isobar Lasso (boosted) | special | stand | 45 | 18–21: x 0.60…2.60, y 0.75…1.40 (mid) |
+| `Isobar Lasso BP` | Thunderclap | special | stand | 31 | 9–11: x 0.10…0.95, y 0.75…2.00 (mid) |
 | `Heat Lightning` | Heat Lightning | special | stand | 40 | 6–9: x 0.10…0.90, y 0.75…2.20 (mid) |
 | `Heat Lightning+` | Heat Lightning (boosted) | special | stand | 40 | 6–9: x 0.10…0.95, y 0.75…2.30 (mid) |
 | `Downpour` | Downpour | special | air | 34 | 12: spawns projectile at x 0.40, y 0.40; 1–16: hangs in the air |
 | `Downpour+` | Downpour (boosted) | special | air | 34 | 12: spawns projectile at x 0.40, y 0.40; 15: spawns projectile at x 0.40, y 0.40; … 4 hits to 18 |
+| `Low Pressure` | Low Pressure | special | air | 36 | 7–34: x -0.20…0.75, y -0.20…0.70 (overhead); 1–5: hangs in the air; 6: dives (forward 0.02, down 0.17 m a frame) |
+| `Low Pressure+` | Low Pressure (boosted) | special | air | 36 | 7–34: x -0.25…0.85, y -0.20…0.80 (overhead); 1–5: hangs in the air; 6: dives (forward 0.02, down 0.17 m a frame) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
-#### Rox Vega (`rox`): 38 move clips
+#### Rox Vega (`rox`): 44 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1456,6 +1560,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Elbow | air | air | 16 | 6–10: x 0.10…0.80, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Kick | air | air | 17 | 5–12: x 0.10…0.85, y 0.10…0.60 (overhead) |
 | `j.BK` | Jumping Split | air | air | 19 | 7–12: x -0.60…0.95, y 0.10…0.60 (overhead) |
+| `j.BP FP` | Air Clap | air | air | 15 | 5–8: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.FK BK` | Heel Drop | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Warm-Up | normal | stand | 17 | 6–7: x 0.20…1.00, y 1.10…1.45 (high) |
 | `FP FP FK` | Reps | normal | stand | 24 | 8–10: x 0.20…1.15, y 0.55…0.90 (mid) |
 | `FP FP FK FK` | Grapevine Step | normal | stand | 23 | 8–9: x 0.20…1.15, y 0.00…0.30 (low) |
@@ -1475,13 +1581,17 @@ plain one), `interact` is kicking a stage prop.
 | `Count of Eight+` | Count of Eight (boosted) | special | stand | 47 | 9–10: x 0.20…1.10, y 0.40…0.90 (mid); 12–13: x 0.20…1.10, y 0.40…0.90 (mid); … 9 hits to 31 |
 | `Star Jump` | Star Jump | special | stand | 34 | 16–18: x 0.20…1.00, y 0.75…1.60 (overhead) |
 | `Star Jump+` | Star Jump (boosted) | special | stand | 34 | 16–18: x 0.20…1.00, y 0.75…1.60 (overhead); 1–15: armour (glows) |
+| `Star Jump BK` | And Down | special | crouch | 31 | 9–11: x 0.20…1.10, y 0.00…0.30 (low) |
+| `Star Jump FP` | Reach for the Sky | special | stand | 28 | 8–10: x 0.10…0.80, y 0.75…1.90 (mid) |
 | `Aerobic Dive` | Aerobic Dive | special | air | 40 | 7–38: x 0.00…0.80, y -0.10…0.50 (overhead); 1–5: hangs in the air; 6: dives (forward 0.11, down 0.13 m a frame) |
 | `Aerobic Dive+` | Aerobic Dive (boosted) | special | air | 40 | 7–38: x 0.00…0.80, y -0.10…0.50 (overhead); 1–5: hangs in the air; 6: dives (forward 0.11, down 0.13 m a frame) |
+| `Splits Drop` | Splits Drop | special | air | 34 | 6–32: x -0.70…0.80, y -0.10…0.45 (overhead); 1–4: hangs in the air; 5: dives (forward 0.00, down 0.18 m a frame) |
+| `Splits Drop+` | Splits Drop (boosted) | special | air | 34 | 6–32: x -0.80…0.90, y -0.10…0.50 (overhead); 1–4: hangs in the air; 5: dives (forward 0.00, down 0.18 m a frame) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.40, y 0.30…1.60 (mid) |
 
-#### Hollis Bey (`hollis`): 35 move clips
+#### Hollis Bey (`hollis`): 40 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1499,6 +1609,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Hammer | air | air | 18 | 8–12: x 0.10…0.90, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Knee | air | air | 20 | 7–14: x 0.10…0.90, y 0.10…0.60 (overhead) |
 | `j.BK` | Body Drop | air | air | 23 | 10–15: x -0.30…1.00, y 0.00…0.50 (overhead) |
+| `j.FK BP` | Baton Swing | air | air | 16 | 6–9: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP BK` | Hammer Fist | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Pat Down | normal | stand | 23 | 9–10: x 0.20…1.10, y 1.10…1.50 (high) |
 | `FP FP FK` | Cuff 'Em | normal | stand | 34 | 8–9: grab (reach 1.20) |
 | `FP FP BP` | Lights Out | normal | stand | 38 | 14–16: x 0.20…1.30, y 0.75…1.40 (mid) |
@@ -1513,15 +1625,18 @@ plain one), `interact` is kicking a stage prop.
 | `Flashlight+` | Flashlight (boosted) | special | stand | 37 | 14–17: x 0.40…2.60, y 0.75…1.80 (mid) |
 | `Key Ring` | Key Ring | special | stand | 32 | 12–14: x 0.40…1.90, y 0.00…0.40 (low) |
 | `Key Ring+` | Key Ring (boosted) | special | stand | 40 | 12–14: x 0.40…1.90, y 0.00…0.40 (low); 20–22: x 0.40…1.90, y 0.75…1.50 (mid) |
+| `Key Ring BP` | Yank | special | stand | 29 | 9–11: x 0.30…1.90, y 0.00…1.50 (mid) |
 | `Night Shift` | Night Shift | special | stand | 39 | 16–19: x 0.10…1.00, y 0.60…1.60 (mid); 1–18: armour (glows) |
 | `Night Shift+` | Night Shift (boosted) | special | stand | 39 | 16–19: x 0.10…1.10, y 0.60…1.60 (mid); 1–22: armour (glows) |
 | `Searchlight` | Searchlight | special | air | 38 | 12–16: x 0.20…2.00, y -1.60…0.40 (overhead); 1–22: hangs in the air |
 | `Searchlight+` | Searchlight (boosted) | special | air | 38 | 12–16: x 0.20…2.50, y -1.90…0.50 (overhead); 1–22: hangs in the air |
+| `Elbow Drop` | Elbow Drop | special | air | 36 | 8–34: x -0.20…0.80, y -0.20…0.60 (overhead); 1–6: hangs in the air; … 4 hits to 34 |
+| `Elbow Drop+` | Elbow Drop (boosted) | special | air | 36 | 8–34: x -0.25…0.90, y -0.20…0.70 (overhead); 1–6: hangs in the air; … 4 hits to 34 |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
-#### Mister Mumbles (`mumbles`): 34 move clips
+#### Mister Mumbles (`mumbles`): 39 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1539,6 +1654,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Clap | air | air | 15 | 5–9: x 0.10…0.90, y 0.40…0.90 (overhead) |
 | `j.FK` | Jumping Kick | air | air | 16 | 4–11: x 0.10…0.95, y 0.00…0.50 (overhead) |
 | `j.BK` | Jumping Split | air | air | 18 | 6–11: x -0.50…1.00, y 0.00…0.45 (overhead) |
+| `j.FK FP` | Clackety-Clack | air | air | 14 | 4–7: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP FK` | Pratfall | air | air | 17 | 5–8: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Ha-Ha | normal | stand | 18 | 7–8: x 0.15…1.00, y 0.75…1.15 (mid) |
 | `FP FP FP` | Ha-Ha-Ha | normal | stand | 22 | 9–10: x 0.15…1.10, y 0.75…1.20 (mid) |
 | `FP FP FP BK` | Punchline | normal | stand | 36 | 12–14: x -0.50…1.25, y 0.40…1.00 (mid) |
@@ -1551,16 +1668,19 @@ plain one), `interact` is kicking a stage prop.
 | `Hand Puppet+` | Hand Puppet (boosted) | special | stand | 30 | 8–10: x 0.15…1.20, y 0.60…1.30 (mid); 12: spawns projectile at x 0.90, y 0.00 |
 | `Strings Attached` | Strings Attached | special | stand | 27 | 6–20: off screen; 14: reappears behind the opponent |
 | `Strings Attached+` | Strings Attached (boosted) | special | stand | 40 | 24–26: x 0.15…1.00, y 0.60…1.30 (mid); 6–22: off screen; 14: reappears behind the opponent |
+| `Strings Attached FP` | Boo! | special | stand | 22 | 6–8: x 0.15…1.00, y 0.60…1.30 (mid) |
 | `Exit Stage Left` | Exit Stage Left | special | stand | 30 | 6–20: off screen; 12: reappears far back |
 | `Knock-Knock` | Knock-Knock | special | stand | 55 | 30–33: x 0.15…1.20, y 0.00…0.90 (unblockable) |
 | `Knock-Knock+` | Knock-Knock (boosted) | special | stand | 50 | 24–27: x 0.15…1.40, y 0.00…0.90 (unblockable) |
 | `Cut the Strings` | Cut the Strings | special | air | 34 | 17–32: x -0.30…0.60, y -0.10…0.50 (overhead); 5–15: off screen; … 5 hits to 32 |
 | `Cut the Strings+` | Cut the Strings (boosted) | special | air | 34 | 17–32: x -0.30…0.60, y -0.10…0.50 (overhead); 5–15: off screen; … 5 hits to 32 |
+| `Puppet Drop` | Puppet Drop | special | air | 32 | 5–30: x -0.30…0.60, y -0.10…0.50 (overhead); 1–3: hangs in the air; 4: dives (forward 0.03, down 0.16 m a frame) |
+| `Puppet Drop+` | Puppet Drop (boosted) | special | air | 32 | 5–30: x -0.35…0.70, y -0.10…0.55 (overhead); 1–3: hangs in the air; 4: dives (forward 0.03, down 0.16 m a frame) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.30, y 0.30…1.60 (mid) |
 
-#### Margaret Okafor (`margaret`): 37 move clips
+#### Margaret Okafor (`margaret`): 42 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1578,6 +1698,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Headline | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
 | `j.BK` | Jumping Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `j.BK FP` | Wire Copy | air | air | 15 | 5–8: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP BK` | Headline Drop | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Top Story | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.10…1.45 (high) |
 | `FP FP BP` | And Finally | normal | stand | 31 | 11–13: x 0.20…1.25, y 0.75…1.40 (mid) |
 | `FP FK` | Correspondent | normal | stand | 25 | 9–10: x 0.20…1.35, y 0.00…0.35 (low) |
@@ -1588,6 +1710,7 @@ plain one), `interact` is kicking a stage prop.
 | `f.BP BP` | Exclusive | normal | stand | 31 | 11–13: x 0.20…1.20, y 0.75…1.40 (mid) |
 | `Breaking` | Breaking | special | stand | 32 | 8–9: x 0.20…1.15, y 0.75…1.40 (mid) |
 | `Breaking+` | Breaking (boosted) | special | stand | 40 | 8–9: x 0.20…1.15, y 0.75…1.40 (mid); 16–17: x 0.20…1.20, y 0.75…1.40 (mid) |
+| `Breaking BK` | And Now This | special | stand | 32 | 10–12: x 0.20…1.30, y 0.75…1.60 (mid) |
 | `Teleprompter` | Teleprompter | special | stand | 44 | 8–26: counter stance; a strike read here plays `Teleprompter Read` |
 | `Teleprompter+` | Teleprompter (boosted) | special | stand | 44 | 8–34: counter stance; a strike read here plays `Teleprompter Read+` |
 | `Teleprompter Read` | Teleprompter: Read | special | stand | 30 | 3–5: x 0.10…1.80, y 0.30…1.80 (mid) |
@@ -1598,11 +1721,13 @@ plain one), `interact` is kicking a stage prop.
 | `Lead Story+` | Lead Story (boosted) | special | stand | 46 | 20–21: x 0.20…1.10, y 0.75…1.70 (overhead); 4–19: armour (glows) |
 | `On the Wire` | On the Wire | special | air | 32 | 8–14: x 0.10…0.90, y 0.40…1.20 (overhead); 1–20: hangs in the air |
 | `On the Wire+` | On the Wire (boosted) | special | air | 32 | 8–10: x 0.10…0.90, y 0.40…1.20 (overhead); 13–15: x 0.10…0.90, y 0.40…1.20 (overhead); 1–20: hangs in the air |
+| `Cut to Commercial` | Cut to Commercial | special | air | 32 | 6–30: x -0.20…0.70, y -0.10…0.60 (overhead); 1–4: hangs in the air; 5: dives (forward 0.01, down 0.20 m a frame) |
+| `Cut to Commercial+` | Cut to Commercial (boosted) | special | air | 32 | 6–30: x -0.25…0.80, y -0.10…0.70 (overhead); 1–4: hangs in the air; 5: dives (forward 0.01, down 0.20 m a frame) |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
-#### Chef Gus Lamarre (`gus`): 34 move clips
+#### Chef Gus Lamarre (`gus`): 39 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1620,6 +1745,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Jumping Skillet | air | air | 20 | 9–13: x 0.10…1.10, y 0.70…1.30 (overhead) |
 | `j.FK` | Jumping Clog | air | air | 19 | 7–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
 | `j.BK` | Jumping Cleaver | air | air | 22 | 10–14: x 0.10…1.20, y 0.30…0.90 (overhead) |
+| `j.FK FP` | Ladle Hook | air | air | 16 | 6–9: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP BK` | Skillet Spike | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Season | normal | stand | 21 | 8–9: x 0.20…1.15, y 1.10…1.50 (high) |
 | `FP FP BK` | Chef's Kiss | normal | stand | 36 | 14–16: x 0.30…1.75, y 0.75…1.50 (mid) |
 | `FP BP` | Sear | normal | stand | 32 | 12–14: x 0.20…1.50, y 0.75…1.50 (mid) |
@@ -1629,6 +1756,7 @@ plain one), `interact` is kicking a stage prop.
 | `c.FP BK` | Julienne | normal | crouch | 36 | 12–14: x 0.20…1.65, y 0.00…0.30 (low) |
 | `Flambé` | Flambé | special | stand | 42 | 16: spawns projectile at x 1.60, y 0.00 |
 | `Flambé+` | Flambé (boosted) | special | stand | 42 | 16: spawns projectile at x 1.90, y 0.00 |
+| `Flambé BP` | Fan the Flames | special | stand | 32 | 10–12: x 0.20…1.60, y 0.40…1.60 (mid) |
 | `Tenderise` | Tenderise | special | stand | 46 | 12–13: x 0.20…1.10, y 0.75…1.50 (mid); 20–21: x 0.20…1.10, y 0.75…1.50 (mid); 30–31: x 0.20…1.15, y 0.75…1.70 (mid) |
 | `Tenderise+` | Tenderise (boosted) | special | stand | 42 | 12–13: x 0.20…1.15, y 0.75…1.50 (mid); 19–20: x 0.20…1.15, y 0.75…1.50 (mid); … 4 hits to 27 |
 | `Mise en Place` | Mise en Place | special | stand | 40 | 14: spawns projectile at x 2.30, y 3.00 (waits 26 frames) |
@@ -1637,11 +1765,13 @@ plain one), `interact` is kicking a stage prop.
 | `Chop Chop+` | Chop Chop (boosted) | special | crouch | 48 | 12–13: x 0.20…2.00, y 0.00…0.35 (low); 20–22: x 0.20…2.10, y 0.00…0.35 (low) |
 | `Cleaver Toss` | Cleaver Toss | special | air | 32 | 10: spawns projectile at x 0.50, y 0.60; 1–12: hangs in the air |
 | `Cleaver Toss+` | Cleaver Toss (boosted) | special | air | 32 | 10: spawns projectile at x 0.50, y 0.60; 14: spawns projectile at x 0.50, y 0.60; 1–16: hangs in the air |
+| `Belly Flop` | Belly Flop | special | air | 38 | 8–36: x -0.40…0.90, y -0.20…0.70 (overhead); 1–6: hangs in the air; 7: dives (forward 0.05, down 0.15 m a frame) |
+| `Belly Flop+` | Belly Flop (boosted) | special | air | 38 | 8–36: x -0.45…1.00, y -0.20…0.80 (overhead); 1–6: hangs in the air; … 4 hits to 36 |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
 
-#### Rev. Gideon Price (`gideon`): 34 move clips
+#### Rev. Gideon Price (`gideon`): 41 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1658,6 +1788,8 @@ plain one), `interact` is kicking a stage prop.
 | `j.BP` | Descending Book | air | air | 19 | 8–12: x 0.10…0.95, y 0.60…1.20 (overhead) |
 | `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
 | `j.BK` | Ascension Kick | air | air | 22 | 9–14: x 0.10…1.00, y 0.10…0.60 (overhead) |
+| `j.BP FP` | Benediction | air | air | 15 | 5–8: x 0.10…0.95, y 0.30…1.70 (overhead) |
+| `j.BP BK` | Smite from Above | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Amen | normal | stand | 19 | 7–8: x 0.20…1.05, y 1.15…1.50 (high) |
 | `FP FP BP` | Hallelujah | normal | stand | 32 | 12–14: x 0.20…1.25, y 0.75…1.60 (mid) |
 | `FP FK` | Sermon | normal | stand | 25 | 9–10: x 0.20…1.30, y 0.00…0.35 (low) |
@@ -1669,13 +1801,18 @@ plain one), `interact` is kicking a stage prop.
 | `Collection Plate+` | Collection Plate (boosted) | special | stand | 40 | 14: spawns projectile at x 0.60, y 0.95 (comes back after 24 frames; caught) |
 | `Laying On of Hands` | Laying On of Hands | special | stand | 36 | 10–12: x 0.20…1.00, y 1.20…1.70 (high) |
 | `Laying On of Hands (healing)` | Laying On of Hands (healing) | special | stand | 46 | 10–12: x 0.20…1.00, y 1.20…1.70 (high); 24: heals (glows) |
+| `Laying On of Hands BK` | Slain in the Spirit | special | stand | 31 | 9–11: x 0.20…1.10, y 0.75…1.60 (mid) |
 | `Laying On of Hands+` | Laying On of Hands (boosted) | special | stand | 36 | 10–12: x 0.20…1.05, y 0.75…1.80 (mid) |
 | `Laying On of Hands (healing)+` | Laying On of Hands (healing, boosted) | special | stand | 46 | 10–12: x 0.20…1.05, y 0.75…1.80 (mid); 24: heals (glows) |
 | `Fire and Brimstone` | Fire and Brimstone | special | stand | 50 | 18–21: x -1.20…1.20, y 0.00…1.80 (mid) |
 | `Fire and Brimstone+` | Fire and Brimstone (boosted) | special | stand | 50 | 18–21: x -1.60…1.60, y 0.00…2.00 (mid); 4–17: armour (glows) |
 | `Fire and Brimstone (blessed)` | Fire and Brimstone (blessed) | special | stand | 54 | 18–22: x -2.20…2.20, y 0.00…2.40 (mid); 4–17: armour (glows) |
+| `Begone` | Begone | special | stand | 40 | 13–15: x 0.20…1.25, y 0.75…1.60 (mid) |
+| `Begone+` | Begone (boosted) | special | stand | 40 | 13–15: x 0.20…1.30, y 0.75…1.70 (mid); 1–12: armour (glows) |
 | `Rapture` | Rapture | special | air | 40 | 14–20: x -1.00…1.00, y -0.60…1.80 (mid); 1–26: hangs in the air |
 | `Rapture+` | Rapture (boosted) | special | air | 40 | 14–20: x -1.50…1.50, y -1.00…2.20 (mid); 1–26: hangs in the air; 1–13: armour (glows) |
+| `Fall from Grace` | Fall from Grace | special | air | 38 | 10–36: x -0.30…0.80, y -0.20…0.70 (overhead); 1–8: hangs in the air; 9: dives (forward 0.06, down 0.15 m a frame) |
+| `Fall from Grace+` | Fall from Grace (boosted) | special | air | 38 | 10–36: x -0.35…0.90, y -0.20…0.80 (overhead); 1–8: hangs in the air; … 4 hits to 36 |
 | `throw` | Throw | throw | stand | 28 | 5–6: grab (reach 1.00) |
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |

@@ -4,7 +4,7 @@
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
-import { box, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
+import { airSpike, airStep, box, followUp, interactMove, move, normal, projectile, rerun, Script, strike, table, technicalDifficulties, throwMove } from './build';
 
 const moves = table(
   // Standing
@@ -33,9 +33,12 @@ const moves = table(
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
-  normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12 }),
-  normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12 }),
+  normal('j.BP', { name: 'Jumping Hammer', kind: 'air', startup: 7, active: 5, recovery: 6, reach: [0.1, 0.9], at: [0.8, 1.3], height: 'overhead', damage: 55, hitstun: 18, blockstun: 12, chain: { BK: 'j.BP BK' } }),
+  normal('j.FK', { name: 'Jumping Knee', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { FP: 'j.FK FP' } }),
   normal('j.BK', { name: 'Jumping Boot', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
+  // Air string steps: the umbrella hooked up under them, then brought down to bounce them off the floor.
+  airStep('j.FK FP', { name: 'Updraft', damage: 35, chain: { BK: 'j.BP BK' } }),
+  airSpike('j.BP BK', { name: 'Downburst', damage: 45 }),
   // String steps
   normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], height: 'high', damage: 35, hitstun: 18, blockstun: 14, chain: { BK: 'FP FP BK' } }),
   normal('FP FP BK', { name: 'Front Moves In', startup: 12, active: 3, recovery: 20, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 0, blockstun: 18, push: 0.07, knockdown: true }),
@@ -82,13 +85,20 @@ const moves = table(
     total: 45,
     boost: 'Isobar Lasso+',
     hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 40, hitstun: 28, blockstun: 18, push: 0, pull: 0.8 })],
+    // Reeled in: BP as it lands brings the umbrella up under them.
+    chain: { BP: 'Isobar Lasso BP' },
+    cancel: [22, 30],
   }),
   move('Isobar Lasso+', {
     name: 'Isobar Lasso (boosted)',
     kind: 'special',
     total: 45,
     hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 55, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+    chain: { BP: 'Isobar Lasso BP' },
+    cancel: [22, 30],
   }),
+  // The lasso's follow-up: a clap of thunder under the chin, up into a juggle.
+  followUp('Isobar Lasso BP', { name: 'Thunderclap', startup: 9, active: 3, recovery: 20, reach: [0.1, 0.95], at: [0.75, 2.0], damage: 38, hitstun: 0, blockstun: 12, launch: 0.16 }),
   // A rising, invulnerable reversal: wins against pressure, loses badly if blocked.
   move('Heat Lightning', {
     name: 'Heat Lightning',
@@ -129,6 +139,29 @@ const moves = table(
       { frame: 15, projectile: hailDown(0.06, 38) },
       { frame: 18, projectile: hailDown(0.09, 38) },
     ],
+  }),
+  // Down + Special in the air: the umbrella closed like a spear, straight down. It hits on the way, and he lands in time to carry on.
+  move('Low Pressure', {
+    name: 'Low Pressure',
+    kind: 'special',
+    stance: 'air',
+    total: 36,
+    boost: 'Low Pressure+',
+    hover: [1, 5],
+    dive: { frame: 6, vx: 0.02, vy: -0.17 },
+    landing: 10,
+    hits: [strike({ frames: [7, 34], reach: [-0.2, 0.75], at: [-0.2, 0.7], height: 'overhead', damage: 55, hitstun: 22, blockstun: 12 })],
+  }),
+  // Boosted: it drives them into the floor, and they bounce up for more.
+  move('Low Pressure+', {
+    name: 'Low Pressure (boosted)',
+    kind: 'special',
+    stance: 'air',
+    total: 36,
+    hover: [1, 5],
+    dive: { frame: 6, vx: 0.02, vy: -0.17 },
+    landing: 10,
+    hits: [strike({ frames: [7, 34], reach: [-0.25, 0.85], at: [-0.2, 0.8], height: 'overhead', damage: 50, hitstun: 0, blockstun: 14, knockdown: true, groundBounce: true })],
   }),
   throwMove(100),
   interactMove(),
@@ -212,8 +245,12 @@ export const DALE: FighterData = {
     b: { FK: 'b.FK' },
   },
   specials: { n: 'Heat Lightning', f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
-  airSpecials: { n: 'Downpour' },
-  airStrings: [{ name: 'Squall', path: ['j.FP', 'BP'], safe: false }],
+  airSpecials: { n: 'Downpour', d: 'Low Pressure' },
+  airStrings: [
+    { name: 'Squall', path: ['j.FP', 'BP'], safe: false },
+    { name: 'Squall Line', path: ['j.FP', 'BP', 'BK'], safe: false },
+    { name: 'Gale Force', path: ['j.FK', 'FP', 'BK'], safe: false },
+  ],
   throwMove: 'throw',
   superMove: 'td',
   interactMove: 'interact',
