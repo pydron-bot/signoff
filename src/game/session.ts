@@ -4,19 +4,30 @@
  * clock, health and meter refills, reset, frame advantage). No DOM here.
  */
 import { Cpu, type CpuLevel } from '../ai/cpu';
-import { Input, METER_MAX, ROUND_FRAMES, STAY_TUNED_FRAMES, createMatch, moveData, saveMatch, step, type MatchState, type SimEvent } from '../sim';
+import { BAR, METER_MAX, ROUND_FRAMES, STAY_TUNED_FRAMES, createMatch, fighterData, saveMatch, step, type FighterState, type MatchState, type SimEvent } from '../sim';
 import { fx } from '../sim/fixed';
 import { segmentData } from '../sim/stages';
 import { setupRound } from '../sim/stage';
 import { AdvantageTracker } from './advantage';
-import { GUIDE_REST, guideInput, guides, guideStart, runGuide, type ComboGuide, type GuideRun } from './comboGuides';
+import { GUIDE_DUMMY, GUIDE_REST, guideInput, guides, guideStart, runGuide, type ComboGuide, type GuideRun } from './comboGuides';
+import { TrainingDummy } from './dummy';
+import { FrameMeter } from './frameMeter';
+import { LessonRun, lesson } from './lessons';
 import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
+import { TrialTracker, trial } from './trials';
 
 /** demo: CPU against CPU, behind the title screen. replay: a recorded match played back. showcase: a combo guide played on a loop. */
 export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay' | 'showcase';
-/** duck: crouching without Block, so highs and throws go over it and everything else hits. */
-export type Dummy = 'stand' | 'block' | 'crouch' | 'duck' | 'cpu';
-export const DUMMIES: readonly Dummy[] = ['stand', 'block', 'crouch', 'duck', 'cpu'];
+/** Who plays player 2 in training: the dummy (dummy.ts) or the CPU. */
+export type Control = 'dummy' | 'cpu';
+export const CONTROLS: readonly Control[] = ['dummy', 'cpu'];
+/**
+ * Where Reset goes: the round's start, point blank in the middle, the
+ * dummy's back to the left or right wall, or a moment saved with
+ * saveMoment().
+ */
+export type Position = 'start' | 'middle' | 'left' | 'right' | 'saved';
+export const POSITIONS: readonly Position[] = ['start', 'middle', 'left', 'right', 'saved'];
 /**
  * Training's finisher practice: the dummy on its last point of health and
  * the player a round up, so any hit ends the match: then a cancellation (if
@@ -41,18 +52,33 @@ export interface SessionOptions {
   version?: string;
   /** For mode 'replay': what to play. */
   replay?: Replay;
-  /** For mode 'showcase': which of p1's combo guides. */
+  /** For mode 'showcase', or a training trial: which of p1's combo guides. */
   guide?: number;
+  /** Training: the guide is a trial to clear (from the guide's start, against its dummy). */
+  trial?: boolean;
+  /** Training: a lesson (lessons.ts) by id. */
+  lesson?: string;
 }
 
 /** Frames both fighters must be at rest before training refills health. */
 const REFILL_AFTER = 40;
+/** Frames at rest after a trial or lesson attempt is decided before it starts again. */
+const AGAIN_AFTER = 30;
 
 export class Session {
   readonly match: MatchState;
   readonly adv = new AdvantageTracker();
-  dummy: Dummy = 'stand';
+  readonly dummy: TrainingDummy;
+  control: Control = 'dummy';
+  readonly frames = new FrameMeter();
   practice: Practice = 'off';
+  position: Position = 'start';
+  /** Training: the moment saveMoment() kept, which Reset can return to. */
+  private saved: MatchState | null = null;
+  /** A trial: the combo to land and how the attempt is going. */
+  readonly tracker: TrialTracker | null = null;
+  /** A lesson being played. */
+  readonly lesson: LessonRun | null = null;
   /** Counts training's resets after a finished practice, so the presentation can start afresh. */
   resets = 0;
   private readonly cpu: Cpu | null;
@@ -74,11 +100,19 @@ export class Session {
   constructor(readonly options: SessionOptions) {
     const o = options;
     this.player = o.mode === 'replay' && o.replay ? new ReplayPlayer(o.replay) : null;
+    this.dummy = new TrainingDummy(o.seed);
     if (o.mode === 'showcase') {
       this.guide = guides(o.p1)[o.guide ?? 0] ?? null;
       this.guideRun = this.guide ? runGuide(o.p1, this.guide) : null;
     }
-    this.match = this.player?.match ?? (this.guide ? guideStart(o.p1, this.guide.bars) : createMatch({ p1: o.p1, p2: o.p2, stage: o.stage, seed: o.seed, studio: o.studio }));
+    const tr = o.mode === 'training' && o.trial ? trial(o.p1, o.guide ?? 0) : null;
+    const ls = o.mode === 'training' && o.lesson ? lesson(o.lesson) : null;
+    if (tr) this.tracker = new TrialTracker(tr);
+    if (ls) this.lesson = new LessonRun(ls);
+    // A trial is the guide's own start; a lesson is in the studio against the guides' dummy.
+    this.match =
+      this.player?.match ??
+      (this.guide ? guideStart(o.p1, this.guide.bars) : tr ? guideStart(o.p1, tr.bars) : createMatch({ p1: ls?.p1 ?? o.p1, p2: ls ? GUIDE_DUMMY : o.p2, stage: ls ? 'weather' : o.stage, seed: o.seed, studio: ls ? true : o.studio }));
     if (this.guide) this.start = saveMatch(this.match);
     const studio = o.studio === true;
     this.recorder = o.mode === 'cpu' || o.mode === 'versus' ? new ReplayRecorder(o.version ?? '', { p1: o.p1, p2: o.p2, stage: this.match.stage, seed: o.seed, studio }) : null;
@@ -88,9 +122,15 @@ export class Session {
       // Straight to the fight, and remember it for resets.
       const ev: SimEvent[] = [];
       while (this.match.phase !== 'fight') step(this.match, 0, 0, ev);
+      this.lesson?.lesson.setup(this.match);
       this.start = saveMatch(this.match);
       this.base = saveMatch(this.match);
     }
+  }
+
+  /** Training with the usual tools (not a trial or a lesson, which have their own start and rules). */
+  get freePlay(): boolean {
+    return this.training && !this.tracker && !this.lesson;
   }
 
   get training(): boolean {
@@ -132,14 +172,20 @@ export class Session {
       this.showcase(ev);
       return;
     }
-    const in1 = this.cpu1 ? this.cpu1.next(m) : p1;
-    const in2 = o.mode === 'versus' ? p2 : o.mode !== 'training' || this.dummy === 'cpu' ? this.cpu!.next(m) : this.dummyInput();
+    let in1 = this.cpu1 ? this.cpu1.next(m) : p1;
+    let in2 = o.mode === 'versus' ? p2 : o.mode !== 'training' || this.control === 'cpu' ? this.cpu!.next(m) : this.lesson ? this.lesson.dummy(m) : this.dummy.next(m);
+    if (this.dummy.recording) {
+      // Recording: the player's input goes to the dummy, and player 1 stands still.
+      in2 = in1;
+      in1 = 0;
+      if (this.dummy.record(in2, m.fighters[1].facing)) this.dummy.stopRecording();
+    }
     const from = ev.length;
     this.inputs[0] = in1;
     this.inputs[1] = in2;
     step(m, in1, in2, ev);
     this.recorder?.push(in1, in2);
-    if (this.training) this.trainingAfter(ev, from);
+    if (this.training) this.trainingAfter(ev, from, in1);
     this.adv.update(m, from ? ev.slice(from) : ev);
   }
 
@@ -179,18 +225,54 @@ export class Session {
 
   /** Training: finisher practice on or off (and reset to it). */
   setPractice(p: Practice): void {
-    if (!this.training || !this.base) return;
     this.practice = p;
-    const s = saveMatch(this.base);
-    if (p !== 'off') {
-      const [a, d] = s.fighters;
+    this.layout();
+  }
+
+  /** Training: where Reset goes (and reset to it). 'saved' without a saved moment is the round's start. */
+  setPosition(p: Position): void {
+    this.position = p;
+    this.layout();
+  }
+
+  /** Training: keep this moment, and make it where Reset goes. */
+  saveMoment(): void {
+    if (!this.freePlay) return;
+    this.saved = saveMatch(this.match);
+    this.position = 'saved';
+    this.start = saveMatch(this.saved);
+  }
+
+  get hasSaved(): boolean {
+    return this.saved !== null;
+  }
+
+  /** The start Reset goes to: the base or the saved moment, the position preset, then finisher practice. */
+  private layout(): void {
+    if (!this.freePlay || !this.base) return;
+    const p = this.position;
+    const s = saveMatch(p === 'saved' && this.saved ? this.saved : this.base);
+    const [a, d] = s.fighters;
+    if (p === 'middle' || p === 'left' || p === 'right') {
+      const wall = segmentData(s.stage, s.segment).halfWidth - fighterData(d.fighter).pushW;
+      const side = p === 'left' ? -1 : 1;
+      const gap = p === 'middle' ? fx(0.8) : fx(1.0);
+      d.x = p === 'middle' ? fx(0.4) : side * wall;
+      a.x = d.x - side * gap;
+      a.facing = side === 1 ? 1 : -1;
+      d.facing = side === 1 ? -1 : 1;
+    }
+    const pr = this.practice;
+    if (pr !== 'off') {
       a.wins = 1;
       d.health = 1;
-      if (p === 'wall') {
+      if (pr === 'wall') {
         // The dummy's back to the right-hand wall, the player close in front.
         const w = segmentData(s.stage, s.segment).halfWidth;
         d.x = w - fx(0.9);
         a.x = d.x - fx(1.0);
+        a.facing = 1;
+        d.facing = -1;
       }
     }
     this.start = s;
@@ -201,6 +283,12 @@ export class Session {
   reset(): void {
     if (this.start) Object.assign(this.match, saveMatch(this.start));
     this.rest = 0;
+    this.adv.last = null;
+    if (!this.training) return;
+    this.dummy.reset();
+    this.frames.clear();
+    this.tracker?.restart();
+    this.lesson?.restart();
   }
 
   /** Finisher practice: the window stays open, and once it's over (or the dummy won the round) it starts again. */
@@ -224,20 +312,15 @@ export class Session {
     if (m.phase === 'fight') m.fighters[0].meter = METER_MAX;
   }
 
-  private dummyInput(): number {
-    const { BLOCK, DOWN } = Input;
-    if (this.dummy === 'stand') return 0;
-    if (this.dummy === 'crouch') return BLOCK | DOWN;
-    if (this.dummy === 'duck') return DOWN;
-    // Blocks everything: the dummy may peek at the attack's height, the CPU may not.
-    const a = this.match.fighters[0];
-    if (a.mode !== 'move') return BLOCK;
-    return BLOCK | (moveData(a.fighter, a.move).hits.some((h) => h.height === 'low') ? DOWN : 0);
-  }
-
-  private trainingAfter(ev: SimEvent[], from: number): void {
+  private trainingAfter(ev: SimEvent[], from: number, in1: number): void {
     const m = this.match;
     m.timer = ROUND_FRAMES;
+    this.frames.push(m);
+    if (this.tracker || this.lesson) {
+      this.drillAfter(ev, from, in1);
+      return;
+    }
+    this.dummyMeter(m.fighters[1]);
     if (this.practice !== 'off') {
       this.practiceAfter(ev, from);
       return;
@@ -258,6 +341,41 @@ export class Session {
         f.cutAwayUsed = false;
       }
       m.fighters[0].meter = METER_MAX;
+      if (this.dummy.settings.meter === 'refill') m.fighters[1].meter = METER_MAX;
+    }
+  }
+
+  /** The dummy's meter held where the settings put it (refilling is done at rest, with health). */
+  private dummyMeter(d: FighterState): void {
+    const level = this.dummy.settings.meter;
+    if (level === 'empty') d.meter = 0;
+    else if (level === 'one') d.meter = BAR;
+    else if (level === 'full') d.meter = METER_MAX;
+  }
+
+  /** Trials and lessons: the attempt is judged, and once it's decided and things are still, it starts again. */
+  private drillAfter(ev: SimEvent[], from: number, in1: number): void {
+    const m = this.match;
+    const t = this.tracker;
+    const l = this.lesson;
+    t?.update(m, ev, from, in1);
+    l?.after(m, ev, from);
+    if (m.phase === 'stayTuned') m.phaseTimer = STAY_TUNED_FRAMES;
+    let over = false;
+    for (let i = ev.length - 1; i >= from; i--) {
+      const e = ev[i];
+      // Never a results screen: the lesson starts again.
+      if (e.type === 'matchOver') {
+        ev.splice(i, 1);
+        over = true;
+      } else if (e.type === 'roundOver') over = true;
+    }
+    const decided = (t !== null && t.state !== 'ready' && t.state !== 'going') || (l !== null && l.result !== null);
+    const atRest = m.phase === 'fight' && m.fighters.every((f) => f.mode === 'idle' || f.mode === 'walk' || f.mode === 'crouch' || f.mode === 'guard');
+    this.rest = decided && atRest ? this.rest + 1 : 0;
+    if (over || this.rest >= AGAIN_AFTER) {
+      this.reset();
+      this.resets++;
     }
   }
 }
