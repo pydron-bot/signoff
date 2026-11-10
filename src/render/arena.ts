@@ -31,6 +31,7 @@ import { Sparks } from './sparks';
 import { Clutter } from './clutter';
 import { Dust } from './dust';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
+import { SetFlash } from './setFlash';
 import { Swoosh } from './swoosh';
 import { StageView } from './stageView';
 
@@ -203,6 +204,7 @@ export class Arena {
   set reduceMotion(on: boolean) {
     this.rig.reduceMotion = on;
     this.impactScreen.reduceMotion = on;
+    this.setFlash.reduceMotion = on;
   }
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
@@ -231,6 +233,8 @@ export class Arena {
   private readonly dust: Dust;
   private readonly clutter: Clutter;
   private readonly light: ImpactLight;
+  /** The fight's light on the set and the fighters: blows, lightning, projectiles, burning specials. */
+  private readonly setFlash = new SetFlash();
   /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
   private readonly impactScreen = new ImpactScreen();
   private readonly shadows: ContactShadows;
@@ -377,6 +381,7 @@ export class Arena {
     this.dust.clear();
     this.clutter.clear();
     this.light.clear();
+    this.setFlash.clear();
     this.impactScreen.clear();
     this.wear.reset();
     for (const v of this.fighters) v.echoes?.reset();
@@ -397,6 +402,8 @@ export class Arena {
     this.clutter.step(m, ev);
     this.light.onEvents(ev);
     this.impactScreen.onEvents(ev);
+    this.setFlash.onEvents(m, ev);
+    this.setFlash.step(m);
     for (const e of ev) {
       if (e.type === 'hit') {
         const v = this.fighters[e.defender];
@@ -476,6 +483,8 @@ export class Arena {
     this.camera.lookAt(c.tx, c.ty, 0);
     if (c.roll !== 0) this.camera.rotateZ(c.roll);
     this.drawDepth(m);
+    // drawDepth has brought the camera's matrices up to date.
+    this.setFlash.update(this.camera, this.frame);
   }
 
   /** The foreground kept off the fight, and the audience in their seats (drawn only when in view). */
