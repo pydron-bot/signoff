@@ -94,8 +94,17 @@ const moves = table(
     name: 'Heat Lightning',
     kind: 'special',
     total: 40,
+    boost: 'Heat Lightning+',
     invuln: [1, 7],
     hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.75, 2.2], damage: 75, hitstun: 0, blockstun: 14, launch: 0.2 })],
+  }),
+  // Boosted: invulnerable longer, and on a juggled body it strikes them back up (his second relaunch, so his third bar buys something).
+  move('Heat Lightning+', {
+    name: 'Heat Lightning (boosted)',
+    kind: 'special',
+    total: 40,
+    invuln: [1, 9],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.95], at: [0.75, 2.3], damage: 55, hitstun: 0, blockstun: 16, launch: 0.2 })],
   }),
   // In the air: the umbrella opens and he hangs there, dropping hail on the way down.
   move('Downpour', {

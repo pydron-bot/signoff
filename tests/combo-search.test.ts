@@ -13,6 +13,10 @@ import { BAR, FIGHTERS, saveMatch, step, type MatchState, type SimEvent } from '
 const RUN = process.env.COMBOS === '1';
 const GUIDES = process.env.GUIDES === '1';
 const CEILING = DAMAGE_CEILING;
+/** The floor beside the ceilings: each bar spent (none to one, one to three) must add at least this much to a fighter's best human combo, in %. */
+export const METER_FLOOR = 4;
+/** Fighters excused from the floor, with the reason. */
+const METER_EXEMPT: Readonly<Record<string, string>> = {};
 
 const BUTTONS = ['FP', 'BP', 'FK', 'BK'] as const;
 /** Presses relative to the moment chosen: [frames later, press] (see pressBits). */
@@ -243,6 +247,8 @@ const FIGHTER_ORDER = Object.keys(FIGHTERS);
 describe.skipIf(!RUN)('combo search (npm run combos)', () => {
   const health = FIGHTERS[DUMMY].health;
   const rows: string[] = [];
+  /** Each fighter's best human combo by bars, in %. */
+  const humanPct: Record<string, Record<number, number>> = {};
   for (const f of Object.values(FIGHTERS)) {
     for (const bars of [0, 1, 3] as const) {
       it(`${f.name}, ${bars} bar${bars === 1 ? '' : 's'}: under ${CEILING[bars]}%`, () => {
@@ -258,15 +264,29 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
         const h = human ?? top;
         row(b, 'frame-perfect');
         row(h, human ? 'human' : 'human (none forgiving)');
+        (humanPct[f.id] ??= {})[bars] = (h.dmg * 100) / health;
         // The search is a beam, not every route, so either can come out ahead.
         expect((Math.max(b.dmg, h.dmg) * 100) / health).toBeLessThanOrEqual(CEILING[bars]);
       }, 120_000);
     }
   }
+  it(`each bar buys at least ${METER_FLOOR}% more (the meter floor)`, () => {
+    const short: string[] = [];
+    for (const id of FIGHTER_ORDER) {
+      const p = humanPct[id];
+      if (!p || id in METER_EXEMPT) continue;
+      // The search is a beam: three bars can't do worse than one, as the one-bar route is still there.
+      const three = Math.max(p[3], p[1]);
+      if (p[1] - p[0] < METER_FLOOR) short.push(`${id}: one bar adds ${(p[1] - p[0]).toFixed(1)}%`);
+      if (three - p[1] < METER_FLOOR) short.push(`${id}: three bars add ${(three - p[1]).toFixed(1)}% to one`);
+    }
+    expect(short).toEqual([]);
+  });
+
   it('writes docs/COMBOS.md', () => {
     writeFileSync(
       'docs/COMBOS.md',
-      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name} (${health} health), with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener still gives the whole combo 2 frames early or late, everything after it moved too, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
+      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name} (${health} health), with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener still gives the whole combo 2 frames early or late, everything after it moved too, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three. The floor applies to the human routes: each bar spent, from none to one and from one to three, must add at least ${METER_FLOOR}%${Object.keys(METER_EXEMPT).length ? ` (excused: ${Object.entries(METER_EXEMPT).map(([id, why]) => `${FIGHTERS[id].name}, ${why}`).join('; ')})` : ''}.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
     );
   });
 });

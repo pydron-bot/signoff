@@ -743,6 +743,34 @@
      7
     ]
    },
+   "Heat Lightning+": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 40,
+    "startup": 6,
+    "lastActive": 9,
+    "hits": [
+     {
+      "frames": [
+       6,
+       9
+      ],
+      "box": [
+       0.1,
+       0.95,
+       0.75,
+       2.3
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "invuln": [
+     1,
+     9
+    ]
+   },
    "Downpour": {
     "kind": "special",
     "stance": "air",
@@ -6532,6 +6560,55 @@
     "motion": [],
     "heal": 24
    },
+   "Laying On of Hands+": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 36,
+    "startup": 10,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       10,
+       12
+      ],
+      "box": [
+       0.2,
+       1.05,
+       0.75,
+       1.8
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "Laying On of Hands (healing)+": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 46,
+    "startup": 10,
+    "lastActive": 12,
+    "hits": [
+     {
+      "frames": [
+       10,
+       12
+      ],
+      "box": [
+       0.2,
+       1.05,
+       0.75,
+       1.8
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "heal": 24
+   },
    "Fire and Brimstone": {
     "kind": "special",
     "stance": "stand",
@@ -6555,6 +6632,34 @@
     ],
     "spawns": [],
     "motion": []
+   },
+   "Fire and Brimstone+": {
+    "kind": "special",
+    "stance": "stand",
+    "total": 50,
+    "startup": 18,
+    "lastActive": 21,
+    "hits": [
+     {
+      "frames": [
+       18,
+       21
+      ],
+      "box": [
+       -1.6,
+       1.6,
+       0,
+       2
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "armor": [
+     4,
+     17
+    ]
    },
    "Fire and Brimstone (blessed)": {
     "kind": "special",

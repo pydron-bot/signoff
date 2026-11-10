@@ -16,6 +16,7 @@
     "art": "blender -b --factory-startup -P blender/build.py --",
     "combos": "COMBOS=1 vitest run tests/combo-search.test.ts",
     "combos:guides": "GUIDES=1 vitest run tests/combo-search.test.ts",
+    "matchups": "MATCHUPS=1 vitest run tests/matchups.test.ts",
     "docs:clips": "UPDATE_DOCS=1 vitest run tests/blender-doc.test.ts tests/blender-data.test.ts",
     "audio:index": "UPDATE_AUDIO=1 vitest run tests/audio.test.ts tests/recording-page.test.ts"
   },

@@ -31,6 +31,11 @@ export const LOOPS: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_bac
  * for them meanwhile (docs/BLENDER-TODO.md).
  */
 export const STAND_INS: Readonly<Record<string, string>> = {
+  // Boosted specials added in 0.49.0 (step 27): the plain move's clip, the same length.
+  'dale:Heat Lightning+': 'Heat Lightning',
+  'gideon:Laying On of Hands+': 'Laying On of Hands',
+  'gideon:Laying On of Hands (healing)+': 'Laying On of Hands (healing)',
+  'gideon:Fire and Brimstone+': 'Fire and Brimstone',
   // Picking up and throwing a prop (the boombox, step 14).
   interact_throw: 'interact',
   // Hit reactions (step 22): the two they refine.

@@ -70,6 +70,7 @@ const moves = table(
     name: 'Laying On of Hands',
     kind: 'special',
     total: 36,
+    boost: 'Laying On of Hands+',
     tithe: { cost: 1, into: 'Laying On of Hands (healing)' },
     hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], height: 'high', damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
   }),
@@ -79,14 +80,39 @@ const moves = table(
     total: 46,
     hits: [strike({ frames: [10, 12], reach: [0.2, 1.0], at: [1.2, 1.7], height: 'high', damage: 55, hitstun: 22, blockstun: 12, push: 0.05 })],
     heal: { frame: 24, amount: 90 },
+    boost: 'Laying On of Hands (healing)+',
+  }),
+  // Boosted (1 bar): both hands, and the spirit lifts them off their feet; on a juggled body, back up again. Paid in Signal, not donations.
+  move('Laying On of Hands+', {
+    name: 'Laying On of Hands (boosted)',
+    kind: 'special',
+    total: 36,
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.05], at: [0.75, 1.8], damage: 62, hitstun: 0, blockstun: 14, push: 0.05, launch: 0.17 })],
+  }),
+  // The same with a donation spent: it heals him as well.
+  move('Laying On of Hands (healing)+', {
+    name: 'Laying On of Hands (healing, boosted)',
+    kind: 'special',
+    total: 46,
+    hits: [strike({ frames: [10, 12], reach: [0.2, 1.05], at: [0.75, 1.8], damage: 62, hitstun: 0, blockstun: 14, push: 0.05, launch: 0.17 })],
+    heal: { frame: 24, amount: 90 },
   }),
   // A blast all round him, front and back. With two donations, the sky opens.
   move('Fire and Brimstone', {
     name: 'Fire and Brimstone',
     kind: 'special',
     total: 50,
+    boost: 'Fire and Brimstone+',
     tithe: { cost: 2, into: 'Fire and Brimstone (blessed)' },
     hits: [strike({ frames: [18, 21], reach: [-1.2, 1.2], at: [0, 1.8], damage: 70, hitstun: 0, blockstun: 14, chip: 12, knockdown: true })],
+  }),
+  // Boosted (1 bar, when there aren't two donations to spend): the sky opens a little way, and a juggled body goes back up.
+  move('Fire and Brimstone+', {
+    name: 'Fire and Brimstone (boosted)',
+    kind: 'special',
+    total: 50,
+    armor: [4, 17],
+    hits: [strike({ frames: [18, 21], reach: [-1.6, 1.6], at: [0, 2.0], damage: 80, hitstun: 0, blockstun: 16, chip: 16, launch: 0.17 })],
   }),
   move('Fire and Brimstone (blessed)', {
     name: 'Fire and Brimstone (blessed)',
