@@ -26,7 +26,7 @@ import { Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 import { ArcadeCard } from './ui/arcadeCard';
-import { LABELS, MUSIC_VOLUME, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
+import { LABELS, MUSIC_VOLUME, touchShown, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
 import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
@@ -65,6 +65,7 @@ const hud = new Hud(document.body);
 const coldOpen = new ColdOpen(
   document.body,
   (side, fighter) => sound.babble(side, fighter),
+  (side, clip) => sound.line(side, clip),
   () => endColdOpen(),
 );
 /** What skips the cold open: an attack, Block, Special or Throw. */
@@ -72,6 +73,7 @@ const SKIP_BITS = Input.FP | Input.BP | Input.FK | Input.BK | Input.BLOCK | Inpu
 let coldOpenHeld = 0;
 
 function endColdOpen(): void {
+  if (coldOpen.active) sound.hush();
   coldOpen.end();
   arena.idling = false;
   // The match starts now, not with the time the lines took.
@@ -125,6 +127,7 @@ function showSettings(back: () => void): void {
       settings[k] = v;
       saveSettings(settings);
       applySettings();
+      refreshTouch();
     },
   }));
   rows.push(
@@ -163,9 +166,22 @@ let touchUi = window.matchMedia('(pointer: coarse)').matches;
 window.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'touch' && !touchUi) {
     touchUi = true;
-    if (session && !demo) touch.show(true);
+    refreshTouch();
   }
 });
+/** The touch buttons are up for a match (and should show, if touchShown agrees). */
+let touchInMatch = false;
+function setTouch(inMatch: boolean): void {
+  touchInMatch = inMatch;
+  refreshTouch();
+}
+/** Shows or hides the touch buttons for the screen, the settings and the pads connected now. */
+function refreshTouch(): void {
+  touch.show(touchInMatch && touchShown(settings, touchUi, padCount(), session?.options.mode === 'versus'));
+}
+// A pad plugged in or out mid-match: the buttons follow.
+window.addEventListener('gamepadconnected', refreshTouch);
+window.addEventListener('gamepaddisconnected', refreshTouch);
 
 // The chosen fighters and CPU level, remembered between visits.
 const setup = { p1: 0, p2: 1, stage: 0, level: 1, sound: 0, studio: 0, models: 0 };
@@ -255,7 +271,7 @@ function startDemo(): void {
   const b = (a + 1 + Math.floor(Math.random() * (FIGHTER_IDS.length - 1))) % FIGHTER_IDS.length;
   session = newSession('demo', FIGHTER_IDS[a], FIGHTER_IDS[b], STAGE_IDS[Math.floor(Math.random() * STAGE_IDS.length)]);
   hud.hide();
-  touch.show(false);
+  setTouch(false);
   pauseBtn.hidden = true;
   pauseMenu.hide();
   arcadeCard.hide();
@@ -286,14 +302,15 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel): void {
   // A match against someone opens on the two of them trading a line.
   if (mode === 'cpu' || mode === 'versus') {
     const o = session.options;
-    coldOpen.begin(o.p1, o.p2, banter(o.p1, o.p2, o.seed));
+    const ex = banter(o.p1, o.p2, o.seed);
+    coldOpen.begin(o.p1, o.p2, ex, [sound.lineSeconds(ex.clips[0]), sound.lineSeconds(ex.clips[1])]);
     arena.idling = true;
     coldOpenHeld = ~0;
   } else endColdOpen();
   title.hidden = true;
   titleMenu.hide();
   hud.start(session.match, session.training);
-  touch.show(touchUi);
+  setTouch(true);
   pauseBtn.hidden = false;
   replayBar.show(false);
   document.body.dataset.scene = 'fight';
@@ -317,7 +334,7 @@ function arcadeResult(winner: number): void {
   const l = afterMatch(ladder!, winner === 0);
   ladder = l;
   pauseMenu.hide();
-  touch.show(false);
+  setTouch(false);
   hud.hide();
   if (l.state === 'won') arcadeCard.ending(l.fighter, [{ label: 'THE END', id: 'arcade-end', run: startDemo }]);
   else if (l.state === 'over') arcadeCard.listings(l, 'OFF THE AIR · GAME OVER', [{ label: 'TITLE', id: 'arcade-end', run: startDemo }]);
@@ -338,7 +355,7 @@ function watch(r: Replay): void {
   titleMenu.hide();
   pauseMenu.hide();
   hud.start(session.match, false);
-  touch.show(false);
+  setTouch(false);
   pauseBtn.hidden = true;
   replayBar.show(true);
   document.body.dataset.scene = 'replay';
@@ -437,7 +454,7 @@ function showcase(fighter: string, guide: number): void {
   titleMenu.hide();
   pauseMenu.hide();
   hud.start(session.match, true);
-  touch.show(false);
+  setTouch(false);
   pauseBtn.hidden = false;
   replayBar.show(false);
   document.body.dataset.scene = 'showcase';
@@ -451,7 +468,7 @@ function leaveShowcase(): void {
     session = begin(r.training);
     over = false;
     hud.start(r.training.match, true);
-    touch.show(touchUi);
+    setTouch(true);
     document.body.dataset.scene = 'fight';
     pause(true);
     showMoves(r.fighter, true, () => pause(true), true);

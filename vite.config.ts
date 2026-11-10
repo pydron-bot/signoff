@@ -68,13 +68,14 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json,m4a}'],
         // The fighter models are precached (~3 MB) so fights work offline.
-        globIgnores: ['**/node_modules/**/*', '**/icons/*512.png'],
+        // The recording script (/recording/) is a page of its own, not part of the game.
+        globIgnores: ['**/node_modules/**/*', '**/icons/*512.png', 'recording/**'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         // The shell answers navigations to the game only, not files opened by URL.
-        // Nor branch previews (/signoff/preview/...), which are their own pages.
-        navigateFallbackDenylist: [/^[^?]*\.(?!html?\b)\w+(?:\?.*)?$/, /\/preview\//],
+        // Nor branch previews (/signoff/preview/...) or the recording script, which are their own pages.
+        navigateFallbackDenylist: [/^[^?]*\.(?!html?\b)\w+(?:\?.*)?$/, /\/preview\//, /\/recording\/?/],
         // GLBs are copied unhashed from public/: only Vite's hashed bundles may skip a revision.
         dontCacheBustURLsMatching: /^assets\/.+-[\w-]{8}\.(?:js|css)$/,
       },

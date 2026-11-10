@@ -10,6 +10,8 @@ export interface Exchange {
   /** Who speaks first (0 left, 1 right) and the two lines, in order. */
   first: 0 | 1;
   lines: readonly [string, string];
+  /** Each line's recording, if there is one: `fighter/line_id` (src/audio/clips.ts). */
+  clips: readonly [string, string];
 }
 
 /** Said to anyone, to open. */
@@ -55,20 +57,46 @@ const PAIRS: Readonly<Record<string, readonly [string, string]>> = {
 /** Two of the same: only one time slot. */
 const MIRROR: readonly [string, string] = ["There's only room in the schedule for one of us.", 'Then one of us gets cancelled.'];
 
-function pick<T>(xs: readonly T[], n: number): T {
-  return xs[((n % xs.length) + xs.length) % xs.length];
+/** A line's recording: the speaker's folder and the line's id. */
+function clip(fighter: string, id: string): string {
+  return `${fighter}/line_${id}`;
 }
 
 /** What the two say before round 1 (`p1` on the left). */
 export function banter(p1: string, p2: string, seed: number): Exchange {
-  if (p1 === p2) return { first: 0, lines: MIRROR };
+  if (p1 === p2) return { first: 0, lines: MIRROR, clips: [clip(p1, 'mirror_open'), clip(p1, 'mirror_reply')] };
   // A pairing's own exchange, most nights; the other order if only that one's written.
   const own = PAIRS[`${p1}:${p2}`];
   const back = PAIRS[`${p2}:${p1}`];
-  if ((own || back) && seed % 4 !== 3) return own && (!back || seed % 2 === 0) ? { first: 0, lines: own } : { first: 1, lines: back! };
+  if ((own || back) && seed % 4 !== 3) {
+    const [first, a, b, lines] = own && (!back || seed % 2 === 0) ? ([0, p1, p2, own] as const) : ([1, p2, p1, back!] as const);
+    return { first, lines, clips: [clip(a, `to_${b}`), clip(b, `answer_${a}`)] };
+  }
   const first: 0 | 1 = seed % 2 === 0 ? 0 : 1;
   const [a, b] = first === 0 ? [p1, p2] : [p2, p1];
-  return { first, lines: [pick(OPENERS[a] ?? OPENERS.dale, seed >> 1), pick(REPLIES[b] ?? REPLIES.dale, seed >> 2)] };
+  const op = OPENERS[a] ?? OPENERS.dale;
+  const re = REPLIES[b] ?? REPLIES.dale;
+  const i = index(op, seed >> 1);
+  const j = index(re, seed >> 2);
+  return { first, lines: [op[i], re[j]], clips: [clip(a, `open_${i + 1}`), clip(b, `reply_${j + 1}`)] };
+}
+
+function index(xs: readonly unknown[], n: number): number {
+  return ((n % xs.length) + xs.length) % xs.length;
+}
+
+/** Every line a fighter can say before a match, with the id its recording goes by (for the recording script). */
+export function scriptOf(id: string): { id: string; text: string; to?: string }[] {
+  const out: { id: string; text: string; to?: string }[] = [];
+  (OPENERS[id] ?? []).forEach((text, k) => out.push({ id: `open_${k + 1}`, text }));
+  (REPLIES[id] ?? []).forEach((text, k) => out.push({ id: `reply_${k + 1}`, text }));
+  for (const [key, [a, b]] of Object.entries(PAIRS)) {
+    const [x, y] = key.split(':');
+    if (x === id) out.push({ id: `to_${y}`, text: a, to: y });
+    if (y === id) out.push({ id: `answer_${x}`, text: b, to: x });
+  }
+  out.push({ id: 'mirror_open', text: MIRROR[0] }, { id: 'mirror_reply', text: MIRROR[1] });
+  return out;
 }
 
 /** Every line a fighter has, for tests. */

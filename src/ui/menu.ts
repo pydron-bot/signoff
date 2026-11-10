@@ -101,6 +101,8 @@ export class Menu {
       const e = this.els[i];
       e.textContent = isChoice(r) ? `${r.label}   ‹ ${r.options[r.value]} ›` : r.label;
       e.classList.toggle('focus', i === this.focus);
+      // Moving with keys or a pad: keep the row in view when the menu scrolls (Settings on a phone).
+      if (i === this.focus) e.scrollIntoView?.({ block: 'nearest' });
     });
   }
 }
