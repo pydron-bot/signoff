@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { FixedStep } from '../src/game/loop';
 import { HOLD, RAMP, SLOW, SlowMo } from '../src/game/slowMo';
-import { CameraRig, NEAR, halfHeight, halfView } from '../src/render/camera';
+import { CameraRig, FOV, NEAR, halfHeight, halfView } from '../src/render/camera';
 import { createMatch, type HitWeight, type MatchState, type SimEvent } from '../src/sim';
 import { fx, toFloat } from '../src/sim/fixed';
 import { segmentData } from '../src/sim/stages';
@@ -163,6 +163,24 @@ describe('camera reactions', () => {
     expect(rig.shot.z).toBeLessThan(rest - 0.1);
   });
 
+  it('an ender knocks the camera back against the blow and punches the lens in, then both settle', () => {
+    const m = ready('rox', 'dale');
+    place(m, -0.5, 0.5);
+    const rig = settled(m, ASPECTS.desktop);
+    const rest = rig.shot.tx;
+    expect(rig.fov).toBe(FOV);
+    // The blow travels toward +x: the camera is knocked the other way.
+    rig.step(m, [hit(3)]);
+    expect(rig.shot.tx).toBeLessThan(rest - 0.1);
+    expect(rig.fov).toBeLessThan(FOV - 2);
+    // Then it leans with the blow, as before.
+    for (let i = 0; i < 6; i++) rig.step(m, []);
+    expect(rig.shot.tx).toBeGreaterThan(rest);
+    for (let i = 0; i < 40; i++) rig.step(m, []);
+    expect(rig.shot.tx).toBeCloseTo(rest, 2);
+    expect(rig.fov).toBe(FOV);
+  });
+
   it('with Reduce Motion, hits move nothing', () => {
     const m = ready('rox', 'dale');
     place(m, -0.5, 0.5);
@@ -172,6 +190,7 @@ describe('camera reactions', () => {
     for (let i = 0; i < 10; i++) rig.step(m, []);
     expect(rig.shot.x).toBeCloseTo(rest.x, 3);
     expect(rig.shot.roll).toBe(0);
+    expect(rig.fov).toBe(FOV);
   });
 
   it('a KO swings round and in on the loser, then back', () => {

@@ -56,6 +56,14 @@ const KO_OUT = 50;
 const KO_ORBIT = 0.22;
 const KO_CLOSER = 0.25;
 
+/** An ender knocks the camera back against the blow (m) for a few steps before it leans with it, then springs back fast. */
+const RECOIL = 0.16;
+const RECOIL_STEPS = 3;
+const RECOIL_DECAY = 0.6;
+/** Enders, wall splats and a super's hit punch the lens in (degrees narrower), easing back over these steps. */
+const FOV_PUNCH = 2.5;
+const FOV_STEPS = 12;
+
 /** The round's establishing shot: how much further back, higher, and round to the side it starts. */
 const INTRO_BACK = 0.75;
 const INTRO_UP = 1.1;
@@ -98,11 +106,17 @@ export class CameraRig {
   /** 1 as a round's intro starts, easing to 0 (none with Reduce Motion); and the side it swings from. */
   private intro = 0;
   private introSide = 1;
+  /** The recoil now (m, signed), steps it holds, and the lean waiting for it; the lens punch, 1 as it lands down to 0. */
+  private recoil = 0;
+  private recoilT = 0;
+  private heldLean = 0;
+  private punch = 0;
 
   /** Jump straight to the framing on the next step (a new match, a replay seek, a new round). */
   reset(): void {
     this.snap = true;
-    this.trauma = this.lean = this.push = this.pushTarget = 0;
+    this.trauma = this.lean = this.push = this.pushTarget = this.recoil = this.heldLean = this.punch = 0;
+    this.recoilT = 0;
     this.koT = -1;
   }
 
@@ -157,6 +171,11 @@ export class CameraRig {
     this.lean *= 0.8;
     this.push += (this.pushTarget - this.push) * 0.35;
     this.pushTarget *= 0.88;
+    if (this.recoilT > 0 && --this.recoilT === 0) {
+      this.lean = Math.max(-0.25, Math.min(0.25, this.lean + this.heldLean));
+      this.heldLean = 0;
+    } else if (this.recoilT === 0) this.recoil *= RECOIL_DECAY;
+    this.punch = Math.max(0, this.punch - 1 / FOV_STEPS);
     if (this.koT >= 0 && ++this.koT > KO_IN + KO_HOLD + KO_OUT) this.koT = -1;
     this.compose();
   }
@@ -170,13 +189,20 @@ export class CameraRig {
         break;
       case 'hit':
         this.kick(TRAUMA[e.weight] + (e.counter ? 0.1 : 0), PUSH[e.weight]);
-        this.lean = Math.max(-0.25, Math.min(0.25, this.lean + e.dir * LEAN[e.weight]));
+        if (e.weight === 3) {
+          // Knocked back first; the lean comes once the recoil has held.
+          this.recoil = -e.dir * RECOIL * (e.counter ? 1.25 : 1);
+          this.recoilT = RECOIL_STEPS;
+          this.heldLean += e.dir * LEAN[e.weight];
+          this.punch = 1;
+        } else this.lean = Math.max(-0.25, Math.min(0.25, this.lean + e.dir * LEAN[e.weight]));
         break;
       case 'guardCrush':
         this.kick(0.35, 0.15);
         break;
       case 'relaunch':
         this.kick(e.how === 'special' ? 0.3 : 0.4, e.how === 'wall' ? 0.6 : 0.45);
+        if (e.how === 'wall') this.punch = Math.max(this.punch, 0.8);
         break;
       case 'boost':
         this.kick(0, 0.45);
@@ -186,6 +212,7 @@ export class CameraRig {
         break;
       case 'superHit':
         this.kick(0.8, 0);
+        this.punch = 1;
         break;
       case 'stageCue':
         this.kick(0.8, 0.5);
@@ -208,6 +235,11 @@ export class CameraRig {
     }
   }
 
+  /** The lens's field of view now, degrees: narrower for a moment after the biggest blows. */
+  get fov(): number {
+    return this.reduceMotion ? FOV : FOV - FOV_PUNCH * this.punch * this.punch;
+  }
+
   private kick(trauma: number, push: number): void {
     this.trauma = Math.min(1, this.trauma + trauma);
     this.pushTarget = Math.max(this.pushTarget, push);
@@ -228,7 +260,8 @@ export class CameraRig {
     const lean = calm ? 0 : this.lean;
     const d = Math.max(3.5, this.fz - (calm ? 0 : this.push));
     const orbit = calm ? 0 : KO_ORBIT * this.koSide * this.koWeight() + INTRO_ORBIT * this.introSide * this.intro;
-    s.tx = this.fx + lean;
+    const recoil = calm ? 0 : this.recoil;
+    s.tx = this.fx + lean + recoil;
     s.ty = this.fy;
     s.x = s.tx + Math.sin(orbit) * d;
     s.z = Math.cos(orbit) * d;

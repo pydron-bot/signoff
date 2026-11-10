@@ -14,6 +14,7 @@ import type { Grade } from './post';
 import { INTRO_FRAMES } from '../sim/constants';
 import type { MatchState } from '../sim';
 import type { SegmentLights } from './stageModel';
+import { FLASH_GLSL, flashUniforms } from './setFlash';
 
 /** Ambient traded for key: the rigs were tuned for a flat ambient with no ground colour. */
 const AMBIENT = 0.8;
@@ -118,6 +119,7 @@ export function addSetLight(mat: THREE.Material): void {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uSetFalloff = SET.falloff;
     shader.uniforms.uSetDim = SET.dim;
+    flashUniforms(shader.uniforms);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSetWorld;')
       .replace(
@@ -125,7 +127,7 @@ export function addSetLight(mat: THREE.Material): void {
         '#include <project_vertex>\n#ifdef USE_INSTANCING\nvSetWorld = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;\n#else\nvSetWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#endif',
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSetWorld;\nuniform float uSetFalloff;\nuniform float uSetDim;')
+      .replace('#include <common>', `#include <common>\nvarying vec3 vSetWorld;\nuniform float uSetFalloff;\nuniform float uSetDim;\n${FLASH_GLSL}`)
       .replace(
         '#include <aomap_fragment>',
         [
@@ -136,6 +138,8 @@ export function addSetLight(mat: THREE.Material): void {
           'float setLit = (1.0 - uSetDim) * (1.0 - uSetFalloff * (1.0 - (1.0 - setBack) * (1.0 - setSide) * (1.0 - setUp)));',
           'reflectedLight.directDiffuse *= setLit;',
           'reflectedLight.indirectDiffuse *= setLit;',
+          // The fight's own light (setFlash.ts) isn't the studio's: no falloff.
+          'reflectedLight.directDiffuse += flashLight(normal, vViewPosition) * diffuseColor.rgb;',
         ].join('\n'),
       );
   };

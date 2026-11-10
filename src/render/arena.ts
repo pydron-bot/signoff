@@ -31,6 +31,9 @@ import { Sparks } from './sparks';
 import { Clutter } from './clutter';
 import { Dust } from './dust';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
+import { SetFlash } from './setFlash';
+import { CutIn, type CutInRect } from './cutIn';
+import { ChannelFlip } from './channelFlip';
 import { Swoosh } from './swoosh';
 import { StageView } from './stageView';
 
@@ -203,6 +206,8 @@ export class Arena {
   set reduceMotion(on: boolean) {
     this.rig.reduceMotion = on;
     this.impactScreen.reduceMotion = on;
+    this.setFlash.reduceMotion = on;
+    this.cut.reduceMotion = on;
   }
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
@@ -231,6 +236,13 @@ export class Arena {
   private readonly dust: Dust;
   private readonly clutter: Clutter;
   private readonly light: ImpactLight;
+  /** Changing channel between the endless channel's matches. */
+  readonly flip: ChannelFlip;
+  /** The fight's light on the set and the fighters: blows, lightning, projectiles, burning specials. */
+  private readonly setFlash = new SetFlash();
+  /** The super cut-in: a close-up of the fighter in a band of the picture. */
+  private readonly cut = new CutIn();
+  private readonly inset: { camera: THREE.Camera; rect: CutInRect } = { camera: this.cut.camera, rect: this.cut.rect };
   /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
   private readonly impactScreen = new ImpactScreen();
   private readonly shadows: ContactShadows;
@@ -265,6 +277,7 @@ export class Arena {
     this.dust = new Dust(this.scene);
     this.clutter = new Clutter(this.scene);
     this.light = new ImpactLight(this.scene);
+    this.flip = new ChannelFlip(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
     this.projectileMat = pm;
@@ -377,6 +390,8 @@ export class Arena {
     this.dust.clear();
     this.clutter.clear();
     this.light.clear();
+    this.setFlash.clear();
+    this.cut.clear();
     this.impactScreen.clear();
     this.wear.reset();
     for (const v of this.fighters) v.echoes?.reset();
@@ -397,6 +412,10 @@ export class Arena {
     this.clutter.step(m, ev);
     this.light.onEvents(ev);
     this.impactScreen.onEvents(ev);
+    this.setFlash.onEvents(m, ev);
+    this.setFlash.step(m);
+    this.cut.step();
+    this.cut.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
         const v = this.fighters[e.defender];
@@ -412,6 +431,11 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+  }
+
+  /** The super cut-in for the post pass this frame (null when there's none), after render(). */
+  cutIn(m: MatchState): { camera: THREE.Camera; rect: CutInRect } | null {
+    return this.cut.active && this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
   }
 
   /** The impact layer's numbers for the post pass, after render() has placed the camera. */
@@ -435,7 +459,8 @@ export class Arena {
     this.rig.aspect = w / h;
   }
 
-  render(m: MatchState): void {
+  /** Draws the match; `dt` is the display time since the last frame (seconds), for what runs on it. */
+  render(m: MatchState, dt = 1 / 60): void {
     this.frame++;
     // The cold open: nothing steps, so the camera frames the match from here (else it keeps the last match's shot).
     if (this.idling) this.rig.step(m, NO_EVENTS);
@@ -472,10 +497,18 @@ export class Arena {
       }
     }
     const c = this.rig.shot;
+    const fov = this.rig.fov;
+    if (this.camera.fov !== fov) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
     this.camera.position.set(c.x, c.y, c.z);
     this.camera.lookAt(c.tx, c.ty, 0);
     if (c.roll !== 0) this.camera.rotateZ(c.roll);
     this.drawDepth(m);
+    // drawDepth has brought the camera's matrices up to date.
+    this.setFlash.update(this.camera, this.frame);
+    this.flip.update(this.camera, dt);
   }
 
   /** The foreground kept off the fight, and the audience in their seats (drawn only when in view). */

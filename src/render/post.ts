@@ -13,6 +13,7 @@
  * small. Nothing here allocates per frame.
  */
 import * as THREE from 'three';
+import type { CutInRect } from './cutIn';
 
 /** A segment's colour grade, applied after tone mapping. */
 export interface Grade {
@@ -112,6 +113,10 @@ uniform float uCrt;
 uniform vec4 uShock;
 uniform float uZoom;
 uniform vec4 uFocus;
+uniform vec4 uDrain;
+uniform vec4 uSpeed;
+uniform vec4 uCut;
+uniform float uCutOn;
 varying vec2 vUv;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
@@ -186,6 +191,13 @@ void main() {
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = max(mix(vec3(l), col, uSaturation), 0.0);
 
+  // An ender's freeze: the colour drains from everything but the blow.
+  if (uDrain.w > 0.0) {
+    float k = smoothstep(uDrain.z, uDrain.z + 0.15, length((vUv - uDrain.xy) * vec2(aspect, 1.0)));
+    float ld = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col = mix(col, vec3(ld) * vec3(0.95, 0.97, 1.05), uDrain.w * k);
+  }
+
   // An impact frame: the picture blown out to a hard negative for a moment.
   if (uImpact > 0.0) {
     float k = smoothstep(0.12, 0.3, l);
@@ -198,6 +210,25 @@ void main() {
     float lf = dot(col, vec3(0.2126, 0.7152, 0.0722));
     col = mix(col, vec3(lf) * vec3(0.85, 0.9, 1.1), uFocus.w * k * 0.7);
     col *= 1.0 - uFocus.w * (0.15 + 0.55 * k);
+  }
+
+  // Speed lines: thin rays rushing out from the action, only toward the edges, new ones each tape frame.
+  if (uSpeed.w > 0.0) {
+    vec2 sv = (vUv - uSpeed.xy) * vec2(aspect, 1.0);
+    float ray = step(0.86, hash(floor(atan(sv.y, sv.x) * 70.0) + frame * 3.1));
+    float edge = smoothstep(0.3, 0.75, length(sv));
+    col = mix(col, vec3(0.95, 0.97, 1.0), ray * edge * uSpeed.w * 0.5);
+  }
+
+  // The super cut-in's frame: colour bars round the close-up's band.
+  if (uCutOn > 0.0) {
+    vec2 pad = vec2(0.016 / aspect, 0.016);
+    bool outer = all(greaterThan(vUv, uCut.xy - pad)) && all(lessThan(vUv, uCut.zw + pad));
+    bool inner = all(greaterThan(vUv, uCut.xy)) && all(lessThan(vUv, uCut.zw));
+    if (outer && !inner) {
+      float i = mod(floor((vUv.x * aspect + vUv.y) * 18.0), 7.0);
+      col = i < 1.0 ? vec3(0.75) : i < 2.0 ? vec3(0.75, 0.75, 0.0) : i < 3.0 ? vec3(0.0, 0.75, 0.75) : i < 4.0 ? vec3(0.0, 0.75, 0.0) : i < 5.0 ? vec3(0.75, 0.0, 0.75) : i < 6.0 ? vec3(0.75, 0.0, 0.0) : vec3(0.0, 0.0, 0.75);
+    }
   }
 
   vec2 vig = vUv - 0.5;
@@ -256,6 +287,15 @@ export class Post {
   focusY = 0.5;
   focusR = 0.2;
   focus = 0;
+  /** An ender's freeze draining the colour from all but the blow: its centre (uv), clear radius (of the screen's height) and strength, 0 to 1. */
+  drainX = 0.5;
+  drainY = 0.5;
+  drainR = 0.12;
+  drain = 0;
+  /** Speed lines out from a point (uv), 0 to 1. */
+  speedX = 0.5;
+  speedY = 0.5;
+  speed = 0;
   /** Grain flickers each frame; Reduce Motion keeps it still. */
   stillGrain = false;
   /** The segment's colour grade: the arena's, which the stage sets. */
@@ -312,6 +352,10 @@ export class Post {
         uShock: { value: new THREE.Vector4() },
         uZoom: { value: 0 },
         uFocus: { value: new THREE.Vector4() },
+        uDrain: { value: new THREE.Vector4() },
+        uSpeed: { value: new THREE.Vector4() },
+        uCut: { value: new THREE.Vector4() },
+        uCutOn: { value: 0 },
       },
     });
   }
@@ -362,10 +406,35 @@ export class Post {
     }
   }
 
-  render(scene: THREE.Scene, camera: THREE.Camera, timeMs: number): void {
+  /** Draws a scene through the pass; `inset` is a second view of it (the super cut-in) in a band of the picture. */
+  render(scene: THREE.Scene, camera: THREE.Camera, timeMs: number, inset?: { camera: THREE.Camera; rect: CutInRect } | null): void {
     const r = this.renderer;
-    r.setRenderTarget(this.scene);
+    const t = this.scene;
+    r.setRenderTarget(t);
     r.render(scene, camera);
+    const cut = inset && inset.rect.on > 0 ? inset.rect : null;
+    if (cut) {
+      // The band's own viewport (it may hang off the edge as it slides in), clipped to the picture.
+      const w = t.width;
+      const h = t.height;
+      const x0 = Math.round(cut.x0 * w);
+      const y0 = Math.round(cut.y0 * h);
+      const x1 = Math.round(cut.x1 * w);
+      const y1 = Math.round(cut.y1 * h);
+      const cx0 = Math.max(0, x0);
+      const cx1 = Math.min(w, x1);
+      if (cx1 > cx0) {
+        t.viewport.set(x0, y0, x1 - x0, y1 - y0);
+        t.scissor.set(cx0, y0, cx1 - cx0, y1 - y0);
+        t.scissorTest = true;
+        r.setRenderTarget(t);
+        r.render(scene, inset!.camera);
+        t.viewport.set(0, 0, w, h);
+        t.scissor.set(0, 0, w, h);
+        t.scissorTest = false;
+        r.setRenderTarget(t);
+      }
+    }
 
     // The glow: bright pass to half size, down to a sixteenth, back up to half.
     this.run(this.prefilter, this.scene.texture, this.scene, this.down[0]);
@@ -389,6 +458,10 @@ export class Post {
     (u.uShock.value as THREE.Vector4).set(this.shockX, this.shockY, this.shockR, this.shock * 0.8);
     u.uZoom.value = this.zoom;
     (u.uFocus.value as THREE.Vector4).set(this.focusX, this.focusY, this.focusR, this.focus);
+    (u.uDrain.value as THREE.Vector4).set(this.drainX, this.drainY, this.drainR, this.drain);
+    (u.uSpeed.value as THREE.Vector4).set(this.speedX, this.speedY, 0, this.speed);
+    if (cut) (u.uCut.value as THREE.Vector4).set(cut.x0, cut.y0, cut.x1, cut.y1);
+    u.uCutOn.value = cut ? 1 : 0;
     // The chain adds four levels together.
     u.uBloom.value = g.bloom / LEVELS;
     (u.uLift.value as THREE.Vector3).set(...g.lift);

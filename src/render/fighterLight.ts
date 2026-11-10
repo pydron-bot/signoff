@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { FLASH_GLSL, flashUniforms } from './setFlash';
 
 /** Shared by every fighter material. */
 const RIM = {
@@ -77,12 +78,13 @@ export function addRim(mat: THREE.MeshLambertMaterial, wear: { value: number } =
     shader.uniforms.uWear = wear;
     shader.uniforms.uSigTime = SIGNAL.time;
     shader.uniforms.uSigTape = SIGNAL.tape;
+    flashUniforms(shader.uniforms);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;\nuniform float uBand;\nuniform float uWear;\nuniform float uSigTime;\nuniform float uSigTape;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 uRimColor;\nuniform float uRimStrength;\nuniform float uBand;\nuniform float uWear;\nuniform float uSigTime;\nuniform float uSigTape;\n' + FLASH_GLSL)
       .replace('#include <lights_lambert_pars_fragment>', BANDED_LAMBERT)
       .replace(
         '#include <opaque_fragment>',
-        `float rimF = 1.0 - saturate(dot(normalize(normal), normalize(vViewPosition)));\noutgoingLight += uRimColor * (rimF * rimF * rimF * uRimStrength);\n${SIGNAL_DAMAGE}\n#include <opaque_fragment>`,
+        `float rimF = 1.0 - saturate(dot(normalize(normal), normalize(vViewPosition)));\noutgoingLight += uRimColor * (rimF * rimF * rimF * uRimStrength);\noutgoingLight += 0.6 * flashLight(normal, vViewPosition) * diffuseColor.rgb;\n${SIGNAL_DAMAGE}\n#include <opaque_fragment>`,
       );
   };
   mat.customProgramCacheKey = () => 'signoff-rim';

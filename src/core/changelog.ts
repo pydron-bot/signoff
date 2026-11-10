@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.58.0',
+    date: '2026-11-10',
+    title: 'Lights, Camera',
+    notes: [
+      'The fight lights up the studio: every blow flashes on the set and the fighters, a counter flashes amber, lightning strikes light the whole room, and projectiles carry their glow with them. Flambé and Fire and Brimstone throw flickering orange across the floor and walls, Heat Lightning crackles, the flashlight throws a cool beam, and Cold Front glows icy.',
+      "Big hits hit harder: the colour drains from everything but the blow while it lands, the camera is knocked back before it follows through, and the lens punches in. Wall splats, Tape Skip and teleports send speed lines to the edges, and a K.O. catches the tape for a moment before the slow motion.",
+      'Technical Difficulties cuts to a close-up of the fighter in a band of colour bars as it starts, and boosts do too, briefly.',
+      'CPU VS CPU: after a K.O., an action replay rewinds and plays the deciding blow again in slow motion (any button skips). The Endless channel changes over with static and the next pairing on screen, and On the TV everything sounds like it comes from the set across the room.',
+    ],
+  },
+  {
     version: '0.57.0',
     date: '2026-11-10',
     title: 'Insomnia',
