@@ -80,16 +80,6 @@ export const STAND_INS: Readonly<Record<string, string>> = {
  * The asset tests let these through; the art side empties the list.
  */
 export const ART_PENDING: ReadonlySet<string> = new Set([
-  'rox:s.BP',
-  'rox:s.FK',
-  'rox:FP FP FK FK',
-  'rox:FP FP FK FK BP',
-  'hollis:s.FK',
-  'hollis:f.FK',
-  'hollis:BP FP FK',
-  // Retired in the pilot.
-  'hollis:FP BK',
-  'hollis:FK FK BP',
 ]);
 
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */

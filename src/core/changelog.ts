@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.43.0',
+    date: '2026-11-10',
+    title: 'House Styles',
+    notes: [
+      "Rox and Hollis fight like themselves: Rox claps, high-kicks, drops into the splits and steps on the beat, with a quick, springy rhythm; Hollis grabs collars, drives knees, barges with his shoulder and shoves with a stiff arm, loading up big and carrying his weight through.",
+    ],
+  },
+  {
     version: '0.42.0',
     date: '2026-11-10',
     title: 'Airborne',
