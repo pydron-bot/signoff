@@ -14,6 +14,8 @@ import * as THREE from 'three';
 const STATIC = 0.32;
 const CLEAR = 0.3;
 const OSD = 1.8;
+/** The display's width, of the picture's. */
+const OSD_W = 0.3;
 /** How far in front of the camera the card sits (m): inside the near clip of nothing. */
 const DIST = 0.2;
 
@@ -29,6 +31,7 @@ uniform float uTime;
 uniform float uStatic;
 uniform float uOsd;
 uniform sampler2D tOsd;
+uniform vec2 uOsdSize;
 varying vec2 vUv;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void main() {
@@ -38,7 +41,8 @@ void main() {
   float band = 0.75 + 0.25 * smoothstep(0.0, 0.15, abs(fract(vUv.y + uTime * 1.3) - 0.5));
   vec4 col = vec4(vec3(n * band), uStatic);
   // The display, top right.
-  vec2 o = (vUv - vec2(0.56, 0.72)) / vec2(0.4, 0.22);
+  // Top right, under the HUD's bars.
+  vec2 o = (vUv - vec2(0.96, 0.8) + uOsdSize) / uOsdSize;
   if (uOsd > 0.0 && o.x > 0.0 && o.x < 1.0 && o.y > 0.0 && o.y < 1.0) {
     vec4 text = texture2D(tOsd, o);
     col = mix(col, vec4(text.rgb, 1.0), text.a * uOsd);
@@ -65,7 +69,7 @@ export class ChannelFlip {
     this.mat = new THREE.ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,
-      uniforms: { uTime: { value: 0 }, uStatic: { value: 0 }, uOsd: { value: 0 }, tOsd: { value: this.osd } },
+      uniforms: { uTime: { value: 0 }, uStatic: { value: 0 }, uOsd: { value: 0 }, tOsd: { value: this.osd }, uOsdSize: { value: new THREE.Vector2(OSD_W, 0.2) } },
       transparent: true,
       depthTest: false,
       depthWrite: false,
@@ -90,13 +94,19 @@ export class ChannelFlip {
       g.lineJoin = 'round';
       let y = 0;
       lines.forEach((line, i) => {
-        const size = i === 0 ? 120 : 40;
+        // As big as it's meant to be, or as fits.
+        let size = i === 0 ? 120 : 40;
         g.font = `bold ${size}px ui-monospace, Menlo, monospace`;
+        const fit = (this.canvas.width - 24) / Math.max(1, g.measureText(line).width);
+        if (fit < 1) {
+          size = Math.floor(size * fit);
+          g.font = `bold ${size}px ui-monospace, Menlo, monospace`;
+        }
         g.lineWidth = i === 0 ? 10 : 6;
         g.strokeStyle = 'rgba(0, 20, 0, 0.85)';
-        g.strokeText(line, this.canvas.width - 8, y);
+        g.strokeText(line, this.canvas.width - 12, y + 8);
         g.fillStyle = '#5dff6a';
-        g.fillText(line, this.canvas.width - 8, y);
+        g.fillText(line, this.canvas.width - 12, y + 8);
         y += size * 1.15;
       });
       this.osd.needsUpdate = true;
@@ -127,6 +137,8 @@ export class ChannelFlip {
     u.uTime.value = this.t;
     u.uStatic.value = !this.snow ? 0 : this.t < STATIC ? 1 : Math.max(0, 1 - (this.t - STATIC) / CLEAR);
     u.uOsd.value = Math.min(1, (this.hold - this.t) / 0.25);
+    // The display keeps the canvas's shape on any screen.
+    (u.uOsdSize.value as THREE.Vector2).set(OSD_W, (OSD_W * camera.aspect * this.canvas.height) / this.canvas.width);
     // Filling the view, just in front of the lens.
     const h = 2 * DIST * Math.tan(((camera.fov / 2) * Math.PI) / 180);
     this.mesh.scale.set(h * camera.aspect, h, 1);
