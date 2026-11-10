@@ -39,6 +39,7 @@ import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
+// The menu's levels; the DIRECTOR plays only Arcade's last fight (arcade.ts).
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 /** Cancellations players have found (signoff.found). */
