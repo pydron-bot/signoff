@@ -117,6 +117,8 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
   const ev: SimEvent[] = [];
   const steps: GuideStep[] = [];
   let hits = 0;
+  /** The combo count as the defender has it (hits, and a jump cancel's extra). */
+  let count = 0;
   let dealt = 0;
   let unbroken = true;
   let lastHit = 0;
@@ -149,8 +151,10 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
         }
       }
       if (e.type !== 'hit' || e.attacker !== 0 || over) continue;
-      if (e.combo !== hits + 1) unbroken = false;
-      hits = e.combo;
+      // The same combo while the count rises (a jump cancel adds to it, for scaling); a new one starts again at 1.
+      if (e.combo <= count) unbroken = false;
+      count = e.combo;
+      hits++;
       dealt += e.damage;
       lastHit = t;
     }

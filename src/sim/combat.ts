@@ -36,6 +36,7 @@ import {
   METER_SCALE_MIN,
   METER_SCALE_STEP,
   SCALE_MIN,
+  CHASED_SCALE_MIN,
   SCALE_STEP,
   TD_CINEMATIC_FRAMES,
   THROWER_FRAMES,
@@ -481,8 +482,8 @@ export function applyHit(
     return;
   }
 
-  const scale = Math.max(SCALE_MIN, 100 - SCALE_STEP * d.combo);
   const wasAir = airborne(d);
+  const scale = Math.max(d.chased ? CHASED_SCALE_MIN : SCALE_MIN, 100 - SCALE_STEP * d.combo);
   // An air normal that hits a body in the air holds its attacker up, so an air string keeps meeting the body it juggles.
   if (!projectile && wasAir && kind === 'air' && a.vy < 0) a.vy = 0;
   const relaunching = relaunch && wasAir;

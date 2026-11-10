@@ -152,16 +152,20 @@ meter. Every number below is a starting value to tune.
   cancels into a special. A **jump cancel**: a launcher (or bounce) that
   hits can be cancelled into a hop (75% of a jump) with Up, which meets the
   body on the way up, so a juggle can go into the air. Once a combo, and it
-  counts as two more hits for damage scaling: the air adds style, not
-  damage. The combo search (`npm run combos`) tries jump cancels and air
-  attacks too, so the damage ceilings cover them.
+  counts as two more hits for damage scaling, and from then on the
+  combo's scaling bottoms out at 20% instead of 30% (0.51.0): the air adds
+  style, not damage. The combo search (`npm run combos`) tries jump
+  cancels and air attacks too, so the damage ceilings cover them (since
+  0.51.0 for real: before, the search took a jump cancel's extra scaling
+  for a dropped combo and never kept one).
 - **The specials pass (0.51.0).** Every fighter has a second air special,
   on Down + Special in the air (a drop straight onto them: Dale's Low
   Pressure, Rox's Splits Drop, Mumbles' Puppet Drop, Hollis's armoured
   Elbow Drop, Margaret's Cut to Commercial, Gus's Belly Flop, Gideon's
   Fall from Grace), each with a boosted version that ground-bounces; a
   **follow-up special**: a button pressed while a special plays brings out
-  its follow-up, hit or not, like a string's next step (Dale's lasso into
+  its follow-up, hit or not, like a string's next step, and ends there (no
+  cancel: a launching follow-up is followed up by a link) (Dale's lasso into
   Thunderclap, Rox's Star Jump into a low or a mid, Mumbles' Strings
   Attached into Boo!, Hollis's Key Ring into Yank, Margaret's Breaking
   into And Now This, Gus's Flambé into Fan the Flames, Gideon's Laying On

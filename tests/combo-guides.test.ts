@@ -4,7 +4,7 @@
 // couple of frames early or late). Rerun `npm run combos:guides` when this
 // fails after a change to the moves. Also the showcase session that plays them.
 import { describe, expect, it } from 'vitest';
-import { DAMAGE_CEILING, GUIDE_DUMMY, GUIDE_REST, guides, runGuide, type ComboGuide } from '../src/game/comboGuides';
+import { DAMAGE_CEILING, GUIDE_DUMMY, GUIDE_REST, guides, isJump, runGuide, type ComboGuide } from '../src/game/comboGuides';
 import { Session } from '../src/game/session';
 import { FIGHTERS, type SimEvent } from '../src/sim';
 
@@ -25,14 +25,14 @@ describe('combo guides', () => {
           const r = runGuide(f.id, g);
           expect(r.unbroken).toBe(true);
           expect(r.hits).toBeGreaterThanOrEqual(2);
-          for (const s of r.steps) expect(s.move, `${s.input} at ${s.at} starts a move`).not.toBe('');
+          for (const s of r.steps) expect(s.move, `${s.input} at ${s.at} starts a move (or jumps)`).not.toBe('');
           expect(r.pct).toBeLessThanOrEqual(DAMAGE_CEILING[g.bars]);
         });
         it(`${g.name}: every press after the first works 2 frames early or late`, () => {
           const want = runGuide(f.id, g).hits;
           g.presses.forEach(([, p], k) => {
-            // The opener sets the timing, and a boost's second Special moves with its first.
-            if (k === 0 || (p === 'SP' && g.presses[k][0] - g.presses[k - 1][0] <= 3)) return;
+            // The opener sets the timing, a boost's second Special moves with its first, and a jump-in's attack is the opener's (timed by eye against the fall).
+            if (k === 0 || (p === 'SP' && g.presses[k][0] - g.presses[k - 1][0] <= 3) || (k === 1 && isJump(g.presses[0][1]))) return;
             for (const d of [-2, 2]) expect(runGuide(f.id, shifted(g, k, d)).hits, `press ${k + 1} (${p}) moved ${d}`).toBe(want);
           });
         });

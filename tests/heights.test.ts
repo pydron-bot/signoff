@@ -5,7 +5,7 @@
 // knocked upright, and cancelling a dash.
 import { describe, expect, it } from 'vitest';
 import { DASH_COMMIT, FIGHTERS, Input, fighterData, step, type HitData, type MatchState, type MoveData, type SimEvent } from '../src/sim';
-import { guideInput, guides, guideStart, runGuide } from '../src/game/comboGuides';
+import { guideInput, guides, guideStart, isJump, runGuide } from '../src/game/comboGuides';
 import { fx } from '../src/sim/fixed';
 import { count, place, presses, ready, run } from './sim-helpers';
 
@@ -149,6 +149,8 @@ describe('ducking', () => {
     const dropped: string[] = [];
     for (const f of roster) {
       for (const g of guides(f.id)) {
+        // A jump-in is aimed at a standing body's height: it's its own matter against a croucher.
+        if (isJump(g.presses[0][1])) continue;
         // A guide that opens with a high can't start on a croucher at all.
         const opener = guideStart(f.id, g.bars);
         const ev0: SimEvent[] = [];

@@ -2,6 +2,7 @@
 // cancel off a launcher that hit, which is how a juggle goes up after them.
 import { describe, expect, it } from 'vitest';
 import { FIGHTERS, Input } from '../src/sim';
+import { JUMP_CANCEL_SCALE } from '../src/sim/constants';
 import { count, place, presses, ready, run } from './sim-helpers';
 
 const { UP, RIGHT, DOWN, FP, BP, FK, SPECIAL } = Input;
@@ -149,7 +150,7 @@ describe('jump cancel', () => {
     const d = m.fighters[1];
     expect(d.chased).toBe(true);
     // One hit landed, scaled as if three had.
-    expect(d.combo).toBe(3);
+    expect(d.combo).toBe(1 + JUMP_CANCEL_SCALE);
   });
 
   it('only off a hit: a blocked launcher stays on the ground', () => {

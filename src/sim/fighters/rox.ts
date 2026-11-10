@@ -90,9 +90,9 @@ const moves = table(
     cancel: [11, 17],
   }),
   // Jumping (all overheads)
-  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.75], at: [0.6, 1.1], height: 'overhead', damage: 55, hitstun: 17, blockstun: 11, chain: { FK: 'j.FK' } }),
-  normal('j.BP', { name: 'Jumping Elbow', kind: 'air', startup: 6, active: 5, recovery: 6, reach: [0.1, 0.8], at: [0.8, 1.3], height: 'overhead', damage: 71, hitstun: 18, blockstun: 12, chain: { FP: 'j.BP FP' } }),
-  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 63, hitstun: 17, blockstun: 11, chain: { BK: 'j.FK BK' } }),
+  normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 4, active: 6, recovery: 5, reach: [0.1, 0.75], at: [0.6, 1.1], height: 'overhead', damage: 42, hitstun: 17, blockstun: 11, chain: { FK: 'j.FK' } }),
+  normal('j.BP', { name: 'Jumping Elbow', kind: 'air', startup: 6, active: 5, recovery: 6, reach: [0.1, 0.8], at: [0.8, 1.3], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12, chain: { FP: 'j.BP FP' } }),
+  normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 5, active: 8, recovery: 5, reach: [0.1, 0.85], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 17, blockstun: 11, chain: { BK: 'j.FK BK' } }),
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 7, active: 6, recovery: 7, reach: [-0.6, 0.95], at: [0.1, 0.6], height: 'overhead', damage: 87, hitstun: 19, blockstun: 12 }),
   // Air string steps: a clap overhead, then a heel dropped like a weight to bounce them off the mat.
   airStep('j.BP FP', { name: 'Air Clap', damage: 32, chain: { BK: 'j.FK BK' } }),

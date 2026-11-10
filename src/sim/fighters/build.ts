@@ -219,12 +219,11 @@ export function normal(id: string, s: NormalSpec): MoveData {
 /**
  * A special's follow-up: Special, then this button as the special plays (it
  * comes out whether the special hit or not, as a string's next step does).
- * One hit, kind special; a launcher keeps a cancel window, to follow them up.
+ * One hit, kind special, and the end of the line: no cancel (a launcher has
+ * to be followed up by a link, never a jump cancel).
  */
 export function followUp(id: string, s: Omit<NormalSpec, 'kind' | 'chain'>): MoveData {
-  const mv = normal(id, { ...s, kind: 'special' });
-  const last = s.startup + s.active - 1;
-  return s.launch === undefined ? mv : { ...mv, cancel: [last + 1, last + CANCEL_LATE] };
+  return normal(id, { ...s, kind: 'special' });
 }
 
 /** An air string's ender: the body spiked into the floor, to bounce back up into a juggle (once a combo; else it knocks down). */

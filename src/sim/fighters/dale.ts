@@ -93,7 +93,7 @@ const moves = table(
     name: 'Isobar Lasso (boosted)',
     kind: 'special',
     total: 45,
-    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 55, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 45, hitstun: 28, blockstun: 30, push: 0, pull: 0.8, pullOnBlock: true })],
     chain: { BP: 'Isobar Lasso BP' },
     cancel: [22, 30],
   }),
@@ -114,7 +114,7 @@ const moves = table(
     kind: 'special',
     total: 40,
     invuln: [1, 9],
-    hits: [strike({ frames: [6, 9], reach: [0.1, 0.95], at: [0.75, 2.3], damage: 55, hitstun: 0, blockstun: 16, launch: 0.2 })],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.95], at: [0.75, 2.3], damage: 65, hitstun: 0, blockstun: 16, launch: 0.2 })],
   }),
   // In the air: the umbrella opens and he hangs there, dropping hail on the way down.
   move('Downpour', {

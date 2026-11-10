@@ -34,7 +34,9 @@ describe('move list', () => {
       const combos = section('Combos');
       expect(combos.length).toBeGreaterThanOrEqual(1);
       combos.forEach((r, k) => {
-        expect(r.input).toMatch(/^(wait\u00a0)?[↓→←↗↑]?(FP|BP|FK|BK|SP)(\u00a0SP)?( › (wait\u00a0)?([↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?|[↑↗]))+$/);
+        // A step is a press (a direction and a button, a boost as SP SP) or a jump (↑, ↗ or ↖ alone).
+        const step = '(wait\u00a0)?([↓→←]?(FP|BP|FK|BK|SP)(\u00a0SP)?|[↑↗↖])';
+        expect(r.input).toMatch(new RegExp(`^${step}( › ${step})+$`));
         expect(r.notes).toMatch(/^\d+ hits · \d+% · (no meter|\d bars?)$/);
         expect(r.watch).toBe(k);
       });
