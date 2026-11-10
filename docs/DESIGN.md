@@ -479,6 +479,10 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
   moved and resized in Settings. They hide while a gamepad plays player 1
   (SCREEN BUTTONS: NOT WITH A PAD, or ALWAYS); in VS PLAYER a single pad is
   player 2's, so player 1 keeps the screen.
+- The touch buttons never hide the fight: while they're up the camera frames
+  the fighters beside them, looking past the wall on the buttons' side by as
+  much as they cover (so every set needs scenery a few metres past its walls),
+  and a button with a fighter behind it fades.
 - Every control can be rebound on keyboard and gamepad; a button-mash guard
   stops held buttons repeating attacks.
 

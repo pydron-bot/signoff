@@ -606,11 +606,22 @@ body {
   white-space: pre;
   text-align: center;
   line-height: 1;
+  transition: opacity 0.12s, background-color 0.12s;
 }
 
 .touch-btn.down {
   background: rgba(241, 237, 224, 0.45);
   color: #0b0b0f;
+}
+
+/* A fighter behind it: the fight shows through (still pressable, and still lit while held). */
+.touch-btn.clear {
+  opacity: 0.4;
+  background: rgba(20, 22, 40, 0.1);
+}
+
+.touch-btn.clear.down {
+  background: rgba(241, 237, 224, 0.3);
 }
 
 .t-special { right: 98px; top: 0; border-color: #4ad0ff; }

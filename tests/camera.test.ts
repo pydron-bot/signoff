@@ -12,10 +12,11 @@ import { place, ready } from './sim-helpers';
 const ASPECTS = { desktop: 16 / 9, iphone: 852 / 393 };
 
 /** The rig settled on a match: stepped until it stops moving. */
-function settled(m: MatchState, aspect: number, reduceMotion = false): CameraRig {
+function settled(m: MatchState, aspect: number, reduceMotion = false, buttons = 0): CameraRig {
   const rig = new CameraRig();
   rig.aspect = aspect;
   rig.reduceMotion = reduceMotion;
+  rig.buttons = buttons;
   for (let i = 0; i < 200; i++) rig.step(m, []);
   return rig;
 }
@@ -53,6 +54,43 @@ describe('camera framing', () => {
       }
     });
   }
+
+  // The iPhone's touch buttons: 250 points of 852, on the right (or, swapped, the left).
+  const SHARE = 262 / 852;
+  /** Where x sits across the screen, -1 (left edge) to 1 (right edge). */
+  const across = (x: number, s: { tx: number; z: number }) => (x - s.tx) / halfView(s.z, ASPECTS.iphone);
+
+  for (const side of [1, -1]) {
+    const where = side > 0 ? 'right' : 'left';
+    it(`with touch buttons on the ${where}, keeps the fighters beside them, even at that wall`, () => {
+      const half = toFloat(segmentData('kitchen', 0).halfWidth);
+      for (let gap = 0.8; gap <= 4; gap += 0.4) {
+        for (const centre of [0, 2, half - 0.4 - gap / 2]) {
+          const m = ready('gus', 'rox');
+          m.stage = 'kitchen';
+          place(m, side * centre - gap / 2, side * centre + gap / 2);
+          const s = settled(m, ASPECTS.iphone, false, side * SHARE).shot;
+          const at = `gap ${gap.toFixed(1)} at ${centre.toFixed(1)}`;
+          // The body nearer the buttons (half a metre wide) stops short of them; both stay on screen.
+          const near = side * across(side * (centre + gap / 2 + 0.45), s);
+          const far = side * across(side * (centre - gap / 2 - 0.45), s);
+          expect(near, at).toBeLessThan(1 - 2 * SHARE + 0.06);
+          expect(far, at).toBeGreaterThan(-1);
+        }
+      }
+    });
+  }
+
+  it('with touch buttons up, the other wall frames as it did without them', () => {
+    const m = ready('gus', 'rox');
+    m.stage = 'kitchen';
+    const half = toFloat(segmentData('kitchen', 0).halfWidth);
+    place(m, -half + 0.4, -half + 1.4);
+    const bare = settled(m, ASPECTS.iphone).shot;
+    const buttons = settled(m, ASPECTS.iphone, false, SHARE).shot;
+    expect(buttons.tx).toBeCloseTo(bare.tx, 3);
+    expect(buttons.z).toBeCloseTo(bare.z, 3);
+  });
 
   it('rises and pulls back for a body in the air', () => {
     const m = ready('rox', 'dale');
