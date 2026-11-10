@@ -38,6 +38,11 @@ export function opponent(l: Ladder): string {
   return l.opponents[l.at];
 }
 
+/** The fighters beaten so far tonight, first beaten first: the studio audience (DESIGN.md, the deal). */
+export function beaten(l: Ladder): string[] {
+  return l.opponents.slice(0, l.at);
+}
+
 /** Where the fight is: the opponent's own show if it has a stage, else the built stages in turn. */
 export function stageFor(l: Ladder): string {
   return homeStage(fighterData(opponent(l)).show) ?? STAGE_IDS[l.at % STAGE_IDS.length];

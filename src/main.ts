@@ -27,7 +27,7 @@ import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 import { ArcadeCard } from './ui/arcadeCard';
 import { LABELS, MUSIC_VOLUME, touchShown, OPTIONS, TOUCH_SCALE, loadSettings, reducedMotion, saveSettings, type Settings } from './game/settings';
-import { afterMatch, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
+import { afterMatch, beaten, createLadder, levelFor, opponent, stageFor, type Ladder } from './game/arcade';
 import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
 import { PerfOverlay } from './ui/perfOverlay';
@@ -263,8 +263,10 @@ function inputSides(s: Session | null): boolean[] {
 
 function begin(s: Session): Session {
   for (const d of inputDisplays) d.clear();
+  // Arcade's beaten fighters watch from the bleachers.
+  const seated = ladder && s.options.mode === 'cpu' ? beaten(ladder) : [];
   // Compile the models' shaders as they arrive, not on their first frame.
-  void arena.setFighters(s.match).then(() => post.compileScene(arena.scene, arena.camera));
+  void Promise.all([arena.setFighters(s.match), arena.setAudience(seated)]).then(() => post.compileScene(arena.scene, arena.camera));
   clock.reset();
   return s;
 }

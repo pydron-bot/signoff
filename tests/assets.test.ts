@@ -5,6 +5,7 @@
 // checked for the objects, materials and lights the game reads.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { FG_INNER, FG_Z, SEATS } from '../src/render/depth';
 import { ART_PENDING } from '../src/render/pose';
 import { FIGHTERS, STAGES } from '../src/sim';
 import { toFloat } from '../src/sim/fixed';
@@ -85,7 +86,7 @@ const MAX_TEXTURE: Record<string, number> = { body: 1024, props: 512 };
 const FPS = 60;
 
 interface Gltf {
-  nodes: { name: string; mesh?: number; skin?: number; translation?: number[]; extras?: Record<string, unknown> }[];
+  nodes: { name: string; mesh?: number; skin?: number; translation?: number[]; rotation?: number[]; extras?: Record<string, unknown> }[];
   skins?: { joints: number[] }[];
   materials?: { name: string; alphaMode?: string; pbrMetallicRoughness?: { baseColorTexture?: { index: number } }; occlusionTexture?: { index: number; texCoord?: number } }[];
   textures?: { source: number }[];
@@ -438,3 +439,72 @@ for (const id of ['weather', 'burn', 'news', 'kitchen']) {
     });
   });
 }
+
+/**
+ * Depth (docs/BLENDER-TODO.md, step 24; src/render/depth.ts): the
+ * foreground's side pieces never come inside the reach the game assumes,
+ * and the six seats sit three a side, each facing the fight.
+ */
+for (const id of ['weather', 'burn', 'news', 'kitchen']) {
+  const path = `public/assets/stages/${id}.glb`;
+  describe.skipIf(!existsSync(path))(`${id}.glb depth`, () => {
+    const g = existsSync(path) ? readGlb(path) : ({} as ReturnType<typeof readGlb>);
+    const node = (name: string) => g.nodes.find((n) => n.name === name);
+
+    it('has the foreground and the audience as meshes', () => {
+      for (const name of ['fg_left', 'fg_right', 'fg_top', 'audience']) expect(node(name)?.mesh, name).toBeDefined();
+    });
+
+    it(`keeps the side pieces outside |x| = ${FG_INNER} and ${FG_Z} m or more toward the camera`, () => {
+      for (const [name, side] of [['fg_left', -1], ['fg_right', 1]] as const) {
+        const n = node(name)!;
+        const [x, , z] = n.translation ?? [0, 0, 0];
+        let inner = Infinity;
+        for (const p of g.meshes[n.mesh!].primitives) {
+          const a = g.accessors[p.attributes.POSITION];
+          inner = Math.min(inner, side > 0 ? x + a.min![0] : -(x + a.max![0]));
+        }
+        expect(inner, `${name} inner edge`).toBeGreaterThanOrEqual(FG_INNER - 0.01);
+        expect(z, `${name} z`).toBeGreaterThanOrEqual(FG_Z);
+      }
+    });
+
+    it(`has seat_1 to seat_${SEATS}, three a side, each turned to face the fight`, () => {
+      for (let k = 1; k <= SEATS; k++) {
+        const n = node(`seat_${k}`);
+        expect(n, `seat_${k}`).toBeDefined();
+        const side = k <= SEATS / 2 ? -1 : 1;
+        expect(Math.sign(n!.translation![0])).toBe(side);
+        // A turn about y: +z (the fighter's front) points to −side.
+        const [, qy, , qw] = n!.rotation!;
+        const frontX = 2 * qy * qw;
+        expect(Math.sign(frontX)).toBe(-side);
+      }
+    });
+  });
+}
+
+/** The living room (step 24 C; src/render/room.ts): the set, the screen to draw on, and the push's two cameras with their lenses. */
+const roomPath = 'public/assets/stages/room.glb';
+describe.skipIf(!existsSync(roomPath))('room.glb', () => {
+  const g = existsSync(roomPath) ? readGlb(roomPath) : ({} as ReturnType<typeof readGlb>);
+  const node = (name: string) => g.nodes.find((n) => n.name === name);
+
+  it('has the set and the screen, the screen in its own material with UVs', () => {
+    expect(node('set')?.mesh).toBeDefined();
+    const screen = node('screen');
+    expect(screen?.mesh).toBeDefined();
+    for (const p of g.meshes[screen!.mesh!].primitives) {
+      expect(g.materials![p.material!].name).toBe('screen');
+      expect(p.attributes.TEXCOORD_0).toBeDefined();
+    }
+  });
+
+  it('has camera_start and camera_end, each with a field of view, the end nearer the screen', () => {
+    const s = node('camera_start');
+    const e = node('camera_end');
+    expect(Number(s?.extras?.fov)).toBeGreaterThan(0);
+    expect(Number(e?.extras?.fov)).toBeGreaterThan(0);
+    expect(e!.translation![2]).toBeLessThan(s!.translation![2]);
+  });
+});

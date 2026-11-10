@@ -7,12 +7,13 @@
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
 import { BurnSet } from './burnSet';
+import { StageDepth } from './depth';
 import { KitchenSet } from './kitchenSet';
 import { NewsSet } from './newsSet';
 import { setFalloff } from './look';
 import { setReflections } from './reflection';
 import type { Grade } from './post';
-import { applyLightMap, type SegmentLights, type StageArt } from './stageModel';
+import { applyLightMap, loadStageArt, type SegmentLights, type StageArt } from './stageModel';
 import { WeatherSet } from './weatherSet';
 
 /** The arena's fixed lights, which the stage sets per segment. */
@@ -59,9 +60,14 @@ export function applyLights(scene: THREE.Scene, lights: StageLights, spec: Segme
 
 export class StageView {
   private readonly sets: Readonly<Record<string, StageSet>>;
+  /** Each stage's foreground and audience (src/render/depth.ts), once its GLB is in. */
+  private readonly depths = new Map<string, StageDepth>();
   private active = '';
 
-  constructor(scene: THREE.Scene, lights: StageLights) {
+  constructor(
+    private readonly scene: THREE.Scene,
+    lights: StageLights,
+  ) {
     this.sets = { weather: new WeatherSet(scene, lights), burn: new BurnSet(scene, lights), news: new NewsSet(scene, lights), kitchen: new KitchenSet(scene, lights) };
     for (const s of Object.values(this.sets)) s.show(false);
   }
@@ -69,7 +75,25 @@ export class StageView {
   /** Shows the match's stage and loads its GLB; resolves once it is in (or failed to load). */
   setStage(id: string): Promise<void> {
     this.use(id);
-    return this.sets[id]?.load() ?? Promise.resolve();
+    const set = this.sets[id];
+    if (!set) return Promise.resolve();
+    const depth = loadStageArt(id).then(
+      (art) => {
+        if (this.depths.has(id)) return;
+        const d = new StageDepth();
+        d.useArt(art);
+        d.root.visible = id === this.active;
+        this.scene.add(d.root);
+        this.depths.set(id, d);
+      },
+      () => undefined,
+    );
+    return Promise.all([set.load(), depth]).then(() => undefined);
+  }
+
+  /** The active stage's foreground and audience, once loaded. */
+  get depth(): StageDepth | null {
+    return this.depths.get(this.active) ?? null;
   }
 
   update(m: MatchState, frame: number): void {
@@ -80,7 +104,11 @@ export class StageView {
   private use(id: string): void {
     if (id === this.active) return;
     this.sets[this.active]?.show(false);
+    const was = this.depths.get(this.active);
+    if (was) was.root.visible = false;
     this.active = id;
     this.sets[id]?.show(true);
+    const d = this.depths.get(id);
+    if (d) d.root.visible = true;
   }
 }

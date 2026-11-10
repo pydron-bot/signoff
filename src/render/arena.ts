@@ -17,6 +17,7 @@ import type { Box } from '../sim/types';
 import { Atmosphere } from './atmosphere';
 import { Echoes } from './echo';
 import { CameraRig, FOV } from './camera';
+import { AUDIENCE_SHADE, SEATS } from './depth';
 import { ContactShadows, setRim, setSignal } from './fighterLight';
 import { WearTracker } from './wear';
 import { FighterModel, loadFighterArt } from './fighterModel';
@@ -98,6 +99,13 @@ const EFFECT_LINGER = 4;
 /** fx_flashlight_beam's size: 1.8 m long (glTF +z), 0.82 m across. */
 const BEAM_LENGTH = 1.8;
 const BEAM_WIDTH = 0.82;
+/** Each seat's sway starts this many frames on from the last, so the audience doesn't sway as one. */
+const SWAY_OFFSET = 23;
+/** A seated fighter's bounds for culling: centre above the seat, and radius, metres. */
+const SEATED_Y = 0.5;
+const SEATED_R = 1.1;
+/** Half a body's width plus its limbs, for what the foreground must keep clear of. */
+const BODY_REACH = 0.6;
 
 interface FighterView {
   group: THREE.Group;
@@ -164,6 +172,13 @@ export class Arena {
   /** Effects shared by every fighter (Tape Skip's smear), once loaded. */
   private shared: Map<string, THREE.Object3D> | null = null;
   private readonly fist = new THREE.Vector3();
+  /** Arcade's beaten fighters, in the bleachers in the order they were beaten; their models once loaded. */
+  private audienceIds: readonly string[] = [];
+  private readonly audience: (FighterModel | null)[] = [];
+  private readonly frustum = new THREE.Frustum();
+  private readonly viewProj = new THREE.Matrix4();
+  private readonly seated = new THREE.Sphere();
+  private readonly turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
   get reduceMotion(): boolean {
     return this.rig.reduceMotion;
@@ -289,6 +304,36 @@ export class Arena {
     return Promise.all(loads).then(() => undefined);
   }
 
+  /**
+   * Who sits in the bleachers (Arcade's beaten fighters, first beaten
+   * first), at most six. Resolves when their models are in the scene.
+   */
+  setAudience(ids: readonly string[]): Promise<void> {
+    const next = ids.slice(0, SEATS);
+    const loads: Promise<void>[] = [];
+    for (let k = 0; k < SEATS; k++) {
+      const id = next[k];
+      if (this.audienceIds[k] === id && (this.audience[k] || !id)) continue;
+      this.audience[k]?.dispose();
+      this.audience[k] = null;
+      if (!id) continue;
+      loads.push(
+        loadFighterArt(id).then(
+          (art) => {
+            if (this.audienceIds[k] !== id || this.audience[k]) return;
+            const model = new FighterModel(art, undefined, AUDIENCE_SHADE);
+            model.root.visible = false;
+            this.scene.add(model.root);
+            this.audience[k] = model;
+          },
+          () => undefined,
+        ),
+      );
+    }
+    this.audienceIds = next;
+    return Promise.all(loads).then(() => undefined);
+  }
+
   /** After a jump in time (a replay seek): poses start afresh from the new step. */
   resync(): void {
     this.poses.reset();
@@ -369,6 +414,35 @@ export class Arena {
     this.camera.position.set(c.x, c.y, c.z);
     this.camera.lookAt(c.tx, c.ty, 0);
     if (c.roll !== 0) this.camera.rotateZ(c.roll);
+    this.drawDepth(m);
+  }
+
+  /** The foreground kept off the fight, and the audience in their seats (drawn only when in view). */
+  private drawDepth(m: MatchState): void {
+    const depth = this.stage.depth;
+    const ax = toFloat(m.fighters[0].x);
+    const bx = toFloat(m.fighters[1].x);
+    depth?.update(this.camera, Math.min(ax, bx) - BODY_REACH, Math.max(ax, bx) + BODY_REACH);
+    this.camera.updateMatrixWorld();
+    this.viewProj.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+    this.frustum.setFromProjectionMatrix(this.viewProj);
+    for (let k = 0; k < SEATS; k++) {
+      const model = this.audience[k];
+      if (!model) continue;
+      const seat = this.models ? depth?.seat(k) : null;
+      if (!seat) {
+        model.root.visible = false;
+        continue;
+      }
+      seat.getWorldPosition(model.root.position);
+      this.seated.center.copy(model.root.position).y += SEATED_Y;
+      this.seated.radius = SEATED_R;
+      model.root.visible = this.frustum.intersectsSphere(this.seated);
+      if (!model.root.visible) continue;
+      // The seat's +z faces the fight; the model is turned a quarter to face +x, so turn it back.
+      seat.getWorldQuaternion(model.root.quaternion).multiply(this.turn);
+      model.pose('sit_audience', this.frame + k * SWAY_OFFSET, true);
+    }
   }
 
   /**
