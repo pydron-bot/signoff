@@ -1,6 +1,18 @@
 # SIGN-OFF — Competitive play: a plan
 
-Nov 10, 2026 · a plan only: nothing here is built yet.
+Nov 10, 2026
+
+**Status (Nov 10):** features 1 to 4 are built, in 0.46.0 (the duck and
+the dash), 0.47.0 (rehearsal), 0.48.0 (the CPU) and 0.49.0 (the bench,
+the meter floor and a first tuning pass). Decisions taken by default:
+throws are ducked only by a neutral duck; the meter floor applies to
+everyone (Dale and Gideon got boosts to meet it); DIRECTOR is Arcade's
+last fight only. The bench (`docs/MATCHUPS.md`) still flags ten
+matchups worse than 30:70 at hard, mostly Rox and Mumbles over the
+slower styles; the first tuning pass found CPU blind spots (lows it
+didn't crouch-block, moves that travel past their hitbox) rather than
+data alone. Feature 5 (online) is not started. The plan as written
+follows.
 
 Five features that would make the fight deeper to play against people and
 more fun to play alone, measured against Mortal Kombat 1. Each lists what is

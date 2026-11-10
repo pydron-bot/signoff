@@ -51,7 +51,8 @@ watching can be pulled through the screen.
   contestant who won. Winning means becoming the next one.
 
 **Arcade** (in now): your fighter against everyone else in turn, listed as
-the night's schedule, easy to hard, with three continues; winning plays the
+the night's schedule, easy to hard and the Programme Director's own CPU
+(DIRECTOR) last, with three continues; winning plays the
 ending, the opening titles of the show you won.
 
 Story mode is told as a night of TV: each chapter is a programme in the
@@ -294,6 +295,29 @@ screens.
   `signoff.lessons` once cleared. Every lesson carries the presses that
   clear it, and a test plays them for every fighter, so a lesson that
   can't be cleared fails the build.
+
+### The CPU (0.48.0)
+
+The CPU (`src/ai/`) sends input frames like a player and sees only what
+is on screen, a reaction time late (24, 15 and 10 frames for easy,
+normal and hard). When an opener it lands connects (a jab, a low, an
+overhead or its launcher), it carries on with that fighter's combo guide
+from the move list, press by press at the guide's timing, from the range
+the guide was measured to hold at, and lets go when it sees the combo
+drop; it chases anti-airs with a jump cancel. It punishes by the frames:
+the launcher route when there's time, else the jab route, else nothing,
+for moves it sees whiff and for unsafe moves it blocks. It spends Tape
+Skip on unsafe moves and to extend, and saves a full meter for Cut Away
+once its health is at stake. It dashes in behind Block, blocks
+projectiles by where they fly and moves it knows go low, ducks throws it
+expects, and times a strike or a throw for the first frame of a getup,
+keyed on seeing the getup start. It counts the opponent's habits over
+the match (the answer to a blocked attack, what they do on getting up,
+how often they jump or throw projectiles) and plays against the
+strongest. Easy does none of this, normal converts about a third of the
+time and hard most of the time. DIRECTOR, Arcade's last fight only, has
+hard's reactions, converts nearly always and adapts fastest. Everything
+is seeded, so a match replays from its seed.
 
 ## Roster
 
