@@ -11,7 +11,7 @@ from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame
 ID = "dale"
 # What gives off light (step 23 C), on the effect meshes only: the body's
 # emission belongs to the game's hit-flash tint.
-EMISSION = {r"curl\d+_.*": 1.5, r"core|bolt\d+_.*": 3, r"streak\d+": 1.5}
+EMISSION = {r"curl\d+_.*": 1.5, r"core|bolt\d+_.*": 3, r"streak\d+": 1.5, r"ring\d+": 2}
 HEIGHT = 1.80
 
 SKIN = (226, 184, 150)
@@ -444,6 +444,46 @@ def fx(make, b):
             length = rng.uniform(0.35, 1.1) * (1.0 - 0.35 * abs(u - 1.0))
             p.box(f"streak{i}", (0.0, -length / 2 + rng.uniform(-0.1, 0.1), u), (0.04, length, 0.07), (200, 200, 220), "fx", mat=1, paint=smear)
 
+    def impact_ring(p):
+        # The shockwave off a heavy hit (step 29, shared by every fighter):
+        # a flat ring 1 m in radius lying in the floor plane (+y up in the
+        # game), bright at its rim and fading to nothing inward.
+        def soft(t):
+            r = np.hypot(t.side, t.fwd)
+            a = np.clip((r - 0.62) / 0.38, 0, 1) ** 1.6
+            t.c = np.clip(np.array((255.0, 246.0, 220.0)) * a[:, None], 0, 255)
+            return t.c
+
+        n = 24
+        for i in range(n):
+            a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
+            pts = [(r * math.cos(a), r * math.sin(a), z) for r in (0.6, 1.0) for a in (a0, a1) for z in (0.0, 0.01)]
+            p.hull(f"ring{i}", pts, (255, 246, 220), "fx", mat=1, paint=soft)
+
+    def crack(p):
+        # A starburst crack 1.5 m across, for wall splats and ground bounces
+        # (step 29, shared): a dark crater with jagged fissures running out
+        # from it, flat, 5 mm thick, +y up in the game.
+        rng = np.random.default_rng(29)
+        p.hull("crater", [(0.16 * math.cos(a) * rng.uniform(0.8, 1.15), 0.16 * math.sin(a) * rng.uniform(0.8, 1.15), z)
+                          for a in np.linspace(0, 2 * math.pi, 11)[:-1] for z in (0.0, 0.006)], (26, 22, 24), "fx", mat=1)
+        for i in range(9):
+            a = 2 * math.pi * i / 9 + rng.uniform(-0.2, 0.2)
+            pts, r, w = [], 0.12, 0.035
+            while r < 0.75:
+                step = rng.uniform(0.08, 0.16)
+                a += rng.uniform(-0.25, 0.25)
+                r2 = min(0.75, r + step)
+                w2 = w * 0.72
+                for (rr, ww) in ((r, w), (r2, w2)):
+                    c, s_ = math.cos(a), math.sin(a)
+                    for side in (-1, 1):
+                        pts.append((rr * c - side * ww * s_, rr * s_ + side * ww * c))
+                p.hull(f"fissure{i}_{len(pts)}", [(x, y, z) for x, y in pts[-4:] for z in (0.0, 0.005)], (34, 30, 32), "fx", mat=1)
+                r, w = r2, w2
+
+    make("fx_impact_ring", impact_ring)
+    make("fx_crack", crack)
     make("fx_cold_front", cold_front)
     make("fx_hail", hail)
     make("fx_isobar_lasso", lasso)

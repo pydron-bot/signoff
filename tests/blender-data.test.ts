@@ -21,7 +21,13 @@ function move(m: MoveData) {
     total: m.total,
     startup: m.startup,
     lastActive: m.lastActive,
-    hits: m.hits.map((h) => ({ frames: h.frames, box: box(h.box), height: h.height })),
+    // heavy: the impact pass's strikes (art step 29): 55 damage and up, launchers, knockdowns, bounces.
+    hits: m.hits.map((h) => ({
+      frames: h.frames,
+      box: box(h.box),
+      height: h.height,
+      heavy: h.damage >= 55 || h.knockdown || h.launch !== undefined || h.groundBounce || h.wallBounce || undefined,
+    })),
     spawns: m.spawns.map((s) => ({ frame: s.frame, at: [r(s.projectile.x), r(s.projectile.y)] })),
     throw: m.throwData ? { frames: m.throwData.frames, range: r(m.throwData.range) } : undefined,
     interact: m.interactFrame,

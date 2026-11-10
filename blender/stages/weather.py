@@ -365,14 +365,7 @@ def build(make):
     def studio(p):
         p.poly("floor", [(-14, -4, 0), (14, -4, 0), (14, 11, 0), (-14, 11, 0)], FLOOR, "set", (0, 0, 1), paint=floor)
         quad(p, "wall", -20, 20, 0, 10, WALL_F, WALL, wall)
-        quad(p, "map", MAP_X0, MAP_X1, MAP_Y0, MAP_Y1, WALL_F + 0.02, SEA, weather_map)
-        quad(p, "header", MAP_X0, MAP_X1, MAP_Y1, HEAD_Y1, WALL_F + 0.02, RED, header)
-        # The green screen on its stand, right of the map.
-        quad(p, "screen", 3.4 + 0.4, 7.4 - 0.4, 0.6, 3.6, -3.5, CHROMA, chroma)
-        for s in (3.75, 7.05):
-            p.box(f"screen_post{s}", (s, -3.5, 1.95), (0.08, 0.08, 3.9), METAL, "set", paint=lit)
-            p.box(f"screen_foot{s}", (s, -3.5, 0.03), (0.12, 0.9, 0.06), METAL, "set", paint=lit)
-        p.box("screen_top", (5.4, -3.5, 3.65), (3.4, 0.08, 0.1), METAL, "set", paint=lit)
+        # The map and its header, and the green screen: shake_map and shake_screen.
         # Studio flats at the arena's walls, braced and weighted behind.
         for s in (-1, 1):
             p.box(f"flat{s}", (s * 6.4, -1, 2.5), (0.8, 4, 5), FLAT, "set", paint=flat)
@@ -394,8 +387,25 @@ def build(make):
                 p.seg(f"coil{ring}_{k}", (-8.2 + r * math.cos(a0), 1.4 + r * math.sin(a0), 0.02 + ring * 0.03),
                       (-8.2 + r * math.cos(a1), 1.4 + r * math.sin(a1), 0.02 + ring * 0.03), 0.018, 0.018, RUBBER, "set", verts=5, paint=lit)
 
-    def storm(p):
+    def wall_map(p):
+        quad(p, "map", MAP_X0, MAP_X1, MAP_Y0, MAP_Y1, WALL_F + 0.02, SEA, weather_map)
+        quad(p, "header", MAP_X0, MAP_X1, MAP_Y1, HEAD_Y1, WALL_F + 0.02, RED, header)
+
+    def green_screen(p):
+        # The green screen on its stand, right of the map.
+        quad(p, "screen", 3.4 + 0.4, 7.4 - 0.4, 0.6, 3.6, -3.5, CHROMA, chroma)
+        for s in (3.75, 7.05):
+            p.box(f"screen_post{s}", (s, -3.5, 1.95), (0.08, 0.08, 3.9), METAL, "set", paint=lit)
+            p.box(f"screen_foot{s}", (s, -3.5, 0.03), (0.12, 0.9, 0.06), METAL, "set", paint=lit)
+        p.box("screen_top", (5.4, -3.5, 3.65), (3.4, 0.08, 0.1), METAL, "set", paint=lit)
+
+    def storm_overlay(p):
         quad(p, "map_storm", MAP_X0, MAP_X1, MAP_Y0, MAP_Y1, WALL_F + 0.04, SEA, storm_map)
+
+    def flood_overlay(p):
+        quad(p, "map_flood", MAP_X0, MAP_X1, MAP_Y0, MAP_Y1, WALL_F + 0.06, SEA, flood_map)
+
+    def storm(p):
         rng = np.random.default_rng(7)
         for k in range(24):
             x = rng.uniform(-12, 12)
@@ -403,7 +413,6 @@ def build(make):
             sheet(p, f"page{k}", x, f, rng.uniform(0, math.pi), 0.002 + 0.0005 * k, 0)
 
     def flood(p):
-        quad(p, "map_flood", MAP_X0, MAP_X1, MAP_Y0, MAP_Y1, WALL_F + 0.06, SEA, flood_map)
         for s in (-1, 1):
             # A junction box on the wall and its cable snaking out to the puddle.
             p.box(f"junction{s}", (s * 3.9, WALL_F + 0.08, 0.6), (0.34, 0.14, 0.42), (150, 150, 140), "set", paint=lit)
@@ -435,6 +444,13 @@ def build(make):
     make("set", studio)
     make("seg_storm", storm)
     make("seg_flood", flood)
+    # Set pieces the game shakes on big hits (art step 29), origins at their
+    # pivots: the map with its header (and the storm and flood maps over it,
+    # shaken with it), the green screen on its stand.
+    make("shake_map", wall_map, pivot=(0, WALL_F, MAP_Y0), parent="set")
+    make("shake_map_storm", storm_overlay, pivot=(0, WALL_F, MAP_Y0), parent="seg_storm")
+    make("shake_map_flood", flood_overlay, pivot=(0, WALL_F, MAP_Y0), parent="seg_flood")
+    make("shake_screen", green_screen, pivot=(5.4, -3.5, 0), parent="set")
     make("prop_dolly_left", dolly_obj(1), at=(-4.6, -0.2, 0))
     make("prop_dolly_right", dolly_obj(-1), at=(4.6, -0.2, 0))
     make("fg_left", lambda p: fg.camera(p, "fg_cam", 1), at=(-6.2, 3.0, 0))

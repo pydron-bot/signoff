@@ -351,6 +351,9 @@ class Pose:
       foot points, for kicks).
     hand_L / hand_R: wrist position, and aim (the direction the hand points).
     knee_L / elbow_L (and _R): optional pole positions (which way the joint bends).
+    stretch: {bone: factor} for the smear frames (art step 29): that bone
+      scaled along its length (and a little thinner), its children with it.
+      Only the STRETCHY bones are keyed.
     shapes: {shape key: value} for the body's shape keys (expressions, held
       props), and the hand and jaw values (fist_*, point_*, open_*, jaw)
       that pose_hands_and_jaw turns into bones; unset values are 0.
@@ -370,6 +373,9 @@ class Pose:
         """A copy with some shape keys set (the rest as they were)."""
         return self.but(shapes={**self.parts.get("shapes", {}), **values})
 
+
+# The bones a smear frame stretches (Pose stretch): every clip keys their scale.
+STRETCHY = ("forearm.L", "forearm.R", "shin.L", "shin.R")
 
 ORDER = ["hips", "spine", "chest", "neck", "head", "shoulder.L", "shoulder.R", "toe.L", "toe.R"]
 
@@ -440,6 +446,10 @@ def apply_pose(rig, pose, height):
     for pb in rig.pose.bones:
         pb.location = (0, 0, 0)
         pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.scale = (1, 1, 1)
+    for name, f in pose.parts.get("stretch", {}).items():
+        thin = 1 / math.sqrt(f)  # longer and thinner, as a smear is
+        rig.pose.bones[name].scale = (thin, f, thin)
     bpy.context.view_layer.update()
 
     root = pose.get("root", {})
@@ -527,6 +537,8 @@ class Clip:
             self._last[pb.name] = q
             pb.keyframe_insert("rotation_quaternion", frame=frame)
             pb.keyframe_insert("location", frame=frame)
+            if pb.name in STRETCHY:
+                pb.keyframe_insert("scale", frame=frame)
         if Clip.shape_keys is not None:
             values = pose.parts.get("shapes", {})
             for kb in Clip.shape_keys.key_blocks[1:]:

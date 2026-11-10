@@ -264,7 +264,7 @@ are authored facing right with the left foot and left hand leading.
 > 12. ~~**Step 25, the fighting styles pilot**~~ *done (Nov 10): Rox's and Hollis's normals and their timing profiles; out of `ART_PENDING`.*
 > 13. ~~**Step 26, air specials**~~ *done (Nov 10): all fourteen clips.*
 > 14. ~~**Step 27, three boosts** and **step 28, the specials pass**~~ *done (Nov 10): all 41 clips.* Was: **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
-> 15. **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
+> 15. ~~**Step 29, the impact pass**~~ *done (Nov 10); the game side can take up the smears, `fx_impact_ring`, `fx_crack` and the `shake_*`/`swing_*` nodes.* Was: **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1481,32 +1481,76 @@ contact, the light a blow throws, a jolt in the freeze and dust when a
 body lands (`docs/VISUALS.md`). The art can make the same moments land
 harder; none of this changes a clip's length or where its hits are.
 
-- [ ] **Smear frames on heavy attacks.** On the first active frame (or
+- [x] **Smear frames on heavy attacks.** On the first active frame (or
   the frame before) of every heavy strike in the clip table (55 damage and
   up, launchers, knockdowns, bounces), stretch the striking limb along its
   path: a stretched forearm or shin mesh, or a smear shape keyed visible
   for one or two frames. The game's swing arc (`src/render/swoosh.ts`)
   stands in until then and can be turned down once the clips carry it.
-- [ ] **Hold the anticipation.** Heavy normals and specials with 12 or
+  *Done (Nov 10): `anim.smear`, on every heavy hit (155 of 276: the data
+  now marks them `heavy`, from `tests/blender-data.test.ts`) struck with a
+  hand or foot: on the frame before the first active one, the forearm
+  stretched 1.55× along its length (the shin 1.4×), a little thinner, its
+  hand or foot with it, and back the next frame. It's bone scale, so the
+  GLBs now carry scale tracks on `forearm.*` and `shin.*` (and the
+  exporter's compensation on `hand.*` and `foot.*`); every other bone's
+  scale is still 1. The active frames are untouched, so the hit checks
+  stand. The swing arc can be turned down.*
+
+- [x] **Hold the anticipation.** Heavy normals and specials with 12 or
   more frames of startup: reach the wind-up pose by about two-thirds of
   the startup and hold it (a slight drift, not a freeze), then snap
   through to the strike in two frames. The snap is what sells the hit.
-- [ ] **Overshoot on contact.** On the first active frame, push the strike
+  *Done: `anim.hold`, for generated heavy normals and specials with 12 or
+  more frames of startup (hand-keyed moves and the styles pilot's rhythm
+  already time their own): the wind-up at two-thirds of the startup, held
+  creeping 6% further back, then through to the strike in two frames
+  (the middle one is the smear).*
+
+- [x] **Overshoot on contact.** On the first active frame, push the strike
   a few centimetres past the hitbox's far edge, then settle back: the
   pose at contact should be the most extended of the move.
-- [ ] **Heavier hit reactions.** `hit_head_heavy`, `hit_body_heavy` and
+  *Done: `anim.overshoot`: on a heavy hit's first active frame the hand
+  or foot is pushed up to 8 cm further, to 2.5 cm past the box's far edge
+  (inside the check's 4 cm), and settles back on the next. Not for chops,
+  rising strikes, spins or held props.*
+
+- [x] **Heavier hit reactions.** `hit_head_heavy`, `hit_body_heavy` and
   `stagger` (step 22): the head snapping a full 30–40° on frame 2, the
   spine following on 3–4. The freeze holds frame 1, so frame 2 is the one
   people see as the hit lands.
-- [ ] **Impact fx meshes** in Dale's GLB (shared, like `fx_tape_skip`):
+  *Done: `Stance.snapped`, a new frame 2 on `hit_head_heavy`,
+  `hit_body_heavy` and `stagger`: the head and neck 85% of the way to the
+  peak (40–45° back on the head hits), the body 20%, the face already
+  hurt; the spine follows to the peak on 4.*
+
+- [x] **Impact fx meshes** in Dale's GLB (shared, like `fx_tape_skip`):
   `fx_impact_ring` (a flat ring with a soft inner edge, 1 m radius, +y up)
   and `fx_crack` (a starburst floor crack, 1.5 m across, dark, for wall
   splats and ground bounces). The game draws its own rings and dust now;
   these would replace them with painted ones.
-- [ ] **Named nodes on the sets that can move.** Per stage, a few nodes
+  *Done: in `dale.glb`: `fx_impact_ring` (1 m radius, the rim bright
+  and fading to black inward, so it suits additive blending; it glows) and
+  `fx_crack` (about 1.4 m across, a dark crater and nine jagged fissures),
+  both flat, 1 cm and 6 mm thick, origin at the centre, +y up.*
+
+- [x] **Named nodes on the sets that can move.** Per stage, a few nodes
   the game can shake or swing on big hits: `shake_*` (props near the walls:
   the weather map, the mirrors, the news monitors, the hanging pans) and
   `swing_*` (hanging lamps, pivot at the top). Origins at their pivots.
+  *Done. Each is a child of its `set` or `seg_*` node (it shows and hides
+  with it, shares its material and light map, and is baked with it), so
+  find them with `getObjectByName`, not among the top-level objects; the
+  origins are the pivots: Weather `shake_map` (map and header, under
+  `set`), `shake_map_storm` and `shake_map_flood` (the overlays, under
+  their segments: shake all three together), `shake_screen` (the green
+  screen, pivot on the floor); Feel the Burn `shake_mirrors` (mirrors,
+  frames and barre, pivot at the foot of the mirror wall),
+  `shake_speakers_left` and `_right` (under `seg_warmup`, so gone in
+  Burnout); News `swing_lamp0`–`5` (the fresnels, pivot on the grid at
+  6.8 m, under `seg_headlines`); Kitchen Live `shake_shelves_left` and
+  `_right` (the jar shelves, under `seg_prep`). Kitchen has no hanging
+  pans yet: they'd be new set dressing (say if wanted).*
 
 ### State clips (every fighter)
 

@@ -11,7 +11,11 @@ A stage module defines ID, LIGHTS (one dict per segment, written to the
 make(name, parts_fn, at=(x, fwd, up)) once per object: parts_fn adds the
 object's parts to `p`; `at` moves the finished object (painting happens
 first, in the space the parts were built in, so a prop's paint can work
-around its own origin).
+around its own origin). For a piece the game moves in place (art step 29:
+`shake_*`, `swing_*`), `pivot` puts the object's origin there without
+moving the piece, and `parent` makes it a child of a `set` or `seg_*`
+object: it shows and hides with that, takes its light map, and is baked
+with it.
 
 Optional, for a scene that isn't a fight (the title's room, step 24 C):
 AUDIENCE = False leaves out the bleachers and their seats; ATLAS overrides
@@ -65,12 +69,18 @@ def build(mod, out_dir, art_dir):
     crowd = getattr(mod, "AUDIENCE", True)
     objs, moves = [], []
 
-    def make(name, parts_fn, at=None):
+    pivots, parents = [], []
+
+    def make(name, parts_fn, at=None, pivot=None, parent=None):
         parts_fn(p)
         obj = p.join(name)
         objs.append(obj)
         if at is not None:
             moves.append((obj, at))
+        if pivot is not None:
+            pivots.append((obj, pivot))
+        if parent is not None:
+            parents.append((obj, parent))
         return obj
 
     mod.build(make)
@@ -94,6 +104,16 @@ def build(mod, out_dir, art_dir):
                 use_glow(p.materials[mi], glow, strength)
     for obj, at in moves:
         obj.location = fighter(*at)
+    from mathutils import Matrix
+    for obj, at in pivots:
+        v = fighter(*at)
+        obj.data.transform(Matrix.Translation(-v))
+        obj.location = v
+    by_name = {o.name: o for o in objs}
+    for obj, name in parents:
+        par = by_name[name]
+        obj.parent = par
+        obj.matrix_parent_inverse = par.matrix_world.inverted()
     # Where the game sits a beaten fighter: empties, exported with the stage.
     seats = []
     for name, at, aim in (audience.seats() if crowd else []) + list(getattr(mod, "EMPTIES", [])):

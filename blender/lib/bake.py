@@ -40,7 +40,13 @@ GAMMA = 4.0
 
 
 def baked(name):
-    return name == "set" or name.startswith(("seg_", "prop_"))
+    return name == "set" or name.startswith(("seg_", "prop_", "shake_", "swing_"))
+
+
+def family(objs, these):
+    """These objects and their children (a set piece the game moves in place,
+    `shake_*` and `swing_*`, is a child of its `set` or `seg_*`: baked with it)."""
+    return [x for o in these for x in [o] + [c for c in objs if c.parent is o]]
 
 
 def unwrap(objs):
@@ -178,9 +184,9 @@ def bake(mod, objs, materials, art_dir):
     _cycles()
     first = set(getattr(mod, "FIRST", ()))
     by = {o.name: o for o in objs}
-    base = [by["set"]] + [by[n] for n in first]
+    base = family(objs, [by["set"]] + [by[n] for n in first])
     passes = [(base, base)]
-    passes += [(base + [o], [o]) for o in objs if o.name.startswith("seg_") and o.name not in first]
+    passes += [(base + family(objs, [o]), family(objs, [o])) for o in objs if o.name.startswith("seg_") and o.name not in first]
     passes += [([o], [o]) for o in objs if o.name.startswith("prop_")]
 
     acc = {mi: np.ones((s, s), dtype=np.float32) for mi, s in SIZE.items()}
@@ -296,11 +302,11 @@ def light_maps(mod, objs, materials, art_dir, out_dir):
     raw = {}
     for n, (pieces, lamps) in sorted(maps.items()):
         obs = [_lamp(i, d) for i, d in enumerate(lamps)]
-        base = [by["set"]] + [by[k] for k in pieces]
+        base = family(objs, [by["set"]] + [by[k] for k in pieces])
         passes = [(base, base)]
         if n == 1:
             # Map 1 serves the segments without their own, so it covers every piece.
-            passes += [(base + [o], [o]) for o in objs if o.name.startswith("seg_") and o.name not in pieces]
+            passes += [(base + family(objs, [o]), family(objs, [o])) for o in objs if o.name.startswith("seg_") and o.name not in pieces]
         acc = np.zeros((size, size, 3), dtype=np.float32)
         cover = np.zeros((size, size), dtype=bool)
         for k, (seen, todo) in enumerate(passes):

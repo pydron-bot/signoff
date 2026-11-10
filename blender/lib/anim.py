@@ -601,6 +601,15 @@ class Stance:
         return {n: [toward(p, crouch if n == "hit_crouch" else base, 1 - self.hit_amount) for p in poses]
                 for n, poses in self.hit_raw(base, crouch).items()}
 
+    def snapped(self, base, peak):
+        """A heavy reaction's frame 2 (art step 29), the one seen as the hit
+        lands (the freeze holds frame 1): the head and neck already most of
+        the way to the peak, the body only starting to go (the spine follows
+        on 3–4), the face already hurt."""
+        p = lerp_pose(base, peak, 0.2)
+        return p.but(neck=lerp(base.parts.get("neck", (0, 0, 0)), peak.parts.get("neck", (0, 0, 0)), 0.85),
+                     head=lerp(base.parts.get("head", (0, 0, 0)), peak.parts.get("head", (0, 0, 0)), 0.85)).but(shapes=peak.parts.get("shapes", {}))
+
     def hit_reactions(self, base, crouch):
         """{clip: (frames, [(frame, pose)])}: the nine hit reactions."""
         P = self.hit_peaks(base, crouch)
@@ -609,10 +618,11 @@ class Stance:
                                    ("hit_body", 12, self.hit_ease), ("hit_body_2", 12, self.hit_ease), ("hit_body_heavy", 18, self.hit_ease_gut),
                                    ("hit_legs", 12, self.hit_ease), ("hit_crouch", 12, self.hit_ease)):
             b = crouch if name == "hit_crouch" else base
-            out[name] = (frames, [(1, b)] + [(f, toward(P[name][0], b, back)) for f, back in ease])
+            snap = [(2, self.snapped(b, P[name][0]))] if name in ("hit_head_heavy", "hit_body_heavy") else []
+            out[name] = (frames, [(1, b)] + snap + [(f, toward(P[name][0], b, back)) for f, back in ease])
         jolted, r1, r2, sway, end = P["stagger"]
         lift = self.s((0, 0, 0.06))
-        out["stagger"] = (30, [(1, base), (4, jolted),
+        out["stagger"] = (30, [(1, base), (2, self.snapped(base, jolted)), (4, jolted),
                                (7, lerp_pose(jolted, r1, 0.5).but(foot_R=moved(lerp_pose(jolted, r1, 0.5).parts["foot_R"], lift))),
                                (10, r1), (14, lerp_pose(r1, r2, 0.5).but(foot_L=moved(lerp_pose(r1, r2, 0.5).parts["foot_L"], lift))),
                                (18, r2), (22, sway), (26, lerp_pose(sway, end, 0.6)), (30, end)])
@@ -1193,6 +1203,7 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
         held = spec.get("held")
         prev_end = None
         opening = None  # (frame, pose, chamber, chop) of the first strike, for rhythm()
+        struck = []  # (hit, limb, chop, extra) per hit, for the impact pass (overshoot)
         for i, hit in enumerate(hits):
             f0, f1 = hit["frames"]
             lb = alt[i % len(alt)] if alt else limb
@@ -1246,6 +1257,7 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
                 at((prev_end + f0) // 2, lerp_pose(keys.get(prev_end, base), fitter.chamber(base, lb, over, low, high=chop), 0.6))
             at(f0, pose)
             at(f1, end)
+            struck.append((hit, lb, chop, extra))
             prev_end = f1
         if prev_end:
             rec = total - prev_end
@@ -1260,6 +1272,11 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
         anticipation = None
         if opening and style is None and not (mv["spawns"] or mv.get("throw") or mv.get("interact")):
             anticipation = rhythm(keys, st, base, opening, (prev_end, end), total, mv["stance"])
+        # The impact pass (art step 29): a heavy blow with a long startup
+        # holds its wind-up and snaps through.
+        if (opening and anticipation is None and style in (None, "rising") and not spec.get("keys")
+                and any(h.get("heavy") for h in hits) and not (mv["spawns"] or mv.get("throw"))):
+            anticipation = hold(keys, base, opening[0], opening[1])
         # The moves people watch get the showcase: specials (boosted ones
         # bigger), the launcher and the string enders.
         ender = " " in mid and not any(o.startswith(mid + " ") for o in data["moves"])
@@ -1304,6 +1321,10 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
 
             step_through(keys, motion, k, free, span=0.7 if style == "grapevine" else 0.5, walk=beat if spec.get("step") == "beat" else gait)
 
+        if not spec.get("prop"):
+            if style not in ("spin", "rising", "teleport"):
+                overshoot(keys, fitter, struck, total)
+            smear(keys, hits, [alt[i % len(alt)] if alt else limb for i in range(len(hits))])
         if mv["kind"] in ("special", "super"):
             shout(keys, mv, total)
         for f in sorted(keys):
@@ -1427,6 +1448,78 @@ def showcase(keys, st, base, b0, b1, total, limb, g, strikers=(), anticipation=N
             del keys[x]
         keys[f] = over
         keys[f + round((total - f) * 0.5)] = lerp_pose(over, base, 0.45)
+
+
+def hold(keys, base, f0, strike):
+    """Hold the anticipation (art step 29): with 12 or more frames of startup,
+    the wind-up (the first key after the stance) is reached by two-thirds of
+    the startup and held, still creeping back, then the strike snaps through
+    in two frames. Rekeys the startup only. Returns the wind-up's frame, for
+    showcase()'s coil."""
+    pre = sorted(f for f in keys if 1 < f < f0)
+    if f0 < 13 or not pre:
+        return None
+    windup = keys[pre[0]]
+    a = round(1 + (f0 - 1) * 2 / 3)
+    if a >= f0 - 2:
+        return None
+    for f in pre:
+        del keys[f]
+    keys[a] = windup
+    keys[f0 - 2] = toward(windup, base, -0.06)  # a slight drift, not a freeze
+    keys[f0 - 1] = lerp_pose(keys[f0 - 2], strike, 0.5).shaped(**strike.parts.get("shapes", {}))
+    return a
+
+
+def overshoot(keys, fitter, struck, total):
+    """Overshoot on contact (art step 29): on a heavy hit's first active frame
+    the striking hand or foot is pushed up to 8 cm further along, to just
+    past the hitbox's far edge (inside the check's slack), then settles back
+    on the next frame: contact is the most extended pose of the move. Not
+    for chops (they come down, not out) or held props."""
+    rig, h = fitter.rig, fitter.st.height
+    taken = {f for hit, *_ in struck for f in range(hit["frames"][0], hit["frames"][1] + 1)}
+    for hit, lb, chop, extra in struck:
+        kind = lb.split(".")[0]
+        f0, f1 = hit["frames"]
+        if not hit.get("heavy") or chop or extra or kind not in ("hand", "foot") or f0 not in keys:
+            continue
+        x0, x1, y0, y1 = hit["box"]
+        sign = 1 if x1 > 0 or x0 >= 0 else -1
+        far = x1 if sign > 0 else x0
+        pose = keys[f0]
+        apply_pose(rig, pose, h)
+        _, tx, ty = tip_point(rig, lb)
+        push = min(0.08, (far + sign * 0.025 - tx) * sign)
+        if push < 0.015:
+            continue
+        settle = f0 + 1
+        if settle <= total and settle not in keys and (settle in taken or settle < total):
+            keys[settle] = pose_at(keys, settle)
+        keys[f0] = fitter.place(pose, lb, (tx + sign * push, ty))
+
+
+# How far a smear frame stretches the striking forearm or shin (art step 29).
+SMEAR = {"hand": ("forearm", 1.55), "foot": ("shin", 1.4)}
+
+
+def smear(keys, hits, limbs):
+    """Smear frames (art step 29): on the frame before each heavy hit's first
+    active frame, the striking forearm or shin stretched along its path, and
+    back the frame after, the way a drawn smear frame sells a fast blow. The
+    active frames are untouched, so every strike check still holds; plain
+    keys on both sides keep the stretch to that one frame."""
+    taken = {f for h in hits for f in range(h["frames"][0], h["frames"][1] + 1)}
+    for h, lb in zip(hits, limbs):
+        kind, side = lb.split(".")
+        f = h["frames"][0] - 1
+        if not h.get("heavy") or kind not in SMEAR or f < 2 or f in taken:
+            continue
+        bone, factor = SMEAR[kind]
+        before = pose_at(keys, f - 1)
+        pose = pose_at(keys, f)
+        keys[f - 1] = before
+        keys[f] = pose.but(stretch={f"{bone}.{side}": factor})
 
 
 def shout(keys, mv, total):

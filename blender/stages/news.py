@@ -299,8 +299,7 @@ def build(make):
     def headlines(p):
         # The lamps hang over the fighting floor until Lights Out drops them
         # (there only their cables are left).
-        for k, x in enumerate(LAMP_X):
-            fresnel(p, f"lamp{k}", (x, 0.0 if k % 2 else -1.0, GRID_U - 0.62))
+        # (The lamps are swing_lamp*, children of this.)
         r = GLOBE_R + 0.3
         quad(p, "globe", -r, r, GLOBE_U - r, GLOBE_U + r, WALL_F + 0.02, GLOBE, globe)
         p.box("header", (0, WALL_F + 0.08, HEADER_U), (5.6, 0.1, 1.05), HEADER, "set", paint=header)
@@ -363,6 +362,12 @@ def build(make):
     make("seg_headlines", headlines)
     make("seg_ticker", ticker)
     make("seg_lightsout", lightsout)
+    # Set pieces the game moves on big hits (art step 29), origins at their
+    # pivots: the lamps over the floor swing from the grid (gone with
+    # seg_headlines when Lights Out drops them).
+    for k, x in enumerate(LAMP_X):
+        f = 0.0 if k % 2 else -1.0
+        make(f"swing_lamp{k}", lambda p, k=k, x=x, f=f: fresnel(p, f"lamp{k}", (x, f, GRID_U - 0.62)), pivot=(x, f, GRID_U), parent="seg_headlines")
     make("prop_desk", desk, at=(0, -0.4, 0))
     make("fg_left", lambda p: fg.camera(p, "fg_cam", 1), at=(-6.2, 3.0, 0))
     make("fg_right", lambda p: fg.boom(p, "fg_boom", -1), at=(6.2, 3.0, 0))
