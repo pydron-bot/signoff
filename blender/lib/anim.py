@@ -34,10 +34,10 @@ def tip_point(rig, limb, extra=0.0):
     """The striking tip as posed now: the limb's end, or `extra` metres past
     the hand along it (a held prop's tip: an umbrella, a string). A knee
     (knee.L) strikes with the knee joint, a shoulder (shoulder.L) with the
-    shoulder joint."""
+    shoulder joint, an elbow (elbow.L) with the elbow."""
     kind, s = limb.split(".")
-    if kind in ("knee", "shoulder"):
-        return point(rig, f"{'shin' if kind == 'knee' else 'upper_arm'}.{s}", "head")
+    if kind in ("knee", "shoulder", "elbow"):
+        return point(rig, {"knee": f"shin.{s}", "shoulder": f"upper_arm.{s}", "elbow": f"forearm.{s}"}[kind], "head")
     if not extra:
         return point(rig, TIP[limb])
     head, tail = Vector(point(rig, limb, "head")), Vector(point(rig, limb))
@@ -910,7 +910,7 @@ class Fitter:
         """The pose with the limb moved so its tip lands at target (fwd, up):
         the wrist or ankle for a hand or foot, the ankle for a knee (the
         shin follows), the hips for a shoulder (the hands and feet stay
-        put). For hand-keyed strikes; the build's check still has the last
+        put), the hips and that hand for an elbow (the arm keeps its bend). For hand-keyed strikes; the build's check still has the last
         word."""
         kind, s = limb.split(".")
         if kind == "knee":
@@ -921,9 +921,11 @@ class Fitter:
             d = (0.0, target[0] - fx, target[1] - fy)
             if abs(d[1]) < 0.003 and abs(d[2]) < 0.003:
                 break
-            if kind == "shoulder":
+            if kind in ("shoulder", "elbow"):
                 hips = pose.parts.get("hips", {})
                 pose = pose.but(hips={**hips, "offset": tuple(a + b for a, b in zip(hips.get("offset", (0, 0, 0)), d))})
+                if kind == "elbow":
+                    pose = pose.but(**{f"hand_{s}": moved(pose.parts[f"hand_{s}"], d)})
             else:
                 key = f"{'hand' if kind == 'hand' else 'foot'}_{s}"
                 pose = pose.but(**{key: moved(pose.parts[key], d)})
@@ -997,7 +999,7 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
     over frames show, whose tip, `reach` metres past the hand, makes the hit),
     step ("beat": a move that travels takes one step on the beat instead of
     walking), glide (it travels without stepping: a slide).
-    The limb can also be a knee (knee.L) or a shoulder (shoulder.L).
+    The limb can also be a knee (knee.L), a shoulder (shoulder.L) or an elbow (elbow.L).
     Moves in `skip` (their art is owed: ART_PENDING) get no clip."""
     fitter = Fitter(rig, st)
     strikes = {}
