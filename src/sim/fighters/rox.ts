@@ -43,7 +43,7 @@ function lariat(frames: readonly number[], damage: readonly number[]): HitData[]
 const moves = table(
   // Standing
   // The most plus jab in the game.
-  normal('s.FP', { name: 'Wake-Up Jab', startup: 6, active: 2, recovery: 8, reach: [0.2, 0.85], at: [1.15, 1.45], height: 'high', damage: 36, hitstun: 14, blockstun: 13, chain: { FP: 'FP FP' } }),
+  normal('s.FP', { name: 'Wake-Up Jab', startup: 6, active: 2, recovery: 8, reach: [0.2, 0.85], at: [1.15, 1.45], height: 'high', damage: 36, hitstun: 14, blockstun: 12, chain: { FP: 'FP FP' } }),
   // Two claps in her face: arms are for rhythm, legs do the damage.
   move('s.BP', {
     name: 'Clap Clap',
@@ -131,7 +131,7 @@ const moves = table(
     total: 46,
     boost: 'Leg Warmer Lariat+',
     motion: [{ frames: [6, 26], vx: 0.06 }],
-    hits: lariat([10, 16, 22], [36, 36, 54]),
+    hits: lariat([10, 16, 22], [32, 32, 50]),
     // After the slam: any normal, to catch the bounce.
     cancel: [24, 30],
   }),
@@ -153,7 +153,7 @@ const moves = table(
     total: 34,
     boost: 'Star Jump+',
     motion: [{ frames: [3, 18], vx: 0.07 }],
-    hits: [strike({ frames: [16, 18], reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 87, hitstun: 20, blockstun: 16 })],
+    hits: [strike({ frames: [16, 18], reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 72, hitstun: 20, blockstun: 16 })],
   }),
   move('Star Jump+', {
     name: 'Star Jump (boosted)',

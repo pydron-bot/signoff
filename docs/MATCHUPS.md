@@ -2,46 +2,88 @@
 
 Written by `npm run matchups` (tests/matchups.test.ts); do not edit by hand.
 
-The CPU against itself: every ordered pair of fighters, 20 seeds each, studio rules (one segment, no hazards), the stages in turn. These are the CPU's results, not the truth about a matchup, but they show a fighter falling off a cliff after a change. The run fails on a matchup worse than 30:70, an average round outside 25 to 50 seconds, or more than 10% of rounds timing out.
+The CPU against itself: every ordered pair of fighters, 100 seeds each, studio rules (one segment, no hazards), the stages in turn. These are the CPU's results, not the truth about a matchup, but they show a fighter falling off a cliff after a change. The run fails on a matchup worse than 30:70, an average round outside 25 to 50 seconds, or more than 10% of rounds timing out.
 
 ## hard
 
-2410 rounds. Average round 39.3 s; 2.4% time out. The first hit wins the round 59.2% of the time.
+12171 rounds. Average round 39.3 s; 5.4% time out. The first hit wins the round 57.8% of the time.
 
 ### Win rates
 
-The row fighter's share of the matches against the column, both sides counted (40 matches a pair).
+The row fighter's share of the matches against the column, both sides counted (200 matches a pair).
 
 | | Storm | Vega | Bey | Mumbles | Okafor | Lamarre | Price | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Dale Storm | – | 38 | 45 | 50 | 80 | 55 | 8 | **46** |
-| Rox Vega | 63 | – | 83 | 50 | 40 | 78 | 30 | **57** |
-| Hollis Bey | 55 | 18 | – | 43 | 70 | 33 | 30 | **41** |
-| Mister Mumbles | 50 | 50 | 58 | – | 45 | 65 | 25 | **49** |
-| Margaret Okafor | 20 | 60 | 30 | 55 | – | 8 | 3 | **29** |
-| Chef Gus Lamarre | 45 | 23 | 68 | 35 | 93 | – | 45 | **51** |
-| Rev. Gideon Price | 93 | 70 | 70 | 75 | 98 | 55 | – | **77** |
+| Dale Storm | – | 7 | 22 | 23 | 44 | 36 | 22 | **25** |
+| Rox Vega | 94 | – | 87 | 44 | 52 | 91 | 73 | **73** |
+| Hollis Bey | 79 | 13 | – | 13 | 49 | 50 | 60 | **44** |
+| Mister Mumbles | 78 | 56 | 88 | – | 49 | 80 | 63 | **69** |
+| Margaret Okafor | 57 | 49 | 52 | 51 | – | 29 | 30 | **44** |
+| Chef Gus Lamarre | 65 | 10 | 51 | 20 | 71 | – | 60 | **46** |
+| Rev. Gideon Price | 78 | 27 | 40 | 38 | 70 | 40 | – | **49** |
 
 ### Combos
 
-48311 combos (a single hit counts as one). 1 hits 68.7%, 2 hits 19.0%, 3 hits 6.8%, 4 hits 2.5%, 5 hits 1.0%, 6–7 hits 0.9%, 8–9 hits 1.0%, 10+ hits 0.1%. Average 78 damage; 1.5% do 250 or more.
+193656 combos (a single hit counts as one). 1 hits 64.7%, 2 hits 13.7%, 3 hits 8.1%, 4 hits 5.0%, 5 hits 2.1%, 6–7 hits 2.0%, 8–9 hits 1.8%, 10+ hits 2.7%. Average 94 damage; 4.8% do 250 or more.
 
 ### Damage by source
 
-normals 43.1% · air normals 1.5% · specials 21.8% · projectiles 19.4% · throws 6.7% · super 6.1% · chip 1.5%
+normals 47.7% · air normals 1.8% · specials 23.7% · projectiles 12.2% · throws 7.9% · super 4.8% · chip 2.0%
 
 ### Mechanics, per round
 
-boost 4.20 · tapeSkip 0.00 · jumpCancel 0.00 · relaunch 0.36 · cutAway 0.04 · flawless 3.22 · punish 2.27 · reversal 0.10 · delayedGetup 1.94 · ducked 0.32 · throw 1.60 · throwTech 0.68 · guardCrush 0.04 · counter 0.16 · superHit 0.34
+boost 2.88 · tapeSkip 0.38 · jumpCancel 0.26 · relaunch 0.83 · cutAway 0.09 · flawless 3.81 · punish 2.38 · reversal 0.06 · delayedGetup 2.00 · ducked 0.47 · throw 2.41 · throwTech 1.30 · guardCrush 0.02 · counter 0.13 · superHit 0.25
 
 ### What each fighter lands
 
 Each fighter's five most damaging moves, as a share of all the damage they did (hits and times blocked in brackets). A move over 35% is marked: the fighter may be one move.
 
-- **Dale Storm:** Cold Front 15% (1798/857) · Heat Lightning 10% (642/21) · Cold Front (boosted) 6% (840/138) · Pressure Drop 6% (449/111) · Isobar Lasso 6% (764/1230)
-- **Rox Vega:** Count of Eight 8% (3115/171) · Reps 7% (884/163) · Warm-Up 7% (1105/147) · Toe Tap 6% (848/67) · Technical Difficulties 6% (118/60)
-- **Hollis Bey:** Clocking In 17% (799/0) · Key Ring 14% (1215/4) · Night Shift 14% (926/293) · Technical Difficulties 7% (130/51) · Clocking In (boosted) 5% (167/0)
-- **Mister Mumbles:** Head Bonk 8% (551/281) · Ha-Ha 8% (1147/112) · Clatter 7% (760/86) · Tap Dance 7% (813/54) · Technical Difficulties 7% (128/75)
-- **Margaret Okafor:** Technical Difficulties 8% (140/56) · Field Report 8% (741/361) · Pointed Shoe 8% (795/278) · Anchor Kick 7% (493/712) · Low Bulletin 7% (956/66)
-- **Chef Gus Lamarre:** Flambé 21% (4426/5) · Mise en Place 10% (870/1313) · Flambé (boosted) 9% (2283/1) · Cleaver 7% (536/645) · Skillet 6% (510/383)
-- **Rev. Gideon Price:** Collection Plate 30% (5229/749) · Collection Plate (boosted) 17% (2116/142) · Pulpit Kick 8% (619/573) · Fire and Brimstone (blessed) 6% (325/356) · Technical Difficulties 5% (96/44)
+- **Dale Storm:** Heat Lightning 20% (5326/135) · Cold Front 13% (5174/12923) · Shin Poke 10% (5294/589) · Cold Front (boosted) 6% (2693/2649) · Throw 5% (1071/0)
+- **Rox Vega:** Leg Warmer Lariat 20% (29069/542) · Throw 8% (2103/0) · Wake-Up Jab 7% (7495/1045) · Count of Eight 7% (22810/362) · Toe Tap 6% (4402/648)
+- **Hollis Bey:** Key Ring 14% (5585/2704) · Clocking In 10% (2209/0) · Night Shift 8% (2374/3299) · Throw 8% (1552/0) · Lights Out 7% (2578/15)
+- **Mister Mumbles:** Under the Bed 10% (4399/39) · Throw 9% (3064/0) · Punchline 9% (3573/67) · Ankle Biter 9% (5682/523) · Hand Puppet 8% (4458/82)
+- **Margaret Okafor:** Lead Paragraph 10% (6236/234) · Breaking 9% (4263/167) · Anchor Kick 8% (4990/3130) · Low Bulletin 8% (5936/648) · We Go Live 7% (5210/24)
+- **Chef Gus Lamarre:** Flambé 15% (16466/11048) · Tenderise 11% (8657/544) · Mise en Place 9% (3564/3515) · Skillet 9% (3791/2138) · Cleaver 8% (2607/3668)
+- **Rev. Gideon Price:** Collection Plate 16% (12722/179) · Pulpit Kick 8% (2785/4477) · Low Offering 7% (5198/963) · Hand Raised 6% (4596/582) · Collection Plate (boosted) 5% (3017/67)
+
+## director
+
+12164 rounds. Average round 39.3 s; 5.1% time out. The first hit wins the round 58.3% of the time.
+
+### Win rates
+
+The row fighter's share of the matches against the column, both sides counted (200 matches a pair).
+
+| | Storm | Vega | Bey | Mumbles | Okafor | Lamarre | Price | Overall |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Dale Storm | – | 8 | 25 | 21 | 41 | 35 | 21 | **25** |
+| Rox Vega | 93 | – | 88 | 46 | 56 | 88 | 75 | **74** |
+| Hollis Bey | 76 | 13 | – | 17 | 51 | 42 | 57 | **42** |
+| Mister Mumbles | 80 | 55 | 83 | – | 45 | 81 | 59 | **67** |
+| Margaret Okafor | 59 | 45 | 50 | 56 | – | 33 | 29 | **45** |
+| Chef Gus Lamarre | 65 | 12 | 58 | 20 | 67 | – | 61 | **47** |
+| Rev. Gideon Price | 79 | 25 | 43 | 41 | 71 | 39 | – | **50** |
+
+### Combos
+
+186691 combos (a single hit counts as one). 1 hits 63.3%, 2 hits 13.4%, 3 hits 8.1%, 4 hits 5.5%, 5 hits 2.4%, 6–7 hits 2.2%, 8–9 hits 2.0%, 10+ hits 3.1%. Average 98 damage; 5.5% do 250 or more.
+
+### Damage by source
+
+normals 46.1% · air normals 2.0% · specials 24.1% · projectiles 11.8% · throws 9.5% · super 4.7% · chip 1.8%
+
+### Mechanics, per round
+
+boost 2.78 · tapeSkip 0.42 · jumpCancel 0.32 · relaunch 0.90 · cutAway 0.10 · flawless 3.67 · punish 2.35 · reversal 0.06 · delayedGetup 2.10 · ducked 0.39 · throw 3.13 · throwTech 1.77 · guardCrush 0.02 · counter 0.12 · superHit 0.25
+
+### What each fighter lands
+
+Each fighter's five most damaging moves, as a share of all the damage they did (hits and times blocked in brackets). A move over 35% is marked: the fighter may be one move.
+
+- **Dale Storm:** Heat Lightning 19% (5419/93) · Cold Front 12% (5134/13048) · Shin Poke 10% (5235/539) · Throw 6% (1407/0) · Cold Front (boosted) 5% (2528/2644)
+- **Rox Vega:** Leg Warmer Lariat 21% (30939/621) · Throw 11% (2832/0) · Wake-Up Jab 7% (7341/776) · Count of Eight 6% (23129/262) · Reps 5% (3527/185)
+- **Hollis Bey:** Key Ring 14% (5592/2595) · Throw 10% (2020/0) · Clocking In 9% (1954/0) · Night Shift 8% (2462/3352) · Lights Out 7% (2691/11)
+- **Mister Mumbles:** Throw 12% (3944/0) · Under the Bed 10% (4393/27) · Punchline 9% (3672/66) · Hand Puppet 8% (4610/71) · Ankle Biter 8% (5032/383)
+- **Margaret Okafor:** Lead Paragraph 10% (6765/167) · Breaking 9% (4737/119) · Anchor Kick 8% (5305/2759) · We Go Live 8% (5756/23) · Developing Story 7% (6362/17)
+- **Chef Gus Lamarre:** Flambé 16% (17413/10319) · Tenderise 11% (9347/469) · Skillet 9% (3984/2026) · Cleaver 8% (2677/3351) · Mise en Place 8% (3251/3079)
+- **Rev. Gideon Price:** Collection Plate 16% (12479/204) · Pulpit Kick 8% (2881/4368) · Low Offering 7% (4908/928) · Throw 7% (1662/0) · Technical Difficulties 5% (493/259)

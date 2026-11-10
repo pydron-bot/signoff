@@ -5,16 +5,16 @@ export const COMBO_ROUTES: Readonly<Record<string, readonly ComboGuide[]>> = {
   dale: [
     { name: 'From your jab', bars: 0, presses: [[0, 'FP'], [11, 'BP'], [27, 'SP']] },
     { name: 'From a low', bars: 0, presses: [[0, 'd FK'], [12, 'SP']] },
-    { name: 'From your overhead', bars: 0, presses: [[0, 'f BP'], [24, 'BP'], [48, 'FP'], [71, 'FP'], [96, 'FP'], [112, 'FP'], [127, 'BK']] },
-    { name: 'Punish', bars: 0, presses: [[0, 'd BP'], [29, 'd BP'], [42, 'BK'], [70, 'f SP']] },
-    { name: 'One bar', bars: 1, presses: [[0, 'f BP'], [24, 'BP'], [48, 'BK'], [78, 'b SP'], [81, 'SP'], [122, 'd BP'], [135, 'BP'], [159, 'FK']] },
+    { name: 'From your overhead', bars: 0, presses: [[0, 'f BP'], [24, 'BP'], [48, 'BK'], [78, 'f SP']] },
+    { name: 'Punish', bars: 0, presses: [[0, 'd BP'], [29, 'd BP'], [42, 'BK'], [70, 'SP']] },
+    { name: 'One bar', bars: 1, presses: [[0, 'f BP'], [24, 'BP'], [48, 'BK'], [78, 'SP'], [81, 'SP'], [121, 'd BP'], [147, 'd BP'], [160, 'FP'], [181, 'BP']] },
   ],
   rox: [
     { name: 'From your jab', bars: 0, presses: [[0, 'FP'], [10, 'FP'], [23, 'FK'], [38, 'FK'], [56, 'b SP'], [99, 'FK'], [123, 'b SP'], [154, 'BP'], [180, 'BP'], [195, 'd SP']] },
     { name: 'From a low', bars: 0, presses: [[0, 'd FK'], [11, 'FK'], [25, 'b SP'], [54, 'FP'], [93, 'FK'], [111, 'FK'], [130, 'BP'], [153, 'b SP']] },
-    { name: 'From your overhead', bars: 0, presses: [[0, 'f FK'], [20, 'BK'], [41, 'FK'], [66, 'b SP'], [134, 'FP'], [148, 'FP'], [161, 'FK'], [176, 'BK']] },
+    { name: 'From your overhead', bars: 0, presses: [[0, 'f FK'], [20, 'BK'], [41, 'FP'], [69, 'FK'], [87, 'FK'], [106, 'BP'], [129, 'b SP'], [172, 'BK']] },
     { name: 'Punish', bars: 0, presses: [[0, 'd BP'], [12, 'FP'], [40, 'FK'], [58, 'FK'], [77, 'BP'], [100, 'b SP'], [143, 'BP'], [176, 'BP']] },
-    { name: 'One bar', bars: 1, presses: [[0, 'd BP'], [12, 'SP'], [15, 'SP'], [64, 'f FK'], [84, 'BK'], [105, 'FK'], [124, 'b SP'], [168, 'BK']] },
+    { name: 'One bar', bars: 1, presses: [[0, 'd BP'], [12, 'f SP'], [15, 'SP'], [66, 'f FK'], [86, 'BK'], [107, 'FK'], [126, 'b SP'], [158, 'FP'], [186, 'FP'], [198, 'FK']] },
     { name: 'Full meter', bars: 3, presses: [[0, 'd BP'], [12, 'SP'], [15, 'SP'], [64, 'f FK'], [84, 'BK'], [105, 'FK'], [124, 'b SP'], [168, 'BK'], [204, 'd SP'], [207, 'SP'], [220, 'SP'], [223, 'SP']] },
   ],
   hollis: [

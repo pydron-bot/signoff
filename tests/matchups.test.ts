@@ -13,7 +13,7 @@ import { FIGHTERS, STAGE_IDS, createMatch, fighterData, moveData, step, type Sim
 
 const RUN = process.env.MATCHUPS === '1';
 const SEEDS = Number(process.env.MATCHUP_SEEDS ?? 100);
-const LEVELS: readonly CpuLevel[] = ['hard'];
+const LEVELS: readonly CpuLevel[] = ['hard', 'director'];
 /** Alarms: the worst matchup allowed, the average round's length in seconds, and the share of rounds that time out. */
 export const WORST_MATCHUP = 30;
 export const ROUND_SECONDS: readonly [number, number] = [25, 50];

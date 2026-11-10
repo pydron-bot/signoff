@@ -6,18 +6,18 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 
 | Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dale Storm | 0 | frame-perfect | 6 | 28.2% | 1 | ↓BP › →BP › →BP BP › BP › BP FK › BP FK FK |
-| Dale Storm | 0 | human | 4 | 23.6% | 26 | →BP › →BP BP › BK › Heat Lightning |
-| Dale Storm | 1 | frame-perfect | 10 | 39.5% | 1 | →BP › →BP BP › ↓BP › BK › Heat Lightning+ › ↓BP › BP › BP FK › BP FK FK › Heat Lightning |
-| Dale Storm | 1 | human | 8 | 38.7% | 13 | →BP › →BP BP › BK › Isobar Lasso+ › ↓BP › BP › BP FK › Heat Lightning |
-| Dale Storm | 3 | frame-perfect | 12 | 44.2% | 2 | ↓BP › Heat Lightning+ › →BP › →BP BP › BP › BP FK › BP FK FK › Heat Lightning+ › BK › Heat Lightning+ › FP › FP BP |
-| Dale Storm | 3 | human (none forgiving) | 13 | 48.2% | 3 | ↓BP › Isobar Lasso+ › →BP › →BP BP › BP › BP FK › Heat Lightning+ › ↓BP › FP › FP BP › Heat Lightning+ › BK › Heat Lightning |
-| Rox Vega | 0 | frame-perfect | 16 | 30.7% | 3 | ↓BP › →FK › →FK BK › FK › Leg Warmer Lariat ×2 › ↓BP › FP › Count of Eight ×8 |
-| Rox Vega | 0 | human | 17 | 30.5% | 10 | ↓BP › FP › FK › FK FK › FK FK BP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
-| Rox Vega | 1 | frame-perfect | 4 | 30.3% | 6 | ↓BP › Star Jump+ › j.BK › Aerobic Dive |
-| Rox Vega | 1 | human | 17 | 38.2% | 9 | ↓BP › Star Jump+ › FK › FP › FP FP › Leg Warmer Lariat ×3 › BP › Count of Eight ×8 |
-| Rox Vega | 3 | frame-perfect | 17 | 49.4% | 1 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › FK › Leg Warmer Lariat ×3 › →FK › Count of Eight ×3 › Count of Eight+ ×5 |
-| Rox Vega | 3 | human | 10 | 46.2% | 9 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › ↓BP › FK › Leg Warmer Lariat ×3 › Count of Eight+ |
+| Dale Storm | 0 | frame-perfect | 5 | 29.1% | 4 | →BP › →BP BP › ↓BP › BK › Heat Lightning |
+| Dale Storm | 0 | human | 4 | 25.1% | 26 | →BP › →BP BP › BK › Heat Lightning |
+| Dale Storm | 1 | frame-perfect | 9 | 39.5% | 1 | →BP › →BP BP › ↓BP › BK › Heat Lightning+ › BP › BP FK › BP FK FK › Heat Lightning |
+| Dale Storm | 1 | human | 7 | 38.0% | 7 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › Heat Lightning |
+| Dale Storm | 3 | frame-perfect | 14 | 46.6% | 1 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › BP FK › Heat Lightning+ › ↓BP › FP › FP FP › Heat Lightning+ › FK › Heat Lightning |
+| Dale Storm | 3 | human | 9 | 42.3% | 6 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › FP › FP BP › Heat Lightning+ › Isobar Lasso+ |
+| Rox Vega | 0 | frame-perfect | 17 | 31.1% | 2 | ↓BP › →FK › →FK BK › FK › FK FK › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
+| Rox Vega | 0 | human | 17 | 30.0% | 10 | ↓BP › FP › FK › FK FK › FK FK BP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight ×7 |
+| Rox Vega | 1 | frame-perfect | 5 | 31.6% | 2 | ↓BP › Star Jump+ › j.FP › j.FK › Aerobic Dive |
+| Rox Vega | 1 | human | 11 | 37.2% | 6 | ↓BP › Star Jump+ › →FK › →FK BK › FK › Leg Warmer Lariat ×3 › BP ×2 › BP BP |
+| Rox Vega | 3 | frame-perfect | 14 | 51.1% | 2 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › →FK › →FK BK › FP › Leg Warmer Lariat ×3 › BK ×2 › Count of Eight+ › →BP |
+| Rox Vega | 3 | human | 9 | 45.8% | 3 | ↓BP › Star Jump+ › j.BK › Aerobic Dive+ › j.FP › j.FK › Aerobic Dive+ › j.BK › Aerobic Dive |
 | Hollis Bey | 0 | frame-perfect | 4 | 24.4% | 3 | ↓BP › BP › BP FP › BP FP BK |
 | Hollis Bey | 0 | human | 3 | 23.4% | 26 | ↓BP › BK › Night Shift |
 | Hollis Bey | 1 | frame-perfect | 5 | 38.1% | 1 | ↓BP › BK › Key Ring+ › →BP › Night Shift |

@@ -614,8 +614,8 @@ export class Cpu {
       s.attacking = mv.hits.length > 0 || s.shooting;
       threat = mv.hits.length > 0 && dist < reach(mv) + fx(0.4);
       s.unblockable = threat && mv.hits.some((h) => h.height === 'unblockable');
-      // A crouching attack is the tell for a low.
-      low = mv.stance === 'crouch';
+      // A crouching attack is the tell for a low, and so is a move it knows goes low (a player learns which do, as it has).
+      low = mv.stance === 'crouch' || (mv.hits.some((h) => h.height === 'low') && !mv.hits.some((h) => h.height === 'overhead'));
       // Winding up a throw of something: blocked by where it will fly (on the floor low; a high one is ducked under).
       for (let k = 0; k < mv.spawns.length; k++) {
         const pd = mv.spawns[k].projectile;
@@ -920,9 +920,12 @@ export class Cpu {
       else if (r < 85) this.start(hold(fwd, 20));
       else this.start(hold(0, 10));
     } else if (dist > fx(1.4)) {
-      if (r < 35) this.start(this.special(me, back | SPECIAL));
-      else if (r < 55) this.start(tap(DOWN | FK));
-      else if (r < 80) this.start(hold(back, 18));
+      // The longest pokes in the game, from where only he reaches.
+      if (r < 22) this.start(this.special(me, back | SPECIAL));
+      else if (r < 40 && dist < fx(1.8)) this.start(tap(BK));
+      else if (r < 40) this.start(this.special(me, fwd | SPECIAL));
+      else if (r < 55) this.start(tap(dist < fx(1.6) ? FK : DOWN | FK));
+      else if (r < 78) this.start(hold(back, 18));
       else this.start(this.special(me, fwd | SPECIAL));
     } else {
       this.start(r < 50 ? hold(fwd, 10) : r < 75 ? tap(DOWN | FK) : taps([back, 0, back]));
@@ -1076,9 +1079,15 @@ export class Cpu {
   }
 }
 
+/** How far in front a move can hit, counting the ground it covers on the way (a lariat, a lunge): what a player who knows the move expects. */
 function reach(mv: MoveData): Fx {
   let r = 0;
   for (const h of mv.hits) r = Math.max(r, h.box.x + h.box.w);
+  for (const mo of mv.motion) {
+    if (mo.vx <= 0) continue;
+    const to = Math.min(mo.frames[1], mv.lastActive);
+    if (to >= mo.frames[0]) r += mo.vx * (to - mo.frames[0] + 1);
+  }
   return r;
 }
 

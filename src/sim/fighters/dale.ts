@@ -13,11 +13,11 @@ const moves = table(
   normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [0.75, 2.0], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
   normal('s.FK', { name: 'Front Kick', startup: 11, active: 3, recovery: 13, reach: [0.2, 1.5], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
   // The longest poke in the game: the umbrella, held out at arm's length.
-  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [0.75, 1.4], damage: 70, hitstun: 22, blockstun: 15, push: 0.07 }),
+  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [0.75, 1.4], damage: 80, hitstun: 22, blockstun: 15, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.7, 0.95], damage: 25, hitstun: 15, blockstun: 11, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
-  normal('c.FK', { name: 'Shin Poke', stance: 'crouch', startup: 8, active: 2, recovery: 14, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 10 }),
+  normal('c.FK', { name: 'Shin Poke', stance: 'crouch', startup: 8, active: 2, recovery: 14, reach: [0.2, 1.25], at: [0, 0.3], height: 'low', damage: 42, hitstun: 16, blockstun: 10 }),
   normal('c.BK', { name: 'Ground Fog', stance: 'crouch', startup: 12, active: 3, recovery: 24, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normal
   normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
@@ -51,13 +51,13 @@ const moves = table(
     kind: 'special',
     total: 48,
     boost: 'Cold Front+',
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 40, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.07, 0], size: [-0.35, 0.35, 0, 1.4], life: 90, effect: { damage: 50, hitstun: 20, blockstun: 16, push: 0.05, chip: 8 } }) }],
   }),
   move('Cold Front+', {
     name: 'Cold Front (boosted)',
     kind: 'special',
     total: 48,
-    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 38, hitstun: 20, blockstun: 16, push: 0.04, chip: 7 } }) }],
+    spawns: [{ frame: 14, projectile: projectile({ at: [0.5, 0], speed: [0.1, 0], size: [-0.35, 0.35, 0, 1.4], life: 70, hits: 2, rehit: 12, effect: { damage: 45, hitstun: 20, blockstun: 16, push: 0.04, chip: 7 } }) }],
   }),
   move('Pressure Drop', {
     name: 'Pressure Drop',
@@ -81,7 +81,7 @@ const moves = table(
     kind: 'special',
     total: 45,
     boost: 'Isobar Lasso+',
-    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 40, hitstun: 28, blockstun: 12, push: 0, pull: 0.8 })],
+    hits: [strike({ frames: [18, 21], reach: [0.6, 2.6], at: [0.75, 1.4], damage: 40, hitstun: 28, blockstun: 18, push: 0, pull: 0.8 })],
   }),
   move('Isobar Lasso+', {
     name: 'Isobar Lasso (boosted)',
@@ -96,7 +96,7 @@ const moves = table(
     total: 40,
     boost: 'Heat Lightning+',
     invuln: [1, 7],
-    hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.75, 2.2], damage: 75, hitstun: 0, blockstun: 14, launch: 0.2 })],
+    hits: [strike({ frames: [6, 9], reach: [0.1, 0.9], at: [0.75, 2.2], damage: 85, hitstun: 0, blockstun: 14, launch: 0.2 })],
   }),
   // Boosted: invulnerable longer, and on a juggled body it strikes them back up (his second relaunch, so his third bar buys something).
   move('Heat Lightning+', {
@@ -193,13 +193,13 @@ export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
   style: 'zoner',
-  health: 830,
+  health: 900,
   walkFwd: fx(0.04),
-  walkBack: fx(0.035),
+  walkBack: fx(0.042),
   jumpVy: fx(0.2),
   jumpVx: fx(0.055),
   dash: { frames: 16, speed: fx(0.08) },
-  backdash: { frames: 20, speed: fx(0.075) },
+  backdash: { frames: 20, speed: fx(0.085) },
   hurt: { stand: box(-0.3, 0.3, 0, 1.8), crouch: box(-0.3, 0.35, 0, 1.1), air: box(-0.3, 0.3, 0.2, 1.6), juggle: box(-0.8, 0.6, 0.2, 0.9) },
   pushW: fx(0.3),
   pushH: fx(1.6),

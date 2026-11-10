@@ -30,7 +30,7 @@
   },
   "walk": {
    "fwd": 2.4,
-   "back": 2.1
+   "back": 2.52
   },
   "dash": {
    "frames": 16,
@@ -38,7 +38,7 @@
   },
   "backdash": {
    "frames": 20,
-   "speed": 0.075
+   "speed": 0.085
   },
   "tapeSkip": {
    "frames": 10,
