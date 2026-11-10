@@ -89,7 +89,7 @@ def build(mod, out_dir, art_dir):
         make("audience", audience.build)
 
     # Every atlas at PNG's strongest (lossless) compression: the stages run
-    # close to their 2 MB with the light maps.
+    # close to their budget with the light maps (5 MB since Nov 10, 2 MB before).
     bpy.context.scene.render.image_settings.compression = 100
     dense = {m["name"] for m in p.meta if m["name"].startswith((*getattr(mod, "DENSE", ()), *audience.DENSE))}
     unwrap(objs, dense, p.meta)

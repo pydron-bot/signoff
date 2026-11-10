@@ -18,6 +18,7 @@ import math
 
 import numpy as np
 
+from lib import clutter as C
 from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area, spot
@@ -462,6 +463,10 @@ def build(make):
     make("fx_water", lambda p: p.poly("water", [(-14, -4, 0.22), (14, -4, 0.22), (14, 11, 0.22), (-14, 11, 0.22)], WATER, "set", (0, 0, 1), mat=2))
     make("fx_puddle", lambda p: disc(p, "puddle", 0.8, 0.235, LIVE, puddle, n=24))
     make("fx_spark", _spark)
+    # Set dressing the game knocks about (step 30), each round its middle.
+    make("clutter_clipboard", C.clipboard)
+    make("clutter_mug", lambda p: C.mug(p, (238, 236, 228), "CH 0", RED))
+    make("clutter_tape", C.tape)
 
 
 def _bolt(p, name, pts, w0, w1):

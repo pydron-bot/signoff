@@ -22,6 +22,7 @@ import math
 
 import numpy as np
 
+from lib import clutter as C
 from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area, spot
@@ -375,3 +376,7 @@ def build(make):
     make("fx_lamp", lamp)
     make("fx_wreck", wreck)
     make("fx_mark", mark)
+    # Set dressing the game knocks about (step 30), each round its middle.
+    make("clutter_script", C.script)
+    make("clutter_mug", lambda p: C.mug(p, (30, 52, 110), "NEWS", (240, 240, 236)))
+    make("clutter_bin", C.bin)

@@ -23,6 +23,7 @@ import math
 
 import numpy as np
 
+from lib import clutter as C
 from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area
@@ -392,4 +393,8 @@ def build(make):
     make("fg_top", lambda p: fg.hood_edge(p, "fg_hood"), at=(-3.0, 2.0, 5.0))
     make("fx_flare", flare)
     make("fx_mark", mark)
+    # Set dressing the game knocks about (step 30), each round its middle.
+    make("clutter_onion", C.onion)
+    make("clutter_lid", C.lid)
+    make("clutter_spoon", C.spoon)
 

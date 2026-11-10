@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.54.0',
+    date: '2026-11-10',
+    title: 'Loose Ends',
+    notes: [
+      'Every stage has odds and ends lying about the floor that get knocked around by the fight: coffee mugs, clipboards and gaffer tape in the weather studio, dumbbells, water bottles and towels at the aerobics show, scripts and a wastebasket in the newsroom, onions, a pot lid and wooden spoons in the kitchen.',
+      'Walk through them and you kick them along; big hits, knockdowns and lightning strikes send them flying. The storm blows the light ones across the studio and the flood floats them. They never affect the fight.',
+    ],
+  },
+  {
     version: '0.53.0',
     date: '2026-11-10',
     title: 'Signatures',

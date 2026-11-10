@@ -96,6 +96,12 @@ shown on the timer, a short event plays out mid-fight: a "Breaking news"
 banner that blocks part of the screen, a laugh track that slows both fighters
 for a second, a power cut that leaves only silhouettes for 3 seconds.
 
+**Set dressing.** Each stage has a few loose odds and ends on its floor
+(mugs, scripts, dumbbells, onions) that nobody can use: feet kick them,
+hits and knockdowns throw them, the storm blows them about and the flood
+floats them. They're presentation only, so they never change a fight
+(docs/BLENDER-TODO.md, step 30).
+
 **Fighter tie-ins.** Every fighter has one special interaction per stage
 segment (the weatherman can stand in front of the green screen to call a
 storm). These are the "home advantage" moments players learn and show off.

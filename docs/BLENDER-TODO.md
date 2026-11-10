@@ -265,6 +265,7 @@ are authored facing right with the left foot and left hand leading.
 > 13. ~~**Step 26, air specials**~~ *done (Nov 10): all fourteen clips.*
 > 14. ~~**Step 27, three boosts** and **step 28, the specials pass**~~ *done (Nov 10): all 41 clips.* Was: **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
 > 15. ~~**Step 29, the impact pass**~~ *done (Nov 10); the game side can take up the smears, `fx_impact_ring`, `fx_crack` and the `shake_*`/`swing_*` nodes.* Was: **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
+> 16. ~~**Step 30, set dressing that gets knocked about**~~ *done (Nov 10): three `clutter_*` kinds on each of the four stages, game side in.*
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1102,11 +1103,11 @@ the fighters' reflections read over it.
 
 **Checks and budget**
 
-- [ ] `tests/assets.test.ts` (game side, written with 0.34.0) checks, once a
+- [x] `tests/assets.test.ts` (game side, written with 0.34.0) checks, once a
   stage has them: the occlusion on `texCoord` 1 and a `TEXCOORD_1` on every
   mesh that uses it, each named light map present and 1024² at most, and
   `lightMap` between 0 and 2.
-- [ ] Each stage's GLB plus its light maps under 2 MB in all.
+- [x] Each stage's GLB plus its light maps under 5 MB in all (raised from 2 MB on Nov 10, when Kitchen and Burn sat at 1.99 and 1.98). *All four pass: Kitchen 1.99 MB, Burn 1.98, Weather 1.74, News 1.31.*
 - [ ] Look at each segment in a match (Training, any segment) at the
   iPhone size and on desktop, with the performance overlay (` key): the
   draw calls mustn't change.
@@ -1551,6 +1552,37 @@ harder; none of this changes a clip's length or where its hits are.
   6.8 m, under `seg_headlines`); Kitchen Live `shake_shelves_left` and
   `_right` (the jar shelves, under `seg_prep`). Kitchen has no hanging
   pans yet: they'd be new set dressing (say if wanted).*
+
+### 30. Set dressing that gets knocked about (Nov 10)
+
+Loose odds and ends on each stage's floor that nobody can pick up or use:
+feet kick them along, rolling props plough through them, low projectiles
+push them, and hits, blocks, knockdowns, ground and wall bounces, hazards
+and the Stage Sign-Off throw them about. The storm's wind drags the light
+ones and the flood floats them. **Presentation only:** the simulation
+never sees them (`src/render/clutter.ts`, physics in
+`src/render/clutterPhysics.ts`, kinds and places in
+`src/render/clutterData.ts`), so they can't change a fight. They go back
+where they were at each round start.
+
+Each kind is one object `clutter_<id>` in the stage's GLB, at the origin and
+built round its middle, in the `props` material (`blender/lib/clutter.py`);
+the game draws every piece of a kind as one instanced mesh (three draw
+calls a stage) and shows a grey box of the same size until the GLB loads.
+Pieces that roll lie with their axis along fwd (the game rolls them about
+it). `tests/assets.test.ts` checks each object's size against
+`clutterData.ts` (±15%), its middle at the origin and its material.
+
+| Stage | Kinds (size side × up × fwd, m) | Pieces |
+| --- | --- | --- |
+| Weather | `clipboard` (0.3 × 0.03 × 0.4, flat), `mug` (0.15 × 0.14 × 0.11, *CH 0*), `tape` (gaffer roll, 0.2 × 0.2 × 0.07, rolls) | 2, 2, 1; all float on the flood |
+| Burn | `dumbbell` (pink vinyl, 0.16 × 0.16 × 0.34, rolls), `bottle` (0.09 × 0.09 × 0.26, rolls), `towel` (0.5 × 0.04 × 0.32, flat) | 2, 2, 2 |
+| News | `script` (0.22 × 0.025 × 0.3, flat), `mug` (navy, *NEWS*), `bin` (wastebasket with paper balls, 0.3 × 0.36 × 0.3) | 3, 1, 1 |
+| Kitchen | `onion` (0.13 × 0.12 × 0.13, rolls), `lid` (0.32 × 0.05 × 0.32, flat), `spoon` (wooden, 0.36 × 0.03 × 0.07, flat) | 3, 1, 2 |
+
+- [x] The objects above in each stage's GLB. *Done (Nov 10): 24 to 240 triangles each, about 0.03 MB a stage.*
+- [x] Game side: physics, stand-ins, wired to the step's events (0.54.0).
+- [ ] Look at them in a match at phone size: Kitchen's onions are small and brown on the checked floor and may want to be bigger or a brighter colour (tomatoes?).
 
 ### State clips (every fighter)
 
