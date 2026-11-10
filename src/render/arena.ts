@@ -6,7 +6,8 @@
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
  * are some, else boxes. It reads the latest match step and the step's events
  * and never changes the match. About 19 draw calls (the signal spray is
- * one, the contact shadows two), plus 3 to 7 a model.
+ * one, the contact shadows two), plus 3 to 7 a model; the impact layer
+ * (src/render/impact.ts, dust.ts, swoosh.ts) adds up to six while it shows.
  */
 import * as THREE from 'three';
 import { FIGHTER_COLORS } from '../core/fighterLook';
@@ -26,6 +27,9 @@ import { FLOOR, MIRROR } from './reflection';
 import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
+import { Dust } from './dust';
+import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
+import { Swoosh } from './swoosh';
 import { StageView } from './stageView';
 
 const COLORS = FIGHTER_COLORS;
@@ -34,7 +38,12 @@ const ACTIVE = 0xff3030;
 const PROJECTILE = 0x9fe8ff;
 /** The hit flash by weight (light, medium, heavy, ender): steps, and how bright. */
 const FLASH_STEPS = [3, 4, 6, 8] as const;
-const FLASH = [0x303030, 0x404040, 0x585858, 0x707070] as const;
+const FLASH = [0x303030, 0x404040, 0x585858, 0x808080] as const;
+/** A counter hit flashes warm. */
+const COUNTER_FLASH = 0x705020;
+/** The body jolting in the freeze of a hit, by weight (m either way), and of a block. */
+const JOLT = [0.012, 0.02, 0.032, 0.05] as const;
+const BLOCK_JOLT = 0.01;
 /** Room around a hurtbox for arms, legs and hair, metres: what the touch buttons fade over (screenRects). */
 const LIMB_ROOM = 0.2;
 
@@ -116,6 +125,10 @@ interface FighterView {
   limbMat: THREE.MeshLambertMaterial;
   flash: number;
   flashColor: number;
+  /** How hard the body jolts while frozen in a hit's freeze. */
+  jolt: number;
+  /** A heavy blow's swing. */
+  swoosh: Swoosh;
   /** The 3D model once loaded, and which fighter it's for. */
   model: FighterModel | null;
   /** Its VHS echoes, trailing fast moves. */
@@ -185,6 +198,7 @@ export class Arena {
   }
   set reduceMotion(on: boolean) {
     this.rig.reduceMotion = on;
+    this.impactScreen.reduceMotion = on;
   }
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
@@ -204,6 +218,10 @@ export class Arena {
   private readonly stage: StageView;
   private readonly sparks: Sparks;
   private readonly burst: SignalBurst;
+  private readonly dust: Dust;
+  private readonly light: ImpactLight;
+  /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
+  private readonly impactScreen = new ImpactScreen();
   private readonly shadows: ContactShadows;
   private readonly rim: THREE.DirectionalLight;
   private readonly key: THREE.DirectionalLight;
@@ -233,6 +251,8 @@ export class Arena {
     this.sparks = new Sparks(this.scene);
     this.air = new Atmosphere(this.scene);
     this.burst = new SignalBurst(this.scene);
+    this.dust = new Dust(this.scene);
+    this.light = new ImpactLight(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
     const pm = new THREE.MeshBasicMaterial({ color: PROJECTILE, transparent: true, opacity: 0.75 });
     this.projectileMat = pm;
@@ -266,7 +286,7 @@ export class Arena {
     const limb = new THREE.Mesh(this.unit, limbMat);
     group.add(body, head, limb);
     this.scene.add(group);
-    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], model: null, echoes: null, id: '', effect: new EffectSlot(this.scene) };
+    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], jolt: 0, swoosh: new Swoosh(this.scene, 0xffffff), model: null, echoes: null, id: '', effect: new EffectSlot(this.scene) };
   }
 
   /**
@@ -282,6 +302,7 @@ export class Arena {
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
       v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
+      v.swoosh.setColor(COLORS[f.fighter] ?? 0xcccccc);
       if (v.id === f.fighter) return;
       v.model?.dispose();
       v.model = null;
@@ -341,6 +362,9 @@ export class Arena {
     this.poses.reset();
     this.rig.reset();
     this.burst.clear();
+    this.dust.clear();
+    this.light.clear();
+    this.impactScreen.clear();
     this.wear.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
@@ -351,21 +375,34 @@ export class Arena {
     this.sparks.update();
     this.burst.update();
     for (const v of this.fighters) if (v.flash > 0) v.flash--;
+    this.dust.step();
+    this.light.step();
+    this.impactScreen.step();
     this.sparks.onEvents(ev);
     this.burst.onEvents(ev);
+    this.dust.onEvents(m, ev);
+    this.light.onEvents(ev);
+    this.impactScreen.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
         const v = this.fighters[e.defender];
-        v.flash = FLASH_STEPS[e.weight];
-        v.flashColor = FLASH[e.weight];
+        v.flash = FLASH_STEPS[e.weight] + (e.counter ? 2 : 0);
+        v.flashColor = e.counter ? COUNTER_FLASH : FLASH[e.weight];
+        v.jolt = JOLT[e.weight] * (e.counter ? 1.3 : 1);
       } else if (e.type === 'block') {
         const v = this.fighters[e.defender];
         v.flash = 3;
         v.flashColor = FLASH[0];
+        v.jolt = BLOCK_JOLT;
       }
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+  }
+
+  /** The impact layer's numbers for the post pass, after render() has placed the camera. */
+  impact(m: MatchState): ImpactTarget {
+    return this.impactScreen.project(m, this.camera);
   }
 
   /** Roughly the picture's colour, for the light it throws (the title's TV): the segment's key and ambient, mixed. */
@@ -541,11 +578,15 @@ export class Arena {
     if (v.model) v.model.root.visible = shown && model !== null;
     const lying = f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup';
     const hurt = hurtBox(f);
+    // Frozen in a hit's freeze, the body jolts side to side, step by step, dying away (not with Reduce Motion).
+    if (f.hitstop > 0 && v.jolt > 0 && !this.reduceMotion) v.group.position.x = (f.hitstop & 1 ? 1 : -1) * v.jolt * Math.min(1, f.hitstop / 6);
+    else if (f.hitstop === 0) v.jolt = 0;
+    const jx = v.group.position.x;
     // Grey boxes have no echoes; a model's start afresh when it's back.
     if (!model) v.echoes?.reset();
     if (model) {
       v.head.visible = false;
-      model.root.position.set(x, y, 0);
+      model.root.position.set(x + jx, y, 0);
       model.root.scale.x = f.facing;
       const p = this.poses.pose(m, i, this.pose);
       if (this.idling) {
@@ -591,6 +632,8 @@ export class Arena {
     this.shadows.update(m, i, shown);
     if (shown) this.drawEffect(f, v, mv, x, y, model ? this.pose.clip : '');
     else v.effect.show('', undefined);
+    if (shown) v.swoosh.update(f, mv, x, y);
+    else v.swoosh.hide();
     // Flash when hit; dim while invulnerable on the floor.
     const base = COLORS[f.fighter] ?? 0xcccccc;
     v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);

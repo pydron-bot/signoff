@@ -475,6 +475,16 @@ more it reacts to a big one than a small one.
   outline, so they stand out from busy sets; a soft contact shadow that
   falls away from the key light and shrinks as they leave the floor; and
   their reflections in the floor (and in Burn's mirrors).
+- **The impact pass** (`docs/VISUALS.md`): heavy hits and enders send a
+  shockwave out from the contact that bends the picture (an ender adds a
+  zoom blur toward it); every blow throws light, a glow at the contact and
+  a pool on the floor (amber on a counter); the defender jolts side to side
+  in the freeze; heavy strikes draw a swing arc in the fighter's colour over
+  their hitbox; a knockdown, ground bounce or wall splat sends a ring
+  across the floor (or up the wall) and kicks up dust; and spending meter (a
+  boost, Cut Away, Technical Difficulties) drops the set into shadow round
+  the fighter. All of it is pooled, costs nothing at rest, and Reduce Motion
+  drops the parts that move the picture.
 - **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
   Skip) trail a cyan and a magenta afterimage a few frames behind, like a
   tape's colour lagging; an ender or a KO lands on two frames of negative.
