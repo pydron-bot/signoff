@@ -5,7 +5,7 @@ eyebrows, a "CH 0" pin and the forecast clicker. Zoner: keeps you out."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance, lerp_pose
+from lib.anim import Stance, added, lerp_pose, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
@@ -231,6 +231,44 @@ def _downpour(boosted):
     return keys
 
 
+def _heat_lightning_plus(st, base, mv, fit):
+    """Heat Lightning+ (step 27): the plain uppercut taken off the floor. A
+    deep coil, the fist down by the knee, then a leap that drives it up
+    through the top of the taller box, the free arm flung down behind; he
+    lands on 15 with the arm still up."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+    coil = st.base(drop=st.drop + 0.2).but(
+        hips={"offset": (0, -0.04 * k, -(st.drop + 0.2) * k), "turn": (18, st.hips_yaw + 14, 0)}, spine=(16, 10, 0), chest=(26, 16, 0),
+        shoulder_L=(26, 16, 0), shoulder_R=(26, 16, 0), head=(-6, -10, 0),
+        hand_L={"pos": s((0.16, 0.18, 0.72)), "aim": (0, 0.4, 1), "hint": (0, 1, 0)},
+        hand_R={"pos": s((-0.26, -0.12, 1.02)), "aim": (-0.3, -0.5, -0.6)}).shaped(fist_L=1.0, fist_R=0.6, jaw=0.2)
+    toes = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
+    # Off the floor: the feet hang under him, toes pointed.
+    hang = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1] + 0.04, 0.06)), "turn": (60, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1] - 0.04, 0.14)), "turn": (70, st.rear_foot_yaw, 0)},
+            "knee_R": s((-0.12, 0.4, 0.5))}
+
+    def drive(lift, target, lean, feet):
+        p = base.but(root={"offset": (0, 0, lift * k)}, hips={"offset": (0, 0.04 * k, 0), "turn": (-8 - lean, st.hips_yaw - 10, 0)},
+                     spine=(-4 - lean, -20, 0), chest=(-10 - lean, -30, 0), shoulder_L=(-10 - lean, -30, 0), shoulder_R=(-10 - lean, -30, 0),
+                     head=(-18 - lean, -10, 0), hand_L={"pos": s((0.12, 0.4, 2.0)), "aim": (0, 0.25, 1), "hint": (0, 1, 0)},
+                     hand_R={"pos": s((-0.3, -0.24, 0.98 + lift)), "aim": (-0.4, -0.6, -0.5)}, **feet).shaped(fist_L=1.0, fist_R=0.0, open_R=0.6, jaw=0.9)
+        return fit.place(p, "hand.L", target)
+
+    launch = drive(0.06, (min(x1 - 0.2, 0.5), y0 + 0.5 * (y1 - y0)), 0, toes)
+    peak = drive(0.24, (min(x1 - 0.25, 0.42), y1 - 0.1), 8, hang)
+    top = drive(0.28, (0.36, y1 + 0.02), 10, hang)  # past the box once the hit is done
+    land = added(top.but(root={"offset": (0, 0, 0)}, foot_L=lf, foot_R=rf), hips={"offset": (0, 0, -0.12 * k)}, spine=(10, 0, 0), chest=(14, 0, 0), head=(16, 0, 0))
+    return [(1, base), (3, lerp_pose(base, coil, 0.7).shaped(**coil.parts["shapes"])), (h0 - 2, coil), (h0 - 1, toward(coil, base, -0.05)),
+            (h0, launch), (h0 + 2, lerp_pose(launch, peak, 0.7).shaped(**peak.parts["shapes"])), (h1, peak), (h1 + 3, top), (h1 + 4, top),
+            (15, land), (18, land), (28, lerp_pose(land, base, 0.55).shaped(fist_L=0.6)), (total, base)]
+
+
 OVERRIDES = {
     # Air specials (step 26): the umbrella held overhead, hail from the free hand.
     "Downpour": {"keys": _downpour(False), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 16)}},
@@ -238,6 +276,7 @@ OVERRIDES = {
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
     "Isobar Lasso": {"limb": "hand.L", "prop": True},
     "Heat Lightning": {"limb": "hand.L", "style": "rising"},
+    "Heat Lightning+": {"limb": "hand.L", "style": "rising", "keys": _heat_lightning_plus},
     "td": {"limb": "hand.R"},
     # The longest poke in the game: the umbrella, held out at arm's length.
     "s.BK": {"limb": "hand.R", "tx": 1.6, "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (5, 29)}},

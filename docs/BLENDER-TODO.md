@@ -1338,15 +1338,27 @@ reactions.
 **Three new boosted specials** play the plain move's clip until theirs
 land (`STAND_INS` in `src/render/pose.ts`; same lengths):
 
-- [ ] `dale:Heat Lightning+` (40 frames; stand-in `Heat Lightning`): the
+- [x] `dale:Heat Lightning+` (40 frames; stand-in `Heat Lightning`): the
   same rising strike, but with the lightning crackling round him from the
-  start (invulnerable 1–9), and higher.
-- [ ] `gideon:Laying On of Hands+` and `Laying On of Hands (healing)+` (36
+  start (invulnerable 1–9), and higher. *Done (Nov 10, hand-keyed:
+  `_heat_lightning_plus`): a deeper coil, the fist down by the knee, then a
+  leap (root up to 0.28 m by 12, the feet hanging) that drives the fist out
+  through the top of the box; he lands on 15 with the arm still up. The
+  crackle is the game's `fx_heat_lightning`. Also fixed in the plain one:
+  the coil on frame 4 left the rear guard at chin height as he sank, so the
+  arm wrapped over his head.*
+- [x] `gideon:Laying On of Hands+` and `Laying On of Hands (healing)+` (36
   and 46 frames; stand-ins the plain ones): both hands, a mid this time
-  (y 0.75–1.8), lifting them off their feet on 10–12.
-- [ ] `gideon:Fire and Brimstone+` (50 frames; stand-in `Fire and
+  (y 0.75–1.8), lifting them off their feet on 10–12. *Done (`_laying_plus`):
+  both palms drawn back to the hips, driven into the chest on 10 and up
+  under the chin by 12, onto his toes; the healing one goes on into the
+  plain one's rapture from 20.*
+- [x] `gideon:Fire and Brimstone+` (50 frames; stand-in `Fire and
   Brimstone`): between the plain and the blessed one: a smaller column of
-  fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows).
+  fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows). *Done:
+  `_brimstone` takes a level now (0 plain, 0.5 boosted, 1 blessed): arms
+  halfway to the blessed height, heels up, and the blessed one's held beat
+  at the top.*
 
 ### 28. The specials pass (Nov 10, game side)
 

@@ -1183,7 +1183,8 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
             # A rising uppercut: coil low, then drive up through the box onto
             # the toes; the arm stays high through the recovery.
             at(max(2, hits[0]["frames"][0] - 2), st.base(drop=st.drop + 0.16).but(
-                chest=(24, st.chest_yaw, 0), hand_L={"pos": st.s((0.12, 0.22, 0.98)), "aim": (0, 0.3, 1), "hint": (0, 1, 0)}))
+                chest=(24, st.chest_yaw, 0), hand_L={"pos": st.s((0.16, 0.2, 0.78)), "aim": (0, 0.4, 1), "hint": (0, 1, 0)},
+                hand_R={"pos": st.s((-0.2, 0.12, 1.12)), "aim": (0.2, 0.5, 0.8)}))  # the guard sinks with him, or it ends up over his head
 
         # The hits.
         alt = spec.get("alt")

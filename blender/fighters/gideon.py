@@ -8,7 +8,7 @@ for the plate moves. All-rounder, with donations as a second resource."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import DATA, Stance, lerp_pose
+from lib.anim import DATA, Stance, added, lerp_pose, moved, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "gideon"
@@ -263,16 +263,18 @@ def _plate(st, base, mv):
             (mv["total"], base)]
 
 
-def _brimstone(blessed):
+def _brimstone(level):
     def keys(st, base, mv):
         """Arms raised on the startup, both brought down on the strike (the
-        blast is all round him); blessed, onto his toes, arms higher, a held
-        beat at the top."""
+        blast is all round him); blessed (level 1), onto his toes, arms
+        higher, a held beat at the top; boosted (0.5) halfway there."""
         s, k = st.s, st.k
-        top = 2.16 if blessed else 1.98
-        lift = {"root": {"offset": (0, 0, 0.05 * k)},
-                "foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
-                "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}} if blessed else {}
+        top = 1.98 + 0.18 * level
+        toe = 0.1 * level
+        lift = {"root": {"offset": (0, 0, 0.05 * k * level)},
+                "foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], toe)), "turn": (80 * toe, st.lead_foot_yaw, 0)},
+                "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], toe)), "turn": (80 * toe, st.rear_foot_yaw, 0)}} if level else {}
+        blessed = level > 0
         raised = base.but(chest=(-14, -18, 0), head=(-30, -8, 0), spine=(-6, -20, 0), **lift,
                           hand_L={"pos": s((0.36, 0.1, top)), "aim": (0.4, 0.1, 1)},
                           hand_R={"pos": s((-0.34, 0.1, top - 0.04)), "aim": (-0.4, 0.1, 1)}).shaped(fist_L=0.0, fist_R=0.6, open_L=1.0, jaw=0.9)
@@ -299,6 +301,43 @@ def _rapture(st, base, mv):
     return [(20, rapture), (24, rapture.but(head=(-38, -6, 0))), (31, rapture), (40, lerp_pose(rapture, base, 0.5).shaped(fist_L=0.3)), (mv["total"], base)]
 
 
+def _laying_plus(healing):
+    def keys(st, base, mv, fit):
+        """Laying On of Hands+ (step 27): both palms drawn back to the hips,
+        then driven into the chest on 10 and up under the chin by 12, onto
+        his toes, lifting them off their feet; healing, into the rapture
+        after."""
+        s, k = st.s, st.k
+        h0, h1 = mv["hits"][0]["frames"]
+        total = mv["total"]
+        x0, x1, y0, y1 = mv["hits"][0]["box"]
+        palm = {"aim": (0, 0.3, 1), "hint": (0, 1, 0)}  # fingers up, palms to them
+        draw = base.but(hips={"offset": (0, -0.08 * k, -(st.drop + 0.06) * k), "turn": (0, st.hips_yaw + 12, 0)}, spine=(-4, -10, 0), chest=(-10, -14, 0),
+                        head=(-18, -6, 0), hand_L={"pos": s((0.24, -0.04, 1.0)), **palm}, hand_R={"pos": s((-0.2, -0.06, 0.98)), **palm}
+                        ).shaped(fist_L=0.0, open_L=0.9, fist_R=0.0, open_R=0.9, jaw=0.5)
+
+        def thrust(lift, y, x):
+            p = base.but(root={"offset": (0, 0, lift * k)}, hips={"offset": (0, 0.14 * k, -st.drop * 0.5 * k), "turn": (-4, st.hips_yaw - 20, 0)},
+                         spine=(4, -36, 0), chest=(6 - 30 * lift, -52, 0), shoulder_L=(6, -52, 0), shoulder_R=(6, -52, 0), head=(-6 - 40 * lift, -14, 0),
+                         hand_L={"pos": s((0.08, 0.7, 1.3)), **palm}, hand_R={"pos": s((-0.06, 0.66, 1.26)), **palm},
+                         foot_L={"pos": s((st.lead_foot[0], st.lead_foot[1] + 0.1, 0.04 + lift)), "turn": (30, st.lead_foot_yaw, 0)},
+                         foot_R={"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (45, st.rear_foot_yaw, 0)}
+                         ).shaped(fist_L=0.0, open_L=0.5, fist_R=0.0, open_R=0.5, jaw=1.0)
+            p = fit.place(p, "hand.L", (x, y))
+            # The rear palm beside the lead, a hand's width lower.
+            return p.but(hand_R=moved(p.parts["hand_L"], (-0.2 * k, -0.04, -0.08)))
+
+        hit = thrust(0.0, y0 + 0.5 * (y1 - y0), min(x1 - 0.2, 0.75))
+        up = thrust(0.06, y1 - 0.12, min(x1 - 0.24, 0.7))
+        out = [(3, lerp_pose(base, draw, 0.6).shaped(**draw.parts["shapes"])), (h0 - 3, draw), (h0 - 2, toward(draw, base, -0.06)),
+               (h0 - 1, lerp_pose(draw, hit, 0.6).shaped(**hit.parts["shapes"])), (h0, hit), (h1, up), (h1 + 3, added(up, chest=(-6, 0, 0), head=(-8, 0, 0)))]
+        if healing:
+            return out + [(h1 + 6, up.but(root={"offset": (0, 0, 0)}, foot_L=base.parts["foot_L"], foot_R=base.parts["foot_R"]))] + _rapture(st, base, mv)
+        return out + [(h1 + 8, up.but(root={"offset": (0, 0, 0)}, foot_L=base.parts["foot_L"], foot_R=base.parts["foot_R"])),
+                      (h1 + 16, lerp_pose(up, base, 0.6).shaped(open_L=0.3, open_R=0.3)), (total, base)]
+    return keys
+
+
 # The plate is in the lead hand until it's thrown on frame 14.
 PLATE = {"key": "plate", "limb": "hand.L", "reach": 0.0, "show": (1, 14)}
 
@@ -323,11 +362,15 @@ OVERRIDES = {
     # The palm to the forehead, with the lead hand (the Bible is in the rear).
     "Laying On of Hands": {"limb": "hand.L", "palm": True},
     "Laying On of Hands (healing)": {"limb": "hand.L", "palm": True, "keys": _rapture},
+    # Boosted (step 27): both palms, a mid that lifts them off their feet.
+    "Laying On of Hands+": {"limb": "hand.L", "palm": True, "keys": _laying_plus(False)},
+    "Laying On of Hands (healing)+": {"limb": "hand.L", "palm": True, "keys": _laying_plus(True)},
     "Collection Plate": {"keys": _plate, "held": PLATE},
     "Collection Plate+": {"keys": _plate, "held": PLATE},
     # The blast is the hit (all round him): the hands only call it down.
-    "Fire and Brimstone": {"limb": "hand.L", "prop": True, "keys": _brimstone(False)},
-    "Fire and Brimstone (blessed)": {"limb": "hand.L", "prop": True, "keys": _brimstone(True)},
+    "Fire and Brimstone": {"limb": "hand.L", "prop": True, "keys": _brimstone(0)},
+    "Fire and Brimstone+": {"limb": "hand.L", "prop": True, "keys": _brimstone(0.5)},
+    "Fire and Brimstone (blessed)": {"limb": "hand.L", "prop": True, "keys": _brimstone(1)},
     "td": {"limb": "hand.L"},
 }
 assert all(m in DATA[ID]["moves"] for m in OVERRIDES)
