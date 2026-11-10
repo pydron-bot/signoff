@@ -12,7 +12,7 @@ import math
 import numpy as np
 
 from lib import paint as P
-from lib.anim import DATA, Stance, lerp_pose, toward
+from lib.anim import DATA, Stance, added, lerp_pose, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "gus"
@@ -397,6 +397,50 @@ def _hook(st, base, mv, fit):
     return [(3, drawn), (h0, low), (h1, high), (h1 + 3, high), (mv["total"], lerp_pose(high, base, 0.6))]
 
 
+def _flambe(boosted):
+    def keys(st, base, mv):
+        """Flambé (step 16 C): the skillet worked over the hob in short
+        jerks (the rear hand), then tossed up and out on the spawn (16), the
+        hand following it, his head back from the heat. Boosted, a bigger
+        toss."""
+        s, k = st.s, st.k
+        f = mv["spawns"][0]["frame"]
+        total = mv["total"]
+        g = 1.3 if boosted else 1.0
+
+        def pan(fwd, up, tilt):
+            return base.but(chest=(10, -20, 0), head=(16, -6, 0),
+                            hand_R={"pos": s((-0.08, fwd, up)), "aim": (0.2, 0.9, tilt), "hint": (0, 0, 1)}).shaped(fist_R=1.0, jaw=0.2)
+
+        out = [(3, pan(0.42, 1.0, -0.1))]
+        for i, fr in enumerate(range(5, f - 3, 2)):
+            out.append((fr, pan(0.46 if i % 2 else 0.38, 1.02 if i % 2 else 0.98, -0.1)))
+        flick = base.but(hips={"offset": (0, -0.04 * k, -st.drop * k), "turn": (-6, st.hips_yaw + 8, 0)}, chest=(-12 * g, -24, 0), head=(-22 * g, 10, 0),
+                         hand_R={"pos": s((-0.08, 0.3, 1.2 + 0.2 * g)), "aim": (0.1, 0.4, 0.9), "hint": (0, 0, 1)}).shaped(fist_R=1.0, jaw=0.9)
+        return out + [(f - 2, pan(0.52, 0.94, -0.3)), (f, flick), (f + 6, flick.but(head=(-18 * g, 14, 0))), (f + 16, lerp_pose(flick, base, 0.5)), (total, base)]
+    return keys
+
+
+def _cleaver_toss(boosted):
+    def keys(st, base, mv):
+        """Cleaver Toss (air, step 16 C): the cleaver drawn back over his
+        shoulder, then an overhand throw down and forward on the spawn (10),
+        the arm following through across him."""
+        s, k = st.s, st.k
+        f = mv["spawns"][0]["frame"]
+        g = 1.3 if boosted else 1.0
+        back = base.but(chest=(-14 * g, 20, 0), head=(-6, -10, 0),
+                        hand_L={"pos": s((0.16, -0.2, 1.75)), "aim": (0, -0.6, 0.8), "hint": (0, 1, 0)},
+                        hand_R={"pos": s((-0.2, 0.4, 1.3)), "aim": (0, 1, 0.2)}).shaped(fist_L=1.0, fist_R=0.0, open_R=0.6, jaw=0.4)
+        release = base.but(chest=(24 * g, -40, 0), head=(14, -10, 0),
+                           hand_L={"pos": s((0.1, 0.62, 1.2)), "aim": (0, 0.8, -0.6), "hint": (0, 1, 0)},
+                           hand_R={"pos": s((-0.3, -0.2, 1.1)), "aim": (-0.4, -0.6, 0.2)}).shaped(fist_L=0.4, open_L=0.5, jaw=1.0)
+        across = release.but(chest=(30 * g, -50, 0), hand_L={"pos": s((-0.1, 0.4, 0.95)), "aim": (-0.5, 0.4, -0.7), "hint": (0, 1, 0)})
+        return [(3, lerp_pose(base, back, 0.5)), (f - 3, back), (f - 1, toward(back, base, -0.06)), (f, release), (f + 3, across), (f + 9, across),
+                (mv["total"], lerp_pose(across, base, 0.6))]
+    return keys
+
+
 OVERRIDES = {
     # The specials pass (step 28).
     "Belly Flop": {"limb": "hand.L", "keys": _belly_flop},
@@ -415,8 +459,11 @@ OVERRIDES = {
     "Chop Chop": {"limb": "hand.L", "chop": True},
     "Chop Chop+": {"limb": "hand.L", "chop": True},
     # The pan is tossed (Flambé) or flipped (Mise en Place) on the spawn frame.
-    "Flambé": {"held": _held("pan", "Flambé", "hand.R", 0.0, 16)},
-    "Flambé+": {"held": _held("pan", "Flambé+", "hand.R", 0.0, 16)},
+    "Flambé": {"keys": _flambe(False), "held": _held("pan", "Flambé", "hand.R", 0.0, 16)},
+    "Flambé+": {"keys": _flambe(True), "held": _held("pan", "Flambé+", "hand.R", 0.0, 16)},
+    # Step 16 C: the signature specials, hand-keyed.
+    "Cleaver Toss": {"keys": _cleaver_toss(False)},
+    "Cleaver Toss+": {"keys": _cleaver_toss(True)},
     "Mise en Place": {"held": _held("pan", "Mise en Place", "hand.R", 0.0, 14)},
     "Mise en Place+": {"held": _held("pan", "Mise en Place+", "hand.R", 0.0, 16)},
     "td": {"limb": "hand.L"},

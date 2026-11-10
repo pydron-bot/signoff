@@ -317,6 +317,16 @@ class Stance:
         """The round intro: rolls the shoulders, then squares up."""
         return self.base(drop=0.03).but(chest=(4 + 6 * t, -10 - 20 * t, 0), head=(-6, 10 - 10 * t, 0))
 
+    def win_keys(self, base):
+        """The victory (keys over 120 frames): into win() and holding it.
+        Fighters override it to play it out (step 16 C)."""
+        return [(1, base), (20, self.win().shaped(win=1.0)), (100, self.win(1).shaped(win=1.0)), (120, self.win(1).shaped(win=1.0))]
+
+    def intro_keys(self, relaxed, base):
+        """The round intro (keys over 90 frames, in stance by 80): intro()
+        played from 0 to 1. Fighters override it to play it out (step 16 C)."""
+        return [(1, relaxed), (30, self.intro()), (60, self.intro(1)), (80, base), (90, base)]
+
     def win_2(self, base):
         """The second victory (keys over 120 frames): the rear fist up instead.
         Fighters override it with something of their own."""
@@ -796,13 +806,12 @@ def state_clips(rig, st, data):
     grab, overhead = (q.shaped(fist_L=0.5, fist_R=0.5, jaw=0.3) for q in (grab, overhead))
     release, through = (q.shaped(fist_L=0.0, fist_R=0.0, open_L=0.7, open_R=0.7, jaw=0.8) for q in (release, through))
     clip("interact_throw", 22, [(1, base), (4, grab), (5, grab), (6, overhead), (8, release), (13, through), (22, base)])
-    win = [(1, base), (20, st.win().shaped(win=1.0)), (100, st.win(1).shaped(win=1.0)), (120, st.win(1).shaped(win=1.0))]
-    clip("win", 120, talking(win, 26, 70, 1))
+    clip("win", 120, talking(st.win_keys(base), 26, 70, 1))
     relaxed = base.but(hips={"offset": (0, 0, 0), "turn": (0, -10, 0)}, spine=(0, -10, 0), chest=(0, -10, 0), neck=(0, 0, 0), head=(0, 0, 0),
                        shoulder_L=(0, -10, 0), shoulder_R=(0, -10, 0),
                        foot_L={"pos": st.s((0.11, 0.03, 0.09)), "turn": (0, -10, 0)}, foot_R={"pos": st.s((-0.11, -0.03, 0.09)), "turn": (0, -10, 0)},
                        hand_L={"pos": st.s((0.24, 0.02, 0.86)), "aim": (0.1, 0.05, -1)}, hand_R={"pos": st.s((-0.24, 0.02, 0.86)), "aim": (-0.1, 0.05, -1)})
-    clip("intro", 90, talking([(1, relaxed), (30, st.intro()), (60, st.intro(1)), (80, base), (90, base)], 6, 40, 2))
+    clip("intro", 90, talking(st.intro_keys(relaxed, base), 6, 40, 2))
     # Second versions, for variety: the game alternates them by round.
     clip("win_2", 120, talking(st.win_2(base), 30, 76, 3))
     clip("intro_2", 90, talking(st.intro_2(relaxed, base), 8, 30, 4))

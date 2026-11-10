@@ -257,7 +257,7 @@ are authored facing right with the left foot and left hand leading.
 > 5. ~~**Step 21 A, finger joints**~~ *done (Nov 9): the five built fighters rebuilt on the split fingers.*
 > 6. ~~**Step 17, Chef Gus Lamarre** and **step 18, Rev. Gideon Price**~~ *done (Nov 9): `gus.glb` and `gideon.glb`.*
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
-> 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
+> 8. ~~**Step 21 B–C with 16 C–D**~~ *done (16 C finished Nov 10).* Was: **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
 > 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, ~~the sets' own lamps~~ *(B done, Nov 9)*, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. ~~**Step 24, depth**~~ *done (Nov 9): the foreground, the audience (and `sit_audience`) and the living room; the game side follows.*
@@ -595,9 +595,9 @@ watch deserve more. Add per-move pose overrides (a file per fighter under
 `blender/data/`, read by `lib/anim.py`), keeping the strike frames on the
 hitbox (the build's check still applies):
 
-- [ ] *(Generated pass done, Nov 9: see* Showcase *in Feedback; hand-keyed signatures to follow.)* Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
+- [x] *(Generated pass done, Nov 9: see* Showcase *in Feedback. Hand-keyed signatures done Nov 10: every special is now staged by its own keys or style except the ones whose generated showcase already reads (Hollis's three, Margaret's, Tenderise, Chop Chop, Pressure Drop, Count of Eight). New: Cold Front (both hands drawn to the rear hip, then shoved through the front), Isobar Lasso (twirled over his head, thrown, reeled in hand over hand), Flambé (the skillet jerked over the hob, then tossed up and out), Cleaver Toss (over the shoulder and down); each boosted version goes further.)* Each fighter's specials and their boosted versions: a clear anticipation on startup, a stretched, overshooting pose on the active frames, a longer follow-through in recovery. Boosted versions should look bigger than the plain ones (they glow already; the pose should sell it too).
 - [x] *(Done, Nov 9, by the showcase pass.)* The launchers (`c.BP` for everyone) and the string enders: they start and end combos, and the camera is on them most.
-- [ ] `intro`, `intro_2`, `win`, `win_2`, using the new hands and jaw (talking to camera, pointing, waving).
+- [x] `intro`, `intro_2`, `win`, `win_2`, using the new hands and jaw (talking to camera, pointing, waving). *Done (Nov 10): they all talk (the jaw works through them); the ones that only held a pose now play out, through new `Stance.win_keys` and `intro_keys`: Dale's win ends pointing down the lens, hand on hip ("back to you"); Rox's intro points at the camera, then two claps overhead, and her win pumps her arms on her toes before pointing at the camera; Hollis checks his watch and cracks his knuckles, and wins shaking his head over folded arms, then jerks a thumb over his shoulder.*
 - [x] `dazed`: with the jaw slack and the hands open it can be much more pitiful. *Done (Nov 9): slumped, shoulders rolled forward, arms hanging limp, knock-kneed, the knees buckling and catching twice a sway with the eyes closing on each dip.*
 
 **D. Shape detail**

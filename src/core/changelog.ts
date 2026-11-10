@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.53.0',
+    date: '2026-11-10',
+    title: 'Signatures',
+    notes: [
+      "Round intros and wins play out: Dale points down the lens to hand back to the studio, Rox asks if you're ready with two big claps and pumps her fists when she wins, and Hollis checks his watch and cracks his knuckles, then waves you along with his thumb.",
+      "Signature specials look their part: Dale shoves his Cold Front through with both hands and twirls the Isobar Lasso over his head before he throws it and reels it in, and Gus works the skillet over the hob before tossing it in Flambé and throws his cleaver overhand.",
+    ],
+  },
+  {
     version: '0.52.0',
     date: '2026-11-10',
     title: 'Every Move Animated',
