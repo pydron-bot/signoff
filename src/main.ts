@@ -8,6 +8,7 @@ import { registerSW } from 'virtual:pwa-register';
 import type { CpuLevel } from './ai/cpu';
 import { Sound, type SoundMode } from './audio/sound';
 import { BUILD_ID } from './core/build';
+import { ScreenAwake } from './core/screenAwake';
 import { VERSION } from './core/changelog';
 import { GUIDE_DUMMY, guides, type ComboGuide } from './game/comboGuides';
 import { Cleared } from './game/cleared';
@@ -267,6 +268,8 @@ let watchSpeed = 0;
 const ENDLESS_WAIT = 5;
 let endlessLeft = 0;
 let endlessWinner = -1;
+/** The endless channel keeps the screen on (not while paused: someone's there). */
+const awake = new ScreenAwake();
 
 /** CPU VS CPU seen on the living room's TV, from the sofa, instead of full screen. */
 function watchingTv(): boolean {
@@ -980,6 +983,7 @@ renderer.setAnimationLoop((now) => {
     endlessLeft = 0;
     watchRandom();
   }
+  awake.want(setup.endless === 1 && session?.options.mode === 'watch' && !paused);
   const s = session;
   if (!s) return;
   const replaying = s.options.mode === 'replay';

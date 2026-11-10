@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { FixedStep } from '../src/game/loop';
 import { HOLD, RAMP, SLOW, SlowMo } from '../src/game/slowMo';
 import { CameraRig, NEAR, halfHeight, halfView } from '../src/render/camera';
-import type { HitWeight, MatchState, SimEvent } from '../src/sim';
+import { createMatch, type HitWeight, type MatchState, type SimEvent } from '../src/sim';
 import { fx, toFloat } from '../src/sim/fixed';
 import { segmentData } from '../src/sim/stages';
 import { place, ready } from './sim-helpers';
@@ -26,6 +26,32 @@ function hit(weight: HitWeight): SimEvent {
 }
 
 describe('camera framing', () => {
+  it('the cold open frames the new match close on the first step, whatever it framed before', () => {
+    const rig = new CameraRig();
+    rig.aspect = ASPECTS.iphone;
+    // The match behind the title, far off to one side.
+    const before = ready('rox', 'dale');
+    const half = toFloat(segmentData('weather', 0).halfWidth);
+    place(before, half - 1.5, half - 0.5);
+    for (let i = 0; i < 200; i++) rig.step(before, []);
+    // A new match, still in its intro (the cold open steps nothing).
+    const m = createMatch({ p1: 'margaret', p2: 'gus', seed: 1 });
+    rig.reset();
+    rig.opening = true;
+    rig.step(m, []);
+    const s = rig.shot;
+    const a = toFloat(m.fighters[0].x);
+    const b = toFloat(m.fighters[1].x);
+    expect(Math.abs(s.tx - (a + b) / 2)).toBeLessThan(0.01);
+    expect(Math.abs(s.x - s.tx)).toBeLessThan(0.01);
+    expect(halfView(s.z, ASPECTS.iphone)).toBeGreaterThan(Math.abs(b - a) / 2 + 0.5);
+    // Not the establishing shot: no further back than the fight would be.
+    const wide = new CameraRig();
+    wide.aspect = ASPECTS.iphone;
+    wide.step(m, []);
+    expect(s.z).toBeLessThan(wide.shot.z * 0.8);
+  });
+
   it('up close, a fighter fills about half the height of the screen', () => {
     const m = ready('rox', 'dale');
     place(m, -0.5, 0.5);

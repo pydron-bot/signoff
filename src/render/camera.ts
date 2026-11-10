@@ -79,6 +79,8 @@ export class CameraRig {
   reduceMotion = false;
   /** The touch buttons' share of the screen's width: positive on the right, negative on the left, 0 with none up. */
   buttons = 0;
+  /** The cold open before round 1: the two of them close, talking, not the round's establishing shot (that cuts in after). */
+  opening = false;
   readonly shot: Shot = { x: 0, y: LOOK_Y + NEAR * TILT, z: NEAR, tx: 0, ty: LOOK_Y, roll: 0 };
   private fx = 0;
   private fy = LOOK_Y;
@@ -122,7 +124,7 @@ export class CameraRig {
     let x = (ax + bx) / 2 + bias * halfView(z, this.aspect);
     let y = (finisher ? 1.05 : LOOK_Y) + high * 0.6;
     // The establishing shot: done by the last third of the intro.
-    const left = m.phase === 'intro' && !this.reduceMotion ? Math.max(0, (m.phaseTimer - INTRO_FRAMES / 3) / (INTRO_FRAMES * (2 / 3))) : 0;
+    const left = m.phase === 'intro' && !this.reduceMotion && !this.opening ? Math.max(0, (m.phaseTimer - INTRO_FRAMES / 3) / (INTRO_FRAMES * (2 / 3))) : 0;
     this.intro = left * left * (3 - 2 * left);
     z *= 1 + INTRO_BACK * this.intro;
     y += INTRO_UP * this.intro;
