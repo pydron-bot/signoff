@@ -304,6 +304,9 @@ export class Hud {
         case 'delayedGetup':
           this.callout(e.player, 'STAYED DOWN');
           break;
+        case 'ducked':
+          this.callout(e.player, 'DUCKED');
+          break;
         case 'guardCrush':
           this.say('GUARD CRUSHED', '', 40);
           break;

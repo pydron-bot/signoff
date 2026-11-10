@@ -14,14 +14,14 @@ const decoy = (hits: number, life: number) =>
 
 const moves = table(
   // Standing
-  normal('s.FP', { name: 'Wooden Jab', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.9], at: [0.8, 1.1], damage: 39, hitstun: 14, blockstun: 11, chain: { FP: 'FP FP' } }),
-  normal('s.BP', { name: 'Head Bonk', startup: 9, active: 2, recovery: 14, reach: [0.15, 0.95], at: [0.9, 1.35], damage: 78, hitstun: 18, blockstun: 13, chain: { FK: 'BP FK' } }),
+  normal('s.FP', { name: 'Wooden Jab', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.9], at: [0.75, 1.1], damage: 39, hitstun: 14, blockstun: 11, chain: { FP: 'FP FP' } }),
+  normal('s.BP', { name: 'Head Bonk', startup: 9, active: 2, recovery: 14, reach: [0.15, 0.95], at: [0.75, 1.35], damage: 78, hitstun: 18, blockstun: 13, chain: { FK: 'BP FK' } }),
   // Ducks as he kicks: high attacks pass over.
   normal('s.FK', { name: 'Shin Kick', stance: 'crouch', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.05], at: [0.2, 0.5], damage: 58, hitstun: 15, blockstun: 12, chain: { FK: 'FK FK' } }),
   normal('s.BK', { name: 'Spin Kick', startup: 11, active: 3, recovery: 16, reach: [-0.5, 1.15], at: [0.4, 0.9], damage: 72, hitstun: 19, blockstun: 13 }),
   // Crouching
   normal('c.FP', { name: 'Knee Poke', stance: 'crouch', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.85], at: [0.4, 0.65], damage: 34, hitstun: 13, blockstun: 10 }),
-  normal('c.BP', { name: 'Pop Up', stance: 'crouch', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.8, 1.8], damage: 78, hitstun: 0, blockstun: 10, launch: 0.18 }),
+  normal('c.BP', { name: 'Pop Up', stance: 'crouch', startup: 8, active: 3, recovery: 18, reach: [0.1, 0.8], at: [0.75, 1.8], damage: 78, hitstun: 0, blockstun: 10, launch: 0.18 }),
   normal('c.FK', { name: 'Ankle Biter', stance: 'crouch', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.15], at: [0, 0.25], height: 'low', damage: 43, hitstun: 14, blockstun: 10, chain: { BK: 'c.FK BK' } }),
   normal('c.BK', { name: 'Leg Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.25], height: 'low', damage: 68, hitstun: 0, blockstun: 10, knockdown: true }),
   // Command normal: back + BP hops into an overhead.
@@ -31,7 +31,7 @@ const moves = table(
     name: 'String Pull',
     kind: 'normal',
     total: 32,
-    hits: [strike({ frames: [14, 16], reach: [0.6, 2.0], at: [0.8, 1.4], damage: 30, hitstun: 24, blockstun: 10, push: 0, pull: 0.8 })],
+    hits: [strike({ frames: [14, 16], reach: [0.6, 2.0], at: [0.75, 1.4], damage: 30, hitstun: 24, blockstun: 10, push: 0, pull: 0.8 })],
     hurt: [{ frames: [14, 24], box: box(0.2, 0.9, 0.8, 1.2) }],
     cancel: [17, 23],
   }),
@@ -41,8 +41,8 @@ const moves = table(
   normal('j.FK', { name: 'Jumping Kick', kind: 'air', startup: 4, active: 8, recovery: 5, reach: [0.1, 0.95], at: [0, 0.5], height: 'overhead', damage: 62, hitstun: 16, blockstun: 11, chain: { BK: 'j.BK' } }),
   normal('j.BK', { name: 'Jumping Split', kind: 'air', startup: 6, active: 6, recovery: 7, reach: [-0.5, 1.0], at: [0, 0.45], height: 'overhead', damage: 87, hitstun: 18, blockstun: 12 }),
   // String steps
-  normal('FP FP', { name: 'Ha-Ha', startup: 7, active: 2, recovery: 10, reach: [0.15, 1.0], at: [0.8, 1.15], damage: 39, hitstun: 15, blockstun: 11, chain: { FP: 'FP FP FP' } }),
-  normal('FP FP FP', { name: 'Ha-Ha-Ha', startup: 9, active: 2, recovery: 12, reach: [0.15, 1.1], at: [0.8, 1.2], damage: 48, hitstun: 16, blockstun: 12, chain: { BK: 'FP FP FP BK' } }),
+  normal('FP FP', { name: 'Ha-Ha', startup: 7, active: 2, recovery: 10, reach: [0.15, 1.0], at: [0.75, 1.15], damage: 39, hitstun: 15, blockstun: 11, chain: { FP: 'FP FP FP' } }),
+  normal('FP FP FP', { name: 'Ha-Ha-Ha', startup: 9, active: 2, recovery: 12, reach: [0.15, 1.1], at: [0.75, 1.2], damage: 48, hitstun: 16, blockstun: 12, chain: { BK: 'FP FP FP BK' } }),
   normal('FP FP FP BK', { name: 'Punchline', startup: 12, active: 3, recovery: 22, reach: [-0.5, 1.25], at: [0.4, 1.0], damage: 98, hitstun: 0, blockstun: 13, push: 0.07, knockdown: true }),
   normal('BP FK', { name: 'Clatter', startup: 8, active: 2, recovery: 14, reach: [0.15, 1.15], at: [0.2, 0.5], damage: 58, hitstun: 16, blockstun: 12, chain: { BP: 'BP FK BP' } }),
   normal('BP FK BP', { name: 'Curtain Call', startup: 16, active: 2, recovery: 16, reach: [0.15, 1.1], at: [0.7, 1.4], height: 'overhead', damage: 87, hitstun: 18, blockstun: 14 }),

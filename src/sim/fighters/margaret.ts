@@ -24,17 +24,17 @@ function liveFeed(delay: number, hits = 1) {
 
 const moves = table(
   // Standing: quick, long enough, and safe.
-  normal('s.FP', { name: 'Cue Card', startup: 6, active: 2, recovery: 9, reach: [0.2, 1.0], at: [1.15, 1.45], damage: 30, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
-  normal('s.BP', { name: 'Lead Paragraph', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.15], at: [1.0, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BP: 'BP BP' } }),
+  normal('s.FP', { name: 'Cue Card', startup: 6, active: 2, recovery: 9, reach: [0.2, 1.0], at: [1.15, 1.45], height: 'high', damage: 30, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
+  normal('s.BP', { name: 'Lead Paragraph', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.15], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BP: 'BP BP' } }),
   normal('s.FK', { name: 'Pointed Shoe', startup: 9, active: 3, recovery: 13, reach: [0.2, 1.4], at: [0.55, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'FK BK' } }),
-  normal('s.BK', { name: 'Anchor Kick', startup: 13, active: 3, recovery: 17, reach: [0.2, 1.55], at: [0.9, 1.4], damage: 70, hitstun: 22, blockstun: 16, push: 0.07 }),
+  normal('s.BK', { name: 'Anchor Kick', startup: 13, active: 3, recovery: 17, reach: [0.2, 1.55], at: [0.75, 1.4], damage: 70, hitstun: 22, blockstun: 16, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Footnote', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.95], at: [0.6, 0.9], damage: 25, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
-  normal('c.BP', { name: 'Rising Headline', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [1.0, 1.9], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
+  normal('c.BP', { name: 'Rising Headline', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
   normal('c.FK', { name: 'Low Bulletin', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.3], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 11 }),
   normal('c.BK', { name: 'Cut the Wires', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.4], at: [0, 0.3], height: 'low', damage: 65, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
-  normal('f.BP', { name: 'Paperweight', startup: 19, active: 2, recovery: 17, reach: [0.2, 1.0], at: [1.0, 1.6], height: 'overhead', damage: 65, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
+  normal('f.BP', { name: 'Paperweight', startup: 19, active: 2, recovery: 17, reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 65, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
   // Steps in as it kicks: closes the gap to the tip of her other normals.
   move('f.FK', {
     name: 'Field Report',
@@ -51,14 +51,14 @@ const moves = table(
   normal('j.FK', { name: 'Jumping Heel', kind: 'air', startup: 6, active: 8, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 50, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
   normal('j.BK', { name: 'Jumping Kick', kind: 'air', startup: 9, active: 6, recovery: 8, reach: [0.1, 1.0], at: [0.1, 0.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 12 }),
   // String steps
-  normal('FP FP', { name: 'Top Story', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.1, 1.45], damage: 30, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
-  normal('FP FP BP', { name: 'And Finally', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.9, 1.4], damage: 60, hitstun: 0, blockstun: 16, push: 0.07, knockdown: true }),
+  normal('FP FP', { name: 'Top Story', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.1, 1.45], height: 'high', damage: 30, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
+  normal('FP FP BP', { name: 'And Finally', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.4], damage: 60, hitstun: 0, blockstun: 16, push: 0.07, knockdown: true }),
   normal('FP FK', { name: 'Correspondent', startup: 9, active: 2, recovery: 15, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 40, hitstun: 18, blockstun: 12 }),
-  normal('BP BP', { name: 'Developing Story', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.2], at: [1.0, 1.45], damage: 50, hitstun: 20, blockstun: 14, chain: { BK: 'BP BP BK' } }),
-  normal('BP BP BK', { name: 'We Go Live', startup: 12, active: 3, recovery: 19, reach: [0.2, 1.3], at: [0.8, 1.6], damage: 70, hitstun: 0, blockstun: 16, launch: 0.15 }),
-  normal('FK BK', { name: 'Weather and Sport', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.45], at: [0.9, 1.4], damage: 60, hitstun: 20, blockstun: 15 }),
+  normal('BP BP', { name: 'Developing Story', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.45], damage: 50, hitstun: 20, blockstun: 14, chain: { BK: 'BP BP BK' } }),
+  normal('BP BP BK', { name: 'We Go Live', startup: 12, active: 3, recovery: 19, reach: [0.2, 1.3], at: [0.75, 1.6], damage: 70, hitstun: 0, blockstun: 16, launch: 0.15 }),
+  normal('FK BK', { name: 'Weather and Sport', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.45], at: [0.75, 1.4], damage: 60, hitstun: 20, blockstun: 15 }),
   normal('c.FP FK', { name: 'Small Print', stance: 'crouch', startup: 9, active: 2, recovery: 18, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 10 }),
-  normal('f.BP BP', { name: 'Exclusive', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.2], at: [0.9, 1.4], damage: 60, hitstun: 0, blockstun: 15, knockdown: true }),
+  normal('f.BP BP', { name: 'Exclusive', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.2], at: [0.75, 1.4], damage: 60, hitstun: 0, blockstun: 15, knockdown: true }),
   // Specials
   // A fast strike that staggers: long enough to land a normal after it on hit, punishable on block.
   move('Breaking', {
@@ -66,15 +66,15 @@ const moves = table(
     kind: 'special',
     total: 32,
     boost: 'Breaking+',
-    hits: [strike({ frames: [8, 9], reach: [0.2, 1.15], at: [0.9, 1.4], damage: 60, hitstun: 36, blockstun: 10, push: 0.02 })],
+    hits: [strike({ frames: [8, 9], reach: [0.2, 1.15], at: [0.75, 1.4], damage: 60, hitstun: 36, blockstun: 10, push: 0.02 })],
   }),
   move('Breaking+', {
     name: 'Breaking (boosted)',
     kind: 'special',
     total: 40,
     hits: [
-      strike({ frames: [8, 9], reach: [0.2, 1.15], at: [0.9, 1.4], damage: 45, hitstun: 22, blockstun: 12, push: 0 }),
-      strike({ frames: [16, 17], reach: [0.2, 1.2], at: [0.9, 1.4], damage: 55, hitstun: 40, blockstun: 14, push: 0.02 }),
+      strike({ frames: [8, 9], reach: [0.2, 1.15], at: [0.75, 1.4], damage: 45, hitstun: 22, blockstun: 12, push: 0 }),
+      strike({ frames: [16, 17], reach: [0.2, 1.2], at: [0.75, 1.4], damage: 55, hitstun: 40, blockstun: 14, push: 0.02 }),
     ],
   }),
   // The counter: she reads the next strike off the teleprompter and answers it.
@@ -125,7 +125,7 @@ const moves = table(
     total: 46,
     boost: 'Lead Story+',
     motion: [{ frames: [4, 14], vx: 0.05 }],
-    hits: [strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.9, 1.7], height: 'overhead', damage: 70, hitstun: 0, blockstun: 14, knockdown: true })],
+    hits: [strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.75, 1.7], height: 'overhead', damage: 70, hitstun: 0, blockstun: 14, knockdown: true })],
   }),
   move('Lead Story+', {
     name: 'Lead Story (boosted)',
@@ -133,7 +133,7 @@ const moves = table(
     total: 46,
     armor: [4, 19],
     motion: [{ frames: [4, 14], vx: 0.06 }],
-    hits: [strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.9, 1.7], height: 'overhead', damage: 85, hitstun: 0, blockstun: 16, knockdown: true })],
+    hits: [strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.75, 1.7], height: 'overhead', damage: 85, hitstun: 0, blockstun: 16, knockdown: true })],
   }),
   // In the air: straight across at the height she's at, cue cards first. An answer to a zoner.
   move('On the Wire', {

@@ -36,24 +36,24 @@ function pan(x: number, delay: number) {
 
 const moves = table(
   // Standing: long and slow. The cleaver and the pans out-reach everyone.
-  normal('s.FP', { name: 'Taste Test', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.1], at: [1.15, 1.5], damage: 35, hitstun: 16, blockstun: 13, chain: { FP: 'FP FP', BP: 'FP BP' } }),
-  normal('s.BP', { name: 'Skillet', startup: 12, active: 3, recovery: 17, reach: [0.2, 1.6], at: [0.95, 1.5], damage: 65, hitstun: 21, blockstun: 15, push: 0.06, chain: { BK: 'BP BK' } }),
+  normal('s.FP', { name: 'Taste Test', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.1], at: [1.15, 1.5], height: 'high', damage: 35, hitstun: 16, blockstun: 13, chain: { FP: 'FP FP', BP: 'FP BP' } }),
+  normal('s.BP', { name: 'Skillet', startup: 12, active: 3, recovery: 17, reach: [0.2, 1.6], at: [0.75, 1.5], damage: 65, hitstun: 21, blockstun: 15, push: 0.06, chain: { BK: 'BP BK' } }),
   normal('s.FK', { name: 'Oven Door', startup: 10, active: 3, recovery: 14, reach: [0.2, 1.45], at: [0.5, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { FP: 'FK FP' } }),
-  normal('s.BK', { name: 'Cleaver', startup: 15, active: 3, recovery: 21, reach: [0.3, 1.85], at: [0.9, 1.5], damage: 80, hitstun: 22, blockstun: 16, push: 0.08 }),
+  normal('s.BK', { name: 'Cleaver', startup: 15, active: 3, recovery: 21, reach: [0.3, 1.85], at: [0.75, 1.5], damage: 80, hitstun: 22, blockstun: 16, push: 0.08 }),
   // Crouching
   normal('c.FP', { name: 'Paring Knife', stance: 'crouch', startup: 8, active: 2, recovery: 10, reach: [0.2, 1.0], at: [0.6, 0.9], damage: 28, hitstun: 15, blockstun: 12, chain: { BK: 'c.FP BK' } }),
-  normal('c.BP', { name: 'Rising Ladle', stance: 'crouch', startup: 10, active: 4, recovery: 20, reach: [0.1, 0.9], at: [1.0, 2.0], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
+  normal('c.BP', { name: 'Rising Ladle', stance: 'crouch', startup: 10, active: 4, recovery: 20, reach: [0.1, 0.9], at: [0.75, 2.0], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
   normal('c.FK', { name: 'Rolling Pin', stance: 'crouch', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.5], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 11 }),
   normal('c.BK', { name: 'Sweep the Floor', stance: 'crouch', startup: 13, active: 3, recovery: 24, reach: [0.2, 1.7], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
-  normal('f.BP', { name: 'Meat Mallet', startup: 21, active: 2, recovery: 18, reach: [0.2, 1.25], at: [1.0, 1.7], height: 'overhead', damage: 75, hitstun: 22, blockstun: 14 }),
+  normal('f.BP', { name: 'Meat Mallet', startup: 21, active: 2, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.7], height: 'overhead', damage: 75, hitstun: 22, blockstun: 14 }),
   // Steps back as he swings: whiff-punishes from the tip of the cleaver.
   move('b.BP', {
     name: 'Back of the Pan',
     kind: 'normal',
     total: 34,
     motion: [{ frames: [1, 8], vx: -0.04 }],
-    hits: [strike({ frames: [13, 15], reach: [0.3, 1.7], at: [0.9, 1.4], damage: 55, hitstun: 20, blockstun: 14 })],
+    hits: [strike({ frames: [13, 15], reach: [0.3, 1.7], at: [0.75, 1.4], damage: 55, hitstun: 20, blockstun: 14 })],
     hurt: [{ frames: [13, 24], box: box(0.3, 1.6, 0.9, 1.4) }],
     cancel: [16, 22],
   }),
@@ -63,12 +63,12 @@ const moves = table(
   normal('j.FK', { name: 'Jumping Clog', kind: 'air', startup: 7, active: 7, recovery: 6, reach: [0.1, 0.9], at: [0.1, 0.6], height: 'overhead', damage: 45, hitstun: 18, blockstun: 12 }),
   normal('j.BK', { name: 'Jumping Cleaver', kind: 'air', startup: 10, active: 5, recovery: 8, reach: [0.1, 1.2], at: [0.3, 0.9], height: 'overhead', damage: 65, hitstun: 20, blockstun: 12 }),
   // String steps
-  normal('FP FP', { name: 'Season', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.5], damage: 35, hitstun: 17, blockstun: 14, chain: { BK: 'FP FP BK' } }),
-  normal('FP FP BK', { name: 'Chef\'s Kiss', startup: 14, active: 3, recovery: 20, reach: [0.3, 1.75], at: [0.9, 1.5], damage: 70, hitstun: 0, blockstun: 17, push: 0.08, knockdown: true }),
-  normal('FP BP', { name: 'Sear', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.5], at: [0.9, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BK: 'BP BK' } }),
-  normal('BP BK', { name: 'Fillet', startup: 15, active: 3, recovery: 20, reach: [0.3, 1.8], at: [0.9, 1.5], damage: 75, hitstun: 0, blockstun: 17, push: 0.08, knockdown: true }),
-  normal('FK FP', { name: 'Garnish', startup: 9, active: 2, recovery: 12, reach: [0.2, 1.2], at: [1.1, 1.5], damage: 35, hitstun: 17, blockstun: 14, chain: { BP: 'FK FP BP' } }),
-  normal('FK FP BP', { name: 'Plate Up', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.4], at: [0.9, 1.7], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
+  normal('FP FP', { name: 'Season', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.5], height: 'high', damage: 35, hitstun: 17, blockstun: 14, chain: { BK: 'FP FP BK' } }),
+  normal('FP FP BK', { name: 'Chef\'s Kiss', startup: 14, active: 3, recovery: 20, reach: [0.3, 1.75], at: [0.75, 1.5], damage: 70, hitstun: 0, blockstun: 17, push: 0.08, knockdown: true }),
+  normal('FP BP', { name: 'Sear', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.5], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BK: 'BP BK' } }),
+  normal('BP BK', { name: 'Fillet', startup: 15, active: 3, recovery: 20, reach: [0.3, 1.8], at: [0.75, 1.5], damage: 75, hitstun: 0, blockstun: 17, push: 0.08, knockdown: true }),
+  normal('FK FP', { name: 'Garnish', startup: 9, active: 2, recovery: 12, reach: [0.2, 1.2], at: [1.1, 1.5], height: 'high', damage: 35, hitstun: 17, blockstun: 14, chain: { BP: 'FK FP BP' } }),
+  normal('FK FP BP', { name: 'Plate Up', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.4], at: [0.75, 1.7], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
   normal('c.FP BK', { name: 'Julienne', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.65], at: [0, 0.3], height: 'low', damage: 55, hitstun: 0, blockstun: 11, knockdown: true }),
   // Specials
   move('Flambé', {
@@ -93,9 +93,9 @@ const moves = table(
     boost: 'Tenderise+',
     motion: [{ frames: [3, 10], vx: 0.04 }],
     hits: [
-      strike({ frames: [12, 13], reach: [0.2, 1.1], at: [0.9, 1.5], damage: 30, hitstun: 16, blockstun: 12, push: 0.01 }),
-      strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.9, 1.5], damage: 30, hitstun: 16, blockstun: 12, push: 0.01 }),
-      strike({ frames: [30, 31], reach: [0.2, 1.15], at: [0.9, 1.7], damage: 55, hitstun: 0, blockstun: 14, push: 0.03, knockdown: true, guardCrush: true }),
+      strike({ frames: [12, 13], reach: [0.2, 1.1], at: [0.75, 1.5], damage: 30, hitstun: 16, blockstun: 12, push: 0.01 }),
+      strike({ frames: [20, 21], reach: [0.2, 1.1], at: [0.75, 1.5], damage: 30, hitstun: 16, blockstun: 12, push: 0.01 }),
+      strike({ frames: [30, 31], reach: [0.2, 1.15], at: [0.75, 1.7], damage: 55, hitstun: 0, blockstun: 14, push: 0.03, knockdown: true, guardCrush: true }),
     ],
   }),
   move('Tenderise+', {
@@ -105,9 +105,9 @@ const moves = table(
     armor: [3, 11],
     motion: [{ frames: [3, 10], vx: 0.05 }],
     hits: [
-      strike({ frames: [12, 13], reach: [0.2, 1.15], at: [0.9, 1.5], damage: 35, hitstun: 16, blockstun: 12, push: 0.01 }),
-      strike({ frames: [19, 20], reach: [0.2, 1.15], at: [0.9, 1.5], damage: 35, hitstun: 16, blockstun: 12, push: 0.01 }),
-      strike({ frames: [26, 27], reach: [0.2, 1.2], at: [0.9, 1.7], damage: 60, hitstun: 0, blockstun: 14, push: 0.02, launch: 0.17, guardCrush: true }),
+      strike({ frames: [12, 13], reach: [0.2, 1.15], at: [0.75, 1.5], damage: 35, hitstun: 16, blockstun: 12, push: 0.01 }),
+      strike({ frames: [19, 20], reach: [0.2, 1.15], at: [0.75, 1.5], damage: 35, hitstun: 16, blockstun: 12, push: 0.01 }),
+      strike({ frames: [26, 27], reach: [0.2, 1.2], at: [0.75, 1.7], damage: 60, hitstun: 0, blockstun: 14, push: 0.02, launch: 0.17, guardCrush: true }),
     ],
   }),
   // Mise en Place: the pan goes up, hangs while it spins, and comes down on them.

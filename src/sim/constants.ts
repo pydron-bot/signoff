@@ -10,6 +10,8 @@ export const BUFFER = 8;
 export const MOTION_WINDOW = 12;
 /** Most frames between the two taps of a dash. */
 export const DASH_WINDOW = 12;
+/** A forward dash is committed this many frames; after that it can be cancelled into Block, a normal, a throw or a special. */
+export const DASH_COMMIT = 6;
 
 // Frame advantage
 /** The fastest normal in the game. A move is safe on block if the fastest punish can't beat the attacker's recovery. */

@@ -101,12 +101,13 @@ type HitEvent = Extract<SimEvent, { type: 'hit' }>;
  * The reaction to a hit on a standing or crouching fighter (docs/BLENDER-TODO.md,
  * step 22): by where it landed, how hard, and how long the stun. Light and
  * medium hits alternate between two versions down a combo, so a string
- * doesn't replay one jolt. `f` is the fighter hit, after the hit.
+ * doesn't replay one jolt. `f` is the fighter hit, after the hit (a hit
+ * knocks a croucher upright, so the event says whether they were down).
  */
 export function hitReaction(e: HitEvent, f: FighterState, finisher: boolean): string {
   // A finisher's blows: always heavy, head and body in turn (their contact height isn't a strike's).
   if (finisher) return e.height === 'low' ? 'hit_legs' : e.combo % 2 === 0 ? 'hit_body_heavy' : 'hit_head_heavy';
-  if (f.crouching) return 'hit_crouch';
+  if (e.crouched) return 'hit_crouch';
   if (f.timer >= STAGGER_STUN) return 'stagger';
   const stand = fighterData(f.fighter).hurt.stand;
   const at = (toFloat(e.y) - toFloat(f.y)) / toFloat(stand.y + stand.h);

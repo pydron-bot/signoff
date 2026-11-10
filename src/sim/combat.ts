@@ -48,7 +48,7 @@ import { fighterData, moveData } from './fighters';
 import { clamp, type Fx } from './fixed';
 import { BLOCK, DOWN, bitIndex } from './input';
 import type { FighterState, MatchState } from './state';
-import type { Box, HitEffect, HitWeight, MoveKind } from './types';
+import type { Box, HitEffect, HitWeight, MoveData, MoveKind } from './types';
 
 // Scratch for one step's pending contacts (not match state: rebuilt every step).
 const pendingHit = [-1, -1];
@@ -77,12 +77,31 @@ function boxesTouch(ax: Fx, ay: Fx, adir: number, ab: Box, bx: Fx, by: Fx, bdir:
 export function hurtBox(f: FighterState): Box {
   const hurt = fighterData(f.fighter).hurt;
   if (f.mode === 'launched' || f.mode === 'down' || f.mode === 'ko' || f.mode === 'getup') return hurt.juggle;
-  return airborne(f) ? hurt.air : f.crouching ? hurt.crouch : hurt.stand;
+  // Reeling from a hit counts as standing, so a combo doesn't depend on how its first hit landed.
+  return airborne(f) ? hurt.air : f.crouching && f.mode !== 'hitstun' ? hurt.crouch : hurt.stand;
 }
 
-/** Does a box at (x, y) facing dir touch any of this fighter's hurtboxes? */
-export function touchesFighter(x: Fx, y: Fx, dir: number, b: Box, d: FighterState): boolean {
-  const base = hurtBox(d);
+/**
+ * Low to the floor on purpose: crouching, crouch-blocking, in crouching
+ * blockstun or in a crouching move. Highs go over them. Reeling from a hit
+ * never counts.
+ */
+export function ducking(f: FighterState): boolean {
+  if (!f.crouching || f.y > 0) return false;
+  switch (f.mode) {
+    case 'crouch':
+    case 'guard':
+    case 'blockstun':
+      return true;
+    case 'move':
+      return moveOf(f).stance === 'crouch';
+    default:
+      return false;
+  }
+}
+
+/** Does a box at (x, y) facing dir touch any of this fighter's hurtboxes? `base` stands in for the body's own box. */
+export function touchesFighter(x: Fx, y: Fx, dir: number, b: Box, d: FighterState, base: Box = hurtBox(d)): boolean {
   if (boxesTouch(x, y, dir, b, d.x, d.y, d.facing, base)) return true;
   if (d.mode === 'move') {
     for (const h of moveOf(d).hurt) if (inWindow(d.moveFrame, h.frames) && boxesTouch(x, y, dir, b, d.x, d.y, d.facing, h.box)) return true;
@@ -110,14 +129,21 @@ export function hittable(f: FighterState): boolean {
   }
 }
 
-function throwable(f: FighterState, reeling = false): boolean {
+/**
+ * Can this fighter be grabbed? `reeling`: a string's grab, which also takes
+ * someone still reeling from its hit. `high`: a plain throw, which goes over
+ * a neutral duck (crouching without Block); crouch-blocking is still thrown,
+ * and command and string grabs take a duck too.
+ */
+function throwable(f: FighterState, reeling = false, high = false): boolean {
   if (f.ko || f.y > 0) return false;
   switch (f.mode) {
     case 'hitstun':
       return reeling;
+    case 'crouch':
+      return !high;
     case 'idle':
     case 'walk':
-    case 'crouch':
     case 'guard':
     case 'dash':
     case 'backdash':
@@ -126,11 +152,23 @@ function throwable(f: FighterState, reeling = false): boolean {
       return true;
     case 'move': {
       const mv = moveOf(f);
-      return mv.stance !== 'air' && !inWindow(f.moveFrame, mv.invuln);
+      return mv.stance !== 'air' && !(high && mv.stance === 'crouch') && !inWindow(f.moveFrame, mv.invuln);
     }
     default:
       return false;
   }
+}
+
+/** A plain throw (not a command or string grab) is a high: a neutral duck goes under it. */
+function throwHigh(mv: MoveData): boolean {
+  return mv.kind === 'throw';
+}
+
+/** Said once a move: a high or a throw went over the ducking defender. */
+function sayDucked(a: FighterState, di: number, ev: SimEvent[]): void {
+  if (a.ducked) return;
+  a.ducked = true;
+  ev.push({ type: 'ducked', player: di, move: a.move });
 }
 
 /** Standing blocks mids and overheads; crouching blocks mids and lows. Only on the ground, holding Block. */
@@ -138,7 +176,8 @@ export function blocks(f: FighterState, height: HitEffect['height']): boolean {
   if (height === 'unblockable' || f.y > 0 || (f.input.held & BLOCK) === 0) return false;
   if (f.mode !== 'idle' && f.mode !== 'walk' && f.mode !== 'crouch' && f.mode !== 'guard' && f.mode !== 'blockstun') return false;
   const crouch = (f.input.held & DOWN) !== 0;
-  return height === 'mid' || (height === 'low' ? crouch : !crouch);
+  // A high reaching a crouching guard has already gone over it (resolveHits).
+  return height === 'mid' || height === 'high' || (height === 'low' ? crouch : !crouch);
 }
 
 function isCounter(f: FighterState): boolean {
@@ -179,7 +218,10 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     if (frozen[i] || a.mode !== 'move') continue;
     const mv = moveOf(a);
     if (mv.throwData) {
-      if (inWindow(a.moveFrame, mv.throwData.frames) && throwable(d, mv.throwData.reeling) && Math.abs(d.x - a.x) <= mv.throwData.range) pendingThrow[i] = true;
+      if (inWindow(a.moveFrame, mv.throwData.frames) && Math.abs(d.x - a.x) <= mv.throwData.range) {
+        if (throwable(d, mv.throwData.reeling, throwHigh(mv))) pendingThrow[i] = true;
+        else if (throwHigh(mv) && throwable(d, mv.throwData.reeling)) sayDucked(a, 1 - i, ev);
+      }
       continue;
     }
     for (let k = 0; k < mv.hits.length; k++) {
@@ -191,6 +233,9 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
         pendingHit[i] = k;
         pendingMove[i] = a.move;
         pendingDecoy[i] = dec;
+      } else if (h.height === 'high' && ducking(d)) {
+        // Over their head: it would have hit them standing.
+        if (hittable(d) && touchesFighter(a.x, a.y, a.facing, h.box, d, fighterData(d.fighter).hurt.stand)) sayDucked(a, 1 - i, ev);
       } else if (hittable(d) && touchesFighter(a.x, a.y, a.facing, h.box, d)) {
         pendingHit[i] = k;
         pendingMove[i] = a.move;
@@ -227,7 +272,7 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
     if (!P.active || P.rehit > 0) continue;
     const d = fs[1 - P.owner];
     const pd = projData(m, p);
-    if (pd.decoy) continue;
+    if (pd.decoy || (pd.effect.height === 'high' && ducking(d))) continue;
     if (hittable(d) && touchesFighter(P.x, P.y, P.dir, pd.box, d)) {
       projHits.push(p);
       projBlocked.push(blocks(d, pd.effect.height));
@@ -274,8 +319,8 @@ export function resolveHits(m: MatchState, ev: SimEvent[], frozen: readonly bool
   }
 
   // Throws lose to strikes: a thrower who was just hit is no longer throwing.
-  const t0 = pendingThrow[0] && stillThrowing(fs[0]) && throwable(fs[1], moveOf(fs[0]).throwData!.reeling);
-  const t1 = pendingThrow[1] && stillThrowing(fs[1]) && throwable(fs[0], moveOf(fs[1]).throwData!.reeling);
+  const t0 = pendingThrow[0] && stillThrowing(fs[0]) && throwable(fs[1], moveOf(fs[0]).throwData!.reeling, throwHigh(moveOf(fs[0])));
+  const t1 = pendingThrow[1] && stillThrowing(fs[1]) && throwable(fs[0], moveOf(fs[1]).throwData!.reeling, throwHigh(moveOf(fs[1])));
   if (t0 && t1) tech(m, ev, 0);
   else if (t0) grab(m, 0, ev);
   else if (t1) grab(m, 1, ev);
@@ -364,6 +409,7 @@ export function applyHit(
   const d = m.fighters[di];
   const dir = projectile ? dirIfLevel : d.x > a.x ? 1 : d.x < a.x ? -1 : dirIfLevel;
   const stop = e.hitstop ?? HITSTOP;
+  const crouched = ducking(d);
 
   if (blocked) {
     // Block pressed just before the hit: flawless, no chip, out of blockstun sooner.
@@ -494,6 +540,8 @@ export function applyHit(
     d.mode = 'hitstun';
     d.timer = e.hitstun + (counter ? COUNTER_HITSTUN : 0);
     d.vx = 0;
+    // Knocked upright: the rest of the combo meets a standing body.
+    d.crouching = false;
     setSlide(d, dir, e.push);
   }
   if (e.pull !== undefined) pull(m, a, d, e.pull);
@@ -507,7 +555,7 @@ export function applyHit(
   gainMeter(m, a, Math.floor(((dmg + (dmg >> 1)) * meterPct) / 100));
   gainMeter(m, d, dmg);
   firstHit(m, ai, ev);
-  ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, weight, dir, x: d.x, y });
+  ev.push({ type: 'hit', attacker: ai, defender: di, move: moveId, damage: dmg, height: e.height, counter, combo: d.combo, weight, dir, x: d.x, y, crouched });
   if (ko) ev.push({ type: 'ko', player: di });
 }
 

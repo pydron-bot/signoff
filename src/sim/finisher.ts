@@ -286,7 +286,7 @@ function blow(m: MatchState, i: number, b: FinishBlow, id: string, ev: SimEvent[
   }
   if (b.damage > 0) {
     const weight = hitWeight(b.damage, b.react === 'launch' || b.react === 'knockdown');
-    ev.push({ type: 'hit', attacker: i, defender: 1 - i, move: id, damage: b.damage, height: b.react === 'low' ? 'low' : 'mid', counter: false, combo: l.combo, weight, dir, x: l.x, y: l.y });
+    ev.push({ type: 'hit', attacker: i, defender: 1 - i, move: id, damage: b.damage, height: b.react === 'low' ? 'low' : 'mid', counter: false, combo: l.combo, weight, dir, x: l.x, y: l.y, crouched: false });
   }
 }
 

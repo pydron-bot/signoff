@@ -14,8 +14,9 @@ import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
 
 /** demo: CPU against CPU, behind the title screen. replay: a recorded match played back. showcase: a combo guide played on a loop. */
 export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay' | 'showcase';
-export type Dummy = 'stand' | 'block' | 'crouch' | 'cpu';
-export const DUMMIES: readonly Dummy[] = ['stand', 'block', 'crouch', 'cpu'];
+/** duck: crouching without Block, so highs and throws go over it and everything else hits. */
+export type Dummy = 'stand' | 'block' | 'crouch' | 'duck' | 'cpu';
+export const DUMMIES: readonly Dummy[] = ['stand', 'block', 'crouch', 'duck', 'cpu'];
 /**
  * Training's finisher practice: the dummy on its last point of health and
  * the player a round up, so any hit ends the match: then a cancellation (if
@@ -227,6 +228,7 @@ export class Session {
     const { BLOCK, DOWN } = Input;
     if (this.dummy === 'stand') return 0;
     if (this.dummy === 'crouch') return BLOCK | DOWN;
+    if (this.dummy === 'duck') return DOWN;
     // Blocks everything: the dummy may peek at the attack's height, the CPU may not.
     const a = this.match.fighters[0];
     if (a.mode !== 'move') return BLOCK;

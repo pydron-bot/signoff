@@ -230,7 +230,7 @@ describe('juggle reactions (step 16)', () => {
 describe('hit reactions (step 22)', () => {
   type Hit = Extract<SimEvent, { type: 'hit' }>;
   /** A hit on a standing Dale (1.8 m tall) at `y` metres. */
-  const hit = (y: number, over: Partial<Hit> = {}): Hit => ({ type: 'hit', attacker: 0, defender: 1, move: 's.FP', damage: 30, height: 'mid', counter: false, combo: 1, weight: 0, dir: 1, x: 0, y: fx(y), ...over });
+  const hit = (y: number, over: Partial<Hit> = {}): Hit => ({ type: 'hit', attacker: 0, defender: 1, move: 's.FP', damage: 30, height: 'mid', counter: false, combo: 1, weight: 0, dir: 1, x: 0, y: fx(y), crouched: false, ...over });
   const dale = () => {
     const m = ready('rox', 'dale');
     const d = m.fighters[1];
@@ -254,9 +254,7 @@ describe('hit reactions (step 22)', () => {
   });
 
   it('crouching takes its own; a long stun staggers', () => {
-    const c = dale();
-    c.crouching = true;
-    expect(hitReaction(hit(0.6), c, false)).toBe('hit_crouch');
+    expect(hitReaction(hit(0.6, { crouched: true }), dale(), false)).toBe('hit_crouch');
     const s = dale();
     s.timer = STAGGER_STUN;
     expect(hitReaction(hit(1.4), s, false)).toBe('stagger');

@@ -26,7 +26,7 @@ export interface MoveSection {
 
 const DIR: Readonly<Record<SpecialDir, string>> = { n: '', f: '→ ', b: '← ', d: '↓ ' };
 const TAP: Readonly<Record<FinishDir, string>> = { f: '→', b: '←', d: '↓', u: '↑' };
-const HEIGHT: Readonly<Record<Height, string>> = { mid: 'mid', low: 'low', overhead: 'overhead', unblockable: 'unblockable' };
+const HEIGHT: Readonly<Record<Height, string>> = { high: 'high', mid: 'mid', low: 'low', overhead: 'overhead', unblockable: 'unblockable' };
 const RANGE = { close: 'close', mid: 'mid range', far: 'far', any: 'any range' } as const;
 
 function signed(n: number | null): string {

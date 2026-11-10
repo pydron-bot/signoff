@@ -11,6 +11,7 @@ import {
   REVERSAL_WINDOW,
   BOOST_WINDOW,
   CUT_AWAY_FRAMES,
+  DASH_COMMIT,
   DOWN_FRAMES,
   FIRST_HIT_METER,
   DELAYED_GETUP,
@@ -102,6 +103,7 @@ export function startMove(f: FighterState, id: string): void {
   f.move = id;
   f.moveFrame = 1;
   f.hitMask = 0;
+  f.ducked = false;
   f.contact = 'none';
   f.armorUsed = false;
   // Straight off the floor: a reversal (said when it hits).
@@ -165,11 +167,15 @@ export function tick(m: MatchState, i: number, ev: SimEvent[]): void {
       else toIdle(f);
       return;
     }
+    case 'dash':
+      if (f.dashFree > 0) f.dashFree--;
+      if (f.timer > 0) f.timer--;
+      else endTimed(m, i, ev);
+      return;
     case 'hitstun':
     case 'blockstun':
     case 'prejump':
     case 'landing':
-    case 'dash':
     case 'backdash':
     case 'down':
     case 'getup':
@@ -240,7 +246,7 @@ function landThrow(m: MatchState, i: number, ev: SimEvent[]): void {
   if (ko) markKo(f, t, grabMove);
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
-  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
+  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: grabMove, damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y, crouched: false });
   if (ko) ev.push({ type: 'ko', player: i });
 }
 
@@ -254,7 +260,7 @@ function landSuper(m: MatchState, i: number, ev: SimEvent[]): void {
   const dir = f.x >= a.x ? 1 : -1;
   launch(f, dir, KNOCK_VY, false);
   firstHit(m, 1 - i, ev);
-  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y });
+  ev.push({ type: 'hit', attacker: 1 - i, defender: i, move: 'td', damage: dmg, height: 'mid', counter: false, combo: 1, weight: 3, dir, x: f.x, y: f.y, crouched: false });
   if (ko) ev.push({ type: 'ko', player: i });
 }
 
@@ -271,6 +277,10 @@ export function control(m: MatchState, i: number, ev: SimEvent[]): void {
       return;
     case 'move':
       moveControl(m, i, ev);
+      return;
+    case 'dash':
+      // Past its commit, a forward dash cancels into Block (stopping dead), a normal, a throw or a special; not a jump or another dash.
+      if (f.dashFree === 0) groundControl(m, i, ev, false);
       return;
     case 'air':
       airControl(f, i, ev);
@@ -346,7 +356,8 @@ function boost(f: FighterState, i: number, ev: SimEvent[]): boolean {
   return true;
 }
 
-function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
+/** `free`: walking, jumping and dashing too (false while cancelling a dash, which carries on unless something comes out). */
+function groundControl(m: MatchState, i: number, ev: SimEvent[], free = true): void {
   const f = m.fighters[i];
   const o = m.fighters[1 - i];
   const d = fighterData(f.fighter);
@@ -391,7 +402,7 @@ function groundControl(m: MatchState, i: number, ev: SimEvent[]): void {
     startMove(f, normalFor(f, atk));
     return;
   }
-  footwork(m, i, true);
+  if (free) footwork(m, i, true);
 }
 
 /** The normal an attack button starts, by the direction held. */
@@ -416,6 +427,7 @@ export function footwork(m: MatchState, i: number, canJump: boolean): void {
     consume(inp, fwd);
     f.mode = 'dash';
     f.timer = d.dash.frames - 1;
+    f.dashFree = DASH_COMMIT;
     f.vx = f.facing * scaled(d.dash.speed, pct);
     f.crouching = false;
     return;
@@ -482,6 +494,8 @@ function moveControl(m: MatchState, i: number, ev: SimEvent[]): void {
     f.mode = 'dash';
     f.move = '';
     f.timer = TAPE_SKIP_FRAMES - 1;
+    // Tape Skip's dash runs its course: combos through it stay as they are.
+    f.dashFree = TAPE_SKIP_FRAMES;
     f.vx = f.facing * TAPE_SKIP_SPEED;
     f.crouching = false;
     ev.push({ type: 'tapeSkip', player: i });

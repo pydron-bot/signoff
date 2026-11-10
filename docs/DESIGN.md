@@ -109,10 +109,27 @@ meter. Every number below is a starting value to tune.
 
 - Walk, jump (neutral, forward, back), crouch, a forward dash and a
   backdash. No sidestep: the 3D is for looks.
-- Block is a held button. Standing blocks mids and overheads; crouching
-  blocks mids and lows. Blocked specials do small chip damage.
+- **Dash cancel (0.46.0).** After its first 6 frames a forward dash can be
+  cancelled into Block (it stops dead, guarding), a normal, a throw or a
+  special, but not a jump or another dash: dash, Block, dash is how to
+  close in under a guard. Backdashes and Tape Skip's dash run their course.
+- Block is a held button. Standing blocks highs, mids and overheads;
+  crouching blocks mids and lows. Blocked specials do small chip damage.
+- **Highs and ducking (0.46.0).** Every hit has a height: high, mid, low,
+  overhead or unblockable. A high goes over anyone ducking (crouching,
+  crouch-blocking, or in a crouching move) and says DUCKED; everything
+  else reaches every crouching fighter, the smallest included (a test
+  checks every box). Every standing jab but Mumbles' (thrown at his own
+  height) is a high, with its string's next step and a few moves thrown at
+  the head (Rox's claps and High Kick, Hollis's Nightstick and Flashlight,
+  Gideon's laying on of hands and collection plate). So the fastest,
+  most plus button can be ducked and punished, and the crouching jab is
+  the safe one. A hit knocks a croucher upright, so the rest of a combo
+  meets a standing body whichever way it began.
 - Throw: a button pair at close range; tech it with the same pair within 10
-  frames.
+  frames. A plain throw is a high: a neutral duck (crouching without
+  Block) goes under it and can punish the whiff, but crouch-blocking is
+  thrown. Command grabs and string grabs take a duck too.
 - **Defence (0.30.0).** A *flawless block* is Block pressed within 4
   frames of the hit landing: no chip, 6 frames less blockstun (so the
   blocker can punish more) and a little meter. A *delayed getup*: hold Down
