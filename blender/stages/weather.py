@@ -19,6 +19,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.bake import area, spot
 from lib.texture import bright
 
 ID = "weather"
@@ -77,6 +78,17 @@ EMISSION = {
     r"(trunk|branch)\d+|flash": 4,
     r"spark.*": 3,
     "puddle": bright(1.5, 190, 215),
+}
+
+# The baked light (step 23 B): {segment: (pieces shown, lamps)}; segments 2
+# and 3 use map 1. The lamp beyond the right flat (its lens, aimed at the
+# middle), the colour bars spilling off the monitor cart, a wash down the map.
+LIGHTMAPS = {
+    1: ((), [
+        spot((8.8, -1.34, 2.35), (0, 0, 1.2), (255, 236, 200), 900, angle=40),
+        area((-9.2, -1.3, 1.07), (0.7, 0.48), (200, 205, 235), 60, aim=(-9.2, 3.0, 0.0)),
+        area((-1.8, -2.8, 6.4), (10.6, 0.3), (230, 235, 255), 700, aim=(-1.8, -4.0, 2.6)),
+    ]),
 }
 
 

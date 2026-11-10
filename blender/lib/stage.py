@@ -66,11 +66,12 @@ def build(mod, out_dir, art_dir):
     bpy.context.view_layer.update()
     bake.unwrap(objs)
     ao = bake.bake(mod, objs, p.materials, art_dir)
+    maps = bake.light_maps(mod, objs, p.materials, art_dir, out_dir)
 
     # The light rig per segment, for the game (it uses fixed lights).
     lights = bpy.data.objects.new("lights", None)
     bpy.context.scene.collection.objects.link(lights)
-    lights["segments"] = json.dumps(mod.LIGHTS)
+    lights["segments"] = json.dumps(bake.rigs(mod.LIGHTS, maps, getattr(mod, "LIGHTMAP_STRENGTH", None)))
 
     print(f"[{mod.ID}] " + ", ".join(f"{o.name} {triangles(o)}" for o in objs) + f"; {sum(triangles(o) for o in objs)} triangles")
     art_dir.mkdir(parents=True, exist_ok=True)

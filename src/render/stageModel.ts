@@ -114,6 +114,8 @@ export function loadStageArt(id: string): Promise<StageArt> {
  * A segment's baked light map on the set: its own file, or the first one the
  * stage names (the lamps of segment 1). Once a stage has a light map every
  * segment keeps one (at 0 if need be), so a segment change never recompiles.
+ * The maps are baked in key-light units (1.0 lights a surface about as the
+ * key does: docs/BLENDER-TODO.md, step 23 B), so they're scaled by the key.
  */
 export function applyLightMap(art: StageArt, spec: SegmentLights): void {
   const first = art.lightMaps.values().next().value;
@@ -121,6 +123,6 @@ export function applyLightMap(art: StageArt, spec: SegmentLights): void {
   const map = (spec.lightMapFile && art.lightMaps.get(spec.lightMapFile)) || first;
   for (const m of art.setMaterials) {
     m.lightMap = map;
-    m.lightMapIntensity = spec.lightMap ?? 1;
+    m.lightMapIntensity = (spec.lightMap ?? 1) * spec.key.intensity;
   }
 }
