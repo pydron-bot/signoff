@@ -24,6 +24,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.bake import area
 from lib.texture import bright
 
 ID = "kitchen"
@@ -83,6 +84,36 @@ EMISSION = {
     "oven_glow": 3,
     "oven_halo": 1.5,
 }
+
+
+def _strips():
+    """A strip light under each shelf, down onto the counter and wall."""
+    out = []
+    for x0, x1 in ((2.2, 5.6), (-5.6, -3.2)):
+        for u in (1.75, 2.35):
+            at = ((x0 + x1) / 2, WALL_F + 0.2, u - 0.04)
+            out.append(area(at, (x1 - x0 - 0.1, 0.06), (255, 236, 210), 60, aim=(at[0], WALL_F + 0.6, 0)))
+    return out
+
+
+# The baked light (step 23 B): Prep's light under the hood on the hob and
+# counter and the strips under the shelves (Grease Fire uses it, flickered by
+# the game); The Oven's orange pouring from the oven door, the hood dead.
+LIGHTMAPS = {
+    1: (("seg_prep",), [
+        area((-1.2, -2.2, 2.26), (1.3, 0.5), (255, 238, 204), 250, aim=(-1.2, -2.2, 0)),
+        *_strips(),
+    ]),
+    3: (("seg_prep", "seg_oven"), [
+        area((OVEN_X, WALL_F + 0.65, (OVEN_U0 + OVEN_U1) / 2), (1.5, 1.2), (255, 120, 40), 700, aim=(OVEN_X, 4.0, 0.3)),
+        *_strips(),
+    ]),
+}
+# The GLB is near its 2 MB with the atlases: the light maps go at 512² (the
+# same layout as the AO, so just coarser; the light is soft anyway).
+LIGHT_SIZE = 512
+# ...and in steps of 4 (of 255), to fit with the GLB under 2 MB.
+LIGHT_STEP = 4
 
 
 def lit(t, **k):

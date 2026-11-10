@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.39.0',
+    date: '2026-11-09',
+    title: 'Practicals',
+    notes: [
+      "The lamps you can see on each stage light it now: pools under the news studio's lamps, warm bars of dawn sun through Feel the Burn's windows, the hood light over the hob, the oven's orange glow, the weather map washed from above.",
+    ],
+  },
+  {
     version: '0.38.0',
     date: '2026-11-09',
     title: 'Sweeps Week',

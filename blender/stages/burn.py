@@ -25,6 +25,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.bake import area
 from lib.texture import bright
 
 ID = "burn"
@@ -96,6 +97,42 @@ EMISSION = {
     r"dawn\d+": lambda t: pane_glow(*DAWN)(t),
     # The morning sky is pale, so it glows less to keep the panes from washing out.
     r"morning\d+": lambda t: pane_glow(*MORNING, sky=0.7)(t),
+}
+
+
+def _sun(direction, colour, power, spread=8):
+    """Sunlight through the panes: a narrow beam per quarter pane (the
+    muntins between them), raking down into the room."""
+    out = []
+    for cx in WIN_X:
+        for dx in (-1, 1):
+            for du in (-1, 1):
+                at = (cx + dx * WIN_W / 4, WALL_F + 0.15, (WIN_U0 + WIN_U1) / 2 + du * (WIN_U1 - WIN_U0) / 4)
+                aim = tuple(a + d for a, d in zip(at, direction))
+                out.append(area(at, (WIN_W / 2 - 0.1, (WIN_U1 - WIN_U0) / 2 - 0.1), colour, power, aim=aim, spread=spread))
+    return out
+
+
+# The baked light (step 23 B): {segment: (pieces shown, lamps)}. Warm-Up:
+# the low dawn sun from the left through the windows, the sign's pink spill.
+# Double Time: the sun higher and whiter, the cyan panel over the sign, the
+# chase lights. Burnout: the windows black, one work light overhead.
+# Three maps beside the GLB: stored in steps of 2 (of 255) to fit under 2 MB.
+LIGHT_STEP = 2
+LIGHTMAPS = {
+    1: (("seg_warmup",), [
+        *_sun((0.3, 0.8, -0.55), (255, 186, 120), 120),
+        area((0, -3.74, SIGN_U), (4.0, 0.8), PINK, 300, aim=(0, 2.0, 1.0)),
+    ]),
+    2: (("seg_warmup", "seg_double"), [
+        *_sun((-0.25, 0.6, -0.75), (255, 236, 206), 120),
+        area((0, -3.68, SIGN_U), (4.0, 0.8), CYAN, 300, aim=(0, 2.0, 1.0)),
+        area((0, -3.72, 3.06), (16.2, 0.12), (255, 214, 196), 400, aim=(0, 2.0, 2.0)),
+    ]),
+    3: (("seg_burnout",), [
+        area((0, 0.5, 7.5), (1.0, 1.0), (205, 215, 255), 1500, aim=(0, 0.5, 0)),
+        area((-0.9, -3.78, 3.55), (1.4, 0.3), PINK, 60, aim=(-0.9, 2.0, 1.0)),
+    ]),
 }
 
 

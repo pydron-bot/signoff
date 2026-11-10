@@ -254,7 +254,7 @@ are authored facing right with the left foot and left hand leading.
 > 7. ~~**Step 19, The Eleven O'Clock News** and **step 20, Kitchen Live**~~ *done (Nov 9): `news.glb` and `kitchen.glb`.*
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
-> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, the sets' own lamps, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
+> 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, ~~the sets' own lamps~~ *(B done, Nov 9)*, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
 > 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
 > 12. **Step 25, the fighting styles pilot**: Rox's and Hollis's new and changed normals, and a timing profile per fighter. Game side in (0.37.0); stand-ins play until the clips land.
 > 13. **Step 26, air specials**: one special in the air for every fighter, and its boosted version (14 clips). Game side in (0.38.0); stand-ins play until the clips land.
@@ -1023,28 +1023,30 @@ only some file size.
 
 **B. The set's own lamps**
 
+*Done (Nov 9): all four stages (`LIGHTMAPS` in each stage module, `light_maps` in `blender/lib/bake.py`). Notes under* Light maps (Nov 9, art side) *in Feedback; read the one about the value's scale.*
+
 The lamps you can see in a set should light it: pools on the floor under the
 news studio's grid, the low dawn sun raking through Burn's windows, the hood
 light over the hob, the oven pouring orange across the floor.
 
-- [ ] Bake only that light, the practical lamps in the set (not the game's
+- [x] Bake only that light, the practical lamps in the set (not the game's
   ambient, key or rim, which it adds itself), as an RGB light map on the
   same `TEXCOORD_1` layout as the AO. glTF has no light-map slot, so it's
   its own file: `art/textures/stage-<id>_light.png`, exported to
   `public/assets/stages/<id>-light.png` (1024², PNG, sRGB), and named in
   the `lights` rig as `lightMapFile` (below): the game loads only the
   files the rig names.
-- [ ] Value: 1.0 in the light map lights a surface about as brightly as the
+- [x] Value: 1.0 in the light map lights a surface about as brightly as the
   key light does. Keep pools soft-edged; a hot spot under a lamp can go to
   about 1.5 (it will just begin to glow).
-- [ ] Per segment: one light map is the lamps that are on in segment 1. A
+- [x] Per segment: one light map is the lamps that are on in segment 1. A
   segment whose lamps are very different can have its own,
   `<id>-light-<n>.png` (n is the segment, 1 to 3), named as that
   segment's `lightMapFile`; a segment that names none uses the first file
   the rig names: Kitchen's Oven (the glow from the oven door, the hood light dead),
   Burn's Burnout (the windows black, one top light), News' Lights Out (the
   grid lamps gone).
-- [ ] Add `lightMapFile` (the file name, e.g. `news-light.png`) and
+- [x] Add `lightMapFile` (the file name, e.g. `news-light.png`) and
   `lightMap` to each segment in the `lights` rig: which map and how
   strongly the game applies it, 0 to 2 (1 if it's left out). The game dims it
   further itself in Lights Out with each lamp that falls, and flickers it
@@ -1744,3 +1746,11 @@ worked into the move data, and the table above updates itself.
   - `fx_puddle`'s rings glow at 1.5 in the file, but `weatherSet.ts` sets the puddles' `emissive` colour (0 at rest), and with an emissive map that colour multiplies the map: at rest the rings don't glow, on the shock they glow in its colour. Probably what you want; say if not.
   - **Fighters:** emission is only on the effect meshes (Cold Front, Heat Lightning, Tape Skip's streaks, Live Feed and its tally, Fire and Brimstone's fire and glory). The `props` material is shared with the body's accessories, and `setTint` sets the body's `emissive` colour, which with an emissive map would only flash the glowing texels. So `fighterModel.ts` now clears the body materials' emission (the fx meshes keep theirs: they get their own materials). **Hollis's lens is not lit** for the same reason: it needs `setTint` to add its tint on top of the glow (a uniform in `addRim`'s shader, say) rather than replace `emissive`. Once that's in, add `"lens": 3` to Hollis's `EMISSION`.
   - GLBs: Kitchen 1.90 MB, which leaves about 0.1 MB for its 23 B light map (one 1024² PNG is more): 23 B may need the set atlas's flames or the light map at 512² there.
+- **Light maps (Nov 9, art side).** Step 23 B done for all four stages; `npm test` passing. Notes for the game side:
+  - Files and rigs: Weather `weather-light.png`; Burn `burn-light.png`, `burn-light-2.png` (Double Time: the sun higher and whiter, the cyan panel, the chase lights) and `burn-light-3.png` (Burnout: one work light overhead, the BURN tube's spill); News `news-light.png` (The Ticker and Lights Out use it too, so the game's dimming per fallen lamp has something to dim); Kitchen `kitchen-light.png` (Grease Fire uses it, for the game's flicker) and `kitchen-light-3.png` (The Oven: the oven's orange, the hood light dead). Segment 1 names map 1, a segment with its own map names that, and every segment has `lightMap`.
+  - **The scale: please check.** The map holds light ÷ 1.5 (so a hot spot can reach 1.5 in an 8-bit PNG), and every rig's `lightMap` is 1.5 to undo that, so the game reads the values as they were baked. Map 1's 95th percentile of lit texels is 1.0 (every map of a stage shares map 1's scale), the brightest is clipped at 1.5. But `applyLightMap` uses the value as raw irradiance, the same units as a light's intensity, while the spec says 1.0 should light a surface about as brightly as the key light does, and the relit keys are 2 or more. In my renders the pools only read when I multiplied `lightMapIntensity` by the segment's key intensity, which is what the spec's wording implies. So either the game multiplies by the key (my suggestion: the art stays in key units), or tell me and I'll bake a fixed multiple in (it'd have to fit under `lightMap` ≤ 2).
+  - How: Cycles' diffuse light (direct and indirect, no colour), on the AO's `TEXCOORD_1` layout of the `set` material, with a black world and every material's emission switched off, so only the lamps listed in `LIGHTMAPS` count. Like the AO, map 1 is baked in passes so the later segments' pieces are covered too; a segment's own map covers only the pieces shown in it. Smoothed 7×7 inside the islands (512 samples still leave noise, and noise doesn't compress).
+  - Burn's sunlight has no window to come through (the wall is solid behind the panes), so it's a narrow beam (8° spread) from each quarter pane, angled down into the room: warm bars across the floor and the side walls at dawn, steeper and whiter in Double Time.
+  - The Oven's orange mostly lands on the counter top and the wall: the counter is between the oven and the floor, so it doesn't pour across the floor the way the spec describes. A lamp low in front of the counter could fake it; say if it's wanted.
+  - Weather's map header is the brightest thing the wash hits (it's nearest the lamp).
+  - Budget: the light maps are big for their content (noisy gradients), so Kitchen's are 512² in steps of 4 (of 255) and Burn's in steps of 2 (`LIGHT_SIZE`, `LIGHT_STEP` in the stage modules). With them: Weather 1.65 MB, Burn 1.87, News 1.19, Kitchen 2.08 (of 2 MiB; the test counts 2,097,152 bytes). Kitchen has no room left: anything new there will need its set atlas trimmed.
