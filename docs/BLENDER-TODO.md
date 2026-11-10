@@ -142,6 +142,11 @@ npm test                     # tests/assets.test.ts checks every GLB against thi
 If the style moves to hand modelling, the `.blend` files become the source
 and the scripts stop writing them (say which in this file).
 
+Moves listed in `ART_PENDING` (`src/render/pose.ts`) get no clip: their art
+is owed, the game plays a stand-in, and the generic fitter can't always
+reach a new move's shape, which would otherwise stop the whole fighter
+rebuilding. Take a move out of the list when its clip is made.
+
 The build fails if a strike misses: for every hit in the data, the striking
 limb's tip (or a held prop's) must be inside the hitbox (±4 cm) on every active frame (moves
 whose hit is an effect, marked `prop`, only point at it). It also fails if
@@ -255,7 +260,7 @@ are authored facing right with the left foot and left hand leading.
 > 8. **Step 21 B–C with 16 C–D**: the five built fighters rebuilt with the finger joints, the face and hand lessons and the shape detail.
 > 9. ~~**Step 22, hit reactions**~~ *done (Nov 9): the nine clips for all seven fighters.*
 > 10. **Step 23, baked light on the sets**: ~~ambient occlusion~~ *(A done, Nov 9)*, ~~the sets' own lamps~~ *(B done, Nov 9)*, ~~what glows~~ *(C done, Nov 9)*, for the four stages. The game side (0.34.0) is in and uses them as they land.
-> 11. **Step 24, depth**: foreground silhouettes, the audience in the dark, and the living room for the title. Spec only; the game side follows.
+> 11. ~~**Step 24, depth**~~ *done (Nov 9): the foreground, the audience (and `sit_audience`) and the living room; the game side follows.*
 > 12. **Step 25, the fighting styles pilot**: Rox's and Hollis's new and changed normals, and a timing profile per fighter. Game side in (0.37.0); stand-ins play until the clips land.
 > 13. **Step 26, air specials**: one special in the air for every fighter, and its boosted version (14 clips). Game side in (0.38.0); stand-ins play until the clips land.
 >
@@ -1134,38 +1139,42 @@ camera tracks and pulls back, they slide past faster than the set does.
 
 **B. The audience in the dark**
 
+*Done (Nov 9): every stage (`blender/lib/audience.py`) and every fighter's `sit_audience`. Notes under* Audience (Nov 9, art side) *in Feedback.*
+
 Bleachers out past each side wall (x = ±8.5 to ±12, z = −2 to +2, rising
 away from the floor), in near darkness, so the walls aren't the end of the
 world when the camera pulls back. Losers become the studio audience
 (DESIGN.md, the deal): in Arcade, the fighters you've beaten will sit
 there, slumped and staring.
 
-- [ ] An object `audience` in each stage, shown in every segment: three rows of
+- [x] An object `audience` in each stage, shown in every segment: three rows of
   bench seats each side, a rail, a dim exit sign.
-- [ ] Empties `seat_1` … `seat_6` (three each side, front row) where the
+- [x] Empties `seat_1` … `seat_6` (three each side, front row) where the
   game will sit a fighter: origin on the seat, facing the fight.
-- [ ] A new state clip for every fighter, `sit_audience` (60 frames,
+- [x] A new state clip for every fighter, `sit_audience` (60 frames,
   looping): sitting, hands on knees, swaying very slightly, head turned to
   the fight. Same rules as the other state clips.
 
 **C. The living room (the title)**
 
+*Done (Nov 9): `room.glb` (`blender/stages/room.py`, `npm run art -- --only room`). Notes under* The living room (Nov 9, art side) *in Feedback.*
+
 `public/assets/stages/room.glb`: where the viewer is at 3:33 a.m. The game
 will draw the attract mode onto the TV's screen and push in through it on
 START, in place of today's shader TV.
 
-- [ ] A 1987 living room, seen from a sofa: a wood-cabinet CRT on a stand
+- [x] A 1987 living room, seen from a sofa: a wood-cabinet CRT on a stand
   (the screen 4:3, about 0.6 m across), a coffee table with an ashtray and a
   TV guide open at Channel 0, the sofa's arm in the foreground, a window
   with a streetlight's orange through the blinds, a standard lamp, off.
-- [ ] `screen`: the TV's glass as its own mesh, a curved quad with UVs 0–1
+- [x] `screen`: the TV's glass as its own mesh, a curved quad with UVs 0–1
   across it, in a material `screen` (the game replaces it).
-- [ ] `camera_start` and `camera_end` empties: where the title's camera
+- [x] `camera_start` and `camera_end` empties: where the title's camera
   sits (on the sofa, about 2.5 m from the set) and where the push ends
   (just short of the glass, the screen filling the view).
-- [ ] The light: only the TV's glow (the game lights the room from the
+- [x] The light: only the TV's glow (the game lights the room from the
   screen's colour) and the streetlight; bake the streetlight as in step 23.
-- [ ] Under 6,000 triangles, two materials plus `screen`, under 1.5 MB.
+- [x] Under 6,000 triangles, two materials plus `screen`, under 1.5 MB.
 
 ### 25. Fighting styles pilot: Rox and Hollis (Nov 9, game side)
 
@@ -1763,3 +1772,14 @@ worked into the move data, and the table above updates itself.
   - With the game's 30° lens they're out of frame until the camera pulls back past about 13 m; at 16 m they sit at the frame's edges, the cameras about a third of the height. Checked from about the game camera with them drawn black, not in a match.
   - They're in the props AO layout's white corner like the effects (no AO): they move with nothing, and the game draws them dark anyway.
   - Kitchen's glow atlas went to 512² (`GLOW_SIZE`) to make room under 2 MB; every stage atlas is now saved at PNG's strongest compression (lossless).
+- **Audience (Nov 9, art side).** Step 24 B done; `npm test` passing. Notes for the game side:
+  - `audience` in every stage GLB (the same on all four, built by `lib/stage.py`): three stepped rows each side from x = ±8.5 out to ±12, z = −2 to 2, each step 0.42 m higher, a bench on each, a rail along the front, a red EXIT sign on a post at the back whose panel glows dimly (1.2). 512 triangles, in `props`, in near-black colours. Like the foreground, it has no AO.
+  - `seat_1`…`seat_3` on the left (z = −1.3, 0, 1.3), `seat_4`…`seat_6` on the right, at x = ±9.05, y = 0.54 (the front bench's top). Each empty's +Z (glTF), a fighter's front, points at the fight: place the fighter's root at the empty with its rotation (don't mirror them).
+  - `sit_audience` (60, loop) in all seven GLBs, in the test's state clips: the root on the seat under the pelvis, the feet reaching down to the step 0.42 m below (Mumbles' dangle), hands on the knees, shoulders rolled forward, the head up at the fight, a very slight sway. Generated (`Stance.sit_audience` in `lib/anim.py`), so a fighter's own version can override it.
+  - The build now skips moves in `ART_PENDING` (see *The pipeline*): Rox's and Hollis's step 25 moves and every fighter's air special (step 26) are owed, and Rox's and Hollis's new moves made the build fail outright. Those clips are now absent from all seven GLBs, where Dale's, Mumbles', Margaret's, Gus's and Gideon's air specials had generated ones; the game plays the stand-ins either way.
+- **The living room (Nov 9, art side).** Step 24 C done: `public/assets/stages/room.glb` (0.68 MB) and `room-light.png` (0.59 MB), 890 triangles. Notes for the game side:
+  - Objects: `set` (everything static: one material, `set`, 1024²) and `screen` (the glass, 96 triangles, material `screen`, UVs 0–1, u to the right and v up as the sofa sees it, bulging 2.5 cm toward the viewer). So it's one material plus `screen`: the props material is left out because the game puts the light map on every material of `set`, and props have their own UV layout.
+  - `camera_start` (on the sofa, 2.6 m from the glass, eye height 1.05) and `camera_end` (0.84 m from the glass): empties whose −Z (glTF) looks at the screen's middle, as a glTF camera would. Each carries `fov` in its extras: 50 at the start (at the game's 30° the sofa sees only the TV) and 30 at the end, where the 0.45 m screen fills the height.
+  - The streetlight is a small spot in the window's reveal (in front of the painted street, which would shadow one further out), shining down through the blinds: bars across the coffee table, the rug and the floor, in `room-light.png`, named in a one-segment `lights` rig (`lightMapFile`, `lightMap` 1.5) like the stages. The street outside glows (0.8, the lamp 3), and so does the VCR's clock (1.5), at 3:33.
+  - Light from the screen is left to the game, as the spec says. In my renders a dim blue point light at the screen with the light map doubled read right; the scale question from *Light maps* applies here too.
+  - The font in `lib/paint.py` gained `X` and `:` (EXIT, 3:33).

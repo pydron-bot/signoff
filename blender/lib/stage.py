@@ -12,12 +12,21 @@ make(name, parts_fn, at=(x, fwd, up)) once per object: parts_fn adds the
 object's parts to `p`; `at` moves the finished object (painting happens
 first, in the space the parts were built in, so a prop's paint can work
 around its own origin).
+
+Optional, for a scene that isn't a fight (the title's room, step 24 C):
+AUDIENCE = False leaves out the bleachers and their seats; ATLAS overrides
+the atlas sizes; SCREEN = True makes the third material `screen` (for the
+game to replace) instead of water; EMPTIES lists (name, at, target) empties
+whose −Z in glTF (a camera's view) looks at `target`, with FOV {name:
+degrees} in an empty's extras as `fov`; finish(objs) runs
+after the atlases are unwrapped (to give a mesh UVs of its own).
 """
 import json
+import math
 
 import bpy
 
-from . import bake
+from . import audience, bake
 from .common import Parts, export_glb, fighter, reset_scene, triangles, vertex_colour_material
 from .glb import add_occlusion
 from .texture import paint, unwrap, use_atlas, use_glow
@@ -37,9 +46,23 @@ def water_material(alpha=0.45):
     return m
 
 
+def _look(at, target):
+    """An empty's rotation so its glTF −Z looks from `at` at `target` (Blender
+    coordinates), glTF +Y up: the exporter turns Blender's local +Y into
+    glTF's −Z, and local +Z into +Y."""
+    from mathutils import Matrix, Vector
+
+    y = (target - at).normalized()
+    x = y.cross(Vector((0, 0, 1))).normalized()
+    z = x.cross(y)
+    return Matrix((x, y, z)).transposed().to_euler()
+
+
 def build(mod, out_dir, art_dir):
     reset_scene()
-    p = Parts([vertex_colour_material("set"), vertex_colour_material("props", roughness=0.4), water_material()])
+    third = vertex_colour_material("screen", roughness=0.1) if getattr(mod, "SCREEN", False) else water_material()
+    p = Parts([vertex_colour_material("set"), vertex_colour_material("props", roughness=0.4), third])
+    crowd = getattr(mod, "AUDIENCE", True)
     objs, moves = [], []
 
     def make(name, parts_fn, at=None):
@@ -51,21 +74,39 @@ def build(mod, out_dir, art_dir):
         return obj
 
     mod.build(make)
+    # Every stage has the same bleachers past its side walls (step 24 B).
+    if crowd:
+        make("audience", audience.build)
 
     # Every atlas at PNG's strongest (lossless) compression: the stages run
     # close to their 2 MB with the light maps.
     bpy.context.scene.render.image_settings.compression = 100
-    dense = {m["name"] for m in p.meta if m["name"].startswith(getattr(mod, "DENSE", ()))}
+    dense = {m["name"] for m in p.meta if m["name"].startswith((*getattr(mod, "DENSE", ()), *audience.DENSE))}
     unwrap(objs, dense, p.meta)
-    for mi, size in ATLAS.items():
+    if hasattr(mod, "finish"):
+        mod.finish(objs)
+    for mi, size in getattr(mod, "ATLAS", ATLAS).items():
         if any(pl.material_index == mi for o in objs for pl in o.data.polygons):
             atlas, glow, strength = paint(objs, p.meta, mi, size, art_dir / "textures" / f"stage-{mod.ID}_{p.materials[mi].name}.png",
-                                          glow=getattr(mod, "EMISSION", {}), glow_max=getattr(mod, "GLOW_SIZE", None))
+                                          glow={**getattr(mod, "EMISSION", {}), **audience.EMISSION}, glow_max=getattr(mod, "GLOW_SIZE", None))
             use_atlas(p.materials[mi], atlas)
             if glow is not None:
                 use_glow(p.materials[mi], glow, strength)
     for obj, at in moves:
         obj.location = fighter(*at)
+    # Where the game sits a beaten fighter: empties, exported with the stage.
+    seats = []
+    for name, at, aim in (audience.seats() if crowd else []) + list(getattr(mod, "EMPTIES", [])):
+        e = bpy.data.objects.new(name, None)
+        bpy.context.scene.collection.objects.link(e)
+        e.location = fighter(*at)
+        if isinstance(aim, tuple):
+            e.rotation_euler = _look(fighter(*at), fighter(*aim))
+        else:
+            e.rotation_euler = (0, 0, math.radians(aim))
+        if name in getattr(mod, "FOV", {}):
+            e["fov"] = mod.FOV[name]
+        seats.append(e)
     bpy.context.view_layer.update()
     bake.unwrap(objs)
     ao = bake.bake(mod, objs, p.materials, art_dir)
@@ -79,5 +120,5 @@ def build(mod, out_dir, art_dir):
     print(f"[{mod.ID}] " + ", ".join(f"{o.name} {triangles(o)}" for o in objs) + f"; {sum(triangles(o) for o in objs)} triangles")
     art_dir.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(art_dir / f"stage-{mod.ID}.blend"), compress=True)
-    export_glb(out_dir / "stages" / f"{mod.ID}.glb", [*objs, lights])
+    export_glb(out_dir / "stages" / f"{mod.ID}.glb", [*objs, *seats, lights])
     add_occlusion(out_dir / "stages" / f"{mod.ID}.glb", ao)

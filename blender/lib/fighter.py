@@ -357,6 +357,20 @@ def check_heights(rig, body, actions, hurt):
     return problems, seen
 
 
+def pending(fid):
+    """The fighter's moves whose art is owed (ART_PENDING in
+    src/render/pose.ts): the game plays a stand-in until the clip lands, and
+    the build makes none, so a move whose new shape the generic fitter can't
+    reach doesn't stop the rest of the fighter being rebuilt."""
+    import re
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parents[2] / "src" / "render" / "pose.ts").read_text()
+    block = re.search(r"ART_PENDING[^=]*=\s*new Set\(\[(.*?)\]\)", src, re.S)
+    ids = re.findall(r"'([a-z]+):([^']+)'", block.group(1)) if block else []
+    return frozenset(m for f, m in ids if f == fid)
+
+
 def build(mod, out_dir, art_dir):
     data = DATA[mod.ID]
     hurt = data["hurt"]
@@ -411,7 +425,10 @@ def build(mod, out_dir, art_dir):
     fit_reactions(rig, body, st, hurt["juggle"])
     fit_hit_crouch(rig, body, st, hurt["crouch"][3])
     actions = state_clips(rig, st, data)
-    moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}))
+    owed = pending(mod.ID)
+    if owed:
+        print(f"[{mod.ID}] art owed, no clip (ART_PENDING): {', '.join(sorted(owed))}")
+    moves, strikes, unreachable = move_clips(rig, st, data, getattr(mod, "OVERRIDES", {}), skip=owed)
     # Secondary motion on the fighter's own bones, before the checks (it moves the mesh).
     bake(rig, actions + moves, mod.xbones(b) if hasattr(mod, "xbones") else [], skinned)
     problems = unreachable + check(rig, moves, strikes)
