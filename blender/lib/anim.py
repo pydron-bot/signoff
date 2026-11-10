@@ -9,6 +9,7 @@ recovery back to base. Which limb strikes comes from the move's last button
 overrides it. Each strike is fitted: the pose is evaluated and the lunge and
 target nudged until the limb's tip is inside the hitbox.
 """
+import inspect
 import json
 import math
 from pathlib import Path
@@ -31,7 +32,12 @@ def lerp(a, b, t):
 
 def tip_point(rig, limb, extra=0.0):
     """The striking tip as posed now: the limb's end, or `extra` metres past
-    the hand along it (a held prop's tip: an umbrella, a string)."""
+    the hand along it (a held prop's tip: an umbrella, a string). A knee
+    (knee.L) strikes with the knee joint, a shoulder (shoulder.L) with the
+    shoulder joint."""
+    kind, s = limb.split(".")
+    if kind in ("knee", "shoulder"):
+        return point(rig, f"{'shin' if kind == 'knee' else 'upper_arm'}.{s}", "head")
     if not extra:
         return point(rig, TIP[limb])
     head, tail = Vector(point(rig, limb, "head")), Vector(point(rig, limb))
@@ -120,15 +126,38 @@ def gait(f0, f1, v, k, span=0.5, lift=0.07):
     return out
 
 
-def step_through(keys, windows, k, free=lambda f, s, pose: False, span=0.5):
+def beat(f0, f1, v, k, lift=0.06):
+    """One step on the beat over frames f0…f1 (a dancer's step-together),
+    in gait's form: the lead foot steps out over the first half and lands
+    ahead, the rear one follows over the second, and both end where the
+    pose has them. A planted foot slides back at v, so it stays put on the
+    floor while the game moves the fighter."""
+    n = max(1, f1 - f0)
+    travel = v * (n + 1)
+    out = {}
+    for f in range(f0, f1 + 1):
+        t = (f - f0) / n
+        # Each foot's place on the floor (0 → travel), less the body's travel so far.
+        if t < 0.5:
+            lead = (travel * smooth(t / 0.5) - travel * t, lift * k * math.sin(math.pi * t / 0.5))
+            rear = (-travel * t, 0.0)
+        else:
+            lead = (travel * (1 - t), 0.0)
+            rear = (travel * smooth((t - 0.5) / 0.5) - travel * t, lift * 0.6 * k * math.sin(math.pi * (t - 0.5) / 0.5))
+        out[f] = [lead, rear]
+    return out
+
+
+def step_through(keys, windows, k, free=lambda f, s, pose: False, span=0.5, walk=gait):
     """Key every frame of each motion window ({frames, vx}) with the feet
     stepping at its speed, over whatever the clip's keys do above them.
     free(frame, "L"/"R", pose) leaves a foot to the clip (a kicking foot, or
-    feet off the floor)."""
+    feet off the floor). walk: gait (steps at the speed) or beat (one step)."""
     new = {}
     for w in windows:
         f0, f1 = w["frames"]
-        for f, feet in gait(f0, f1, w["vx"], k, span).items():
+        steps = walk(f0, f1, w["vx"], k, span) if walk is gait else walk(f0, f1, w["vx"], k)
+        for f, feet in steps.items():
             pose = pose_at(keys, f)
             parts = {}
             for s, (d, z) in zip("LR", feet):
@@ -205,6 +234,22 @@ class Stance:
     # tops out at the crouching hurtbox.
     crouch_drop = 0.5
     crouch_pitch = 32
+    # Rhythm (step 25 A): how every generated strike moves (see rhythm()).
+    # Unset, a strike eases the plain way.
+    # windup (draw, start, end): the limb drawn back `draw` times as far as
+    #   the plain chamber (over 1, the body loads up behind it too), between
+    #   these shares of the startup.
+    # snap (frames, power): how it reaches the strike over its last frames:
+    #   power under 1 is there early (a hard ease-out), over 1 still
+    #   accelerating into it.
+    # follow (carry, hold): how far the body carries past the strike (1 is
+    #   the weight thrown onto the front foot), and for how many frames.
+    # settle: the recovery's overshoot back past the stance (a bounce);
+    #   negative sinks into it instead.
+    windup = None
+    snap = None
+    follow = None
+    settle = 0.0
 
     def __init__(self, height):
         self.height = height
@@ -286,7 +331,7 @@ class Stance:
         stretch of the neck to each side. Fighters override it."""
         return [(1, relaxed), (25, relaxed.but(head=(0, 0, 20))), (45, relaxed.but(head=(0, 0, -20))), (62, self.intro(1)), (80, base), (90, base)]
 
-    def windup(self):
+    def td_windup(self):
         """Technical Difficulties: a huge wind-up (seen in the first 20 frames)."""
         return self.base(drop=self.drop + 0.05).but(
             chest=(-10, 40, 0), hips={"offset": (0, -0.1 * self.k, -(self.drop + 0.05) * self.k), "turn": (0, 10, 0)},
@@ -751,7 +796,7 @@ def state_clips(rig, st, data):
     # Second versions, for variety: the game alternates them by round.
     clip("win_2", 120, talking(st.win_2(base), 30, 76, 3))
     clip("intro_2", 90, talking(st.intro_2(relaxed, base), 8, 30, 4))
-    clip("td_cinematic", 150, [(1, base), (20, st.windup()), (130, st.windup()), (140, st.finish()), (150, st.finish())])
+    clip("td_cinematic", 150, [(1, base), (20, st.td_windup()), (130, st.td_windup()), (140, st.finish()), (150, st.finish())])
     return out
 
 
@@ -861,6 +906,50 @@ class Fitter:
             self.problems.append(f"{label}: {limb} can't reach x {x0}…{x1}, y {y0}…{y1}")
         return best
 
+    def place(self, pose, limb, target, tries=24):
+        """The pose with the limb moved so its tip lands at target (fwd, up):
+        the wrist or ankle for a hand or foot, the ankle for a knee (the
+        shin follows), the hips for a shoulder (the hands and feet stay
+        put). For hand-keyed strikes; the build's check still has the last
+        word."""
+        kind, s = limb.split(".")
+        if kind == "knee":
+            return self.knee(pose, s, target)
+        for _ in range(tries):
+            apply_pose(self.rig, pose, self.st.height)
+            _, fx, fy = tip_point(self.rig, limb)
+            d = (0.0, target[0] - fx, target[1] - fy)
+            if abs(d[1]) < 0.003 and abs(d[2]) < 0.003:
+                break
+            if kind == "shoulder":
+                hips = pose.parts.get("hips", {})
+                pose = pose.but(hips={**hips, "offset": tuple(a + b for a, b in zip(hips.get("offset", (0, 0, 0)), d))})
+            else:
+                key = f"{'hand' if kind == 'hand' else 'foot'}_{s}"
+                pose = pose.but(**{key: moved(pose.parts[key], d)})
+        return pose
+
+    def knee(self, pose, s, target, shin=(-0.3, -0.95)):
+        """The pose with the knee driven up to target (fwd, up): the thigh
+        reaches it from the hip (the hips slid forward or back until it
+        can), the shin hangs from it along `shin` (fwd, up)."""
+        rig = self.rig
+        for _ in range(4):
+            apply_pose(rig, pose, self.st.height)
+            hip, knee, ankle = (Vector(point(rig, b, "head")) for b in (f"thigh.{s}", f"shin.{s}", f"foot.{s}"))
+            a, b = (knee - hip).length, (ankle - knee).length
+            # Where the hip must be for the thigh to reach the target.
+            up = max(-a * 0.95, min(a * 0.95, target[1] - hip.z))
+            d = (0.0, target[0] - math.sqrt(a * a - up * up) - hip.y, target[1] - up - hip.z)
+            if abs(d[1]) < 0.003 and abs(d[2]) < 0.003:
+                break
+            hips = pose.parts.get("hips", {})
+            pose = pose.but(hips={**hips, "offset": tuple(p + q for p, q in zip(hips.get("offset", (0, 0, 0)), d))})
+        n = math.hypot(*shin)
+        foot = dict(pose.parts.get(f"foot_{s}", {}))
+        foot["pos"] = (hip.x, target[0] + b * shin[0] / n, target[1] + b * shin[1] / n)
+        return pose.but(**{f"foot_{s}": foot, f"knee_{s}": (hip.x, target[0] + 0.6, target[1] + 0.2)})
+
     def chamber(self, base, limb, overhead=False, low=False, high=False):
         """The limb drawn back before a strike; `high` raises it above the
         head for an overhead (a hand) or into an axe kick (a foot)."""
@@ -902,9 +991,13 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
     hit comes down from overhead, like an overhead: a pound, a cleaver
     chop), palm (strikes with an open hand), keys (a function (st, base, mv)
     giving [(frame, pose)] that replaces the generated keys over its frames:
-    hand-keyed poses for a move people watch), tx / ty (where to aim the
+    hand-keyed poses for a move people watch; given a fourth argument, it
+    gets the Fitter, for Fitter.place), tx / ty (where to aim the
     strike), held ({key, limb, reach, show}: a prop shown by shape key `key`
-    over frames show, whose tip, `reach` metres past the hand, makes the hit).
+    over frames show, whose tip, `reach` metres past the hand, makes the hit),
+    step ("beat": a move that travels takes one step on the beat instead of
+    walking), glide (it travels without stepping: a slide).
+    The limb can also be a knee (knee.L) or a shoulder (shoulder.L).
     Moves in `skip` (their art is owed: ART_PENDING) get no clip."""
     fitter = Fitter(rig, st)
     strikes = {}
@@ -1096,6 +1189,7 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
         alt = spec.get("alt")
         held = spec.get("held")
         prev_end = None
+        opening = None  # (frame, pose, chamber, chop) of the first strike, for rhythm()
         for i, hit in enumerate(hits):
             f0, f1 = hit["frames"]
             lb = alt[i % len(alt)] if alt else limb
@@ -1106,6 +1200,8 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
             x0, x1, y0, y1 = hit["box"]
             label = f"{mid} hit {i + 1}"
             report = not spec.get("prop")
+            # A hand-keyed move replaces the fit; the check still applies.
+            fitter_report = report and not spec.get("keys")
             extra = held["reach"] if held and held["limb"] == lb else 0.0
             aim = {"extra": extra, "tx": spec.get("tx")}
             if style == "spin":
@@ -1114,16 +1210,16 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
             elif style == "rising":
                 tiptoe = {"foot_L": {"pos": st.s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
                           "foot_R": {"pos": st.s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
-                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0), **aim)
-                end = fitter.fit(base.but(root={"offset": (0, 0, 0.06 * k)}, **tiptoe), lb, hit["box"], over, label, report, ty=y1 - 0.12, **aim)
+                pose = fitter.fit(base, lb, hit["box"], over, label, fitter_report, ty=y0 + 0.35 * (y1 - y0), **aim)
+                end = fitter.fit(base.but(root={"offset": (0, 0, 0.06 * k)}, **tiptoe), lb, hit["box"], over, label, fitter_report, ty=y1 - 0.12, **aim)
                 checks.append(((f0, f1), [lb], hit["box"], extra))
             elif chop:
-                pose = fitter.fit(base, lb, hit["box"], over, label, report, ty=y1 - 0.08, chop=lb.startswith("hand"), **aim)
-                end = fitter.fit(base, lb, hit["box"], over, label, report, ty=y0 + 0.35 * (y1 - y0), chop=lb.startswith("hand"), **aim)
+                pose = fitter.fit(base, lb, hit["box"], over, label, fitter_report, ty=y1 - 0.08, chop=lb.startswith("hand"), **aim)
+                end = fitter.fit(base, lb, hit["box"], over, label, fitter_report, ty=y0 + 0.35 * (y1 - y0), chop=lb.startswith("hand"), **aim)
                 if report:
                     checks.append(((f0, f1), [lb], hit["box"], extra))
             else:
-                pose = end = fitter.fit(base, lb, hit["box"], over, label, report, ty=spec.get("ty"), **aim)
+                pose = end = fitter.fit(base, lb, hit["box"], over, label, fitter_report, ty=spec.get("ty"), **aim)
                 if report:
                     checks.append(((f0, f1), [lb], hit["box"], extra))
             if spec.get("palm"):
@@ -1137,8 +1233,10 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
                     ch = f0 - 3
                 if moving_until and moving_until < f0 and lb.startswith("foot"):
                     ch = max(ch, min(f0 - 1, moving_until + 1))  # step first, then chamber the kick
+                drawn = fitter.chamber(base, lb, over, low, high=chop)
+                opening = (f0, pose, drawn, chop, lb)
                 if ch < f0 and ch not in keys:
-                    at(ch, fitter.chamber(base, lb, over, low, high=chop))
+                    at(ch, drawn)
                 if chop and f0 - ch >= 4:
                     at(f0 - 2, fitter.raised(base, lb))
             elif f0 - prev_end >= 2:
@@ -1155,6 +1253,10 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
             elif rec > 3 and prev_end + max(1, round(rec * 0.35)) not in keys:
                 at(prev_end + max(1, round(rec * 0.35)), lerp_pose(keys[prev_end], base, 0.55))
         keys[total] = base
+        # Each fighter's rhythm on the plain strikes (step 25 A).
+        anticipation = None
+        if opening and style is None and not (mv["spawns"] or mv.get("throw") or mv.get("interact")):
+            anticipation = rhythm(keys, st, base, opening, (prev_end, end), total, mv["stance"])
         # The moves people watch get the showcase: specials (boosted ones
         # bigger), the launcher and the string enders.
         ender = " " in mid and not any(o.startswith(mid + " ") for o in data["moves"])
@@ -1166,9 +1268,10 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
                 first = (alt[0] if alt else limb) if hits else None
                 boosted = mid.endswith("+") or "(" in mid
                 showcase(keys, st, base, min(a for a, _ in spans), max(b for _, b in spans), total, first, 1.6 if boosted else 1.0,
-                         {alt[i % len(alt)] if alt else limb for i in range(len(hits))})
+                         {alt[i % len(alt)] if alt else limb for i in range(len(hits))}, anticipation)
         if spec.get("keys"):
-            custom = spec["keys"](st, base, mv)
+            fn = spec["keys"]
+            custom = fn(st, base, mv, fitter) if len(inspect.signature(fn).parameters) > 3 else fn(st, base, mv)
             lo, hi = min(f for f, _ in custom), max(f for f, _ in custom)
             for f in [f for f in keys if lo <= f <= hi]:
                 del keys[f]
@@ -1185,18 +1288,18 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
                 keys[f] = keys[f].shaped(**{held["key"]: 1.0 if a <= f <= b else 0.0})
 
         # Moves that travel step at their speed (the game moves the fighter).
-        if motion:
+        if motion and not spec.get("glide"):
             alt = spec.get("alt")
             kicks = []  # (foot side, first frame, last frame) a kicking foot is left to the clip
             for i, h in enumerate(hits):
                 lb = alt[i % len(alt)] if alt else limb
-                if lb.startswith("foot"):
+                if lb.startswith(("foot", "knee")):
                     kicks.append((lb[-1], h["frames"][0] - 3, h["frames"][1] + 3))
 
             def free(f, s, pose):
                 return off_floor(pose, k) or any(s == side and a <= f <= b for side, a, b in kicks)
 
-            step_through(keys, motion, k, free, span=0.7 if style == "grapevine" else 0.5)
+            step_through(keys, motion, k, free, span=0.7 if style == "grapevine" else 0.5, walk=beat if spec.get("step") == "beat" else gait)
 
         if mv["kind"] in ("special", "super"):
             shout(keys, mv, total)
@@ -1207,13 +1310,76 @@ def move_clips(rig, st, data, overrides, skip=frozenset()):
     return out, strikes, fitter.problems
 
 
-def showcase(keys, st, base, b0, b1, total, limb, g, strikers=()):
+def rhythm(keys, st, base, opening, closing, total, stance):
+    """A fighter's timing on a plain strike (step 25 A; Stance.windup, snap,
+    follow, settle): rekeys the startup before the first strike and the
+    recovery after the last, never the active frames, so every strike check
+    still holds. Returns the frame of the drawn-back key (for showcase's
+    coil), if it keyed one."""
+    f0, strike, chamber, chop, limb = opening
+    f1, end = closing
+    k = st.k
+    drawn_at = None
+    if st.windup and not chop and f0 >= 5:
+        draw, a, b = st.windup
+        span = f0 - 1
+        frames, power = st.snap or (1, 1.0)
+        hold = f0 - frames  # the drawn pose is held until the snap starts
+        b_f = max(2, min(round(1 + b * span), hold))
+        a_f = min(round(1 + a * span), b_f - 1)
+        drawn = toward(chamber, base, 1 - draw)
+        if draw > 1:
+            # A big draw loads the body up behind it: back, down, turned away.
+            g = (draw - 1) * 2
+            sign = 1 if limb.endswith(".L") else -1
+            drawn = added(drawn, hips={"offset": (0, -0.05 * k * g, -0.025 * k * g), "turn": (0, 8 * g * sign, 0)},
+                          spine=(0, 6 * g * sign, 0), chest=(-4 * g, 12 * g * sign, 0), head=(4 * g, -6 * g * sign, 0))
+        for f in [f for f in keys if 1 < f < f0]:
+            del keys[f]
+        if a_f > 1:
+            keys[a_f] = base
+        keys[b_f] = drawn
+        drawn_at = b_f
+        if hold > b_f:
+            keys[hold] = toward(drawn, base, -0.06)  # still creeping back
+        for i in range(1, frames):
+            f = f0 - i
+            if f > b_f and f != hold:
+                keys[f] = lerp_pose(keys[hold], strike, (1 - i / frames) ** power)
+    if st.follow and f1 and total - f1 >= 6:
+        carry, hold = st.follow
+        aloft = stance == "air"
+        for f in [f for f in keys if f1 < f < total]:
+            del keys[f]
+        # Carried past the strike: the hips through and onto the front foot.
+        carried = added(end, hips={"offset": (0, 0.07 * k * carry, (0 if aloft else -0.035) * k * carry), "turn": (6 * carry, 0, 0)},
+                        chest=(8 * carry, 0, 0), head=(4 * carry, 0, 0))
+        fc = min(total - 3, f1 + (2 if carry >= 0.5 else 1))
+        keys[fc] = carried
+        fh = min(total - 2, fc + hold)
+        if fh > fc:
+            keys[fh] = added(carried, hips={"offset": (0, 0.01 * k * carry, (0 if aloft else -0.01) * k * carry)})
+        rec = total - fh
+        fm = fh + max(1, round(rec * 0.4))
+        keys[fm] = lerp_pose(carried, base, 0.65)
+        fs = total - max(2, round(rec * 0.25))
+        if st.settle and rec >= 8 and fs > fm:
+            if st.settle > 0:
+                keys[fs] = toward(end, base, 1 + st.settle)  # sprung back past the stance
+            elif not aloft:
+                d = -st.settle
+                keys[fs] = added(base, hips={"offset": (0, 0, -0.035 * k * d)}, spine=(3 * d, 0, 0), chest=(5 * d, 0, 0))
+    return drawn_at
+
+
+def showcase(keys, st, base, b0, b1, total, limb, g, strikers=(), anticipation=None):
     """The moves people watch (specials, the launcher, string enders, step
     16 C): the key before the business (b0…b1) coils further back, the body
     stretches into it over the business (the free arm thrown back, the rear
     heel up) without moving the striking limb, then overshoots past it and
     follows through for longer. g: how much (boosted versions go bigger);
-    strikers: every limb that hits in the move, left where the fit put it.
+    strikers: every limb that hits in the move, left where the fit put it;
+    anticipation: the key to coil (rhythm()'s drawn pose), else the last before b0.
     Only the striking limb is checked against the hitbox, on the active
     frames, so the rest of the body is free."""
     k = st.k
@@ -1222,7 +1388,7 @@ def showcase(keys, st, base, b0, b1, total, limb, g, strikers=()):
     hand = limb is not None and limb.startswith("hand")
     # Anticipation: wound up away from the strike, lower and back.
     pre = [f for f in keys if 1 < f < b0]
-    f = max(pre) if pre else (b0 - 4 if b0 - 4 >= 2 else None)
+    f = anticipation or (max(pre) if pre else (b0 - 4 if b0 - 4 >= 2 else None))
     if f is not None:
         keys[f] = added(pose_at(keys, f), hips={"offset": (0, -0.05 * k * g, -0.03 * k * g), "turn": (0, 8 * g * sign, 0)},
                         spine=(0, 8 * g * sign, 0), chest=(-4 * g, 14 * g * sign, 0), head=(6 * g, -8 * g * sign, 0))

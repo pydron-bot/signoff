@@ -7,7 +7,7 @@ heavy-lidded eyes, big hands and heavy boots. Grappler: slow, huge throws."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance
+from lib.anim import Stance, added, lerp_pose, moved, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, ring, torso
 
 ID = "hollis"
@@ -172,6 +172,13 @@ class STANCE(Stance):
     rear_aim = (0, 1, 0.3)
     guard_fist = 0.0
     block_head = -4  # ducking would lift the back of his cap over the hurtbox
+    # Rhythm (step 25 A): a big, visible load early in the startup, still
+    # accelerating into the strike, a heavy carry-through held a beat, and
+    # he sinks back into his stance.
+    windup = (1.5, 0.0, 0.6)
+    snap = (4, 2.0)
+    follow = (1.0, 4)
+    settle = -1.0
     # A big man: moves least, and the head barely turns on light hits.
     hit_amount = 0.7
     hit_turn = 0.35
@@ -208,7 +215,170 @@ class STANCE(Stance):
         return [(1, relaxed), (16, cap), (28, cap), (44, crack), (52, push), (58, crack), (66, push), (80, base), (90, base)]
 
 
+def _searchlight(st, base, mv):
+    """Searchlight (air): hanging there, the flashlight swept down across the
+    floor in front of him on the hits (from near to far)."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    up = base.but(chest=(-4, -20, 0), hand_R={"pos": s((-0.1, 0.25, 1.4)), "aim": (0, 0.4, 0.9)}).shaped(fist_R=0.8)
+    near = base.but(chest=(24, -10, 0), head=(26, 0, 0), hand_R={"pos": s((-0.1, 0.5, 0.8)), "aim": (0, 0.3, -0.95)}).shaped(fist_R=0.8, jaw=0.5)
+    far = near.but(chest=(12, -10, 0), head=(14, 0, 0), hand_R={"pos": s((-0.1, 0.68, 0.98)), "aim": (0, 0.85, -0.5)})
+    return [(6, up), (h0 - 2, near), (h0, near), (h1, far), (h1 + 6, far), (mv["total"], base)]
+
+
+def _sink(st, base, d=1.0):
+    """Settling back into the stance: a little lower, folded over it."""
+    return added(base, hips={"offset": (0, 0, -0.035 * st.k * d)}, spine=(3 * d, 0, 0), chest=(5 * d, 0, 0))
+
+
+def _collar_grab(st, base, mv, fit):
+    """Collar Grab (s.FP): the lead hand shoots out open, closes on a collar
+    on the hits and yanks it back to his chest by 14."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    load = base.but(hips={"offset": (0, -0.06 * k, -(st.drop + 0.03) * k), "turn": (0, st.hips_yaw + 10, 0)}, spine=(10, -4, 0), chest=(10, 0, 0),
+                    shoulder_L=(10, 0, 0), shoulder_R=(10, 0, 0), head=(6, -8, 0),
+                    hand_L={"pos": s((0.18, 0.12, 1.34)), "aim": (0, 0.8, 0.5), "hint": (0, 0, -1)}).shaped(fist_L=0.0, open_L=0.9)
+    reach = base.but(hips={"offset": (0, 0.12 * k, -st.drop * k), "turn": (6, st.hips_yaw - 16, 0)}, spine=(6, -40, 0), chest=(12, -56, 0),
+                     shoulder_L=(12, -56, 0), shoulder_R=(12, -56, 0), head=(0, -10, 0),
+                     hand_L={"pos": s((0.1, 0.6, 1.4)), "aim": (0, 1, 0.05), "hint": (0, 0.3, -1)})
+    reach = fit.place(reach, "hand.L", (0.74, 1.42)).shaped(fist_L=0.0, open_L=0.8, jaw=0.4)
+    grip = reach.shaped(fist_L=0.85, open_L=0.0, jaw=0.6)
+    yank = base.but(hips={"offset": (0, -0.03 * k, -st.drop * k), "turn": (-4, st.hips_yaw + 4, 0)}, spine=(-2, -20, 0), chest=(-6, -24, 0),
+                    shoulder_L=(-6, -24, 0), shoulder_R=(-6, -24, 0), head=(-6, -6, 0),
+                    hand_L={"pos": s((0.1, 0.22, 1.32)), "aim": (0, 0.4, 0.9), "hint": (0, 1, 0)}).shaped(fist_L=1.0, jaw=0.2)
+    return [(3, load), (5, toward(load, base, -0.06)), (6, lerp_pose(load, reach, 0.25)), (7, lerp_pose(load, reach, 0.6)),
+            (h0, reach), (h1, grip), (h1 + 2, lerp_pose(grip, yank, 0.6)), (14, yank), (16, yank), (total - 2, _sink(st, base)), (total, base)]
+
+
+def _knee(side):
+    """Knee (s.FK, the lead knee) and Patrol (FK FK, the rear one, walking
+    in): grabs the shoulders, pulls them down onto a knee driven up into
+    the gut on the hits, then a heavy carry-through."""
+    def keys(st, base, mv, fit):
+        s, k = st.s, st.k
+        h0, h1 = mv["hits"][0]["frames"]
+        total = mv["total"]
+        x0, x1, y0, y1 = mv["hits"][0]["box"]
+        sx = 0.13 if side == "L" else -0.13
+        other = "R" if side == "L" else "L"
+        hands = {"hand_L": {"pos": s((0.17, 0.62, 1.5)), "aim": (-0.2, 0.9, -0.3), "hint": (0, 0, -1)},
+                 "hand_R": {"pos": s((-0.17, 0.6, 1.48)), "aim": (0.2, 0.9, -0.3), "hint": (0, 0, -1)}}
+        reach = base.but(hips={"offset": (0, 0.05 * k, -st.drop * k), "turn": (6, st.hips_yaw + 6, 0)}, spine=(8, -12, 0), chest=(14, -14, 0),
+                         shoulder_L=(14, -14, 0), shoulder_R=(14, -14, 0), head=(2, -6, 0), **hands).shaped(fist_L=0.0, fist_R=0.0, open_L=0.7, open_R=0.7)
+        # Hands closed on the shoulders, pulling them down.
+        grab = added(reach.but(hand_L={**hands["hand_L"], "pos": s((0.17, 0.56, 1.42))}, hand_R={**hands["hand_R"], "pos": s((-0.17, 0.54, 1.4))}),
+                     chest=(6, 0, 0)).shaped(fist_L=0.7, fist_R=0.7, open_L=0.0, open_R=0.0, jaw=0.3)
+        of = base.parts[f"foot_{other}"]
+        chamber = grab.but(**{f"foot_{side}": {"pos": (sx * k, -0.06 * k, 0.4 * k), "turn": (50, 0, 0)}, f"knee_{side}": (sx * k, 1.2 * k, 1.0 * k)})
+
+        def drive(target, lean):
+            p = grab.but(hips={"offset": (0, 0.14 * k, -(st.drop - 0.04) * k), "turn": (-6, st.hips_yaw + 4, 0)}, spine=(8 + lean, -12, 0),
+                         chest=(18 + lean, -14, 0), shoulder_L=(18 + lean, -14, 0), shoulder_R=(18 + lean, -14, 0), head=(12, -6, 0),
+                         **{f"foot_{side}": {"pos": (sx * k, 0.3 * k, 0.6 * k), "turn": (60, 0, 0)}, f"knee_{side}": (sx * k, 1.5 * k, 1.4 * k),
+                            f"foot_{other}": moved(of, (0, 0.04 * k, 0.03 * k), (22, of["turn"][1], 0))})
+            return fit.place(p, f"knee.{side}", target).shaped(jaw=0.8)
+
+        hit = drive((min(x1 - 0.2, 0.56), (y0 + y1) / 2 - 0.04), 0)
+        high = drive((min(x1 - 0.18, 0.58), (y0 + y1) / 2 + 0.04), 6)
+        carry = added(high, hips={"offset": (0, 0.06 * k, -0.02 * k), "turn": (6, 0, 0)}, chest=(10, 0, 0), head=(6, 0, 0))
+        down = lerp_pose(carry.but(**{f"foot_{side}": base.parts[f"foot_{side}"], f"foot_{other}": of}), base, 0.5).shaped(
+            fist_L=0.3, fist_R=0.3, open_L=0.4, open_R=0.4)
+        return [(max(2, h0 - 6), reach), (h0 - 4, grab), (h0 - 2, chamber), (h0, hit), (h1, high), (h1 + 3, carry), (h1 + 6, carry),
+                (h1 + round((total - h1) * 0.65), down), (total - 2, _sink(st, base)), (total, base)]
+    return keys
+
+
+def _shoulder_check(st, base, mv, fit):
+    """Shoulder Check (f.BP): a barge, tucked behind the lead shoulder,
+    moving (the game carries him) through the armour, then the shoulder
+    rising and dropping onto them on the hits."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    turn = dict(spine=(16, -62, 0), chest=(26, -80, 0), shoulder_L=(26, -80, 0), shoulder_R=(26, -80, 0), neck=(10, -36, 0), head=(4, -12, 0))
+    arms = {"hand_L": {"pos": s((0.02, 0.22, 1.2)), "aim": (-0.7, 0.3, 0.6)}, "hand_R": {"pos": s((-0.14, 0.08, 1.12)), "aim": (0.4, 0.6, 0.5)}}
+    tuck = base.but(hips={"offset": (0, 0.04 * k, -(st.drop + 0.06) * k), "turn": (12, -56, 0)}, **turn, **arms).shaped(fist_L=1.0, fist_R=1.0, jaw=0.3)
+    lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+    lunge = {"foot_L": moved(lf, s((0, 0.3, 0))), "foot_R": moved(rf, s((0, 0.05, 0.03)), (24, rf["turn"][1], 0))}
+    rise = added(tuck, hips={"offset": (0, 0, 0.06 * k), "turn": (-8, 0, 0)}, chest=(-12, 0, 0), shoulder_L=(-12, 0, 0), shoulder_R=(-12, 0, 0)).but(**lunge)
+
+    def bash(target, pitch):
+        p = added(tuck.but(**lunge), chest=(pitch, 0, 0), shoulder_L=(pitch, 0, 0), shoulder_R=(pitch, 0, 0), spine=(pitch * 0.5, 0, 0))
+        return fit.place(p, "shoulder.L", target).shaped(jaw=0.9)
+
+    hit = bash((0.5, 1.48), 0)
+    drop = bash((0.58, 1.22), 18)
+    carry = added(drop, hips={"offset": (0, 0.07 * k, -0.04 * k)}, chest=(8, 0, 0), shoulder_L=(8, 0, 0), shoulder_R=(8, 0, 0))
+    return [(4, tuck), (h0 - 6, tuck.but(head=(8, -12, 0))), (h0 - 2, rise), (h0, hit), (h1, drop), (h1 + 4, carry), (h1 + 8, carry),
+            (h1 + 14, lerp_pose(carry, base, 0.6).shaped(fist_L=0.5, fist_R=0.5)), (total - 3, _sink(st, base)), (total, base)]
+
+
+def _stiff_arm(st, base, mv, fit):
+    """Stiff Arm (f.FK): his slowest normal. A big wind-up, the lead arm
+    drawn right back, then a slow locked-arm shove, the heel of the palm
+    into the chest on the hits and the weight thrown through it."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+    palm = {"aim": (0, 0.3, 1), "hint": (0, 1, 0)}  # fingers up, palm to them
+    wind = base.but(hips={"offset": (0, -0.12 * k, -(st.drop + 0.05) * k), "turn": (-4, st.hips_yaw + 22, 0)}, spine=(0, 0, 0), chest=(-6, 18, 0),
+                    shoulder_L=(-6, 18, 0), shoulder_R=(-6, 18, 0), head=(4, -14, 0),
+                    hand_L={"pos": s((0.24, -0.16, 1.32)), **palm}, hand_R={"pos": s((-0.2, -0.05, 1.05)), "aim": (-0.2, 0.3, -1)},
+                    foot_L=moved(lf, (0, 0, 0.02 * k), (16, lf["turn"][1], 0))).shaped(fist_L=0.0, open_L=0.6, fist_R=0.6, jaw=0.0)
+    shove = base.but(hips={"offset": (0, 0.24 * k, -(st.drop + 0.03) * k), "turn": (8, st.hips_yaw - 30, 0)}, spine=(8, -48, 0), chest=(14, -66, 0),
+                     shoulder_L=(14, -66, 0), shoulder_R=(14, -66, 0), head=(4, -12, 0),
+                     hand_L={"pos": s((0.08, 0.8, 1.3)), **palm}, hand_R={"pos": s((-0.24, -0.1, 1.15)), "aim": (-0.3, -0.6, 0.2)},
+                     foot_L=moved(lf, s((0, 0.24, 0))), foot_R=moved(rf, s((0, 0.06, 0.03)), (22, rf["turn"][1], 0))).shaped(
+        fist_L=0.0, open_L=0.5, fist_R=0.6, jaw=0.9)
+    hit = fit.place(shove, "hand.L", (x1 - 0.1, (y0 + y1) / 2 + 0.05))
+    through = fit.place(added(shove, hips={"offset": (0, 0.03 * k, 0)}), "hand.L", (x1 - 0.06, (y0 + y1) / 2 + 0.03))
+    carry = added(through, hips={"offset": (0, 0.08 * k, -0.04 * k), "turn": (6, 0, 0)}, chest=(10, 0, 0), head=(6, 0, 0))
+    return [(8, lerp_pose(base, wind, 0.5)), (13, wind), (h0 - 4, toward(wind, base, -0.08)), (h0 - 2, lerp_pose(wind, hit, 0.3)), (h0 - 1, lerp_pose(wind, hit, 0.65)),
+            (h0, hit), (h1, through), (h1 + 4, carry), (h1 + 8, carry), (h1 + 13, lerp_pose(carry, base, 0.6)), (total - 3, _sink(st, base)), (total, base)]
+
+
+def _frisk(st, base, mv):
+    """Frisk (BP FP FK): pats them down, then grabs a wrist and twists it
+    behind their back on the catch (the game plays the reeling grab); the
+    generated whiff after it grabs at air and stumbles."""
+    s, k = st.s, st.k
+    f0, f1 = mv["throw"]["frames"]
+    reach = mv["throw"]["range"] - 0.35  # as the command grab's
+    lean = dict(hips={"offset": (0, 0.1 * k, -(st.drop + 0.04) * k), "turn": (10, st.hips_yaw + 20, 0)}, spine=(10, -6, 0), chest=(18, -8, 0),
+                shoulder_L=(18, -8, 0), shoulder_R=(18, -8, 0), head=(10, 0, 0))
+    down = (0, 0.25, -1)
+
+    def pat(l_up, r_up, press=0.0):
+        """Palms on them (to the front), each hand at its height."""
+        return base.but(**lean, hand_L={"pos": (0.15 * k, reach - 0.06 + press, l_up * k), "aim": down, "hint": (0, 1, 0)},
+                        hand_R={"pos": (-0.15 * k, reach - 0.1 + press, r_up * k), "aim": down, "hint": (0, 1, 0)}).shaped(
+            fist_L=0.0, fist_R=0.0, open_L=0.3, open_R=0.3, jaw=0.2)
+
+    grab = base.but(**lean, hand_L={"pos": (0.06 * k, reach, 1.0 * k), "aim": (0, 1, -0.2), "hint": (-1, 0, 0)},
+                    hand_R={"pos": (-0.08 * k, reach - 0.04, 1.1 * k), "aim": (0.3, 0.9, 0.1), "hint": (0, 0, 1)}).shaped(fist_L=0.75, fist_R=0.5, jaw=0.5)
+    # The twist: the wrist turned over and up their back.
+    twist = grab.but(hand_L={"pos": (0.0, reach - 0.06, 1.18 * k), "aim": (-0.6, 0.6, 0.5), "hint": (0, 0, -1)},
+                     hand_R={"pos": (-0.1 * k, reach - 0.08, 1.2 * k), "aim": (0.2, 0.9, 0.3), "hint": (0, 0, 1)}).shaped(fist_L=0.9, fist_R=0.7, jaw=0.7)
+    return [(2, pat(1.42, 1.36)), (3, pat(1.38, 1.4, 0.03)), (4, pat(1.2, 1.26)), (5, pat(1.16, 1.12, 0.03)), (6, pat(1.0, 1.06)),
+            (f0 - 1, lerp_pose(pat(1.0, 1.06), grab, 0.6)), (f0, grab), (f1, twist)]
+
+
 OVERRIDES = {
+    # The fighting styles pilot (step 25 C): the night watch.
+    "s.FP": {"keys": _collar_grab},
+    "s.FK": {"limb": "knee.L", "keys": _knee("L")},
+    "FK FK": {"limb": "knee.R", "keys": _knee("R")},
+    "c.BP": {"style": "braced"},
+    "f.BP": {"limb": "shoulder.L", "keys": _shoulder_check},
+    "f.FK": {"limb": "hand.L", "palm": True, "keys": _stiff_arm},
+    "BP FP FK": {"keys": _frisk},
+    # Air special (step 26): the beam is the hit; the hand sweeps it.
+    "Searchlight": {"limb": "hand.R", "prop": True, "keys": _searchlight},
+    "Searchlight+": {"limb": "hand.R", "prop": True, "keys": _searchlight},
     # The beam and the chain make these hits (effects); the hand points them.
     "Flashlight": {"limb": "hand.R", "prop": True},
     "Key Ring": {"limb": "hand.R", "prop": True},

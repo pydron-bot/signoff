@@ -303,7 +303,23 @@ def _rapture(st, base, mv):
 PLATE = {"key": "plate", "limb": "hand.L", "reach": 0.0, "show": (1, 14)}
 
 
+def _rapture_air(st, base, mv):
+    """Rapture (air): arms out, head back, hanging (1–26), the light going
+    off all round him on the hits. The arms open up and back rather than
+    out to the sides, which the camera (along his side) wouldn't see."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    out = base.but(chest=(-22, -10, 0), head=(-36, -4, 0), spine=(-10, -10, 0),
+                   hand_L={"pos": s((0.4, -0.3, 1.85)), "aim": (0.5, -0.4, 0.8)},
+                   hand_R={"pos": s((-0.36, -0.25, 1.82)), "aim": (-0.5, -0.4, 0.8)}).shaped(win=1.0, ko=0.6, fist_L=0.0, open_L=1.0, fist_R=0.6, jaw=0.8)
+    return [(6, lerp_pose(base, out, 0.6)), (h0 - 2, out), (h0, out.but(head=(-42, -4, 0))), (h1, out.but(head=(-42, -4, 0))),
+            (26, out), (34, lerp_pose(out, base, 0.6).shaped(fist_L=0.3)), (mv["total"], base)]
+
+
 OVERRIDES = {
+    # Air special (step 26): the light all round him is the hit.
+    "Rapture": {"limb": "hand.L", "prop": True, "keys": _rapture_air},
+    "Rapture+": {"limb": "hand.L", "prop": True, "keys": _rapture_air},
     # The palm to the forehead, with the lead hand (the Bible is in the rear).
     "Laying On of Hands": {"limb": "hand.L", "palm": True},
     "Laying On of Hands (healing)": {"limb": "hand.L", "palm": True, "keys": _rapture},
