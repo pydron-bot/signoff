@@ -14,6 +14,18 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.50.0',
+    date: '2026-11-10',
+    title: 'Even Odds',
+    notes: [
+      'Every matchup is now winnable: against the CPU at hard and on the final fight, no fighter wins more than 70% against any other.',
+      'Health now balances the cast: Dale 990, Hollis 980, Gideon 970, Gus 960, Margaret 820, Mumbles 740 and Rox 660. The fast ones who combo hardest have the least to lose.',
+      "Gideon's collection plate hits lighter (26, 36 boosted).",
+      'The CPU knows its matchups and defends like a player: it ducks you if you throw it every time it gets up, keeps its guard when your string can carry on, and guards a projectile from further off the faster it flies.',
+      'The title fits a phone held sideways: a smaller logo, the menu in two even columns inside the screen, the version in the corner, and long choices shortened rather than cut off. The trial count is on the MOVE LIST row.',
+    ],
+  },
+  {
     version: '0.49.0',
     date: '2026-11-10',
     title: 'Every Bar Counts',

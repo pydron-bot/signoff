@@ -319,6 +319,21 @@ time and hard most of the time. DIRECTOR, Arcade's last fight only, has
 hard's reactions, converts nearly always and adapts fastest. Everything
 is seeded, so a match replays from its seed.
 
+**Styles and leans (0.50.0).** Each style's choices (strings, throws,
+specials, pokes, lows, approaching, retreating, waiting, guarding,
+jumping, mix-ups) are weighted options, and each fighter's CPU has a lean
+(`src/ai/lean.ts`) that scales those weights. Where a matchup needs it,
+the losing side has matchup knowledge too: a lean for that opponent only,
+searched to win that matchup, so the winner's play is never made worse to
+even things up (Gus against Rox mixes up more and throws less; Gideon
+presses Hollis instead of waiting; Rox stays out of Mumbles' reach and
+uses her specials; Mumbles strings Margaret rather than spending
+specials into her counter; Rox goes low on Margaret). On defence it
+learns what the opponent does to its getup and ducks a habitual throw
+(throws are highs), keeps its guard a moment after a blockstun when the
+attacker can carry on, and guards a projectile it sees coming from
+further away the faster it flies, including a returning one.
+
 ## Roster
 
 Version 1 ships 8 fighters; the first playable has 2 with opposite styles,
@@ -596,6 +611,13 @@ is pure, deterministic code that knows nothing about rendering.
   without a rewrite.
 - The CPU opponent sends inputs through the same interface as a player, so
   it can't cheat by reading state the player can't see.
+
+**Health is the balance between styles (0.50.0):** Dale 990, Gideon
+970, Hollis 980, Gus 960, Margaret 820, Mumbles 740, Rox 660. The fast
+fighters who convert hardest have the least to lose (Rox's routes reach
+the design's 30% from a 6-frame jab). Combos are measured as a share of
+1000 health whoever the dummy is, so health can change without moving
+the ceilings.
 
 **Balance is measured.** `npm run combos` holds every fighter's combos
 between the floor and the ceilings above. `npm run matchups` plays the

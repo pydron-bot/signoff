@@ -217,7 +217,7 @@ export const MARGARET: FighterData = {
   id: 'margaret',
   name: 'Margaret Okafor',
   style: 'footsies',
-  health: 900,
+  health: 820,
   walkFwd: fx(0.042),
   walkBack: fx(0.038),
   jumpVy: fx(0.2),

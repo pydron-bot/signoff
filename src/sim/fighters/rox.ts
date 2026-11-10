@@ -251,7 +251,7 @@ export const ROX: FighterData = {
   id: 'rox',
   name: 'Rox Vega',
   style: 'rushdown',
-  health: 1000,
+  health: 660,
   walkFwd: fx(0.06),
   walkBack: fx(0.04),
   jumpVy: fx(0.2),

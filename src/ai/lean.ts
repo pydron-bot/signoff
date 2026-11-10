@@ -24,6 +24,28 @@ export const LEANS: Readonly<Record<string, Lean>> = {
   gideon: EVEN,
 };
 
-export function leanOf(fighter: string): Lean {
-  return LEANS[fighter] ?? EVEN;
+/**
+ * Matchup knowledge: how the CPU leans playing a fighter against one
+ * opponent, where that matchup needs it. Only the losing side of a matchup
+ * the bench flagged has one, searched to win that matchup (the winner's
+ * play is left alone).
+ */
+export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean>>>> = {
+  gus: {
+    rox: { ...EVEN, string: 1.6, throw: 0.6, retreat: 0.6, mix: 2.5 },
+  },
+  gideon: {
+    hollis: { ...EVEN, string: 1.6, throw: 1.6, approach: 1.6, retreat: 0.6, wait: 0.6 },
+  },
+  rox: {
+    mumbles: { ...EVEN, string: 2.5, throw: 0.6, special: 2.5, approach: 0.6, guard: 0.6 },
+    margaret: { ...EVEN, low: 1.6 },
+  },
+  mumbles: {
+    margaret: { ...EVEN, string: 1.6, special: 0.6 },
+  },
+};
+
+export function leanOf(fighter: string, opponent = ''): Lean {
+  return MATCHUP_LEANS[fighter]?.[opponent] ?? LEANS[fighter] ?? EVEN;
 }

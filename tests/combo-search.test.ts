@@ -7,7 +7,7 @@
 // the move list's combo guides instead (src/game/comboRoutes.ts).
 import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, guideStart, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
+import { DAMAGE_CEILING, GUIDE_DUMMY as DUMMY, GUIDE_HEALTH, guideStart, pressBits, runGuide, type ComboGuide } from '../src/game/comboGuides';
 import { BAR, FIGHTERS, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
 
 const RUN = process.env.COMBOS === '1';
@@ -245,7 +245,7 @@ function route(moves: readonly string[]): string {
 const FIGHTER_ORDER = Object.keys(FIGHTERS);
 
 describe.skipIf(!RUN)('combo search (npm run combos)', () => {
-  const health = FIGHTERS[DUMMY].health;
+  const health = GUIDE_HEALTH;
   const rows: string[] = [];
   /** Each fighter's best human combo by bars, in %. */
   const humanPct: Record<string, Record<number, number>> = {};
@@ -286,7 +286,7 @@ describe.skipIf(!RUN)('combo search (npm run combos)', () => {
   it('writes docs/COMBOS.md', () => {
     writeFileSync(
       'docs/COMBOS.md',
-      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name} (${health} health), with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener still gives the whole combo 2 frames early or late, everything after it moved too, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three. The floor applies to the human routes: each bar spent, from none to one and from one to three, must add at least ${METER_FLOOR}%${Object.keys(METER_EXEMPT).length ? ` (excused: ${Object.entries(METER_EXEMPT).map(([id, why]) => `${FIGHTERS[id].name}, ${why}`).join('; ')})` : ''}.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
+      `# SIGN-OFF — best combos\n\nWritten by \`npm run combos\` (tests/combo-search.test.ts); do not edit by hand.\n\nThe most damaging unbroken combo the simulation allows for each fighter, from a point-blank hit midscreen against ${FIGHTERS[DUMMY].name}, measured as a share of ${health} health, with no meter, one bar and three bars. Found by a beam search over every normal, command normal, special and boosted special at every useful timing; the first-hit bonus bar is left out. Each is searched twice: *frame-perfect* (any timing) and *human* (every press after the opener still gives the whole combo 2 frames early or late, everything after it moved too, on top of the 8-frame input buffer). *Tightest press* is the narrowest window, in frames, of any press after the opener: 1–2 is frame-perfect play, 5 or more is comfortable. The ceilings apply to both: ${CEILING[0]}% with no meter, ${CEILING[1]}% with one bar, ${CEILING[3]}% with three. The floor applies to the human routes: each bar spent, from none to one and from one to three, must add at least ${METER_FLOOR}%${Object.keys(METER_EXEMPT).length ? ` (excused: ${Object.entries(METER_EXEMPT).map(([id, why]) => `${FIGHTERS[id].name}, ${why}`).join('; ')})` : ''}.\n\n| Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |\n| --- | --- | --- | --- | --- | --- | --- |\n${rows.join('\n')}\n`,
     );
   });
 });

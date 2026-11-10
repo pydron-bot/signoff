@@ -5,7 +5,7 @@
  * standing dummy. The move list shows them; a showcase session plays them.
  * No DOM here.
  */
-import { BAR, createMatch, fighterData, moveData, Input, step, type MatchState, type SimEvent } from '../sim';
+import { BAR, createMatch, moveData, Input, step, type MatchState, type SimEvent } from '../sim';
 import { fx } from '../sim/fixed';
 import { COMBO_ROUTES } from './comboRoutes';
 
@@ -21,7 +21,9 @@ export interface ComboGuide {
 
 /** Every guide is played against the same standing opponent, as the search measured it. */
 export const GUIDE_DUMMY = 'rox';
-/** The most a combo may take, as % of the dummy's health, by bars spent (the combo search checks every route against these). */
+/** Combos are measured as a share of this much health, whoever the dummy is, so a fighter's health can change without moving the ceilings. */
+export const GUIDE_HEALTH = 1000;
+/** The most a combo may take, as % of GUIDE_HEALTH, by bars spent (the combo search checks every route against these). */
 export const DAMAGE_CEILING: Readonly<Record<number, number>> = { 0: 33, 1: 42, 3: 52 };
 /** Frames the showcase holds after the last hit before it plays the combo again. */
 export const GUIDE_REST = 90;
@@ -151,5 +153,5 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
     move = a.mode === 'move' ? a.move : '';
     frame = a.mode === 'move' ? a.moveFrame : 0;
   }
-  return { steps, hits, pct: (dealt * 100) / fighterData(GUIDE_DUMMY).health, unbroken, end: lastHit };
+  return { steps, hits, pct: (dealt * 100) / GUIDE_HEALTH, unbroken, end: lastHit };
 }

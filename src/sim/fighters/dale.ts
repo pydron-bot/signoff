@@ -193,7 +193,7 @@ export const DALE: FighterData = {
   id: 'dale',
   name: 'Dale Storm',
   style: 'zoner',
-  health: 900,
+  health: 990,
   walkFwd: fx(0.04),
   walkBack: fx(0.042),
   jumpVy: fx(0.2),

@@ -21,7 +21,7 @@ function plate(speed: number, back: number, damage: number) {
     rehit: 14,
     collects: true,
     // Skimmed at chest height: duck it.
-    effect: { damage, height: 'high', hitstun: 18, blockstun: 14, push: 0.03, chip: 6 },
+    effect: { damage, height: 'high', hitstun: 18, blockstun: 14, push: 0.03, chip: 4 },
   });
 }
 
@@ -57,13 +57,13 @@ const moves = table(
     kind: 'special',
     total: 40,
     boost: 'Collection Plate+',
-    spawns: [{ frame: 14, projectile: plate(0.11, 26, 35) }],
+    spawns: [{ frame: 14, projectile: plate(0.11, 26, 26) }],
   }),
   move('Collection Plate+', {
     name: 'Collection Plate (boosted)',
     kind: 'special',
     total: 40,
-    spawns: [{ frame: 14, projectile: plate(0.15, 24, 45) }],
+    spawns: [{ frame: 14, projectile: plate(0.15, 24, 36) }],
   }),
   // A palm to the forehead. With a donation to spend, it heals him too.
   move('Laying On of Hands', {
@@ -191,7 +191,7 @@ export const GIDEON: FighterData = {
   id: 'gideon',
   name: 'Rev. Gideon Price',
   style: 'allrounder',
-  health: 950,
+  health: 940,
   walkFwd: fx(0.042),
   walkBack: fx(0.037),
   jumpVy: fx(0.2),

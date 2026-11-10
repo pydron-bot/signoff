@@ -318,7 +318,7 @@ describe('Technical Difficulties', () => {
   it('below 30% health, Block + Special starts it; on a hit the cinematic deals 30%, once a match', () => {
     const m = ready('rox', 'dale');
     place(m, -0.3, 0.3);
-    m.fighters[0].health = 250;
+    m.fighters[0].health = m.fighters[0].maxHealth >> 2;
     const ev = run(m, 200, presses({ 0: SPECIAL }, BLOCK));
     expect(count(ev, 'superStart')).toBe(1);
     expect(count(ev, 'superHit')).toBe(1);
@@ -333,7 +333,7 @@ describe('Technical Difficulties', () => {
     const m = ready('rox', 'dale');
     place(m, -2.5, 2.5);
     const a = m.fighters[0];
-    a.health = 250;
+    a.health = a.maxHealth >> 2;
     const ev = run(m, 60, presses({ 0: SPECIAL }, BLOCK));
     expect(count(ev, 'superStart')).toBe(1);
     expect(count(ev, 'superHit')).toBe(0);
@@ -350,7 +350,7 @@ describe('Technical Difficulties', () => {
   it('blocked, it chips and recharges too', () => {
     const m = ready('rox', 'dale');
     place(m, -0.3, 0.3);
-    m.fighters[0].health = 250;
+    m.fighters[0].health = m.fighters[0].maxHealth >> 2;
     const ev = run(m, 60, presses({ 0: SPECIAL }, BLOCK), BLOCK);
     expect(count(ev, 'block')).toBe(1);
     expect(m.fighters[0].tdUsed).toBe(false);
@@ -366,7 +366,7 @@ describe('Technical Difficulties', () => {
   it('the round clock stops during the cinematic', () => {
     const m = ready('rox', 'dale');
     place(m, -0.3, 0.3);
-    m.fighters[0].health = 250;
+    m.fighters[0].health = m.fighters[0].maxHealth >> 2;
     run(m, 20, presses({ 0: SPECIAL }, BLOCK));
     expect(m.fighters[0].mode).toBe('cinematic');
     const t = m.timer;

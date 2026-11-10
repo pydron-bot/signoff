@@ -17,7 +17,7 @@ import { createRng, nextInt, type RngState } from '../sim/rng';
 import { backToWall, stageFinisher } from '../sim/finisher';
 import { propInReach } from '../sim/stage';
 import { segmentData } from '../sim/stages';
-import { GUIDE_DUMMY } from '../game/comboGuides';
+import { GUIDE_HEALTH } from '../game/comboGuides';
 import { leanOf, type Choice } from './lean';
 import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_PRESS, AFTER_BLOCK_THROW, Habits, OKI_STRIKE, OKI_THROW, WAKE_ATTACK, WAKE_BLOCK, WAKE_JUMP, type Glimpse } from './habits';
 import { RouteRun, openerBits, routeAfter, routeOf, warm, type Opener } from './routes';
@@ -80,12 +80,12 @@ const ATTACK: Readonly<Record<string, number>> = { FP, BP, FK, BK };
 const ROUTE_SLACK = fx(0.05);
 /** A blocked attack is answered (duck, block, throw) only this soon after. */
 const READ_FRESH = 40;
-/** Within this of the opponent it waits behind a guard. */
-const IDLE_GUARD_RANGE = fx(1.8);
+/** Steps of a projectile's flight it guards ahead of (its reaction time and some). */
+const PROJECTILE_LEAD = 24;
 /** Steps a getup's guard or duck is held once it's up. */
 const WAKE_HOLD = 10;
 /** Steps it keeps its guard after a blockstun when they can carry on (a string, or close and plus). */
-const GUARD_ON = 10;
+const GUARD_ON = 6;
 
 /** What the CPU saw of its opponent on one frame. */
 interface Seen extends Glimpse {
@@ -98,6 +98,8 @@ interface Seen extends Glimpse {
   low: boolean;
   /** An opponent's projectile coming this way. */
   projectile: boolean;
+  /** One of their projectiles is on screen (anywhere). */
+  shotOut: boolean;
   /** Visibly stuck in the recovery of a move. */
   recovering: boolean;
   /** Frames left of the move they're in (0 if none): the animation shows how far through it they are. */
@@ -140,6 +142,7 @@ export class Cpu {
     threat: false,
     low: false,
     projectile: false,
+    shotOut: false,
     recovering: false,
     left: 0,
     unblockable: false,
@@ -198,8 +201,6 @@ export class Cpu {
   private blockedBy = '';
   /** The combo count it last weighed a Cut Away at. */
   private cutCombo = 0;
-  /** Between decisions it keeps a guard up when they're in reach (decided with each wait). */
-  private idleGuard = false;
   /** It was in blockstun on the step before, and the move it last blocked. */
   private inBlockstun = false;
   private lastBlocked = '';
@@ -380,12 +381,12 @@ export class Cpu {
     }
     if (this.wait > 0) {
       this.wait--;
-      return this.idleGuard ? this.guardBits(me, s) : 0;
+      // A projectile on its way: guard it (crouching under a high one), even between decisions.
+      return s.threat && s.shotOut ? BLOCK | (s.low ? DOWN : 0) : 0;
     }
     if (propInReach(m, me) >= 0 && this.roll(35)) this.start(tap(INTERACT));
     else this.decide(me, s);
     this.wait = this.level.think + nextInt(this.rng, this.level.think);
-    this.idleGuard = this.roll(this.level.block * leanOf(me.fighter).guard);
     return this.next0(me);
   }
 
@@ -455,7 +456,7 @@ export class Cpu {
       return this.next0(me);
     }
     // Their health bar, against what each route does to the guide's dummy.
-    const killPct = Math.floor((them.health * 100) / fighterData(GUIDE_DUMMY).health);
+    const killPct = Math.floor((them.health * 100) / GUIDE_HEALTH);
     const r = routeAfter(me.fighter, me.move, me.meter, this.spare(me, 1) && this.roll(this.level.boost), killPct);
     // Too far out for the route to hold together: the string it was in goes on instead.
     if (!r || Math.abs(them.x - me.x) > r.far + ROUTE_SLACK) return null;
@@ -654,14 +655,17 @@ export class Cpu {
       }
     }
     let projectile = false;
+    let shotOut = false;
     for (let p = 0; p < m.projectiles.length; p++) {
       const P = m.projectiles[p];
       if (!P.active || P.owner === this.player) continue;
       const pd = moveData(them.fighter, P.move).spawns[P.spawn].projectile;
-      // One that comes back (the plate) is still a threat once it's gone past.
-      if (Math.sign(me.x - P.x) !== P.dir && (pd.returnAfter === undefined || P.back)) continue;
+      shotOut = true;
       const near = Math.abs(P.x - me.x);
-      if (near < fx(2.2)) {
+      // One that comes back (the plate) is still a threat once it's gone past; one on top of it is a threat whichever way it's going.
+      if (Math.sign(me.x - P.x) !== P.dir && (pd.returnAfter === undefined || P.back) && near > fx(0.6)) continue;
+      // A fast one is a threat from further off: it's seen late, so the guard goes up while it's still on its way.
+      if (near < fx(1.2) + Math.abs(pd.vx) * PROJECTILE_LEAD) {
         threat = true;
         // Where it flies is on screen: one on the floor is blocked low, and a crouching guard goes under a high one.
         if (pd.effect.height === 'low' || pd.effect.height === 'high') low = true;
@@ -670,6 +674,7 @@ export class Cpu {
     }
     s.threat = threat;
     s.projectile = projectile;
+    s.shotOut = shotOut;
     s.low = low;
   }
 
@@ -719,7 +724,7 @@ export class Cpu {
       return;
     }
     // Up close, now and then the mix-up a route starts from: low against a standing guard, overhead against a crouching one.
-    const lean = leanOf(me.fighter);
+    const lean = leanOf(me.fighter, this.foe);
     if (dist < fx(1.0) && this.level.convert > 0 && this.roll(25 * lean.mix)) {
       this.start(this.opener(me, s.guarding ? (s.crouching ? 'overhead' : 'low') : this.roll(60) ? 'jab' : 'low'));
       return;
@@ -853,17 +858,6 @@ export class Cpu {
   }
 
   /**
-   * Between decisions, with them in reach and able to attack, a guard rather
-   * than standing there: crouching (a high goes over it, and the threat check
-   * stands it up for an overhead it sees coming).
-   */
-  private guardBits(me: FighterState, s: Seen): number {
-    if (Math.abs(s.x - me.x) > IDLE_GUARD_RANGE || s.recovering || s.y > fx(0.3)) return 0;
-    if (s.mode === 'down' || s.mode === 'getup' || s.mode === 'launched' || s.mode === 'hitstun') return 0;
-    return BLOCK | DOWN;
-  }
-
-  /**
    * Just out of a blockstun: keep blocking if they can carry on. The move it
    * blocked chains (a string goes on), or they're close and the move left
    * them ahead (a player learns which are plus). Not if they've shown they
@@ -885,10 +879,12 @@ export class Cpu {
    * guard, crouching mostly, with a duck now and then to keep them honest.
    */
   private wakeDefence(me: FighterState, s: Seen): number {
-    if (Math.abs(s.x - me.x) >= fx(1.6) || !this.roll((this.level.block * 3) / 5)) return 0;
+    if (Math.abs(s.x - me.x) >= fx(1.6)) return 0;
     const h = this.habits;
     const k = h.likely(h.oki, SURE);
+    // A read on its own: one who throws its getups gets the duck whether or not it would have guarded.
     if (k === OKI_THROW && this.roll(this.level.read)) return DOWN;
+    if (!this.roll((this.level.block * 3) / 5)) return 0;
     if (k === OKI_STRIKE) return this.roll(60) ? BLOCK | DOWN : BLOCK;
     if (this.roll(this.level.read / 4)) return DOWN;
     return this.roll(60) ? BLOCK | DOWN : BLOCK;
@@ -929,7 +925,7 @@ export class Cpu {
    * chosen, as making one can draw on the dice (a boost, a string).
    */
   private choose(me: FighterState, options: readonly Option[]): void {
-    const lean = leanOf(me.fighter);
+    const lean = leanOf(me.fighter, this.foe);
     let total = 0;
     for (const [c, w] of options) total += w * lean[c];
     if (total <= 0) return;

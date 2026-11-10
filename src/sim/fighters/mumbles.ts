@@ -184,7 +184,7 @@ export const MUMBLES: FighterData = {
   id: 'mumbles',
   name: 'Mister Mumbles',
   style: 'trickster',
-  health: 900,
+  health: 740,
   walkFwd: fx(0.055),
   walkBack: fx(0.05),
   jumpVy: fx(0.22),

@@ -187,7 +187,7 @@ export const HOLLIS: FighterData = {
   id: 'hollis',
   name: 'Hollis Bey',
   style: 'grappler',
-  health: 1050,
+  health: 980,
   walkFwd: fx(0.032),
   walkBack: fx(0.028),
   jumpVy: fx(0.18),

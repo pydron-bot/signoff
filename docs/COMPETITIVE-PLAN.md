@@ -7,11 +7,10 @@ the dash), 0.47.0 (rehearsal), 0.48.0 (the CPU) and 0.49.0 (the bench,
 the meter floor and a first tuning pass). Decisions taken by default:
 throws are ducked only by a neutral duck; the meter floor applies to
 everyone (Dale and Gideon got boosts to meet it); DIRECTOR is Arcade's
-last fight only. The bench (`docs/MATCHUPS.md`) still flags ten
-matchups worse than 30:70 at hard, mostly Rox and Mumbles over the
-slower styles; the first tuning pass found CPU blind spots (lows it
-didn't crouch-block, moves that travel past their hitbox) rather than
-data alone. Feature 5 (online) is not started. The plan as written
+last fight only. Since 0.50.0 the bench (`docs/MATCHUPS.md`) passes at
+hard and DIRECTOR: no matchup worse than 30:70, with health as the
+balance between styles and per-matchup CPU knowledge for the losing side
+of the matchups that needed it. Feature 5 (online) is not started. The plan as written
 follows.
 
 Five features that would make the fight deeper to play against people and

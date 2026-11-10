@@ -60,7 +60,7 @@ describe('training session', () => {
     expect(s.match.phase).toBe('fight');
     s.match.fighters[1].health = 500;
     for (let t = 0; t < 60; t++) s.tick(0, 0, ev);
-    expect(s.match.fighters[1].health).toBe(1000);
+    expect(s.match.fighters[1].health).toBe(s.match.fighters[1].maxHealth);
   });
 });
 
