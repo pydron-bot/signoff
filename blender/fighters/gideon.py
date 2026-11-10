@@ -355,7 +355,119 @@ def _rapture_air(st, base, mv):
             (26, out), (34, lerp_pose(out, base, 0.6).shaped(fist_L=0.3)), (mv["total"], base)]
 
 
+def _fall_from_grace(st, base, mv, fit):
+    """Fall from Grace (air, step 28): hanging arms wide and head back (1–8,
+    armoured and glowing when boosted), then down on them feet first and a
+    little forward from 9, the Bible raised over his head in both hands."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    wide = base.but(chest=(-20, -10, 0), head=(-34, -4, 0), spine=(-8, -10, 0),
+                    hand_L={"pos": s((0.4, -0.28, 1.8)), "aim": (0.5, -0.4, 0.8)},
+                    hand_R={"pos": s((-0.36, -0.24, 1.78)), "aim": (-0.5, -0.4, 0.8)}).shaped(fist_L=0.0, open_L=1.0, fist_R=0.6, jaw=0.7)
+    raised = {"hand_R": {"pos": s((-0.06, 0.12, 1.98)), "aim": (0.5, 0.2, 0.85), "hint": (0, 1, 0)},
+              "hand_L": {"pos": s((0.1, 0.14, 1.98)), "aim": (-0.5, 0.2, 0.85), "hint": (0, 1, 0)}}
+    drop = base.but(hips={"offset": (0, 0.04 * k, 0), "turn": (6, st.hips_yaw, 0)}, chest=(-6, -16, 0), head=(6, -6, 0), **raised,
+                    foot_L={"pos": s((0.1, 0.18, 0.04)), "aim": (0, 0.3, -0.95), "hint": (0, 0.95, 0.3)}, toe_L=(0, 0, 0), knee_L=s((0.1, 0.8, 0.5)),
+                    foot_R={"pos": s((-0.1, 0.0, 0.16)), "turn": (40, -30, 0)}, knee_R=s((-0.1, 0.6, 0.55))).shaped(fist_L=0.0, open_L=0.3, fist_R=0.6, jaw=1.0)
+    drop = fit.place(drop, "foot.L", (min(x1 - 0.3, 0.2), y0 + 0.15))
+    return [(4, lerp_pose(base, wide, 0.7).shaped(**wide.parts["shapes"])), (8, wide.but(head=(-38, -4, 0))), (h0 - 1, lerp_pose(wide, drop, 0.6).shaped(**drop.parts["shapes"])),
+            (h0, drop), (h1, drop.but(head=(10, -6, 0))), (mv["total"], drop)]
+
+
+def _begone(boosted):
+    def keys(st, base, mv, fit):
+        """Begone (step 28): the lead palm drawn right back, then thrust to
+        their forehead with all his weight behind it on 13–15; boosted, dug
+        in through the armour (1–12) and the palm driving up."""
+        s, k = st.s, st.k
+        h0, h1 = mv["hits"][0]["frames"]
+        total = mv["total"]
+        x0, x1, y0, y1 = mv["hits"][0]["box"]
+        lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+        palm = {"aim": (0, 0.3, 1), "hint": (0, 1, 0)}
+        wind = base.but(hips={"offset": (0, -0.12 * k, -(st.drop + (0.1 if boosted else 0.05)) * k), "turn": (-4, st.hips_yaw + 24, 0)}, chest=(-8, 22, 0),
+                        shoulder_L=(-8, 22, 0), shoulder_R=(-8, 22, 0), head=(-10, -14, 0),
+                        hand_L={"pos": s((0.26, -0.2, 1.4)), **palm}).shaped(fist_L=0.0, open_L=0.8, jaw=0.4)
+        thrust = base.but(hips={"offset": (0, 0.26 * k, -(st.drop + 0.03) * k), "turn": (8, st.hips_yaw - 34, 0)}, spine=(8, -48, 0), chest=(12, -66, 0),
+                          shoulder_L=(12, -66, 0), shoulder_R=(12, -66, 0), head=(2, -12, 0),
+                          hand_L={"pos": s((0.08, 0.85, 1.45)), **palm},
+                          foot_L=moved(lf, s((0, 0.26, 0))), foot_R=moved(rf, s((0, 0.06, 0.03)), (22, rf["turn"][1], 0))).shaped(fist_L=0.0, open_L=0.5, jaw=1.0)
+        hit = fit.place(thrust, "hand.L", (x1 - 0.12, y0 + 0.6 * (y1 - y0)))
+        end = fit.place(added(thrust, hips={"offset": (0, 0.02 * k, 0.04 * k if boosted else 0)}, chest=(-10 if boosted else 0, 0, 0)), "hand.L",
+                        (x1 - 0.1, y1 - 0.1 if boosted else y0 + 0.65 * (y1 - y0)))
+        carry = added(end, hips={"offset": (0, 0.06 * k, -0.03 * k)}, chest=(8, 0, 0), head=(6, 0, 0))
+        return [(4, lerp_pose(base, wind, 0.6).shaped(**wind.parts["shapes"])), (9, wind), (h0 - 2, toward(wind, base, -0.06)),
+                (h0 - 1, lerp_pose(wind, hit, 0.6).shaped(**hit.parts["shapes"])), (h0, hit), (h1, end), (h1 + 4, carry), (h1 + 9, carry),
+                (h1 + 17, lerp_pose(carry, base, 0.6).shaped(open_L=0.3)), (total, base)]
+    return keys
+
+
+def _slain(st, base, mv, fit):
+    """Slain in the Spirit (Laying On of Hands BK, step 28): from the palm
+    on their forehead, a push up and back, onto his toes, the head thrown
+    back in rapture as they go up."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    palm = {"aim": (0, 0.3, 1), "hint": (0, 1, 0)}
+    toes = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
+    on = base.but(hips={"offset": (0, 0.1 * k, -(st.drop + 0.06) * k), "turn": (6, st.hips_yaw - 20, 0)}, chest=(10, -50, 0), shoulder_L=(10, -50, 0),
+                  shoulder_R=(10, -50, 0), head=(4, -10, 0), hand_L={"pos": s((0.08, 0.6, 1.2)), **palm}).shaped(fist_L=0.0, open_L=0.6, jaw=0.3)
+    push = base.but(root={"offset": (0, 0, 0.04 * k)}, hips={"offset": (0, 0.16 * k, -st.drop * 0.5 * k), "turn": (-6, st.hips_yaw - 30, 0)},
+                    chest=(-14, -60, 0), shoulder_L=(-14, -60, 0), shoulder_R=(-14, -60, 0), head=(-30, -12, 0),
+                    hand_L={"pos": s((0.08, 0.7, 1.5)), **palm}, **toes).shaped(win=0.6, fist_L=0.0, open_L=0.8, jaw=1.0)
+    hit = fit.place(on, "hand.L", (x0 + 0.55 * (x1 - x0), y0 + 0.4 * (y1 - y0)))
+    up = fit.place(push, "hand.L", (x0 + 0.5 * (x1 - x0), y1 - 0.1))
+    settle = up.but(root={"offset": (0, 0, 0)}, foot_L=base.parts["foot_L"], foot_R=base.parts["foot_R"])
+    return [(4, on.but(hips={"offset": (0, 0.06 * k, -(st.drop + 0.1) * k), "turn": (6, st.hips_yaw - 20, 0)})), (h0 - 1, lerp_pose(on, hit, 0.5)), (h0, hit), (h1, up),
+            (h1 + 4, up.but(head=(-36, -12, 0))), (h1 + 10, settle), (total - 4, lerp_pose(settle, base, 0.6)), (total, base)]
+
+
+def _benediction(st, base, mv, fit):
+    """Benediction (j.BP FP, step 28): a blessing raised under them, the lead
+    palm swept up from his hip, low on 5 to high on 8."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    palm = {"aim": (0, 0.3, 1), "hint": (0, 1, 0)}
+    drawn = base.but(chest=(12, 10, 0), hand_L={"pos": s((0.24, -0.05, 0.9)), "aim": (0.2, -0.2, -0.9)}).shaped(fist_L=0.0, open_L=0.5)
+    low = fit.place(base.but(chest=(6, -30, 0), hand_L={"pos": s((0.12, 0.5, 0.9)), "aim": (0, 0.8, 0.5), "hint": (0, 0, 1)}).shaped(fist_L=0.0, open_L=0.8, jaw=0.5),
+                    "hand.L", (x0 + 0.5 * (x1 - x0), y0 + 0.4))
+    high = fit.place(base.but(chest=(-14, -36, 0), head=(-20, -6, 0), hand_L={"pos": s((0.12, 0.4, 1.3)), **palm}).shaped(win=0.6, fist_L=0.0, open_L=0.8, jaw=0.9),
+                     "hand.L", (x0 + 0.4 * (x1 - x0), y1 - 0.15))
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, high), (mv["total"], lerp_pose(high, base, 0.6))]
+
+
+def _smite(st, base, mv, fit):
+    """Smite from Above (j.BP BK, step 28): the Bible raised high in both
+    hands and brought down through the spike box, high on 6 to low on 9."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+
+    def both(p):
+        r = p.parts["hand_R"]["pos"]
+        return p.but(hand_L={**p.parts["hand_R"], "pos": (r[0] + 0.12 * k, r[1], r[2])}).shaped(fist_L=0.0, open_L=0.4)
+
+    up = both(base.but(chest=(-16, -14, 0), head=(-20, 0, 0), hand_R={"pos": s((-0.04, -0.05, 2.02)), "aim": (0, -0.4, 0.9), "hint": (0, 1, 0)})).shaped(jaw=0.5)
+    high = both(fit.place(base.but(chest=(2, -20, 0), hand_R={"pos": s((-0.04, 0.45, 1.6)), "aim": (0, 0.8, -0.3), "hint": (0, 1, 0)}), "hand.R",
+                          (x0 + 0.5 * (x1 - x0), y1 - 0.3))).shaped(jaw=1.0)
+    low = both(fit.place(base.but(chest=(38, -20, 0), spine=(14, -10, 0), head=(26, 0, 0), hand_R={"pos": s((-0.04, 0.45, 0.7)), "aim": (0, 0.3, -0.95), "hint": (0, 1, 0)}),
+                         "hand.R", (x0 + 0.45 * (x1 - x0), 0.55))).shaped(jaw=1.0)
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Fall from Grace": {"limb": "foot.L", "keys": _fall_from_grace},
+    "Begone": {"limb": "hand.L", "palm": True, "keys": _begone(False)},
+    "Begone+": {"limb": "hand.L", "palm": True, "keys": _begone(True)},
+    "Laying On of Hands BK": {"limb": "hand.L", "palm": True, "keys": _slain},
+    "j.BP FP": {"limb": "hand.L", "palm": True, "keys": _benediction},
+    "j.BP BK": {"limb": "hand.R", "keys": _smite},
     # Air special (step 26): the light all round him is the hit.
     "Rapture": {"limb": "hand.L", "prop": True, "keys": _rapture_air},
     "Rapture+": {"limb": "hand.L", "prop": True, "keys": _rapture_air},
