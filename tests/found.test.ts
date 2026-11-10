@@ -16,6 +16,7 @@ describe('found cancellations', () => {
     expect(humanSide('versus', 1)).toBe(true);
     expect(humanSide('replay', 0)).toBe(false);
     expect(humanSide('demo', 0)).toBe(false);
+    expect(humanSide('watch', 0)).toBe(false);
     expect(humanSide('showcase', 0)).toBe(false);
   });
 });

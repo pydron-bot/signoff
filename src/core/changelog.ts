@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.55.0',
+    date: '2026-11-10',
+    title: 'CPU vs CPU',
+    notes: [
+      'CPU VS CPU on the title screen: pick both fighters and the stage, set each side\'s CPU from Easy up to the Director, and sit back with the health bars, the announcer and the cold open. Random Match picks two fighters and a stage for you.',
+      'Pause to play it at half or double speed, show the hit boxes (B on a keyboard), or start the same match again; afterwards, a rematch or another random match. Watching never replaces your last match\'s replay.',
+    ],
+  },
+  {
     version: '0.54.0',
     date: '2026-11-10',
     title: 'Loose Ends',

@@ -16,8 +16,12 @@ import { LessonRun, lesson } from './lessons';
 import { ReplayPlayer, ReplayRecorder, type Replay } from './replay';
 import { TrialTracker, trial, trialOf } from './trials';
 
-/** demo: CPU against CPU, behind the title screen. replay: a recorded match played back. showcase: a combo guide played on a loop. */
-export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'replay' | 'showcase';
+/**
+ * demo: CPU against CPU, behind the title screen. watch: CPU against CPU,
+ * chosen and watched as a match. replay: a recorded match played back.
+ * showcase: a combo guide played on a loop.
+ */
+export type Mode = 'cpu' | 'training' | 'versus' | 'demo' | 'watch' | 'replay' | 'showcase';
 /** Who plays player 2 in training: the dummy (dummy.ts) or the CPU. */
 export type Control = 'dummy' | 'cpu';
 export const CONTROLS: readonly Control[] = ['dummy', 'cpu'];
@@ -45,6 +49,8 @@ export interface SessionOptions {
   /** Weather at Eleven if not given. */
   stage?: string;
   level: CpuLevel;
+  /** Demo and watch: player 1's CPU level (`level` if not given). */
+  level1?: CpuLevel;
   seed: number;
   /** Studio rules: one segment, hazards off. */
   studio?: boolean;
@@ -119,7 +125,7 @@ export class Session {
     const studio = o.studio === true;
     this.recorder = o.mode === 'cpu' || o.mode === 'versus' ? new ReplayRecorder(o.version ?? '', { p1: o.p1, p2: o.p2, stage: this.match.stage, seed: o.seed, studio }) : null;
     this.cpu = options.mode === 'versus' || options.mode === 'showcase' || this.player ? null : new Cpu(1, options.level, options.seed);
-    this.cpu1 = options.mode === 'demo' ? new Cpu(0, options.level, options.seed * 7 + 1) : null;
+    this.cpu1 = options.mode === 'demo' || options.mode === 'watch' ? new Cpu(0, options.level1 ?? options.level, options.seed * 7 + 1) : null;
     if (options.mode === 'training') {
       // Straight to the fight, and remember it for resets.
       const ev: SimEvent[] = [];

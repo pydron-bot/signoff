@@ -39,6 +39,33 @@ describe('CPU', () => {
   });
 });
 
+describe('CPU VS CPU', () => {
+  const finish = (s: Session, p1: number, p2: number) => {
+    const ev: SimEvent[] = [];
+    for (let t = 0; t < 40000 && s.match.phase !== 'over'; t++) s.tick(p1, p2, ev);
+    return s.match;
+  };
+
+  it('both sides are the CPU: the players\' inputs change nothing, and it plays to the end', () => {
+    const opts = { mode: 'watch', p1: 'gus', p2: 'margaret', level: 'normal', level1: 'hard', seed: 9 } as const;
+    const quiet = finish(new Session(opts), 0, 0);
+    expect(quiet.phase).toBe('over');
+    expect(finish(new Session(opts), Input.FP | Input.RIGHT, Input.BLOCK | Input.DOWN)).toEqual(quiet);
+  });
+
+  it('each side plays at its own level', () => {
+    const opts = { mode: 'watch', p1: 'dale', p2: 'rox', level: 'easy', seed: 5 } as const;
+    const levels = (level1: 'easy' | 'director') => finish(new Session({ ...opts, level1 }), 0, 0);
+    expect(levels('director')).not.toEqual(levels('easy'));
+    // Without level1, player 1 plays at `level` too.
+    expect(finish(new Session(opts), 0, 0)).toEqual(levels('easy'));
+  });
+
+  it('is not recorded: the last match kept for replays stays the player\'s', () => {
+    expect(new Session({ mode: 'watch', p1: 'dale', p2: 'rox', level: 'normal', seed: 1 }).recording()).toBeNull();
+  });
+});
+
 describe('training session', () => {
   it('starts in the fight with no clock, and shows frame advantage', () => {
     const s = new Session({ mode: 'training', p1: 'dale', p2: 'rox', level: 'normal', seed: 1 });
