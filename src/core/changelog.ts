@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.42.0',
+    date: '2026-11-10',
+    title: 'Airborne',
+    notes: [
+      "Every air special has its own animation: Dale's umbrella up as the hail comes down, Rox's heel-first dive, Mumbles dropping feet first after his strings snap, Hollis sweeping the floor with his flashlight, Margaret cutting straight across, Gus's cleaver toss and Gideon's rapture.",
+    ],
+  },
+  {
     version: '0.41.0',
     date: '2026-11-10',
     title: 'Studio Audience',

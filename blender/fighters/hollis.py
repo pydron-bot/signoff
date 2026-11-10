@@ -208,7 +208,21 @@ class STANCE(Stance):
         return [(1, relaxed), (16, cap), (28, cap), (44, crack), (52, push), (58, crack), (66, push), (80, base), (90, base)]
 
 
+def _searchlight(st, base, mv):
+    """Searchlight (air): hanging there, the flashlight swept down across the
+    floor in front of him on the hits (from near to far)."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    up = base.but(chest=(-4, -20, 0), hand_R={"pos": s((-0.1, 0.25, 1.4)), "aim": (0, 0.4, 0.9)}).shaped(fist_R=0.8)
+    near = base.but(chest=(24, -10, 0), head=(26, 0, 0), hand_R={"pos": s((-0.1, 0.5, 0.8)), "aim": (0, 0.3, -0.95)}).shaped(fist_R=0.8, jaw=0.5)
+    far = near.but(chest=(12, -10, 0), head=(14, 0, 0), hand_R={"pos": s((-0.1, 0.68, 0.98)), "aim": (0, 0.85, -0.5)})
+    return [(6, up), (h0 - 2, near), (h0, near), (h1, far), (h1 + 6, far), (mv["total"], base)]
+
+
 OVERRIDES = {
+    # Air special (step 26): the beam is the hit; the hand sweeps it.
+    "Searchlight": {"limb": "hand.R", "prop": True, "keys": _searchlight},
+    "Searchlight+": {"limb": "hand.R", "prop": True, "keys": _searchlight},
     # The beam and the chain make these hits (effects); the hand points them.
     "Flashlight": {"limb": "hand.R", "prop": True},
     "Key Ring": {"limb": "hand.R", "prop": True},

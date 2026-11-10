@@ -1268,6 +1268,8 @@ themselves even in clips nobody hand-keys:
 
 ### 26. Air specials (Nov 9, game side)
 
+*Done (Nov 10): all seven, both versions; out of `ART_PENDING`. Notes under* Air specials (Nov 10, art side) *in Feedback.*
+
 Every fighter has a special in the air now (Special while jumping, once a
 jump), with a boosted version, and air strings that chain one jumping
 normal into another. The air strings reuse the jumping normals' clips; the
@@ -1276,29 +1278,29 @@ in brackets (`STAND_INS`, `ART_PENDING` in `src/render/pose.ts`). The
 boosted clip (`+`) can be the plain one with more on it, as elsewhere.
 Frames, hitboxes, hovers and dives are in the clip table below.
 
-- [ ] `dale:Downpour`, `Downpour+` (34 frames; stand-in `j.BP`): the
+- [x] `dale:Downpour`, `Downpour+` (34 frames; stand-in `j.BP`): the
   umbrella opens over his head and he hangs there (frames 1–16, 1–20
   boosted), the free arm hurling hail down and forward on 12 (and 15 and
   18 boosted).
-- [ ] `rox:Aerobic Dive`, `Aerobic Dive+` (40 frames; stand-in `j.FK`): a
+- [x] `rox:Aerobic Dive`, `Aerobic Dive+` (40 frames; stand-in `j.FK`): a
   beat's pause (1–5), then down at 45° heel first from 6, the other leg
   tucked, arms swept back; it's cut short when she lands.
-- [ ] `mumbles:Cut the Strings`, `Cut the Strings+` (34 frames; stand-in
+- [x] `mumbles:Cut the Strings`, `Cut the Strings+` (34 frames; stand-in
   `Strings Attached`): the strings snap and he's gone (off screen 5–15),
   back behind them at the same height on 12, hanging limp, then dropping
   feet first from 16.
-- [ ] `hollis:Searchlight`, `Searchlight+` (38 frames; stand-in
+- [x] `hollis:Searchlight`, `Searchlight+` (38 frames; stand-in
   `Flashlight`): he hangs in the air (1–22) and sweeps the flashlight
   down across the floor in front of him, 12–16. The beam effect
   (`fx_flashlight_beam`) can be reused, aimed down.
-- [ ] `margaret:On the Wire`, `On the Wire+` (32 frames; stand-in
+- [x] `margaret:On the Wire`, `On the Wire+` (32 frames; stand-in
   `Breaking`): she hangs at the height she's at and shoots straight across
   (6–16), the cue cards held out like a blade, hitting on 8–14 (two hits
   boosted, 8–10 and 13–15).
-- [ ] `gus:Cleaver Toss`, `Cleaver Toss+` (32 frames; stand-in `Mise en
+- [x] `gus:Cleaver Toss`, `Cleaver Toss+` (32 frames; stand-in `Mise en
   Place`): a cleaver thrown down and forward from the air on 10 (and 14
   boosted), hanging there 1–12.
-- [ ] `gideon:Rapture`, `Rapture+` (40 frames; stand-in `Fire and
+- [x] `gideon:Rapture`, `Rapture+` (40 frames; stand-in `Fire and
   Brimstone`): arms out, head back, hanging (1–26), the light going off all
   round him on 14–20; armoured 1–13 boosted (glows).
 
@@ -1783,3 +1785,11 @@ worked into the move data, and the table above updates itself.
   - The streetlight is a small spot in the window's reveal (in front of the painted street, which would shadow one further out), shining down through the blinds: bars across the coffee table, the rug and the floor, in `room-light.png`, named in a one-segment `lights` rig (`lightMapFile`, `lightMap` 1.5) like the stages. The street outside glows (0.8, the lamp 3), and so does the VCR's clock (1.5), at 3:33.
   - Light from the screen is left to the game, as the spec says. In my renders a dim blue point light at the screen with the light map doubled read right; the scale question from *Light maps* applies here too.
   - The font in `lib/paint.py` gained `X` and `:` (EXIT, 3:33).
+- **Air specials (Nov 10, art side).** Step 26 done: all fourteen clips at their exact lengths, every strike in its box, `npm test` passing; the fourteen entries are out of `ART_PENDING` in `src/render/pose.ts`. Notes for the game side:
+  - Dale, Downpour: hand-keyed (`_downpour`); the umbrella (the `umbrella` key, shown 1–16, 1–20 boosted) held straight up over his head, the free hand winding up and hurling down and forward on 12 (and 15 and 18 boosted). The umbrella is the closed one from s.BK: it doesn't open.
+  - Rox, Aerobic Dive: hand-keyed (`_dive`); arms up for the beat's pause (1–5), then heel first from 7 (the lead foot makes the hit), the other leg tucked, the arms swept back, held to the end.
+  - Mumbles, Cut the Strings: the teleport style with the lead foot: hidden 5–15, dropping feet first on the hits.
+  - Hollis, Searchlight: hand-keyed (`_searchlight`), `prop` (the beam is the hit): the flashlight raised, then the arm thrown down and forward on 12 and lifted toward the far end by 16 (a sweep from near to far). The arm is at full stretch: the hand can't get as low as the beam's start, so the beam should come from the hand, aimed down, as `fx_flashlight_beam` already does.
+  - Margaret, On the Wire: generated with the rear hand (both hands taking turns, boosted); the script pages stay in the lead hand.
+  - Gus, Cleaver Toss: generated (the spawn shape): the cleaver hand out on 10.
+  - Gideon, Rapture: hand-keyed (`_rapture_air`), `prop`: the head back and the arms up and back, not out to the sides (the camera looks along his side, so arms out would vanish behind him), Bible high.

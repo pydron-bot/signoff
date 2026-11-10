@@ -203,7 +203,28 @@ class STANCE(Stance):
         return [(1, relaxed), (16, up), (32, up.but(spine=(0, 0, 10), chest=(0, -6, 20))), (48, up.but(spine=(0, 0, -10), chest=(0, -6, -20))), (60, up), (80, base), (90, base)]
 
 
+def _dive(st, base, mv):
+    """Aerobic Dive (air): a beat's pause, arms up (1–5), then down at 45°
+    heel first from 6, the lead leg out straight, the other tucked, arms
+    swept back; the game cuts it short when she lands."""
+    s, k = st.s, st.k
+    pause = base.but(chest=(-8, 0, 0), head=(-10, 0, 0),
+                     hand_L={"pos": s((0.18, 0.05, 1.95)), "aim": (0.1, 0.1, 1)},
+                     hand_R={"pos": s((-0.18, 0.05, 1.95)), "aim": (-0.1, 0.1, 1)}).shaped(open_L=0.6, open_R=0.6, jaw=0.4)
+    dive = base.but(hips={"offset": (0, 0, -0.12 * k), "turn": (-20, st.hips_yaw, 0)}, spine=(8, 0, 0), chest=(14, 0, 0), head=(10, 0, 0),
+                    foot_L={"pos": s((0.1, 0.5, 0.18)), "aim": (0, 0.7, -0.7)},
+                    foot_R={"pos": s((-0.12, -0.05, 0.62)), "turn": (40, -20, 0)},
+                    knee_L=s((0.1, 0.9, 0.6)), knee_R=s((-0.12, 0.6, 0.9)),
+                    hand_L={"pos": s((0.22, -0.45, 1.0)), "aim": (0.2, -0.8, -0.3)},
+                    hand_R={"pos": s((-0.22, -0.45, 1.0)), "aim": (-0.2, -0.8, -0.3)}).shaped(fist_L=0.0, fist_R=0.0, open_L=0.8, open_R=0.8, jaw=0.7)
+    h0, h1 = mv["hits"][0]["frames"]
+    return [(3, pause), (5, pause), (h0, dive), (h1, dive.but(head=(14, 0, 0))), (mv["total"], dive)]
+
+
 OVERRIDES = {
+    # Air special (step 26): heel first at 45°, the lead leg making the hit.
+    "Aerobic Dive": {"limb": "foot.L", "keys": _dive},
+    "Aerobic Dive+": {"limb": "foot.L", "keys": _dive},
     "Leg Warmer Lariat": {"style": "spin"},
     "Count of Eight": {"limb": "foot.L"},
     "Star Jump": {"style": "hop", "limb": "hand.L"},

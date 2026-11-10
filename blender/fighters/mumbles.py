@@ -276,6 +276,9 @@ class STANCE(Stance):
 
 
 OVERRIDES = {
+    # Air special (step 26): gone, then dropping feet first from behind.
+    "Cut the Strings": {"style": "teleport", "limb": "foot.L"},
+    "Cut the Strings+": {"style": "teleport", "limb": "foot.L"},
     "Strings Attached": {"style": "teleport", "limb": "hand.R"},
     "Exit Stage Left": {"style": "teleport"},
     "Knock-Knock": {"style": "knock", "limb": "hand.R"},

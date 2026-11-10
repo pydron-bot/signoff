@@ -242,6 +242,9 @@ class STANCE(Stance):
 
 
 OVERRIDES = {
+    # Air special (step 26): straight across, the cue cards out like a blade.
+    "On the Wire": {"limb": "hand.R"},
+    "On the Wire+": {"alt": ["hand.R", "hand.L"]},
     # A sharp, fast straight with the rear hand; the boosted one follows with the lead.
     "Breaking": {"limb": "hand.R"},
     "Breaking+": {"alt": ["hand.R", "hand.L"]},
