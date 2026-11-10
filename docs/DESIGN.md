@@ -380,7 +380,9 @@ match kept for WATCH REPLAY stays the player's.
 VIEW ON THE TV (0.56.0) keeps it on the living room's TV, seen from the
 sofa as on the title, with the HUD hidden; a tap or Esc opens the menu.
 ENDLESS gives the winner five seconds, then starts the next random match
-with no results menu; a tap or Esc between matches stops it.
+with no results menu; a tap or Esc between matches stops it. While it
+runs (not paused) a screen wake lock keeps the display on (0.57.0,
+`src/core/screenAwake.ts`).
 
 **Styles and leans (0.50.0).** Each style's choices (strings, throws,
 specials, pokes, lows, approaching, retreating, waiting, guarding,

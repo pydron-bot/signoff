@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.57.0',
+    date: '2026-11-10',
+    title: 'Insomnia',
+    notes: [
+      "With Endless on, CPU VS CPU keeps your screen from dimming and locking, so the channel can play all night. Pause, or leave CPU VS CPU, and the screen sleeps as usual again.",
+    ],
+  },
+  {
     version: '0.56.0',
     date: '2026-11-10',
     title: 'Up All Night',
