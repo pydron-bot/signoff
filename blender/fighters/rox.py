@@ -348,7 +348,73 @@ def _five_six(st, base, mv, fit):
             (total, base)]
 
 
+def _splits_drop(st, base, mv, fit):
+    """Splits Drop (air, step 28): hanging with the knees tucked and the arms
+    up (1–4), then straight down into the full splits, a heel each side
+    (the lead one checked in the box), arms out in a V; the game cuts it
+    short when she lands."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    tuck = base.but(foot_L={"pos": s((0.11, 0.12, 0.5)), "turn": (30, -15, 0)}, foot_R={"pos": s((-0.12, -0.06, 0.46)), "turn": (30, -40, 0)},
+                    knee_L=s((0.11, 0.8, 1.0)), knee_R=s((-0.12, 0.7, 0.95)), chest=(-6, -10, 0), head=(-10, 0, 0),
+                    hand_L={"pos": s((0.2, 0.05, 1.95)), "aim": (0.2, 0.1, 1)}, hand_R={"pos": s((-0.2, 0.05, 1.95)), "aim": (-0.2, 0.1, 1)}
+                    ).shaped(fist_L=0.0, fist_R=0.0, open_L=0.6, open_R=0.6, jaw=0.3)
+    split = base.but(hips={"offset": (0, 0.02 * k, -0.5 * k), "turn": (-4, st.hips_yaw * 0.5, 0)}, spine=(2, -18, 0), chest=(-4, -20, 0),
+                     shoulder_L=(-4, -20, 0), shoulder_R=(-4, -20, 0), neck=(-4, -10, 0), head=(-6, -4, 0),
+                     foot_L={"pos": s((0.08, 0.7, 0.2)), "aim": (0, 0.96, -0.28), "hint": (0, 0.28, 0.96)}, knee_L=s((0.08, 0.5, 1.2)), toe_L=(0, 0, 0),
+                     foot_R={"pos": s((-0.1, -0.66, 0.2)), "aim": (0, -0.96, -0.28), "hint": (0, 0.28, -0.96)}, knee_R=s((-0.1, -0.5, -0.6)), toe_R=(0, 0, 0),
+                     hand_L={"pos": s((0.42, 0.24, 1.5)), "aim": (0.6, 0.3, 0.75)},
+                     hand_R={"pos": s((-0.42, -0.2, 1.5)), "aim": (-0.6, -0.3, 0.75)}).shaped(fist_L=0.0, fist_R=0.0, open_L=0.9, open_R=0.9, jaw=0.8)
+    split = fit.place(split, "foot.L", (min(x1 - 0.15, 0.62), y0 + 0.4 * (y1 - y0)))
+    return [(2, lerp_pose(base, tuck, 0.6).shaped(**tuck.parts["shapes"])), (4, tuck), (h0 - 1, lerp_pose(tuck, split, 0.6).shaped(**split.parts["shapes"])),
+            (h0, split), (h1, split.but(head=(-10, -4, 0))), (mv["total"], split)]
+
+
+def _air_clap(st, base, mv, fit):
+    """Air Clap (j.BP FP, step 28): the hands thrown wide, then clapped
+    together high in front of her (over their heads) on the hits."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    wide = base.but(chest=(-8, -14, 0), head=(-8, 0, 0), hand_L={"pos": s((0.5, 0.0, 1.6)), "aim": (0.6, 0.2, 0.75)},
+                    hand_R={"pos": s((-0.5, -0.05, 1.6)), "aim": (-0.6, 0.2, 0.75)}).shaped(fist_L=0.0, fist_R=0.0, open_L=0.8, open_R=0.8, jaw=0.3)
+    clap = base.but(chest=(-10, -18, 0), head=(-14, 0, 0),
+                    hand_R={"pos": s((-0.03, 0.3, 1.9)), "aim": (0.1, 0.3, 0.95), "hint": (1, 0, 0)},
+                    hand_L={"pos": s((0.03, 0.3, 1.9)), "aim": (-0.1, 0.3, 0.95), "hint": (-1, 0, 0)}).shaped(fist_L=0.0, fist_R=0.0, open_L=0.2, open_R=0.2, jaw=0.7)
+    clap = fit.place(clap, "hand.R", (x0 + 0.35 * (x1 - x0), y1 - 0.08))
+    r = clap.parts["hand_R"]["pos"]
+    clap = clap.but(hand_L={**clap.parts["hand_L"], "pos": (r[0] + 0.06 * k, r[1], r[2])})
+    return [(3, wide), (h0 - 1, lerp_pose(wide, clap, 0.75)), (h0, clap), (h1, clap), (h1 + 3, lerp_pose(clap, wide, 0.4)), (mv["total"], base)]
+
+
+def _heel_drop(st, base, mv, fit):
+    """Heel Drop (j.FK BK, step 28): an axe kick in the air, the lead leg
+    swung up straight over her head, then the heel brought straight down
+    through the spike box, high on 6 to low on 9."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    arms = {"hand_L": {"pos": s((0.3, -0.2, 1.4)), "aim": (0.4, -0.6, 0.4)}, "hand_R": {"pos": s((-0.3, -0.25, 1.35)), "aim": (-0.4, -0.6, 0.4)}}
+    lean = base.but(hips={"offset": (0, -0.04 * k, 0), "turn": (-24, st.hips_yaw, 0)}, chest=(-16, -24, 0), head=(-6, 0, 0), **arms).shaped(
+        fist_L=0.0, fist_R=0.0, open_L=0.6, open_R=0.6, jaw=0.4)
+    up = lean.but(foot_L={"pos": s((0.11, 0.3, 1.85)), "aim": (0, 0.3, 0.95), "hint": (0, -0.95, 0.3)}, knee_L=s((0.11, 0.9, 1.8)), toe_L=(0, 0, 0))
+    high = fit.place(up.but(foot_L={"pos": s((0.11, 0.45, 1.6)), "aim": (0, 0.9, 0.4), "hint": (0, -0.4, 0.9)}), "foot.L", (x0 + 0.45 * (x1 - x0), y1 - 0.2))
+    down = added(lean, hips={"turn": (30, 0, 0)}, chest=(34, 0, 0), head=(24, 0, 0)).shaped(jaw=0.9)
+    low = fit.place(down.but(foot_L={"pos": s((0.11, 0.5, 0.1)), "aim": (0, 0.3, -0.95), "hint": (0, 0.95, 0.3)}, knee_L=s((0.11, 1.0, 0.6)), toe_L=(0, 0, 0)),
+                    "foot.L", (x0 + 0.45 * (x1 - x0), y0 + 0.25))
+    return [(3, up), (h0 - 1, lerp_pose(up, high, 0.6)), (h0, high), (h0 + 1, lerp_pose(high, low, 0.45)), (h1, low), (h1 + 4, low),
+            (mv["total"], lerp_pose(low, base, 0.6))]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Splits Drop": {"limb": "foot.L", "keys": _splits_drop},
+    "j.BP FP": {"limb": "hand.R", "keys": _air_clap},
+    "j.FK BK": {"limb": "foot.L", "keys": _heel_drop},
+    # Star Jump's follow-ups, out of its landing: an uppercut onto her toes, a low sweep.
+    "Star Jump FP": {"limb": "hand.L", "style": "rising"},
+    "Star Jump BK": {"limb": "foot.L"},
     # The fighting styles pilot (step 25 B): the routine.
     "s.BP": {"keys": _clap_clap},
     "s.FK": {"keys": _high_kick},

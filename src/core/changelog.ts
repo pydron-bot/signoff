@@ -14,6 +14,17 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.52.0',
+    date: '2026-11-10',
+    title: 'Every Move Animated',
+    notes: [
+      "Every new move has its own animation now, no more borrowed ones: the air drops (Dale's umbrella spear, Rox's splits, Mumbles falling like dead weight, Hollis's elbow, Margaret's heel, Gus's belly flop, Gideon falling with the Bible held high), every follow-up, Begone, and all fourteen new air string steps and spikes.",
+      "The boosted specials look bigger than the plain ones: Dale's boosted Heat Lightning leaves the floor, Gideon's boosted Laying On of Hands is two-handed and lifts them, and his boosted Fire and Brimstone reaches higher.",
+      'Heavy blows land harder: the arm or leg smears through the swing, big wind-ups hold before they snap, the strike reaches through at contact, and a heavy hit throws the head back on the very first frame.',
+      "Dale's Heat Lightning no longer flicks his arm over his head as he crouches.",
+    ],
+  },
+  {
     version: '0.51.0',
     date: '2026-11-10',
     title: 'Combo School',

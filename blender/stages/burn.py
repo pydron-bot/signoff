@@ -488,7 +488,7 @@ def build(make):
         for k, x in enumerate((-6, -3.6, -1.2, 1.2, 3.6, 6)):
             p.seg(f"can{k}", (x, -1.2, 7.3), (x * 0.95, -0.9, 6.95), 0.13, 0.15, RUBBER, "set", verts=8, paint=metal)
 
-    def warmup(p):
+    def mirrors(p):
         for i in range(8):
             x0, x1 = MIRROR_X[i], MIRROR_X[i + 1]
             quad(p, f"mirror{i}", x0, x1, MIRROR_U0, MIRROR_U1, MIRROR_F, MIRROR, mirror(x0, x1))
@@ -496,14 +496,22 @@ def build(make):
         p.seg("barre", (-8, -3.55, 1.0), (8, -3.55, 1.0), 0.03, 0.03, WOOD, "set", verts=8, paint=wood)
         for k, x in enumerate((-7, -3.5, 0, 3.5, 7)):
             p.seg(f"bracket{k}", (x, MIRROR_F + 0.03, 1.0), (x, -3.55, 1.0), 0.015, 0.015, ALU, "set", verts=4, paint=metal)
-        sign_board(p, "sign", -3.84, neon(SIGN_LINES, PINK))
-        panes(p, "dawn", WALL_F + 0.01, pane(*DAWN, (70, 34, 62), (226, 214, 208)))
-        for s in (-1, 1):
-            p.box(f"sidewall{s}", (s * 6.4, -1.5, 2.5), (0.8, 5.0, 5.0), SIDE, "set", paint=side_wall)
+
+    def speaker_stack(s):
+        def parts(p):
             x = s * 5.55
             p.box(f"cab_low{s}", (x, -3.0, 0.45), (0.8, 0.6, 0.9), TOLEX, "set", paint=speaker(x, 0.47, 0.3))
             p.box(f"cab_high{s}", (x, -3.0, 1.25), (0.7, 0.55, 0.7), TOLEX, "set", paint=speaker(x, 1.28, 0.22))
             p.box(f"horn{s}", (x, -3.0, 1.73), (0.5, 0.4, 0.26), TOLEX, "set", paint=speaker(x, 1.73, 0.08))
+        return parts
+
+    def warmup(p):
+        # The mirrors (with their frames and the barre) and the speaker
+        # stacks are shake_mirrors and shake_speakers_*, children of this.
+        sign_board(p, "sign", -3.84, neon(SIGN_LINES, PINK))
+        panes(p, "dawn", WALL_F + 0.01, pane(*DAWN, (70, 34, 62), (226, 214, 208)))
+        for s in (-1, 1):
+            p.box(f"sidewall{s}", (s * 6.4, -1.5, 2.5), (0.8, 5.0, 5.0), SIDE, "set", paint=side_wall)
 
     def double(p):
         p.box("chase", (0, -3.8, 3.06), (16.2, 0.06, 0.12), BOARD, "set", paint=chase)
@@ -570,6 +578,11 @@ def build(make):
     make("seg_warmup", warmup)
     make("seg_double", double)
     make("seg_burnout", burnout)
+    # Set pieces the game shakes on big hits (art step 29), origins at their
+    # pivots; with seg_warmup, they're gone in Burnout.
+    make("shake_mirrors", mirrors, pivot=(0, MIRROR_F, MIRROR_U0), parent="seg_warmup")
+    make("shake_speakers_left", speaker_stack(-1), pivot=(-5.55, -3.0, 0), parent="seg_warmup")
+    make("shake_speakers_right", speaker_stack(1), pivot=(5.55, -3.0, 0), parent="seg_warmup")
     make("prop_boombox", boombox_parts, at=(0, -0.3, 0))
     make("fg_left", lambda p: fg.speakers(p, "fg_pa", 1), at=(-6.2, 3.0, 0))
     make("fg_right", lambda p: fg.mic_stand(p, "fg_mic", -1), at=(6.2, 3.0, 0))

@@ -10,7 +10,7 @@ import math
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance
+from lib.anim import Stance, added, lerp_pose, moved, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "margaret"
@@ -241,7 +241,83 @@ class STANCE(Stance):
         return [(1, base), (20, to_cam), (52, to_cam), (60, nod), (70, to_cam), (120, to_cam)]
 
 
+def _commercial(st, base, mv, fit):
+    """Cut to Commercial (air, step 28): a quick tuck (1–4), then straight
+    down heel first from 5, legs together and the lead heel leading, the
+    cue cards held out to the side for balance; precise, never flailing."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    tuck = base.but(foot_L={"pos": s((0.1, 0.14, 0.5)), "turn": (30, -15, 0)}, foot_R={"pos": s((-0.1, 0.0, 0.48)), "turn": (30, -35, 0)},
+                    knee_L=s((0.1, 0.8, 1.0)), knee_R=s((-0.1, 0.7, 0.95)), chest=(10, -14, 0), head=(6, 0, 0),
+                    hand_L={"pos": s((0.16, 0.24, 1.15)), "aim": (0, 0.5, 0.8)}, hand_R={"pos": s((-0.14, 0.2, 1.1)), "aim": (0, 0.5, 0.8)}).shaped(jaw=0.0)
+    stamp = base.but(hips={"offset": (0, 0, 0), "turn": (-4, st.hips_yaw, 0)}, chest=(-4, -20, 0), head=(12, -6, 0),
+                     foot_L={"pos": s((0.08, 0.16, 0.04)), "aim": (0, 0.25, -0.97), "hint": (0, 0.97, 0.25)}, toe_L=(0, 0, 0), knee_L=s((0.08, 0.8, 0.5)),
+                     foot_R={"pos": s((-0.08, 0.0, 0.14)), "turn": (40, -30, 0)}, knee_R=s((-0.08, 0.6, 0.55)),
+                     hand_L={"pos": s((0.5, 0.1, 1.3)), "aim": (0.8, 0.2, 0.3)}, hand_R={"pos": s((-0.48, 0.0, 1.26)), "aim": (-0.8, 0.1, 0.3)}
+                     ).shaped(fist_R=0.0, open_R=0.6, jaw=0.4)
+    stamp = fit.place(stamp, "foot.L", (min(x1 - 0.25, 0.15), y0 + 0.12))
+    return [(2, lerp_pose(base, tuck, 0.6)), (4, tuck), (h0 - 1, lerp_pose(tuck, stamp, 0.6)), (h0, stamp), (h1, stamp), (mv["total"], stamp)]
+
+
+def _wire_copy(st, base, mv, fit):
+    """Wire Copy (j.BK FP, step 28): the cue cards flicked up under them, a
+    backhand from her hip, low on 5 to high on 8."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    drawn = base.but(chest=(10, 14, 0), hand_L={"pos": s((-0.05, 0.05, 0.95)), "aim": (-0.6, 0.2, -0.6)})
+    low = fit.place(base.but(chest=(6, -30, 0), hand_L={"pos": s((0.12, 0.5, 0.9)), "aim": (0, 0.8, 0.5), "hint": (0, 0, 1)}).shaped(jaw=0.5), "hand.L",
+                    (x0 + 0.5 * (x1 - x0), y0 + 0.4))
+    high = fit.place(base.but(chest=(-12, -36, 0), head=(-10, -6, 0), hand_L={"pos": s((0.12, 0.4, 1.4)), "aim": (0, 0.3, 0.95), "hint": (0, 1, 0)}).shaped(jaw=0.7),
+                     "hand.L", (x0 + 0.4 * (x1 - x0), y1 - 0.15))
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, high), (mv["total"], lerp_pose(high, base, 0.6))]
+
+
+def _headline_drop(st, base, mv, fit):
+    """Headline Drop (j.BP BK, step 28): the cue cards raised over her head
+    and brought down edge first through the spike box, high on 6 to low on 9."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    up = base.but(chest=(-14, -14, 0), head=(-10, 0, 0), hand_L={"pos": s((0.08, -0.05, 2.0)), "aim": (0, -0.3, 0.95), "hint": (0, 1, 0)}).shaped(jaw=0.3)
+    high = fit.place(base.but(chest=(0, -20, 0), hand_L={"pos": s((0.08, 0.45, 1.55)), "aim": (0, 0.8, -0.2), "hint": (0, 1, 0)}).shaped(jaw=0.8), "hand.L",
+                     (x0 + 0.5 * (x1 - x0), y1 - 0.3))
+    low = fit.place(base.but(chest=(36, -20, 0), spine=(12, -10, 0), head=(24, 0, 0), hand_L={"pos": s((0.08, 0.45, 0.7)), "aim": (0, 0.3, -0.95), "hint": (0, 1, 0)}
+                             ).shaped(jaw=0.8), "hand.L", (x0 + 0.45 * (x1 - x0), 0.55))
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
+def _and_now_this(st, base, mv, fit):
+    """And Now This (Breaking BK, step 28): out of the straight, the weight
+    shifted onto the lead foot and the rear leg swung up in a rising front
+    kick under their chin, a launcher; the pages kept tidy at her side."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    lf = base.parts["foot_L"]
+    shift = base.but(hips={"offset": (0, 0.06 * k, -(st.drop + 0.03) * k), "turn": (4, st.hips_yaw - 10, 0)}, chest=(4, -24, 0),
+                     hand_R={"pos": s((-0.16, 0.2, 1.3)), "aim": (0, 0.6, 0.8)}).shaped(fist_R=1.0)
+    chamber = shift.but(foot_R={"pos": s((-0.1, 0.2, 0.6)), "turn": (50, -20, 0)}, knee_R=s((-0.1, 1.0, 1.1)))
+    lean = base.but(hips={"offset": (0, 0.0, -0.01 * k), "turn": (-22, st.hips_yaw - 20, 0)}, spine=(-10, -30, 0), chest=(-14, -34, 0), head=(4, -10, 0),
+                    shoulder_L=(-14, -34, 0), shoulder_R=(-14, -34, 0), foot_L=moved(lf, (0, 0, 0.03 * k), (24, lf["turn"][1], 0)),
+                    hand_R={"pos": s((-0.3, -0.3, 1.3)), "aim": (-0.3, -0.8, 0.3)}, toe_R=(0, 0, 0)).shaped(fist_R=0.3, open_R=0.5, jaw=0.6)
+    kick = fit.place(lean.but(foot_R={"pos": s((-0.08, 0.6, 1.0)), "aim": (0, 0.6, 0.8), "hint": (0, -0.8, 0.6)}, knee_R=s((-0.08, 1.2, 1.4))), "foot.R",
+                     (x0 + 0.5 * (x1 - x0), y0 + 0.3 * (y1 - y0)))
+    up = fit.place(lean.but(foot_R={"pos": s((-0.08, 0.5, 1.3)), "aim": (0, 0.4, 0.9), "hint": (0, -0.9, 0.4)}, knee_R=s((-0.08, 1.2, 1.7))), "foot.R",
+                   (x0 + 0.4 * (x1 - x0), y1 - 0.1))
+    down = lerp_pose(up, base, 0.6)
+    return [(4, shift), (h0 - 3, chamber), (h0 - 1, lerp_pose(chamber, kick, 0.7)), (h0, kick), (h1, up), (h1 + 3, up.but(head=(-2, -10, 0))),
+            (h1 + 9, down), (total - 3, toward(base, down, -0.1)), (total, base)]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Cut to Commercial": {"limb": "foot.L", "keys": _commercial},
+    "j.BK FP": {"limb": "hand.L", "keys": _wire_copy},
+    "j.BP BK": {"limb": "hand.L", "keys": _headline_drop},
+    "Breaking BK": {"limb": "foot.R", "keys": _and_now_this},
     # Air special (step 26): straight across, the cue cards out like a blade.
     "On the Wire": {"limb": "hand.R"},
     "On the Wire+": {"alt": ["hand.R", "hand.L"]},

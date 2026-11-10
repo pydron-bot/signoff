@@ -290,9 +290,10 @@ def build(make):
         # The light under the hood, over the hob.
         p.box("hood_light", (-1.2, -2.2, 2.29), (1.4, 0.6, 0.02), (255, 238, 204), "set")
 
-    def prep(p):
-        rng = np.random.default_rng(3)
-        for k, (x0, x1) in enumerate(((2.2, 5.6), (-5.6, -3.2))):
+    def shelves(k, x0, x1):
+        """The two shelves of jars over one end of the counter (shake_shelves_*)."""
+        def parts(p):
+            rng = np.random.default_rng(3 + k)
             for j, u in enumerate((1.75, 2.35)):
                 p.box(f"shelf{k}{j}", ((x0 + x1) / 2, WALL_F + 0.14, u), (x1 - x0, 0.26, 0.04), WOOD, "set", paint=knives_paint)
                 x = x0 + 0.15
@@ -302,6 +303,9 @@ def build(make):
                     p.seg(f"jar{k}{j}_{x:.2f}", (x, WALL_F + 0.14, u + 0.02), (x, WALL_F + 0.14, u + 0.02 + h), r, r, col, "set", verts=6, paint=lambda t: lit(t, lo=0.8))
                     p.seg(f"lid{k}{j}_{x:.2f}", (x, WALL_F + 0.14, u + 0.02 + h), (x, WALL_F + 0.14, u + 0.05 + h), r * 1.05, r * 1.05, (200, 180, 120), "set", verts=6)
                     x += r * 2 + rng.uniform(0.04, 0.12)
+        return parts
+
+    def prep(p):
         p.box("sign", (SIGN_X, WALL_F + 0.08, 3.85), (4.3, 0.1, 1.25), RED, "set", paint=sign)
 
     def grease(p):
@@ -375,6 +379,10 @@ def build(make):
 
     make("set", kitchen)
     make("seg_prep", prep)
+    # Set pieces the game shakes on big hits (art step 29): each end's two
+    # shelves of jars, origins on the wall under the lower shelf.
+    make("shake_shelves_right", shelves(0, 2.2, 5.6), pivot=(3.9, WALL_F, 1.75), parent="seg_prep")
+    make("shake_shelves_left", shelves(1, -5.6, -3.2), pivot=(-4.4, WALL_F, 1.75), parent="seg_prep")
     make("seg_grease", grease)
     make("seg_oven", oven)
     make("prop_pot", pot, at=(-3, COUNTER_F, COUNTER_U))

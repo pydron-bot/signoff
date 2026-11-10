@@ -87,7 +87,8 @@
        0.75,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -135,7 +136,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -183,7 +185,8 @@
        0.75,
        1.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -231,7 +234,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -255,7 +259,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -335,7 +340,8 @@
        0.8,
        1.3
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -383,7 +389,8 @@
        0.1,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -431,7 +438,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -479,7 +487,8 @@
        0.7,
        1.2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -527,7 +536,8 @@
        0.5,
        0.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -575,7 +585,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -623,7 +634,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -781,7 +793,8 @@
        0.75,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -805,7 +818,8 @@
        0.75,
        2.2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -833,7 +847,8 @@
        0.75,
        2.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -911,7 +926,8 @@
        -0.2,
        0.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -935,7 +951,8 @@
        -0.2,
        0.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1209,7 +1226,8 @@
        0.75,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1257,7 +1275,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1369,7 +1388,8 @@
        0.8,
        1.3
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1417,7 +1437,8 @@
        0.1,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1465,7 +1486,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1521,7 +1543,8 @@
        0.55,
        0.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1585,7 +1608,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1617,7 +1641,8 @@
        0.75,
        1.25
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1641,7 +1666,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1673,7 +1699,8 @@
        0,
        0.35
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1737,7 +1764,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1793,7 +1821,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1835,7 +1864,8 @@
        0.5,
        1.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1893,7 +1923,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -1977,7 +2008,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2104,7 +2136,8 @@
        0.4,
        0.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2219,7 +2252,8 @@
        0.4,
        0.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2247,7 +2281,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2279,7 +2314,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2315,7 +2351,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2339,7 +2376,8 @@
        0.75,
        1.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2363,7 +2401,8 @@
        -0.1,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2387,7 +2426,8 @@
        -0.1,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2411,7 +2451,8 @@
        -0.1,
        0.45
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2435,7 +2476,8 @@
        -0.1,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2587,7 +2629,8 @@
        1.1,
        1.5
       ],
-      "height": "high"
+      "height": "high",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2611,7 +2654,8 @@
        0.75,
        1.35
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2635,7 +2679,8 @@
        0.75,
        1.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2687,7 +2732,8 @@
        0.75,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2739,7 +2785,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2763,7 +2810,8 @@
        0.75,
        1.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2799,7 +2847,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2847,7 +2896,8 @@
        0.8,
        1.3
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2871,7 +2921,8 @@
        0.1,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2895,7 +2946,8 @@
        0,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -2943,7 +2995,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3008,7 +3061,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3073,7 +3127,8 @@
        0,
        0.35
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3097,7 +3152,8 @@
        0.75,
        1.35
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3235,7 +3291,8 @@
        0,
        0.4
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3259,7 +3316,8 @@
        0,
        0.4
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      },
      {
       "frames": [
@@ -3272,7 +3330,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3296,7 +3355,8 @@
        0,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3320,7 +3380,8 @@
        0.6,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3356,7 +3417,8 @@
        0.6,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3440,7 +3502,8 @@
        -0.2,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3468,7 +3531,8 @@
        -0.2,
        0.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3624,7 +3688,8 @@
        0.75,
        1.35
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3648,7 +3713,8 @@
        0.2,
        0.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3672,7 +3738,8 @@
        0.4,
        0.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3720,7 +3787,8 @@
        0.75,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3768,7 +3836,8 @@
        0,
        0.25
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3792,7 +3861,8 @@
        0.7,
        1.4
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3864,7 +3934,8 @@
        0.4,
        0.9
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3888,7 +3959,8 @@
        0,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3912,7 +3984,8 @@
        0,
        0.45
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -3960,7 +4033,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4032,7 +4106,8 @@
        0.4,
        1
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4056,7 +4131,8 @@
        0.2,
        0.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4080,7 +4156,8 @@
        0.7,
        1.4
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4128,7 +4205,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4152,7 +4230,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4176,7 +4255,8 @@
        0.6,
        1.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [
@@ -4209,7 +4289,8 @@
        0.6,
        1.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [
@@ -4264,7 +4345,8 @@
        0.6,
        1.3
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4346,7 +4428,8 @@
        0,
        0.9
       ],
-      "height": "unblockable"
+      "height": "unblockable",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4370,7 +4453,8 @@
        0,
        0.9
       ],
-      "height": "unblockable"
+      "height": "unblockable",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4430,7 +4514,8 @@
        -0.1,
        0.5
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4490,7 +4575,8 @@
        -0.1,
        0.55
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4642,7 +4728,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4690,7 +4777,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4738,7 +4826,8 @@
        0.75,
        1.9
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4786,7 +4875,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4810,7 +4900,8 @@
        0.75,
        1.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4890,7 +4981,8 @@
        0.8,
        1.3
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4938,7 +5030,8 @@
        0.1,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -4986,7 +5079,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5034,7 +5128,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5106,7 +5201,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5130,7 +5226,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5178,7 +5275,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5202,7 +5300,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5239,7 +5338,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5263,7 +5363,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5321,7 +5422,8 @@
        0.3,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5349,7 +5451,8 @@
        0.3,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5413,7 +5516,8 @@
        0.75,
        1.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5445,7 +5549,8 @@
        0.75,
        1.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5481,7 +5586,8 @@
        0.4,
        1.2
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5533,7 +5639,8 @@
        0.4,
        1.2
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5596,7 +5703,8 @@
        -0.1,
        0.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5748,7 +5856,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5796,7 +5905,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5844,7 +5954,8 @@
        0.75,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5892,7 +6003,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5916,7 +6028,8 @@
        0.75,
        1.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5940,7 +6053,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -5996,7 +6110,8 @@
        0.7,
        1.3
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6044,7 +6159,8 @@
        0.3,
        0.9
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6092,7 +6208,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6140,7 +6257,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6164,7 +6282,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6188,7 +6307,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6236,7 +6356,8 @@
        0.75,
        1.7
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6260,7 +6381,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6320,7 +6442,8 @@
        0.4,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6370,7 +6493,8 @@
        0.75,
        1.7
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6428,7 +6552,8 @@
        0.75,
        1.7
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6507,7 +6632,8 @@
        0,
        0.35
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6544,7 +6670,8 @@
        0,
        0.35
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6611,7 +6738,8 @@
        -0.2,
        0.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6635,7 +6763,8 @@
        -0.2,
        0.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6791,7 +6920,8 @@
        0.75,
        1.55
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6839,7 +6969,8 @@
        0.75,
        1.35
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6887,7 +7018,8 @@
        0.75,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6935,7 +7067,8 @@
        0,
        0.3
       ],
-      "height": "low"
+      "height": "low",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -6959,7 +7092,8 @@
        0.75,
        1.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7007,7 +7141,8 @@
        0.6,
        1.2
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7055,7 +7190,8 @@
        0.1,
        0.6
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7103,7 +7239,8 @@
        -0.3,
        1.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7151,7 +7288,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7199,7 +7337,8 @@
        0.75,
        1.5
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7223,7 +7362,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7247,7 +7387,8 @@
        0.75,
        1.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7333,7 +7474,8 @@
        1.2,
        1.7
       ],
-      "height": "high"
+      "height": "high",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7357,7 +7499,8 @@
        1.2,
        1.7
       ],
-      "height": "high"
+      "height": "high",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7382,7 +7525,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7406,7 +7550,8 @@
        0.75,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7430,7 +7575,8 @@
        0.75,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7455,7 +7601,8 @@
        0,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7479,7 +7626,8 @@
        0,
        2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7507,7 +7655,8 @@
        0,
        2.4
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7535,7 +7684,8 @@
        0.75,
        1.6
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7559,7 +7709,8 @@
        0.75,
        1.7
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7587,7 +7738,8 @@
        -0.6,
        1.8
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7611,7 +7763,8 @@
        -1,
        2.2
       ],
-      "height": "mid"
+      "height": "mid",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7639,7 +7792,8 @@
        -0.2,
        0.7
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],
@@ -7663,7 +7817,8 @@
        -0.2,
        0.8
       ],
-      "height": "overhead"
+      "height": "overhead",
+      "heavy": true
      }
     ],
     "spawns": [],

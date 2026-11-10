@@ -5,13 +5,13 @@ eyebrows, a "CH 0" pin and the forecast clicker. Zoner: keeps you out."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance, lerp_pose
+from lib.anim import Stance, added, lerp_pose, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
 # What gives off light (step 23 C), on the effect meshes only: the body's
 # emission belongs to the game's hit-flash tint.
-EMISSION = {r"curl\d+_.*": 1.5, r"core|bolt\d+_.*": 3, r"streak\d+": 1.5}
+EMISSION = {r"curl\d+_.*": 1.5, r"core|bolt\d+_.*": 3, r"streak\d+": 1.5, r"ring\d+": 2}
 HEIGHT = 1.80
 
 SKIN = (226, 184, 150)
@@ -231,13 +231,136 @@ def _downpour(boosted):
     return keys
 
 
+def _heat_lightning_plus(st, base, mv, fit):
+    """Heat Lightning+ (step 27): the plain uppercut taken off the floor. A
+    deep coil, the fist down by the knee, then a leap that drives it up
+    through the top of the taller box, the free arm flung down behind; he
+    lands on 15 with the arm still up."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    lf, rf = base.parts["foot_L"], base.parts["foot_R"]
+    coil = st.base(drop=st.drop + 0.2).but(
+        hips={"offset": (0, -0.04 * k, -(st.drop + 0.2) * k), "turn": (18, st.hips_yaw + 14, 0)}, spine=(16, 10, 0), chest=(26, 16, 0),
+        shoulder_L=(26, 16, 0), shoulder_R=(26, 16, 0), head=(-6, -10, 0),
+        hand_L={"pos": s((0.16, 0.18, 0.72)), "aim": (0, 0.4, 1), "hint": (0, 1, 0)},
+        hand_R={"pos": s((-0.26, -0.12, 1.02)), "aim": (-0.3, -0.5, -0.6)}).shaped(fist_L=1.0, fist_R=0.6, jaw=0.2)
+    toes = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
+    # Off the floor: the feet hang under him, toes pointed.
+    hang = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1] + 0.04, 0.06)), "turn": (60, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1] - 0.04, 0.14)), "turn": (70, st.rear_foot_yaw, 0)},
+            "knee_R": s((-0.12, 0.4, 0.5))}
+
+    def drive(lift, target, lean, feet):
+        p = base.but(root={"offset": (0, 0, lift * k)}, hips={"offset": (0, 0.04 * k, 0), "turn": (-8 - lean, st.hips_yaw - 10, 0)},
+                     spine=(-4 - lean, -20, 0), chest=(-10 - lean, -30, 0), shoulder_L=(-10 - lean, -30, 0), shoulder_R=(-10 - lean, -30, 0),
+                     head=(-18 - lean, -10, 0), hand_L={"pos": s((0.12, 0.4, 2.0)), "aim": (0, 0.25, 1), "hint": (0, 1, 0)},
+                     hand_R={"pos": s((-0.3, -0.24, 0.98 + lift)), "aim": (-0.4, -0.6, -0.5)}, **feet).shaped(fist_L=1.0, fist_R=0.0, open_R=0.6, jaw=0.9)
+        return fit.place(p, "hand.L", target)
+
+    launch = drive(0.06, (min(x1 - 0.2, 0.5), y0 + 0.5 * (y1 - y0)), 0, toes)
+    peak = drive(0.24, (min(x1 - 0.25, 0.42), y1 - 0.1), 8, hang)
+    top = drive(0.28, (0.36, y1 + 0.02), 10, hang)  # past the box once the hit is done
+    land = added(top.but(root={"offset": (0, 0, 0)}, foot_L=lf, foot_R=rf), hips={"offset": (0, 0, -0.12 * k)}, spine=(10, 0, 0), chest=(14, 0, 0), head=(16, 0, 0))
+    return [(1, base), (3, lerp_pose(base, coil, 0.7).shaped(**coil.parts["shapes"])), (h0 - 2, coil), (h0 - 1, toward(coil, base, -0.05)),
+            (h0, launch), (h0 + 2, lerp_pose(launch, peak, 0.7).shaped(**peak.parts["shapes"])), (h1, peak), (h1 + 3, top), (h1 + 4, top),
+            (15, land), (18, land), (28, lerp_pose(land, base, 0.55).shaped(fist_L=0.6)), (total, base)]
+
+
+def _both_hands(p):
+    """The lead hand on the umbrella too, a fist's width up the cane from the rear."""
+    r = p.parts["hand_R"]
+    a = r["aim"]
+    return p.but(hand_L={**r, "pos": tuple(c - 0.1 * d for c, d in zip(r["pos"], a))}).shaped(fist_L=1.0)
+
+
+def _brolly(fit, base, target, both=False):
+    """The pose with the umbrella's tip at target (fwd, up), from the rear hand."""
+    p = fit.fit(base, "hand.R", (target[0] - 0.05, target[0] + 0.05, target[1] - 0.05, target[1] + 0.05), report=False,
+                tx=target[0], ty=target[1], extra=UMBRELLA).shaped(fist_R=1.0)
+    return _both_hands(p) if both else p
+
+
+def _low_pressure(st, base, mv, fit):
+    """Low Pressure (air, step 28): the umbrella snapped shut and raised in
+    both hands, hanging (1–5), then driven straight down like a spear, the
+    tip leading under him, the legs folded up behind out of its way."""
+    s, k = st.s, st.k
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    raised = base.but(chest=(-8, -20, 0), head=(-6, -6, 0),
+                      hand_R={"pos": s((-0.06, 0.2, 1.95)), "aim": (0, 0.15, -1), "hint": (0, 1, 0)}).shaped(fist_R=1.0, jaw=0.4)
+    raised = _both_hands(raised).but(foot_L={"pos": s((0.1, 0.1, 0.42)), "turn": (30, -15, 0)}, foot_R={"pos": s((-0.1, -0.02, 0.4)), "turn": (30, -40, 0)})
+    legs = {"foot_L": {"pos": s((0.1, -0.22, 0.4)), "turn": (70, -10, 0)}, "foot_R": {"pos": s((-0.1, -0.3, 0.46)), "turn": (70, -30, 0)},
+            "knee_L": s((0.1, 0.5, 0.5)), "knee_R": s((-0.1, 0.45, 0.55))}
+    lean = base.but(chest=(30, -10, 0), spine=(14, -10, 0), head=(30, 0, 0), hips={"offset": (0, 0, 0), "turn": (10, st.hips_yaw, 0)}, **legs)
+    spear = _brolly(fit, lean, ((x0 + x1) * 0.4, y0 + 0.08), both=True).shaped(jaw=0.9)
+    return [(3, raised), (5, toward(raised, base, -0.05)), (7, spear), (total - 2, spear.but(head=(26, 0, 0))), (total, lerp_pose(spear, base, 0.5))]
+
+
+def _updraft(st, base, mv, fit):
+    """Updraft (j.FK FP, step 28): the umbrella hooked up under them, low and
+    forward on 5 to high on 8; hanging, no drift."""
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    low = _brolly(fit, base.but(chest=(14, -20, 0)), (x0 + 0.5 * (x1 - x0), y0 + 0.2))
+    high = _brolly(fit, base.but(chest=(-10, -30, 0), head=(-12, 0, 0)), (x0 + 0.45 * (x1 - x0), y1 - 0.15))
+    drawn = _brolly(fit, base.but(chest=(20, 0, 0)), (0.05, 0.1))
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, added(high, chest=(-4, 0, 0))), (mv["total"], base)]
+
+
+def _downburst(st, base, mv, fit):
+    """Downburst (j.BP BK, step 28): the umbrella raised over his head in both
+    hands and swung down through the whole spike box, high on 6 to low on 9."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    up = _both_hands(base.but(chest=(-14, -10, 0), head=(-10, 0, 0),
+                              hand_R={"pos": s((-0.04, -0.12, 1.98)), "aim": (0, -0.6, 0.8), "hint": (0, 1, 0)}).shaped(fist_R=1.0, jaw=0.5))
+    high = _brolly(fit, base.but(chest=(-6, -10, 0)), (x0 + 0.5 * (x1 - x0), y1 - 0.15), both=True).shaped(jaw=0.9)
+    low = _brolly(fit, base.but(chest=(34, -10, 0), spine=(12, -10, 0), head=(24, 0, 0)), (x0 + 0.5 * (x1 - x0), y0 + 0.15), both=True).shaped(jaw=0.9)
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
+def _thunderclap(st, base, mv, fit):
+    """Thunderclap (Isobar Lasso BP, step 28): out of the lasso's reel-in, the
+    umbrella swept up from low under their chin, onto his toes, and held
+    high; it puts them on the floor."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    toes = {"foot_L": {"pos": s((st.lead_foot[0], st.lead_foot[1], 0.1)), "turn": (40, st.lead_foot_yaw, 0)},
+            "foot_R": {"pos": s((st.rear_foot[0], st.rear_foot[1], 0.1)), "turn": (40, st.rear_foot_yaw, 0)}}
+    crouch = st.base(drop=st.drop + 0.14).but(chest=(24, 10, 0), spine=(10, 6, 0), head=(-4, -6, 0))
+    drawn = _brolly(fit, crouch, (-0.25, 0.15)).shaped(jaw=0.3)
+    rise = base.but(root={"offset": (0, 0, 0.04 * k)}, chest=(-8, -40, 0), spine=(-2, -30, 0), head=(-10, -10, 0), **toes)
+    hit = _brolly(fit, crouch.but(chest=(6, -20, 0)), (x0 + 0.55 * (x1 - x0), y0 + 0.3), both=True)
+    top = _brolly(fit, rise, (x0 + 0.4 * (x1 - x0), y1 - 0.12), both=True).shaped(jaw=0.9)
+    over = _brolly(fit, rise.but(chest=(-14, -40, 0)), (0.3, 2.2), both=True)
+    return [(4, drawn), (h0 - 3, toward(drawn, base, -0.05)), (h0, hit), (h1, top), (h1 + 4, over), (h1 + 8, over),
+            (h1 + 14, lerp_pose(over.but(root={"offset": (0, 0, 0)}, foot_L=base.parts["foot_L"], foot_R=base.parts["foot_R"]), base, 0.5)), (total, base)]
+
+
+def _held(show):
+    return {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": show}
+
+
 OVERRIDES = {
+    # The specials pass (step 28): the umbrella's tip makes every hit.
+    "Low Pressure": {"limb": "hand.R", "keys": _low_pressure, "held": _held((2, 34))},
+    "j.FK FP": {"limb": "hand.R", "keys": _updraft, "held": _held((2, 13))},
+    "j.BP BK": {"limb": "hand.R", "keys": _downburst, "held": _held((2, 16))},
+    "Isobar Lasso BP": {"limb": "hand.R", "keys": _thunderclap, "held": _held((2, 26))},
     # Air specials (step 26): the umbrella held overhead, hail from the free hand.
     "Downpour": {"keys": _downpour(False), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 16)}},
     "Downpour+": {"keys": _downpour(True), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 20)}},
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
     "Isobar Lasso": {"limb": "hand.L", "prop": True},
     "Heat Lightning": {"limb": "hand.L", "style": "rising"},
+    "Heat Lightning+": {"limb": "hand.L", "style": "rising", "keys": _heat_lightning_plus},
     "td": {"limb": "hand.R"},
     # The longest poke in the game: the umbrella, held out at arm's length.
     "s.BK": {"limb": "hand.R", "tx": 1.6, "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (5, 29)}},
@@ -321,6 +444,46 @@ def fx(make, b):
             length = rng.uniform(0.35, 1.1) * (1.0 - 0.35 * abs(u - 1.0))
             p.box(f"streak{i}", (0.0, -length / 2 + rng.uniform(-0.1, 0.1), u), (0.04, length, 0.07), (200, 200, 220), "fx", mat=1, paint=smear)
 
+    def impact_ring(p):
+        # The shockwave off a heavy hit (step 29, shared by every fighter):
+        # a flat ring 1 m in radius lying in the floor plane (+y up in the
+        # game), bright at its rim and fading to nothing inward.
+        def soft(t):
+            r = np.hypot(t.side, t.fwd)
+            a = np.clip((r - 0.62) / 0.38, 0, 1) ** 1.6
+            t.c = np.clip(np.array((255.0, 246.0, 220.0)) * a[:, None], 0, 255)
+            return t.c
+
+        n = 24
+        for i in range(n):
+            a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
+            pts = [(r * math.cos(a), r * math.sin(a), z) for r in (0.6, 1.0) for a in (a0, a1) for z in (0.0, 0.01)]
+            p.hull(f"ring{i}", pts, (255, 246, 220), "fx", mat=1, paint=soft)
+
+    def crack(p):
+        # A starburst crack 1.5 m across, for wall splats and ground bounces
+        # (step 29, shared): a dark crater with jagged fissures running out
+        # from it, flat, 5 mm thick, +y up in the game.
+        rng = np.random.default_rng(29)
+        p.hull("crater", [(0.16 * math.cos(a) * rng.uniform(0.8, 1.15), 0.16 * math.sin(a) * rng.uniform(0.8, 1.15), z)
+                          for a in np.linspace(0, 2 * math.pi, 11)[:-1] for z in (0.0, 0.006)], (26, 22, 24), "fx", mat=1)
+        for i in range(9):
+            a = 2 * math.pi * i / 9 + rng.uniform(-0.2, 0.2)
+            pts, r, w = [], 0.12, 0.035
+            while r < 0.75:
+                step = rng.uniform(0.08, 0.16)
+                a += rng.uniform(-0.25, 0.25)
+                r2 = min(0.75, r + step)
+                w2 = w * 0.72
+                for (rr, ww) in ((r, w), (r2, w2)):
+                    c, s_ = math.cos(a), math.sin(a)
+                    for side in (-1, 1):
+                        pts.append((rr * c - side * ww * s_, rr * s_ + side * ww * c))
+                p.hull(f"fissure{i}_{len(pts)}", [(x, y, z) for x, y in pts[-4:] for z in (0.0, 0.005)], (34, 30, 32), "fx", mat=1)
+                r, w = r2, w2
+
+    make("fx_impact_ring", impact_ring)
+    make("fx_crack", crack)
     make("fx_cold_front", cold_front)
     make("fx_hail", hail)
     make("fx_isobar_lasso", lasso)

@@ -7,7 +7,7 @@ strings running up to a control bar. Trickster: small, light, slippery."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance
+from lib.anim import Stance, lerp_pose, toward
 from lib.body import about, arms, face_paint, grip, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "mumbles"
@@ -275,7 +275,88 @@ class STANCE(Stance):
                 (54, loll.shaped(jaw=0.0)), (64, relaxed), (80, base), (90, base)]
 
 
+def _puppet_drop(st, base, mv, fit):
+    """Puppet Drop (air, step 28): the strings go slack and he drops like
+    dead weight from 4, feet first, legs straight under him, the arms and
+    head left floating up loose, the jaw hanging."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    jolt = base.but(chest=(-8, -10, 0), head=(-14, 0, 0), hand_L={"pos": s((0.3, 0.05, 1.5)), "aim": (0.3, 0, 1)},
+                    hand_R={"pos": s((-0.3, 0.0, 1.5)), "aim": (-0.3, 0, 1)}).shaped(fist_L=0.0, fist_R=0.0, open_L=0.8, open_R=0.8, jaw=0.6)
+    limp = base.but(hips={"offset": (0, 0, 0.0), "turn": (4, st.hips_yaw, 0)}, spine=(6, -6, 0), chest=(10, -10, 0), neck=(-10, 0, 0), head=(-26, 4, 12),
+                    shoulder_L=(10, -10, 0), shoulder_R=(10, -10, 0),
+                    hand_L={"pos": s((0.36, 0.08, 1.28)), "aim": (0.4, 0.1, 0.9)}, hand_R={"pos": s((-0.34, -0.06, 1.34)), "aim": (-0.4, -0.1, 0.9)},
+                    foot_L={"pos": s((0.09, 0.08, 0.02)), "turn": (30, -10, 0)}, foot_R={"pos": s((-0.09, -0.04, 0.06)), "turn": (30, -30, 0)},
+                    knee_L=s((0.09, 0.6, 0.4)), knee_R=s((-0.09, 0.5, 0.4))).shaped(fist_L=0.0, fist_R=0.0, open_L=0.4, open_R=0.4, jaw=1.0)
+    limp = fit.place(limp, "foot.L", (min(x1 - 0.2, 0.12), y0 + 0.1))
+    return [(3, jolt), (h0 - 1, lerp_pose(jolt, limp, 0.6).shaped(**limp.parts["shapes"])), (h0, limp), (h0 + 8, limp.but(head=(-30, 4, -10))),
+            (h0 + 16, limp.but(head=(-24, 4, 14))), (mv["total"], limp)]
+
+
+def _boo(st, base, mv, fit):
+    """Boo! (Strings Attached FP, step 28): back on stage behind them,
+    crouched small, then springing up at them, arms up and clawed, jaw
+    dropped wide, on the hits."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    small = st.base(drop=st.drop + 0.12).but(chest=(24, -10, 0), head=(14, 0, 0),
+                                             hand_L={"pos": s((0.14, 0.2, 0.9)), "aim": (0, 0.3, 1)}, hand_R={"pos": s((-0.12, 0.16, 0.9)), "aim": (0, 0.3, 1)}
+                                             ).shaped(fist_L=0.4, fist_R=0.4, jaw=0.0)
+    boo = base.but(hips={"offset": (0, 0.1 * k, 0.02 * k), "turn": (-6, st.hips_yaw - 10, 0)}, spine=(-4, -20, 0), chest=(-10, -26, 0), head=(-10, -10, 0),
+                   shoulder_L=(-10, -26, 0), shoulder_R=(-10, -26, 0),
+                   hand_L={"pos": s((0.2, 0.4, 1.3)), "aim": (0.1, 0.5, 0.85), "hint": (0, 1, 0)},
+                   hand_R={"pos": s((-0.2, 0.36, 1.3)), "aim": (-0.1, 0.5, 0.85), "hint": (0, 1, 0)}).shaped(fist_L=0.0, fist_R=0.0, open_L=1.0, open_R=1.0, jaw=1.0)
+    boo = fit.place(boo, "hand.L", (x0 + 0.4 * (x1 - x0), y1 - 0.12))
+    r = boo.parts["hand_L"]["pos"]
+    boo = boo.but(hand_R={**boo.parts["hand_R"], "pos": (r[0] - 0.36 * k, r[1] - 0.04, r[2] - 0.02)})
+    return [(3, small), (h0 - 1, toward(small, base, -0.05)), (h0, boo), (h1, boo), (h1 + 4, boo.but(head=(-14, -10, 0))),
+            (total - 4, lerp_pose(boo, base, 0.6).shaped(open_L=0.4, open_R=0.4)), (total, base)]
+
+
+def _clackety(st, base, mv):
+    """Clackety-Clack (j.FK FP, step 28): the big head thrust at them, the
+    jaw clacking open and shut every other frame over the hits."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    back = base.but(chest=(-10, 10, 0), head=(-16, 10, 0)).shaped(jaw=0.0)
+    lunge = base.but(hips={"offset": (0, 0.12 * st.k, 0), "turn": (16, st.hips_yaw, 0)}, spine=(20, -16, 0), chest=(34, -20, 0), neck=(24, -10, 0), head=(10, -10, 0),
+                     hand_L={"pos": s((0.24, 0.0, 1.0)), "aim": (0.4, -0.4, -0.5)}, hand_R={"pos": s((-0.24, -0.06, 1.0)), "aim": (-0.4, -0.4, -0.5)})
+    out = [(2, back)]
+    for f in range(h0 - 1, h1 + 3):
+        out.append((f, lunge.shaped(jaw=1.0 if (f - h0) % 2 == 0 else 0.1)))
+    return out + [(mv["total"], base)]
+
+
+def _pratfall(st, base, mv, fit):
+    """Pratfall (j.BP FK, step 28): sat down on them, hard: the legs shot out
+    in front, the seat dropped, arms flung up, high on 5 to low on 8."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    arms = {"hand_L": {"pos": s((0.34, -0.1, 1.5)), "aim": (0.4, -0.2, 0.9)}, "hand_R": {"pos": s((-0.34, -0.14, 1.5)), "aim": (-0.4, -0.2, 0.9)}}
+    perch = base.but(chest=(-6, -10, 0), head=(-8, 0, 0), **arms).shaped(fist_L=0.0, fist_R=0.0, open_L=0.8, open_R=0.8, jaw=0.5)
+
+    def sit(drop):
+        p = base.but(hips={"offset": (0, -0.08 * k, -drop * k), "turn": (-50, st.hips_yaw, 0)}, spine=(16, -10, 0), chest=(24, -10, 0), head=(20, 0, 0), **arms,
+                     foot_L={"pos": s((0.09, 0.5, 0.5)), "aim": (0, 0.7, 0.7), "hint": (0, -0.7, 0.7)}, knee_L=s((0.09, 0.8, 1.2)), toe_L=(0, 0, 0),
+                     foot_R={"pos": s((-0.09, 0.46, 0.46)), "aim": (0, 0.7, 0.7), "hint": (0, -0.7, 0.7)}, knee_R=s((-0.09, 0.8, 1.2)), toe_R=(0, 0, 0))
+        return p.shaped(fist_L=0.0, fist_R=0.0, open_L=1.0, open_R=1.0, jaw=1.0)
+
+    high = fit.place(sit(0.1), "foot.L", (x0 + 0.5 * (x1 - x0), 0.75))
+    low = fit.place(sit(0.5), "foot.L", (x0 + 0.6 * (x1 - x0), 0.3))
+    return [(3, perch), (h0, high), (h1, low), (h1 + 4, low.but(head=(22, 0, 0))), (mv["total"], lerp_pose(low, base, 0.5))]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Puppet Drop": {"limb": "foot.L", "keys": _puppet_drop},
+    "Strings Attached FP": {"limb": "hand.L", "keys": _boo},
+    # The clacking jaw is the hit (the head lunges into the box); the build checks hands, feet, knees, shoulders and elbows.
+    "j.FK FP": {"limb": "hand.L", "prop": True, "keys": _clackety},
+    "j.BP FK": {"limb": "foot.L", "keys": _pratfall},
     # Air special (step 26): gone, then dropping feet first from behind.
     "Cut the Strings": {"style": "teleport", "limb": "foot.L"},
     "Cut the Strings+": {"style": "teleport", "limb": "foot.L"},

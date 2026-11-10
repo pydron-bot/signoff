@@ -263,8 +263,8 @@ are authored facing right with the left foot and left hand leading.
 > 11. ~~**Step 24, depth**~~ *done (Nov 9): the foreground, the audience (and `sit_audience`) and the living room; the game side follows.*
 > 12. ~~**Step 25, the fighting styles pilot**~~ *done (Nov 10): Rox's and Hollis's normals and their timing profiles; out of `ART_PENDING`.*
 > 13. ~~**Step 26, air specials**~~ *done (Nov 10): all fourteen clips.*
-> 14. **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
-> 15. **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
+> 14. ~~**Step 27, three boosts** and **step 28, the specials pass**~~ *done (Nov 10): all 41 clips.* Was: **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
+> 15. ~~**Step 29, the impact pass**~~ *done (Nov 10); the game side can take up the smears, `fx_impact_ring`, `fx_crack` and the `shake_*`/`swing_*` nodes.* Was: **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1338,15 +1338,27 @@ reactions.
 **Three new boosted specials** play the plain move's clip until theirs
 land (`STAND_INS` in `src/render/pose.ts`; same lengths):
 
-- [ ] `dale:Heat Lightning+` (40 frames; stand-in `Heat Lightning`): the
+- [x] `dale:Heat Lightning+` (40 frames; stand-in `Heat Lightning`): the
   same rising strike, but with the lightning crackling round him from the
-  start (invulnerable 1–9), and higher.
-- [ ] `gideon:Laying On of Hands+` and `Laying On of Hands (healing)+` (36
+  start (invulnerable 1–9), and higher. *Done (Nov 10, hand-keyed:
+  `_heat_lightning_plus`): a deeper coil, the fist down by the knee, then a
+  leap (root up to 0.28 m by 12, the feet hanging) that drives the fist out
+  through the top of the box; he lands on 15 with the arm still up. The
+  crackle is the game's `fx_heat_lightning`. Also fixed in the plain one:
+  the coil on frame 4 left the rear guard at chin height as he sank, so the
+  arm wrapped over his head.*
+- [x] `gideon:Laying On of Hands+` and `Laying On of Hands (healing)+` (36
   and 46 frames; stand-ins the plain ones): both hands, a mid this time
-  (y 0.75–1.8), lifting them off their feet on 10–12.
-- [ ] `gideon:Fire and Brimstone+` (50 frames; stand-in `Fire and
+  (y 0.75–1.8), lifting them off their feet on 10–12. *Done (`_laying_plus`):
+  both palms drawn back to the hips, driven into the chest on 10 and up
+  under the chin by 12, onto his toes; the healing one goes on into the
+  plain one's rapture from 20.*
+- [x] `gideon:Fire and Brimstone+` (50 frames; stand-in `Fire and
   Brimstone`): between the plain and the blessed one: a smaller column of
-  fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows).
+  fire (reach ±1.6 m, up to 2.0 m), armoured 4–17 (glows). *Done:
+  `_brimstone` takes a level now (0 plain, 0.5 boosted, 1 blessed): arms
+  halfway to the blessed height, heels up, and the blessed one's held beat
+  at the top.*
 
 ### 28. The specials pass (Nov 10, game side)
 
@@ -1356,30 +1368,45 @@ lands (`STAND_INS` in `src/render/pose.ts`, in brackets below); frames,
 hitboxes, hovers and dives are in the clip table under *Move clips*. The
 boosted clip (`+`) can be the plain one with more on it, as elsewhere.
 
+*Done (Nov 10): all 38 clips, hand-keyed per fighter (`_low_pressure`,
+`_splits_drop`, `_elbow_drop` and so on in `blender/fighters/`), every
+strike in its box. Boosted versions share the plain move's keys (the `+`
+falls back to the plain override). Notes:*
+
+- *A new strike tip, `elbow.L/R` (the forearm's root), for Hollis's Elbow
+  Drop; `Fitter.place` moves the body and that hand for it.*
+- *Mumbles' Clackety-Clack is marked `prop`: the jaw makes the hit and the
+  build can't check a jaw, so the head lunges into the box unchecked.*
+- *Gus has no ladle: Ladle Hook is the cleaver hand hooking up. A ladle
+  would be a fifth shape key (a full copy of the mesh); say if it's wanted.*
+- *Air string spikes run from over the head to low in front on 6–9;
+  the drops (Low Pressure, Elbow Drop, Belly Flop, Puppet Drop and the
+  rest) hold their falling pose to the end, for the game to cut on landing.*
+
 **Air specials on Down** (Down + Special in the air). Each hangs a beat,
 then drops; they read best with a clear windup pose in the hang and a
 committed, straight-line fall.
 
-- [ ] `dale:Low Pressure`, `Low Pressure+` (36 frames; stand-in `j.FK`):
+- [x] `dale:Low Pressure`, `Low Pressure+` (36 frames; stand-in `j.FK`):
   the umbrella snapped shut and pointed straight down like a spear, both
   hands on it; hang 1–5, straight down from 6; the tip leads (hit box
   under and just in front of him).
-- [ ] `rox:Splits Drop`, `Splits Drop+` (34 frames; stand-in `j.BK`):
+- [x] `rox:Splits Drop`, `Splits Drop+` (34 frames; stand-in `j.BK`):
   hang 1–4 knees tucked, then straight down into the full splits, a heel
   each side (box from 0.7 m behind to 0.8 m in front, at the feet).
-- [ ] `mumbles:Puppet Drop`, `Puppet Drop+` (32 frames; stand-in `Cut the
+- [x] `mumbles:Puppet Drop`, `Puppet Drop+` (32 frames; stand-in `Cut the
   Strings`): the strings go slack and he drops like dead weight, limbs
   loose, feet first, from 4; he lands first and is up quickly.
-- [ ] `hollis:Elbow Drop`, `Elbow Drop+` (36 frames; stand-in `j.BK`):
+- [x] `hollis:Elbow Drop`, `Elbow Drop+` (36 frames; stand-in `j.BK`):
   hang 1–6 with the elbow raised high (armoured 1–10, 1–14 boosted:
   glows), then all of him down, elbow first, from 7.
-- [ ] `margaret:Cut to Commercial`, `Cut to Commercial+` (32 frames;
+- [x] `margaret:Cut to Commercial`, `Cut to Commercial+` (32 frames;
   stand-in `j.FK`): a quick tuck 1–4, then straight down heel first from
   5, the cue cards held out for balance.
-- [ ] `gus:Belly Flop`, `Belly Flop+` (38 frames; stand-in `j.BK`): arms
+- [x] `gus:Belly Flop`, `Belly Flop+` (38 frames; stand-in `j.BK`): arms
   and legs spread 1–6, then down belly first, a little forward, from 7;
   a big, flat landing (16 frames of landing lag; boosted armoured 1–10).
-- [ ] `gideon:Fall from Grace`, `Fall from Grace+` (38 frames; stand-in
+- [x] `gideon:Fall from Grace`, `Fall from Grace+` (38 frames; stand-in
   `Rapture`): hangs arms wide, head back 1–8 (armoured 1–8 boosted), then
   comes down on them, a little forward, from 9, the book raised in both
   hands.
@@ -1388,32 +1415,32 @@ committed, straight-line fall.
 `cancel` window). Each starts from the end pose of its special, so the
 first frames should blend out of it.
 
-- [ ] `dale:Isobar Lasso BP` *Thunderclap* (31 frames; stand-in `c.BP`):
+- [x] `dale:Isobar Lasso BP` *Thunderclap* (31 frames; stand-in `c.BP`):
   from the lasso's reel-in, the umbrella brought up under their chin, a
   rising blow that puts them on the floor (hits 9–11, up to 2.0 m).
-- [ ] `rox:Star Jump BK` *And Down* (31 frames, crouching; stand-in
+- [x] `rox:Star Jump BK` *And Down* (31 frames, crouching; stand-in
   `c.BK`): landing from the Star Jump straight into a low sweep.
-- [ ] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `s.FK`):
+- [x] `rox:Star Jump FP` *Reach for the Sky* (28 frames; stand-in `s.FK`):
   landing from the Star Jump straight into an uppercut, up on her toes,
   that puts them on the floor.
-- [ ] `mumbles:Strings Attached FP` *Boo!* (22 frames; stand-in `s.BP`):
+- [x] `mumbles:Strings Attached FP` *Boo!* (22 frames; stand-in `s.BP`):
   back on stage behind them, arms up, jaw dropped wide: a scare that hits
   (6–8).
-- [ ] `hollis:Key Ring BP` *Yank* (29 frames; stand-in `Key Ring`): the
+- [x] `hollis:Key Ring BP` *Yank* (29 frames; stand-in `Key Ring`): the
   key ring's chain wrenched back with both hands, pulling them in and up
   (hits 9–11, from the floor to 1.5 m, out to 1.9 m).
-- [ ] `margaret:Breaking BK` *And Now This* (32 frames; stand-in `c.BP`):
+- [x] `margaret:Breaking BK` *And Now This* (32 frames; stand-in `c.BP`):
   from the stagger strike into a rising kick, a launcher (hits 10–12).
-- [ ] `gus:Flambé BP` *Fan the Flames* (32 frames; stand-in `s.BP`): the
+- [x] `gus:Flambé BP` *Fan the Flames* (32 frames; stand-in `s.BP`): the
   skillet swept up through the fire, a launcher with long reach (out to
   1.6 m, 10–12). The fire effect can be reused on the skillet.
-- [ ] `gideon:Laying On of Hands BK` *Slain in the Spirit* (31 frames;
+- [x] `gideon:Laying On of Hands BK` *Slain in the Spirit* (31 frames;
   stand-in `c.BP`): from the hand on their forehead, a push up and back, a
   launcher (10–12).
 
 **Gideon's Begone** (back + Special):
 
-- [ ] `gideon:Begone`, `Begone+` (40 frames; stand-in `Laying On of
+- [x] `gideon:Begone`, `Begone+` (40 frames; stand-in `Laying On of
   Hands`): a palm thrust to the forehead with the whole body behind it,
   hits 13–15 (y 0.75–1.6, out to 1.25 m); boosted, he's armoured 1–12
   (glows) and the palm drives up.
@@ -1424,22 +1451,22 @@ above). The attacker stops falling as each step chains and as it hits a
 body in the air, so these play hanging in the air: they shouldn't drift
 down in the clip.
 
-- [ ] `dale:j.FK FP` *Updraft*, `dale:j.BP BK` *Downburst* (15 and 18
+- [x] `dale:j.FK FP` *Updraft*, `dale:j.BP BK` *Downburst* (15 and 18
   frames; stand-in `j.BP`): the umbrella hooked up under them, then
   swung down from overhead with both hands.
-- [ ] `rox:j.BP FP` *Air Clap*, `rox:j.FK BK` *Heel Drop* (stand-ins
+- [x] `rox:j.BP FP` *Air Clap*, `rox:j.FK BK` *Heel Drop* (stand-ins
   `j.FP`, `j.FK`): a clap overhead; an axe kick, heel straight down.
-- [ ] `mumbles:j.FK FP` *Clackety-Clack*, `mumbles:j.BP FK` *Pratfall*
+- [x] `mumbles:j.FK FP` *Clackety-Clack*, `mumbles:j.BP FK` *Pratfall*
   (stand-ins `j.FP`, `j.BK`): his jaw clacking at them; sitting down on
   them, hard.
-- [ ] `hollis:j.FK BP` *Baton Swing*, `hollis:j.BP BK` *Hammer Fist*
+- [x] `hollis:j.FK BP` *Baton Swing*, `hollis:j.BP BK` *Hammer Fist*
   (stand-in `j.BP`): the nightstick swung up; both fists brought down.
-- [ ] `margaret:j.BK FP` *Wire Copy*, `margaret:j.BP BK` *Headline Drop*
+- [x] `margaret:j.BK FP` *Wire Copy*, `margaret:j.BP BK` *Headline Drop*
   (stand-ins `j.FP`, `j.BP`): cue cards flicked up; brought down edge
   first.
-- [ ] `gus:j.FK FP` *Ladle Hook*, `gus:j.BP BK` *Skillet Spike* (stand-ins
+- [x] `gus:j.FK FP` *Ladle Hook*, `gus:j.BP BK` *Skillet Spike* (stand-ins
   `j.FP`, `j.BP`): a ladle hooked up; the skillet brought down flat.
-- [ ] `gideon:j.BP FP` *Benediction*, `gideon:j.BP BK` *Smite from Above*
+- [x] `gideon:j.BP FP` *Benediction*, `gideon:j.BP BK` *Smite from Above*
   (stand-ins `j.FP`, `j.BP`): a blessing raised under them; the book
   brought down from on high.
 
@@ -1454,32 +1481,76 @@ contact, the light a blow throws, a jolt in the freeze and dust when a
 body lands (`docs/VISUALS.md`). The art can make the same moments land
 harder; none of this changes a clip's length or where its hits are.
 
-- [ ] **Smear frames on heavy attacks.** On the first active frame (or
+- [x] **Smear frames on heavy attacks.** On the first active frame (or
   the frame before) of every heavy strike in the clip table (55 damage and
   up, launchers, knockdowns, bounces), stretch the striking limb along its
   path: a stretched forearm or shin mesh, or a smear shape keyed visible
   for one or two frames. The game's swing arc (`src/render/swoosh.ts`)
   stands in until then and can be turned down once the clips carry it.
-- [ ] **Hold the anticipation.** Heavy normals and specials with 12 or
+  *Done (Nov 10): `anim.smear`, on every heavy hit (155 of 276: the data
+  now marks them `heavy`, from `tests/blender-data.test.ts`) struck with a
+  hand or foot: on the frame before the first active one, the forearm
+  stretched 1.55× along its length (the shin 1.4×), a little thinner, its
+  hand or foot with it, and back the next frame. It's bone scale, so the
+  GLBs now carry scale tracks on `forearm.*` and `shin.*` (and the
+  exporter's compensation on `hand.*` and `foot.*`); every other bone's
+  scale is still 1. The active frames are untouched, so the hit checks
+  stand. The swing arc can be turned down.*
+
+- [x] **Hold the anticipation.** Heavy normals and specials with 12 or
   more frames of startup: reach the wind-up pose by about two-thirds of
   the startup and hold it (a slight drift, not a freeze), then snap
   through to the strike in two frames. The snap is what sells the hit.
-- [ ] **Overshoot on contact.** On the first active frame, push the strike
+  *Done: `anim.hold`, for generated heavy normals and specials with 12 or
+  more frames of startup (hand-keyed moves and the styles pilot's rhythm
+  already time their own): the wind-up at two-thirds of the startup, held
+  creeping 6% further back, then through to the strike in two frames
+  (the middle one is the smear).*
+
+- [x] **Overshoot on contact.** On the first active frame, push the strike
   a few centimetres past the hitbox's far edge, then settle back: the
   pose at contact should be the most extended of the move.
-- [ ] **Heavier hit reactions.** `hit_head_heavy`, `hit_body_heavy` and
+  *Done: `anim.overshoot`: on a heavy hit's first active frame the hand
+  or foot is pushed up to 8 cm further, to 2.5 cm past the box's far edge
+  (inside the check's 4 cm), and settles back on the next. Not for chops,
+  rising strikes, spins or held props.*
+
+- [x] **Heavier hit reactions.** `hit_head_heavy`, `hit_body_heavy` and
   `stagger` (step 22): the head snapping a full 30–40° on frame 2, the
   spine following on 3–4. The freeze holds frame 1, so frame 2 is the one
   people see as the hit lands.
-- [ ] **Impact fx meshes** in Dale's GLB (shared, like `fx_tape_skip`):
+  *Done: `Stance.snapped`, a new frame 2 on `hit_head_heavy`,
+  `hit_body_heavy` and `stagger`: the head and neck 85% of the way to the
+  peak (40–45° back on the head hits), the body 20%, the face already
+  hurt; the spine follows to the peak on 4.*
+
+- [x] **Impact fx meshes** in Dale's GLB (shared, like `fx_tape_skip`):
   `fx_impact_ring` (a flat ring with a soft inner edge, 1 m radius, +y up)
   and `fx_crack` (a starburst floor crack, 1.5 m across, dark, for wall
   splats and ground bounces). The game draws its own rings and dust now;
   these would replace them with painted ones.
-- [ ] **Named nodes on the sets that can move.** Per stage, a few nodes
+  *Done: in `dale.glb`: `fx_impact_ring` (1 m radius, the rim bright
+  and fading to black inward, so it suits additive blending; it glows) and
+  `fx_crack` (about 1.4 m across, a dark crater and nine jagged fissures),
+  both flat, 1 cm and 6 mm thick, origin at the centre, +y up.*
+
+- [x] **Named nodes on the sets that can move.** Per stage, a few nodes
   the game can shake or swing on big hits: `shake_*` (props near the walls:
   the weather map, the mirrors, the news monitors, the hanging pans) and
   `swing_*` (hanging lamps, pivot at the top). Origins at their pivots.
+  *Done. Each is a child of its `set` or `seg_*` node (it shows and hides
+  with it, shares its material and light map, and is baked with it), so
+  find them with `getObjectByName`, not among the top-level objects; the
+  origins are the pivots: Weather `shake_map` (map and header, under
+  `set`), `shake_map_storm` and `shake_map_flood` (the overlays, under
+  their segments: shake all three together), `shake_screen` (the green
+  screen, pivot on the floor); Feel the Burn `shake_mirrors` (mirrors,
+  frames and barre, pivot at the foot of the mirror wall),
+  `shake_speakers_left` and `_right` (under `seg_warmup`, so gone in
+  Burnout); News `swing_lamp0`–`5` (the fresnels, pivot on the grid at
+  6.8 m, under `seg_headlines`); Kitchen Live `shake_shelves_left` and
+  `_right` (the jar shelves, under `seg_prep`). Kitchen has no hanging
+  pans yet: they'd be new set dressing (say if wanted).*
 
 ### State clips (every fighter)
 

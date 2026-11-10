@@ -12,7 +12,7 @@ import math
 import numpy as np
 
 from lib import paint as P
-from lib.anim import DATA, Stance
+from lib.anim import DATA, Stance, lerp_pose, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lit, mouth, torso
 
 ID = "gus"
@@ -321,7 +321,88 @@ def _held(key, mid, limb, reach, until=None):
 
 # The pan swings on the rear-hand normals (BP), the cleaver on the lead hand.
 _PAN = ("s.BP", "c.BP", "f.BP", "b.BP", "j.BP", "FP BP", "FK FP BP")
+# The skillet's far rim, this far past his rear fingertips (the pan's centre is 0.24 out, 0.17 across).
+PAN_REACH = 0.36
+
+
+def _pan_at(fit, base, target):
+    """The pose with the skillet's far rim at target (fwd, up), from the rear hand."""
+    return fit.fit(base, "hand.R", (target[0] - 0.05, target[0] + 0.05, target[1] - 0.05, target[1] + 0.05), report=False,
+                   tx=target[0], ty=target[1], extra=PAN_REACH).shaped(fist_R=1.0)
+
+
+def _belly_flop(st, base, mv, fit):
+    """Belly Flop (air, step 28): spread like a starfish, hanging (1–6), then
+    down belly first and a little forward from 7, arms and legs flung wide;
+    the game gives him a big flat landing."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    star = base.but(chest=(-8, -10, 0), head=(-12, 0, 0),
+                    hand_L={"pos": s((0.6, 0.05, 1.7)), "aim": (0.7, 0, 0.7)}, hand_R={"pos": s((-0.6, 0.0, 1.7)), "aim": (-0.7, 0, 0.7)},
+                    foot_L={"pos": s((0.36, 0.1, 0.2)), "turn": (0, -10, 0)}, foot_R={"pos": s((-0.36, -0.05, 0.2)), "turn": (0, -30, 0)},
+                    knee_L=s((0.4, 0.6, 0.6)), knee_R=s((-0.4, 0.5, 0.6))).shaped(fist_L=0.8, fist_R=0.0, open_R=0.9, jaw=0.6)
+    flop = base.but(hips={"offset": (0, 0.1 * k, -0.42 * k), "turn": (70, st.hips_yaw * 0.5, 0)}, spine=(10, -6, 0), chest=(10, -8, 0), neck=(-20, 0, 0), head=(-30, 0, 0),
+                    shoulder_L=(10, -8, 0), shoulder_R=(10, -8, 0),
+                    hand_L={"pos": s((0.5, 0.8, 0.4)), "aim": (0.5, 0.8, 0)}, hand_R={"pos": s((-0.5, 0.7, 0.4)), "aim": (-0.5, 0.8, 0)},
+                    foot_L={"pos": s((0.3, -0.75, 0.42)), "turn": (90, -10, 0)}, foot_R={"pos": s((-0.3, -0.8, 0.4)), "turn": (90, -30, 0)},
+                    knee_L=s((0.3, -0.3, -0.4)), knee_R=s((-0.3, -0.3, -0.4))).shaped(fist_L=0.8, fist_R=0.0, open_R=0.9, jaw=1.0)
+    flop = fit.place(flop, "hand.L", (min(x1 - 0.2, 0.6), y0 + 0.5 * (y1 - y0)))
+    return [(3, lerp_pose(base, star, 0.7).shaped(**star.parts["shapes"])), (6, star), (7, lerp_pose(star, flop, 0.5).shaped(**flop.parts["shapes"])),
+            (h0, flop), (h1, flop.but(head=(-34, 0, 0))), (mv["total"], flop)]
+
+
+def _fan_the_flames(st, base, mv, fit):
+    """Fan the Flames (Flambé BP, step 28): out of the toss, the skillet
+    swept up from behind his hip through the fire and under their chin, a
+    long launcher; held up high through the recovery."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    low = st.base(drop=st.drop + 0.1).but(chest=(16, 20, 0), spine=(8, 10, 0), head=(-2, -6, 0))
+    drawn = _pan_at(fit, low, (-0.5, 0.35)).shaped(jaw=0.3)
+    reach = base.but(hips={"offset": (0, 0.14 * k, -(st.drop + 0.02) * k), "turn": (4, st.hips_yaw - 30, 0)}, spine=(6, -40, 0), chest=(4, -56, 0),
+                     shoulder_L=(4, -56, 0), shoulder_R=(4, -56, 0), head=(-4, -12, 0))
+    hit = _pan_at(fit, reach, (x0 + 0.55 * (x1 - x0), y0 + 0.3 * (y1 - y0))).shaped(jaw=1.0)
+    up = _pan_at(fit, reach.but(chest=(-12, -56, 0), head=(-14, -12, 0)), (x0 + 0.4 * (x1 - x0), y1 - 0.12)).shaped(jaw=1.0)
+    high = _pan_at(fit, reach.but(chest=(-16, -50, 0), head=(-18, -12, 0)), (0.75, 1.85))
+    return [(4, drawn), (h0 - 3, toward(drawn, base, -0.05)), (h0, hit), (h1, up), (h1 + 4, high), (h1 + 9, high),
+            (total - 5, lerp_pose(high, base, 0.6)), (total, base)]
+
+
+def _skillet_spike(st, base, mv, fit):
+    """Skillet Spike (j.BP BK, step 28): the skillet raised over his head and
+    brought down flat through the spike box, high on 6 to low on 9."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    up = base.but(chest=(-14, -14, 0), head=(-10, 0, 0), hand_R={"pos": s((-0.06, -0.08, 2.0)), "aim": (0, -0.5, 0.85), "hint": (0, 1, 0)}).shaped(fist_R=1.0, jaw=0.4)
+    high = _pan_at(fit, base.but(chest=(-4, -20, 0)), (x0 + 0.5 * (x1 - x0), y1 - 0.25)).shaped(jaw=0.9)
+    low = _pan_at(fit, base.but(chest=(36, -20, 0), spine=(14, -10, 0), head=(24, 0, 0)), (x0 + 0.55 * (x1 - x0), 0.2)).shaped(jaw=0.9)
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
+def _hook(st, base, mv, fit):
+    """Ladle Hook (j.FK FP, step 28): the lead hand hooked up from low under
+    them, low on 6 to high on 9 (there's no ladle: the cleaver hand does it)."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    drawn = base.but(chest=(14, 20, 0), hand_L={"pos": s((0.24, -0.1, 0.9)), "aim": (0.2, -0.3, -0.9)})
+    low = fit.place(base.but(chest=(6, -40, 0), hand_L={"pos": s((0.14, 0.5, 0.9)), "aim": (0, 0.8, 0.5), "hint": (0, 0, 1)}).shaped(jaw=0.5), "hand.L",
+                    (x0 + 0.5 * (x1 - x0), y0 + 0.4))
+    high = fit.place(base.but(chest=(-12, -50, 0), head=(-10, -8, 0), hand_L={"pos": s((0.14, 0.4, 1.3)), "aim": (0, 0.3, 0.95), "hint": (0, 1, 0)}).shaped(jaw=0.8),
+                     "hand.L", (x0 + 0.4 * (x1 - x0), y1 - 0.15))
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, high), (mv["total"], lerp_pose(high, base, 0.6))]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Belly Flop": {"limb": "hand.L", "keys": _belly_flop},
+    "Flambé BP": {"limb": "hand.R", "keys": _fan_the_flames, "held": {"key": "pan", "limb": "hand.R", "reach": PAN_REACH, "show": (2, 30)}},
+    "j.BP BK": {"limb": "hand.R", "keys": _skillet_spike, "held": {"key": "pan", "limb": "hand.R", "reach": PAN_REACH, "show": (2, 16)}},
+    "j.FK FP": {"limb": "hand.L", "keys": _hook},
     **{m: {"held": _held("pan", m, "hand.R", 0.2)} for m in _PAN},
     # The long cleaver swings: s.BK (out to 1.85 m) and the strings it ends.
     "s.BK": {"limb": "hand.L"},

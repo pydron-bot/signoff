@@ -367,7 +367,88 @@ def _frisk(st, base, mv):
             (f0 - 1, lerp_pose(pat(1.0, 1.06), grab, 0.6)), (f0, grab), (f1, twist)]
 
 
+def _elbow_drop(st, base, mv, fit):
+    """Elbow Drop (air, step 28): hanging with the lead elbow raised high,
+    the fist by his ear (armoured: it glows), then all of him down elbow
+    first from 7, folded over it, the legs kicked up behind."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    raised = base.but(chest=(-10, -30, 0), spine=(-4, -20, 0), head=(4, -10, 0),
+                      hand_L={"pos": s((0.14, 0.02, 1.62)), "aim": (0, -0.3, 0.95)}, elbow_L=s((0.3, 0.3, 2.4)),
+                      hand_R={"pos": s((-0.4, -0.1, 1.35)), "aim": (-0.7, -0.2, 0.4)}).shaped(fist_L=1.0, fist_R=0.0, open_R=0.6, jaw=0.6)
+    drop = base.but(hips={"offset": (0, 0.1 * k, 0.1 * k), "turn": (55, st.hips_yaw, 0)}, spine=(22, -20, 0), chest=(30, -24, 0),
+                    shoulder_L=(30, -24, 0), shoulder_R=(30, -24, 0), head=(-10, -10, 0),
+                    hand_L={"pos": s((0.04, 0.75, 0.95)), "aim": (-0.6, 0.3, 0.6)}, elbow_L=s((0.2, 0.9, -0.6)),
+                    hand_R={"pos": s((-0.36, 0.3, 0.6)), "aim": (-0.4, -0.3, -0.8)},
+                    foot_L={"pos": s((0.12, -0.6, 0.85)), "turn": (100, -10, 0)}, foot_R={"pos": s((-0.14, -0.7, 0.75)), "turn": (100, -30, 0)},
+                    knee_L=s((0.12, 0.2, 0.4)), knee_R=s((-0.14, 0.1, 0.35))).shaped(fist_L=1.0, fist_R=0.6, jaw=1.0)
+    drop = fit.place(drop, "elbow.L", (x0 + 0.45 * (x1 - x0), y1 - 0.12))
+    return [(3, lerp_pose(base, raised, 0.7).shaped(**raised.parts["shapes"])), (6, raised), (7, lerp_pose(raised, drop, 0.6).shaped(**drop.parts["shapes"])),
+            (h0, drop), (h1, drop.but(head=(24, -10, 0))), (mv["total"], drop)]
+
+
+def _yank(st, base, mv):
+    """Yank (Key Ring BP, step 28): out of the key ring's throw, both hands
+    on the chain low and out in front, wrenched back and up to his chest on
+    the hits, leaning right back into it (the chain is the game's)."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    total = mv["total"]
+    grip = base.but(hips={"offset": (0, 0.1 * k, -(st.drop + 0.08) * k), "turn": (16, st.hips_yaw - 10, 0)}, spine=(14, -24, 0), chest=(26, -30, 0),
+                    shoulder_L=(26, -30, 0), shoulder_R=(26, -30, 0), head=(6, -10, 0),
+                    hand_R={"pos": s((-0.04, 0.62, 0.78)), "aim": (0, 1, -0.2), "hint": (0, 0, 1)},
+                    hand_L={"pos": s((0.08, 0.5, 0.82)), "aim": (0, 1, -0.2), "hint": (0, 0, 1)}).shaped(fist_L=1.0, fist_R=1.0, jaw=0.3)
+    haul = base.but(hips={"offset": (0, -0.14 * k, -(st.drop + 0.04) * k), "turn": (-14, st.hips_yaw + 10, 0)}, spine=(-10, -10, 0), chest=(-20, -16, 0),
+                    shoulder_L=(-20, -16, 0), shoulder_R=(-20, -16, 0), head=(-14, -6, 0),
+                    hand_R={"pos": s((-0.1, 0.12, 1.4)), "aim": (0.2, -0.6, 0.6), "hint": (0, 1, 0)},
+                    hand_L={"pos": s((0.12, 0.2, 1.34)), "aim": (-0.2, -0.6, 0.6), "hint": (0, 1, 0)},
+                    foot_L=moved(base.parts["foot_L"], (0, 0, 0.03 * k), (24, base.parts["foot_L"]["turn"][1], 0))).shaped(fist_L=1.0, fist_R=1.0, jaw=1.0)
+    return [(4, grip), (h0 - 2, toward(grip, base, -0.06)), (h0, lerp_pose(grip, haul, 0.6).shaped(**haul.parts["shapes"])), (h1, haul), (h1 + 6, haul.but(head=(-18, -6, 0))),
+            (h1 + 12, lerp_pose(haul, base, 0.5).shaped(fist_L=0.6, fist_R=0.6)), (total - 3, _sink(st, base)), (total, base)]
+
+
+def _baton(st, base, mv, fit):
+    """Baton Swing (j.FK BP, step 28): the rear fist swung up from his hip
+    through them, low on 6 to high on 9, the body turning into it."""
+    s = st.s
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+    turn = dict(chest=(4, -50, 0), spine=(2, -30, 0), shoulder_L=(4, -50, 0), shoulder_R=(4, -50, 0))
+    drawn = base.but(chest=(14, 10, 0), hand_R={"pos": s((-0.3, -0.2, 0.95)), "aim": (-0.2, -0.3, -0.9)}).shaped(fist_R=1.0)
+    low = fit.place(base.but(**turn, hand_R={"pos": s((-0.05, 0.5, 0.95)), "aim": (0, 0.8, 0.6), "hint": (0, 0, 1)}).shaped(fist_R=1.0, jaw=0.6), "hand.R",
+                    (x0 + 0.5 * (x1 - x0), y0 + 0.5))
+    high = base.but(**{**turn, "chest": (-14, -60, 0)}, head=(-12, -10, 0), hand_R={"pos": s((-0.02, 0.38, 1.3)), "aim": (0, 0.3, 0.95), "hint": (0, 1, 0)}
+                    ).shaped(fist_R=1.0, jaw=0.9)
+    return [(3, drawn), (h0, low), (h1, high), (h1 + 3, high), (mv["total"], lerp_pose(high, base, 0.6))]
+
+
+def _hammer_fist(st, base, mv, fit):
+    """Hammer Fist (j.BP BK, step 28): both fists locked together over his
+    head, brought straight down through the spike box, high on 6 to low on 9."""
+    s, k = st.s, st.k
+    h0, h1 = mv["hits"][0]["frames"]
+    x0, x1, y0, y1 = mv["hits"][0]["box"]
+
+    def both(p):
+        r = p.parts["hand_R"]["pos"]
+        return p.but(hand_L={**p.parts["hand_R"], "pos": (r[0] + 0.09 * k, r[1], r[2])})
+
+    up = both(base.but(chest=(-16, -20, 0), head=(-8, 0, 0), hand_R={"pos": s((-0.04, -0.05, 2.05)), "aim": (0, -0.4, 0.9), "hint": (0, 1, 0)})).shaped(
+        fist_L=1.0, fist_R=1.0, jaw=0.5)
+    high = both(fit.place(base.but(chest=(4, -20, 0), hand_R={"pos": s((-0.04, 0.45, 1.6)), "aim": (0, 0.8, -0.3), "hint": (0, 1, 0)}), "hand.R",
+                          (x0 + 0.5 * (x1 - x0), y1 - 0.3))).shaped(fist_L=1.0, fist_R=1.0, jaw=0.9)
+    low = both(fit.place(base.but(chest=(40, -20, 0), spine=(14, -10, 0), head=(26, 0, 0), hand_R={"pos": s((-0.04, 0.45, 0.7)), "aim": (0, 0.3, -0.95), "hint": (0, 1, 0)}),
+                         "hand.R", (x0 + 0.45 * (x1 - x0), 0.55))).shaped(fist_L=1.0, fist_R=1.0, jaw=0.9)
+    return [(3, up), (h0 - 1, toward(up, base, -0.05)), (h0, high), (h1, low), (h1 + 4, low), (mv["total"], lerp_pose(low, base, 0.6))]
+
+
 OVERRIDES = {
+    # The specials pass (step 28).
+    "Elbow Drop": {"limb": "elbow.L", "keys": _elbow_drop},
+    "Key Ring BP": {"limb": "hand.R", "prop": True, "keys": _yank},
+    "j.FK BP": {"limb": "hand.R", "keys": _baton},
+    "j.BP BK": {"limb": "hand.R", "keys": _hammer_fist},
     # The fighting styles pilot (step 25 C): the night watch.
     "s.FP": {"keys": _collar_grab},
     "s.FK": {"limb": "knee.L", "keys": _knee("L")},
