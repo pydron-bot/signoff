@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.45.0',
+    date: '2026-11-10',
+    title: 'Through the Glass',
+    notes: [
+      'The title is a living room at 3:33 a.m.: the attract mode plays on the TV across the room, and starting a match pushes in through the glass.',
+      'In Arcade, the fighters you have beaten watch from the bleachers in the dark past the walls.',
+      'Studio cameras, boom mics and lamps stand at the edges of the frame as the camera pulls back, and step out of the way of a fighter at the wall.',
+    ],
+  },
+  {
     version: '0.44.0',
     date: '2026-11-10',
     title: 'House Styles',

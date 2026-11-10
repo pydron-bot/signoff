@@ -207,6 +207,7 @@ export class Arena {
   private readonly shadows: ContactShadows;
   private readonly rim: THREE.DirectionalLight;
   private readonly key: THREE.DirectionalLight;
+  private readonly ambient: THREE.HemisphereLight;
   private readonly air: Atmosphere;
   private frame = 0;
   private projectileMat!: THREE.MeshBasicMaterial;
@@ -226,6 +227,7 @@ export class Arena {
     this.scene.add(rim);
     this.rim = rim;
     this.key = key;
+    this.ambient = ambient;
     this.shadows = new ContactShadows(this.scene);
     this.stage = new StageView(this.scene, { ambient, key, rim, grade: this.grade });
     this.sparks = new Sparks(this.scene);
@@ -364,6 +366,11 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+  }
+
+  /** Roughly the picture's colour, for the light it throws (the title's TV): the segment's key and ambient, mixed. */
+  tone(out: THREE.Color): THREE.Color {
+    return out.copy(this.key.color).lerp(this.ambient.color, 0.5);
   }
 
   /** The scene's drawing height in device pixels: effects sized in pixels follow it. */

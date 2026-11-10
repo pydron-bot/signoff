@@ -421,8 +421,12 @@ more it reacts to a big one than a small one.
   takes baked occlusion, light maps and emission from the art as it lands
   (docs/BLENDER-TODO.md, step 23). Haze, beams from the set's own lamps
   and drifting dust (`src/render/atmosphere.ts`) give the air depth.
-- **The title** is the attract mode on a CRT in a dark room at 3:33 a.m.;
-  starting a match pushes in through the glass.
+- **The title** is the attract mode on the TV in a living room at 3:33
+  a.m., seen from the sofa (lit by the screen and a streetlight through the
+  blinds); starting a match pushes in through the glass.
+- **The studio round the fight:** camera kit at the edges of the frame in
+  silhouette, and bleachers in the dark past the walls, where in Arcade the
+  fighters you've beaten sit and watch (the deal).
 - Commercial breaks between rounds show fake ads for the stage's world (a
   mattress store, a hotline, a toy) for 4 seconds while the set changes.
 
