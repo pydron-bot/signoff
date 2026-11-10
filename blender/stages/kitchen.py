@@ -23,6 +23,7 @@ import math
 
 import numpy as np
 
+from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area
 from lib.texture import bright
@@ -77,6 +78,7 @@ LIGHTS = [
 
 # What gives off light (step 23 C): part name → strength, or a rule.
 EMISSION = {
+    "fg_cam_tally": 2,
     "sign": bright(2.5, 150, 200),
     "hood_light": 2,
     r"wall-?1_.*|embers.*": 3,
@@ -114,6 +116,8 @@ LIGHTMAPS = {
 LIGHT_SIZE = 512
 # ...and in steps of 4 (of 255), to fit with the GLB under 2 MB.
 LIGHT_STEP = 4
+# ...and the glow atlas at 512² (mostly flames, which the bloom softens).
+GLOW_SIZE = 512
 
 
 def lit(t, **k):
@@ -375,6 +379,9 @@ def build(make):
     make("seg_oven", oven)
     make("prop_pot", pot, at=(-3, COUNTER_F, COUNTER_U))
     make("prop_knives", knives, at=(3, COUNTER_F, COUNTER_U))
+    make("fg_left", lambda p: fg.camera(p, "fg_cam", 1), at=(-6.2, 3.0, 0))
+    make("fg_right", lambda p: fg.cue_cards(p, "fg_cards", -1), at=(6.2, 3.0, 0))
+    make("fg_top", lambda p: fg.hood_edge(p, "fg_hood"), at=(-3.0, 2.0, 5.0))
     make("fx_flare", flare)
     make("fx_mark", mark)
 

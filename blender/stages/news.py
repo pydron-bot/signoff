@@ -22,6 +22,7 @@ import math
 
 import numpy as np
 
+from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area, spot
 
@@ -80,6 +81,7 @@ LIGHTS = [
 
 # What gives off light (step 23 C): part name → strength, or a rule.
 EMISSION = {
+    "fg_cam_tally": 2,
     "globe": lambda t: np.where(np.hypot(t.side, t.up - GLOBE_U) < GLOBE_R, 1.5, 0.0),
     "header": 2,
     "clock": 1.0,  # a white face: any more and it blooms into a ball
@@ -362,6 +364,9 @@ def build(make):
     make("seg_ticker", ticker)
     make("seg_lightsout", lightsout)
     make("prop_desk", desk, at=(0, -0.4, 0))
+    make("fg_left", lambda p: fg.camera(p, "fg_cam", 1), at=(-6.2, 3.0, 0))
+    make("fg_right", lambda p: fg.boom(p, "fg_boom", -1), at=(6.2, 3.0, 0))
+    make("fg_top", lambda p: fg.lamp(p, "fg_lamp"), at=(-2.5, 2.0, 5.0))
     make("fx_lamp", lamp)
     make("fx_wreck", wreck)
     make("fx_mark", mark)

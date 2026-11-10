@@ -24,6 +24,7 @@ import math
 
 import numpy as np
 
+from lib import foreground as fg
 from lib import paint as P
 from lib.bake import area
 from lib.texture import bright
@@ -570,6 +571,9 @@ def build(make):
     make("seg_double", double)
     make("seg_burnout", burnout)
     make("prop_boombox", boombox_parts, at=(0, -0.3, 0))
+    make("fg_left", lambda p: fg.speakers(p, "fg_pa", 1), at=(-6.2, 3.0, 0))
+    make("fg_right", lambda p: fg.mic_stand(p, "fg_mic", -1), at=(6.2, 3.0, 0))
+    make("fg_top", lambda p: fg.lamp(p, "fg_lamp"), at=(2.5, 2.0, 5.0))
     make("fx_shard", shard)
     make("fx_shatter", shatter)
     make("fx_mark", mark)

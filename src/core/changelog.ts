@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.41.0',
+    date: '2026-11-10',
+    title: 'Studio Audience',
+    notes: [
+      'Behind the scenes: the studio kit at the edges of the frame, the bleachers in the dark where beaten fighters will sit, and the living room at 3:33 a.m. are built, ready for the game to bring in.',
+    ],
+  },
+  {
     version: '0.40.0',
     date: '2026-11-10',
     title: 'Practicals',
