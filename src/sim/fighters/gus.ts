@@ -227,7 +227,7 @@ export const GUS: FighterData = {
   id: 'gus',
   name: 'Chef Gus Lamarre',
   style: 'midrange',
-  health: 1000,
+  health: 940,
   walkFwd: fx(0.036),
   walkBack: fx(0.032),
   jumpVy: fx(0.19),

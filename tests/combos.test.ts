@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { BAR, FIGHTERS, Input, JUGGLE_POP, MAX_JUGGLE, METER_SCALE_MIN, METER_SCALE_STEP, REPEAT_KEEP, SCALE_STEP, step, type MatchState, type SimEvent } from '../src/sim';
 import { fx } from '../src/sim/fixed';
+import { GUIDE_HEALTH } from '../src/game/comboGuides';
 import { count, place, ready } from './sim-helpers';
 
 const { DOWN, LEFT, RIGHT, BLOCK, SPECIAL, FP, BP, FK, BK } = Input;
@@ -237,7 +238,7 @@ describe("Rox's signature routes", () => {
     // One unbroken combo.
     h.forEach((e, k) => expect(e.combo, `${e.move} is hit ${k + 1}`).toBe(k + 1));
     const d = m.fighters[1];
-    return { hits: h.length, pct: ((d.maxHealth - d.health) * 100) / d.maxHealth };
+    return { hits: h.length, pct: ((d.maxHealth - d.health) * 100) / GUIDE_HEALTH };
   }
 
   it('meterless: 10 or more hits, strings and specials (no launcher loop), about 30%', () => {

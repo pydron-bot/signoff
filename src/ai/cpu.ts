@@ -17,8 +17,9 @@ import { createRng, nextInt, type RngState } from '../sim/rng';
 import { backToWall, stageFinisher } from '../sim/finisher';
 import { propInReach } from '../sim/stage';
 import { segmentData } from '../sim/stages';
-import { GUIDE_DUMMY } from '../game/comboGuides';
-import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_PRESS, AFTER_BLOCK_THROW, Habits, WAKE_ATTACK, WAKE_BLOCK, WAKE_JUMP, type Glimpse } from './habits';
+import { GUIDE_HEALTH } from '../game/comboGuides';
+import { leanOf, type Choice } from './lean';
+import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_PRESS, AFTER_BLOCK_THROW, Habits, OKI_STRIKE, OKI_THROW, WAKE_ATTACK, WAKE_BLOCK, WAKE_JUMP, type Glimpse } from './habits';
 import { RouteRun, openerBits, routeAfter, routeOf, warm, type Opener } from './routes';
 
 const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT, METER } = Input;
@@ -79,6 +80,12 @@ const ATTACK: Readonly<Record<string, number>> = { FP, BP, FK, BK };
 const ROUTE_SLACK = fx(0.05);
 /** A blocked attack is answered (duck, block, throw) only this soon after. */
 const READ_FRESH = 40;
+/** Steps of a projectile's flight it guards ahead of (its reaction time and some). */
+const PROJECTILE_LEAD = 24;
+/** Steps a getup's guard or duck is held once it's up. */
+const WAKE_HOLD = 10;
+/** Steps it keeps its guard after a blockstun when they can carry on (a string, or close and plus). */
+const GUARD_ON = 6;
 
 /** What the CPU saw of its opponent on one frame. */
 interface Seen extends Glimpse {
@@ -91,6 +98,8 @@ interface Seen extends Glimpse {
   low: boolean;
   /** An opponent's projectile coming this way. */
   projectile: boolean;
+  /** One of their projectiles is on screen (anywhere). */
+  shotOut: boolean;
   /** Visibly stuck in the recovery of a move. */
   recovering: boolean;
   /** Frames left of the move they're in (0 if none): the animation shows how far through it they are. */
@@ -119,6 +128,8 @@ export interface CpuTally {
 
 /** A plan gives the input for each frame until it returns null. A soft one (walking) gives way when something's coming. */
 type Plan = ((me: FighterState, t: number) => number | null) & { soft?: boolean };
+/** One of a style's options: the kind of choice it is (for the lean), its weight, and how to make it. */
+type Option = readonly [Choice, number, () => Plan];
 
 export class Cpu {
   private readonly rng: RngState;
@@ -131,6 +142,7 @@ export class Cpu {
     threat: false,
     low: false,
     projectile: false,
+    shotOut: false,
     recovering: false,
     left: 0,
     unblockable: false,
@@ -189,6 +201,9 @@ export class Cpu {
   private blockedBy = '';
   /** The combo count it last weighed a Cut Away at. */
   private cutCombo = 0;
+  /** It was in blockstun on the step before, and the move it last blocked. */
+  private inBlockstun = false;
+  private lastBlocked = '';
   /** The step it saw the opponent start getting up (-1: not yet). */
   private getupAt = -1;
   /** What it has learned of the opponent this match. */
@@ -264,6 +279,10 @@ export class Cpu {
       }
       return 0;
     }
+    // Its own guard: the move it's blocking (on screen as it lands), and whether a blockstun ended on this step.
+    if (me.mode === 'blockstun' && them.mode === 'move') this.lastBlocked = them.move;
+    const leftBlock = this.inBlockstun && me.mode !== 'blockstun';
+    this.inBlockstun = me.mode === 'blockstun';
     const at = now - Math.min(this.level.delay, now);
     const s = this.seen[at % HISTORY];
     this.view = s;
@@ -289,9 +308,14 @@ export class Cpu {
     this.stayDown = -1;
     // Getting up with them close: guard on the first frame up (crouching mostly: a high goes over it), now and then.
     if (me.mode === 'getup') {
-      if (this.wakeGuard < 0) this.wakeGuard = Math.abs(s.x - me.x) < fx(1.6) && this.roll((this.level.block * 3) / 5) ? (this.roll(60) ? BLOCK | DOWN : BLOCK) : 0;
+      if (this.wakeGuard < 0) {
+        this.habits.rising(now + me.timer + 1);
+        this.wakeGuard = this.wakeDefence(me, s);
+      }
       return this.wakeGuard;
     }
+    // Up: the guard (or the duck) is held a moment more, through whatever was timed for the first frame.
+    if (this.wakeGuard > 0 && actionable(me)) this.start(hold(this.wakeGuard, WAKE_HOLD));
     this.wakeGuard = -1;
     if (me.combo === 0) this.cutCombo = 0;
     if (this.cutAway(me)) return METER;
@@ -306,6 +330,11 @@ export class Cpu {
     if (skip) return skip;
     const pun = this.punishBlocked(me, them);
     if (pun) return pun;
+    // Out of a blockstun with them still on it: the guard stays up a moment (pressing now walks into the next hit).
+    if (leftBlock && actionable(me) && this.keepGuard(me, them)) {
+      this.start(hold(BLOCK | (me.crouching ? DOWN : 0), GUARD_ON + nextInt(this.rng, 6)));
+      return this.next0(me);
+    }
 
     if (this.plan?.soft && s.threat && actionable(me)) this.plan = null;
     if (this.plan) {
@@ -352,7 +381,8 @@ export class Cpu {
     }
     if (this.wait > 0) {
       this.wait--;
-      return 0;
+      // A projectile on its way: guard it (crouching under a high one), even between decisions.
+      return s.threat && s.shotOut ? BLOCK | (s.low ? DOWN : 0) : 0;
     }
     if (propInReach(m, me) >= 0 && this.roll(35)) this.start(tap(INTERACT));
     else this.decide(me, s);
@@ -426,7 +456,7 @@ export class Cpu {
       return this.next0(me);
     }
     // Their health bar, against what each route does to the guide's dummy.
-    const killPct = Math.floor((them.health * 100) / fighterData(GUIDE_DUMMY).health);
+    const killPct = Math.floor((them.health * 100) / GUIDE_HEALTH);
     const r = routeAfter(me.fighter, me.move, me.meter, this.spare(me, 1) && this.roll(this.level.boost), killPct);
     // Too far out for the route to hold together: the string it was in goes on instead.
     if (!r || Math.abs(them.x - me.x) > r.far + ROUTE_SLACK) return null;
@@ -625,14 +655,17 @@ export class Cpu {
       }
     }
     let projectile = false;
+    let shotOut = false;
     for (let p = 0; p < m.projectiles.length; p++) {
       const P = m.projectiles[p];
       if (!P.active || P.owner === this.player) continue;
       const pd = moveData(them.fighter, P.move).spawns[P.spawn].projectile;
-      // One that comes back (the plate) is still a threat once it's gone past.
-      if (Math.sign(me.x - P.x) !== P.dir && (pd.returnAfter === undefined || P.back)) continue;
+      shotOut = true;
       const near = Math.abs(P.x - me.x);
-      if (near < fx(2.2)) {
+      // One that comes back (the plate) is still a threat once it's gone past; one on top of it is a threat whichever way it's going.
+      if (Math.sign(me.x - P.x) !== P.dir && (pd.returnAfter === undefined || P.back) && near > fx(0.6)) continue;
+      // A fast one is a threat from further off: it's seen late, so the guard goes up while it's still on its way.
+      if (near < fx(1.2) + Math.abs(pd.vx) * PROJECTILE_LEAD) {
         threat = true;
         // Where it flies is on screen: one on the floor is blocked low, and a crouching guard goes under a high one.
         if (pd.effect.height === 'low' || pd.effect.height === 'high') low = true;
@@ -641,6 +674,7 @@ export class Cpu {
     }
     s.threat = threat;
     s.projectile = projectile;
+    s.shotOut = shotOut;
     s.low = low;
   }
 
@@ -690,7 +724,8 @@ export class Cpu {
       return;
     }
     // Up close, now and then the mix-up a route starts from: low against a standing guard, overhead against a crouching one.
-    if (dist < fx(1.0) && this.level.convert > 0 && this.roll(25)) {
+    const lean = leanOf(me.fighter, this.foe);
+    if (dist < fx(1.0) && this.level.convert > 0 && this.roll(25 * lean.mix)) {
       this.start(this.opener(me, s.guarding ? (s.crouching ? 'overhead' : 'low') : this.roll(60) ? 'jab' : 'low'));
       return;
     }
@@ -700,7 +735,7 @@ export class Cpu {
       return;
     }
     // Now and then it goes over the top: a jump-in, with an air attack or its air special.
-    if (dist > fx(1.3) && dist < fx(2.8) && this.roll(this.level === LEVELS.easy ? 4 : 8)) {
+    if (dist > fx(1.3) && dist < fx(2.8) && this.roll((this.level === LEVELS.easy ? 4 : 8) * lean.jump)) {
       this.start(this.jumpIn(me, d));
       return;
     }
@@ -822,6 +857,39 @@ export class Cpu {
     };
   }
 
+  /**
+   * Just out of a blockstun: keep blocking if they can carry on. The move it
+   * blocked chains (a string goes on), or they're close and the move left
+   * them ahead (a player learns which are plus). Not if they've shown they
+   * throw after a blocked string; then it's their throw it has to beat.
+   */
+  private keepGuard(me: FighterState, them: FighterState): boolean {
+    if (Math.abs(them.x - me.x) > fx(1.5) || !this.roll(this.level.block)) return false;
+    const id = this.lastBlocked;
+    if (!id || !(id in fighterData(them.fighter).moves)) return false;
+    const mv = moveData(them.fighter, id);
+    const onBlock = frameData(mv).onBlock;
+    return hasChain(mv) || (onBlock !== null && onBlock >= 0);
+  }
+
+  /**
+   * Its own getup with them close, decided once: by what they've done to its
+   * getups before. One who throws gets a neutral duck (a throw goes over it,
+   * and the whiff can be punished); one who strikes gets a guard; otherwise a
+   * guard, crouching mostly, with a duck now and then to keep them honest.
+   */
+  private wakeDefence(me: FighterState, s: Seen): number {
+    if (Math.abs(s.x - me.x) >= fx(1.6)) return 0;
+    const h = this.habits;
+    const k = h.likely(h.oki, SURE);
+    // A read on its own: one who throws its getups gets the duck whether or not it would have guarded.
+    if (k === OKI_THROW && this.roll(this.level.read)) return DOWN;
+    if (!this.roll((this.level.block * 3) / 5)) return 0;
+    if (k === OKI_STRIKE) return this.roll(60) ? BLOCK | DOWN : BLOCK;
+    if (this.roll(this.level.read / 4)) return DOWN;
+    return this.roll(60) ? BLOCK | DOWN : BLOCK;
+  }
+
   /** A dash in: now and then dash, Block (cancelled once it's committed), again, to come in behind a guard. */
   private dash(me: FighterState): Plan {
     const fwd = me.facing > 0 ? RIGHT : LEFT;
@@ -851,6 +919,26 @@ export class Cpu {
     };
   }
 
+  /**
+   * One of a style's options, by weight: each weight is scaled by how the
+   * CPU leans for this fighter (src/ai/lean.ts). Options are made only once
+   * chosen, as making one can draw on the dice (a boost, a string).
+   */
+  private choose(me: FighterState, options: readonly Option[]): void {
+    const lean = leanOf(me.fighter, this.foe);
+    let total = 0;
+    for (const [c, w] of options) total += w * lean[c];
+    if (total <= 0) return;
+    let r = (nextInt(this.rng, 10000) * total) / 10000;
+    for (const [c, w, make] of options) {
+      r -= w * lean[c];
+      if (r < 0) {
+        this.start(make());
+        return;
+      }
+    }
+  }
+
   /** A bit of everything: the plate from range to collect, the blast when it's paid for, a heal when hurt and holding a donation. */
   private allrounder(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
     const blessed = me.donations >= 2;
@@ -859,172 +947,219 @@ export class Cpu {
       return;
     }
     if (dist < fx(1.1)) {
-      if (blessed && r < 30) this.start(this.special(me, SPECIAL));
-      else if (r < 45) this.start(this.string(d, me));
-      else if (r < 57) this.start(tap(THROW));
-      else if (r < 67) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 77) this.start(tap(DOWN | BK));
-      else this.start(taps([back, 0, back]));
+      this.choose(me, [
+        ['special', blessed ? 30 : 0, () => this.special(me, SPECIAL)],
+        ['string', blessed ? 15 : 45, () => this.string(d, me)],
+        ['throw', 12, () => tap(THROW)],
+        ['special', 10, () => this.special(me, DOWN | SPECIAL)],
+        ['low', 10, () => tap(DOWN | BK)],
+        ['retreat', 23, () => taps([back, 0, back])],
+      ]);
     } else if (dist < fx(1.8)) {
-      if (r < 25) this.start(tap(BK));
-      else if (r < 40) this.start(tap(DOWN | FK));
-      else if (r < 55) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 75) this.start(hold(fwd, 10));
-      else this.start(hold(back, 10));
+      this.choose(me, [
+        ['poke', 25, () => tap(BK)],
+        ['low', 15, () => tap(DOWN | FK)],
+        ['special', 15, () => this.special(me, fwd | SPECIAL)],
+        ['approach', 20, () => hold(fwd, 10)],
+        ['retreat', 25, () => hold(back, 10)],
+      ]);
     } else {
-      if (r < 45) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 80) this.start(hold(fwd, 16));
-      else this.start(hold(0, 10));
+      this.choose(me, [
+        ['special', 45, () => this.special(me, fwd | SPECIAL)],
+        ['approach', 35, () => hold(fwd, 16)],
+        ['wait', 20, () => hold(0, 10)],
+      ]);
     }
   }
 
   /** Holds the space at the tip of the cleaver: long pokes, fire on the floor as they come in, pans from range, the mallet up close. */
-  private midrange(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+  private midrange(me: FighterState, d: FighterData, dist: Fx, _r: number, fwd: number, back: number): void {
     if (dist < fx(1.05)) {
-      if (r < 35) this.start(this.string(d, me));
-      else if (r < 50) this.start(this.special(me, SPECIAL));
-      else if (r < 60) this.start(tap(THROW));
-      else if (r < 75) this.start(tap(back | BP));
-      else this.start(hold(back, 14));
+      this.choose(me, [
+        ['string', 35, () => this.string(d, me)],
+        ['special', 15, () => this.special(me, SPECIAL)],
+        ['throw', 10, () => tap(THROW)],
+        ['poke', 15, () => tap(back | BP)],
+        ['retreat', 25, () => hold(back, 14)],
+      ]);
     } else if (dist < fx(1.9)) {
-      if (r < 22) this.start(tap(BK));
-      else if (r < 38) this.start(tap(BP));
-      else if (r < 50) this.start(tap(DOWN | FK));
-      else if (r < 60) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 72) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 82) this.start(tap(back | BP));
-      else this.start(hold(back, 10));
+      this.choose(me, [
+        ['poke', 22, () => tap(BK)],
+        ['poke', 16, () => tap(BP)],
+        ['low', 12, () => tap(DOWN | FK)],
+        ['special', 10, () => this.special(me, DOWN | SPECIAL)],
+        ['special', 12, () => this.special(me, fwd | SPECIAL)],
+        ['poke', 10, () => tap(back | BP)],
+        ['retreat', 18, () => hold(back, 10)],
+      ]);
     } else if (dist > fx(2.6)) {
-      if (r < 40) this.start(this.special(me, back | SPECIAL));
-      else if (r < 75) this.start(hold(fwd, 16));
-      else this.start(hold(0, 10));
+      this.choose(me, [
+        ['special', 40, () => this.special(me, back | SPECIAL)],
+        ['approach', 35, () => hold(fwd, 16)],
+        ['wait', 25, () => hold(0, 10)],
+      ]);
     } else {
-      if (r < 30) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 50) this.start(this.special(me, back | SPECIAL));
-      else if (r < 80) this.start(hold(fwd, 8));
-      else this.start(hold(back, 8));
+      this.choose(me, [
+        ['special', 30, () => this.special(me, fwd | SPECIAL)],
+        ['special', 20, () => this.special(me, back | SPECIAL)],
+        ['approach', 30, () => hold(fwd, 8)],
+        ['retreat', 20, () => hold(back, 8)],
+      ]);
     }
   }
 
-  /** Keeps out: projectiles from range, the lasso at mid range. */
-  private zoner(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+  /** Keeps out: projectiles from range, the lasso and the longest pokes at mid range. */
+  private zoner(me: FighterState, d: FighterData, dist: Fx, _r: number, fwd: number, back: number): void {
     if (dist < fx(1.05)) {
-      if (r < 50) this.start(this.string(d, me));
-      else if (r < 62) this.start(tap(THROW));
-      else if (r < 74) this.start(tap(DOWN | BK));
-      else if (r < 86) this.start(this.special(me, back | SPECIAL));
-      else this.start(taps([back, 0, back]));
+      this.choose(me, [
+        ['string', 50, () => this.string(d, me)],
+        ['throw', 12, () => tap(THROW)],
+        ['low', 12, () => tap(DOWN | BK)],
+        ['special', 12, () => this.special(me, back | SPECIAL)],
+        ['retreat', 14, () => taps([back, 0, back])],
+      ]);
     } else if (dist > fx(2.6)) {
-      if (r < 45) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 70) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 85) this.start(hold(fwd, 20));
-      else this.start(hold(0, 10));
+      this.choose(me, [
+        ['special', 45, () => this.special(me, fwd | SPECIAL)],
+        ['special', 25, () => this.special(me, DOWN | SPECIAL)],
+        ['approach', 15, () => hold(fwd, 20)],
+        ['wait', 15, () => hold(0, 10)],
+      ]);
     } else if (dist > fx(1.4)) {
-      // The longest pokes in the game, from where only he reaches.
-      if (r < 22) this.start(this.special(me, back | SPECIAL));
-      else if (r < 40 && dist < fx(1.8)) this.start(tap(BK));
-      else if (r < 40) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 55) this.start(tap(dist < fx(1.6) ? FK : DOWN | FK));
-      else if (r < 78) this.start(hold(back, 18));
-      else this.start(this.special(me, fwd | SPECIAL));
+      this.choose(me, [
+        ['special', 22, () => this.special(me, back | SPECIAL)],
+        dist < fx(1.8) ? ['poke', 18, () => tap(BK)] : ['special', 18, () => this.special(me, fwd | SPECIAL)],
+        dist < fx(1.6) ? ['poke', 15, () => tap(FK)] : ['low', 15, () => tap(DOWN | FK)],
+        ['retreat', 23, () => hold(back, 18)],
+        ['special', 22, () => this.special(me, fwd | SPECIAL)],
+      ]);
     } else {
-      this.start(r < 50 ? hold(fwd, 10) : r < 75 ? tap(DOWN | FK) : taps([back, 0, back]));
+      this.choose(me, [
+        ['approach', 50, () => hold(fwd, 10)],
+        ['low', 25, () => tap(DOWN | FK)],
+        ['retreat', 25, () => taps([back, 0, back])],
+      ]);
     }
   }
 
   /** Gets in and stays in. */
-  private rushdown(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+  private rushdown(me: FighterState, d: FighterData, dist: Fx, _r: number, fwd: number, back: number): void {
     if (dist < fx(1.05)) {
-      if (r < 50) this.start(this.string(d, me));
-      else if (r < 62) this.start(tap(THROW));
-      else if (r < 74) this.start(tap(DOWN | FK));
-      else if (r < 86) this.start(this.special(me, DOWN | SPECIAL));
-      else this.start(hold(BLOCK, 16));
+      this.choose(me, [
+        ['string', 50, () => this.string(d, me)],
+        ['throw', 12, () => tap(THROW)],
+        ['low', 12, () => tap(DOWN | FK)],
+        ['special', 12, () => this.special(me, DOWN | SPECIAL)],
+        ['guard', 14, () => hold(BLOCK, 16)],
+      ]);
       return;
     }
-    if (r < 40) this.start(this.dash(me));
-    else if (r < 60) this.start(hold(fwd, 24));
-    else if (r < 72 && dist < fx(2.2)) this.start(this.special(me, back | SPECIAL));
-    else if (r < 78 && dist < fx(2.0)) this.start(this.special(me, fwd | SPECIAL));
-    else if (r < 86 && dist > fx(1.2) && dist < fx(2.6)) this.start(this.special(me, SPECIAL));
-    else if (r < 92) this.start(hold(UP | fwd, 4));
-    else this.start(hold(fwd, 12));
+    this.choose(me, [
+      ['approach', 40, () => this.dash(me)],
+      ['approach', 20, () => hold(fwd, 24)],
+      ['special', dist < fx(2.2) ? 12 : 0, () => this.special(me, back | SPECIAL)],
+      ['special', dist < fx(2.0) ? 6 : 0, () => this.special(me, fwd | SPECIAL)],
+      ['special', dist > fx(1.2) && dist < fx(2.6) ? 8 : 0, () => this.special(me, SPECIAL)],
+      ['jump', 6, () => hold(UP | fwd, 4)],
+      ['approach', 8, () => hold(fwd, 12)],
+    ]);
   }
 
   /** Walks in behind armour; grabs anyone who blocks. */
-  private grappler(me: FighterState, d: FighterData, s: Seen, dist: Fx, r: number, fwd: number, back: number): void {
+  private grappler(me: FighterState, d: FighterData, s: Seen, dist: Fx, _r: number, fwd: number, back: number): void {
     if (dist < fx(1.1)) {
       const grab = s.guarding ? 40 : 22;
-      if (r < grab) this.start(this.special(me, fwd | SPECIAL));
       // A guard he can't grab through: the stiff arm crushes it.
-      else if (s.guarding && d.normals.f.FK && r < grab + 10) this.start(tap(fwd | FK));
-      else if (r < grab + 25) this.start(this.string(d, me));
-      else if (r < grab + 33) this.start(tap(THROW));
-      else if (r < grab + 40) this.start(tap(DOWN | BK));
-      else this.start(hold(BLOCK, 14));
+      const crush = s.guarding && d.normals.f.FK ? 10 : 0;
+      this.choose(me, [
+        ['special', grab, () => this.special(me, fwd | SPECIAL)],
+        ['poke', crush, () => tap(fwd | FK)],
+        ['string', 25, () => this.string(d, me)],
+        ['throw', 8, () => tap(THROW)],
+        ['low', 7, () => tap(DOWN | BK)],
+        ['guard', 60 - grab - crush, () => hold(BLOCK, 14)],
+      ]);
     } else if (dist < fx(2.2)) {
-      if (r < 25) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 42) this.start(this.special(me, back | SPECIAL));
-      else if (r < 70) this.start(hold(fwd, 20));
-      else if (r < 88) this.start(this.special(me, SPECIAL));
-      else this.start(this.dash(me));
+      this.choose(me, [
+        ['special', 25, () => this.special(me, DOWN | SPECIAL)],
+        ['special', 17, () => this.special(me, back | SPECIAL)],
+        ['approach', 28, () => hold(fwd, 20)],
+        ['special', 18, () => this.special(me, SPECIAL)],
+        ['approach', 12, () => this.dash(me)],
+      ]);
     } else {
-      if (r < 45) this.start(hold(fwd, 30));
-      else if (r < 65) this.start(this.dash(me));
-      else if (r < 85) this.start(this.special(me, SPECIAL));
-      else this.start(hold(back, 10));
+      this.choose(me, [
+        ['approach', 45, () => hold(fwd, 30)],
+        ['approach', 20, () => this.dash(me)],
+        ['special', 20, () => this.special(me, SPECIAL)],
+        ['retreat', 15, () => hold(back, 10)],
+      ]);
     }
   }
 
   /** Never where you expect: teleports, decoys, the joke, but mostly pressure. */
-  private trickster(me: FighterState, d: FighterData, s: Seen, dist: Fx, r: number, fwd: number, back: number): void {
-    const puppetOut = this.ownDecoy;
+  private trickster(me: FighterState, d: FighterData, s: Seen, dist: Fx, _r: number, fwd: number, back: number): void {
+    const puppet = this.ownDecoy ? 0 : 1;
     if (dist < fx(1.05)) {
       const joke = s.guarding ? 18 : 6;
-      if (r < 55) this.start(this.string(d, me));
-      else if (r < 66) this.start(tap(THROW));
-      else if (r < 66 + joke) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 78 + joke) this.start(tap(back | BP));
-      else this.start(this.special(me, back | SPECIAL));
+      this.choose(me, [
+        ['string', 55, () => this.string(d, me)],
+        ['throw', 11, () => tap(THROW)],
+        ['special', joke, () => this.special(me, DOWN | SPECIAL)],
+        ['poke', 12, () => tap(back | BP)],
+        ['special', 22 - joke, () => this.special(me, back | SPECIAL)],
+      ]);
     } else if (dist < fx(2.5)) {
-      if (r < 12) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 20 && !puppetOut) this.start(this.special(me, SPECIAL));
-      else if (r < 75) this.start(this.dash(me));
-      else if (r < 88) this.start(hold(UP | fwd, 4));
-      else this.start(hold(fwd, 14));
+      this.choose(me, [
+        ['special', 12, () => this.special(me, fwd | SPECIAL)],
+        ['special', 8 * puppet, () => this.special(me, SPECIAL)],
+        ['approach', 55, () => this.dash(me)],
+        ['jump', 13, () => hold(UP | fwd, 4)],
+        ['approach', 12, () => hold(fwd, 14)],
+      ]);
     } else {
-      if (r < 20 && !puppetOut) this.start(this.special(me, SPECIAL));
-      else if (r < 70) this.start(this.dash(me));
-      else if (r < 85) this.start(this.special(me, fwd | SPECIAL));
-      else this.start(hold(fwd, 24));
+      this.choose(me, [
+        ['special', 20 * puppet, () => this.special(me, SPECIAL)],
+        ['approach', 50, () => this.dash(me)],
+        ['special', 15, () => this.special(me, fwd | SPECIAL)],
+        ['approach', 15, () => hold(fwd, 24)],
+      ]);
     }
   }
 
   /** Lives at the tip of her normals: pokes, steps in and out to bait a whiff, the live feed from range. */
-  private footsies(me: FighterState, d: FighterData, dist: Fx, r: number, fwd: number, back: number): void {
+  private footsies(me: FighterState, d: FighterData, dist: Fx, _r: number, fwd: number, back: number): void {
     if (dist < fx(1.05)) {
-      if (r < 45) this.start(this.string(d, me));
-      else if (r < 57) this.start(tap(THROW));
-      else if (r < 67) this.start(this.special(me, SPECIAL));
-      else if (r < 77) this.start(tap(DOWN | FK));
-      else this.start(taps([back, 0, back]));
+      this.choose(me, [
+        ['string', 45, () => this.string(d, me)],
+        ['throw', 12, () => tap(THROW)],
+        ['special', 10, () => this.special(me, SPECIAL)],
+        ['low', 10, () => tap(DOWN | FK)],
+        ['retreat', 23, () => taps([back, 0, back])],
+      ]);
     } else if (dist < fx(1.6)) {
-      if (r < 25) this.start(tap(BK));
-      else if (r < 42) this.start(tap(FK));
-      else if (r < 55) this.start(tap(DOWN | FK));
-      else if (r < 65) this.start(tap(fwd | FK));
-      else if (r < 72) this.start(this.special(me, DOWN | SPECIAL));
-      else if (r < 86) this.start(hold(back, 10));
-      else this.start(hold(fwd, 8));
+      this.choose(me, [
+        ['poke', 25, () => tap(BK)],
+        ['poke', 17, () => tap(FK)],
+        ['low', 13, () => tap(DOWN | FK)],
+        ['poke', 10, () => tap(fwd | FK)],
+        ['special', 7, () => this.special(me, DOWN | SPECIAL)],
+        ['retreat', 14, () => hold(back, 10)],
+        ['approach', 14, () => hold(fwd, 8)],
+      ]);
     } else if (dist > fx(2.6)) {
-      if (r < 35) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 80) this.start(hold(fwd, 20));
-      else this.start(hold(0, 10));
+      this.choose(me, [
+        ['special', 35, () => this.special(me, fwd | SPECIAL)],
+        ['approach', 45, () => hold(fwd, 20)],
+        ['wait', 20, () => hold(0, 10)],
+      ]);
     } else {
-      if (r < 20) this.start(this.special(me, fwd | SPECIAL));
-      else if (r < 60) this.start(hold(fwd, 10));
-      else if (r < 75) this.start(tap(fwd | FK));
-      else this.start(hold(back, 8));
+      this.choose(me, [
+        ['special', 20, () => this.special(me, fwd | SPECIAL)],
+        ['approach', 40, () => hold(fwd, 10)],
+        ['poke', 15, () => tap(fwd | FK)],
+        ['retreat', 25, () => hold(back, 8)],
+      ]);
     }
   }
 

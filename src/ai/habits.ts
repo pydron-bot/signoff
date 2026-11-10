@@ -29,13 +29,23 @@ export const WAKE_BLOCK = 1;
 export const WAKE_THROW = 2;
 export const WAKE_JUMP = 3;
 
+/** On the CPU's own getup: they throw it, strike it, or leave it. */
+export const OKI_THROW = 0;
+export const OKI_STRIKE = 1;
+export const OKI_WAIT = 2;
+
 /** Frames after a blocked attack, and after getting up, in which their answer counts. */
 const AFTER_BLOCK_WINDOW = 30;
 const WAKE_WINDOW = 20;
+/** Around the CPU's own getup: a move started this soon before it (timed to land as it stands) or this long after counts as their answer. */
+const OKI_BEFORE = 14;
+const OKI_AFTER = 16;
 
 export class Habits {
   readonly afterBlock = [0, 0, 0];
   readonly wake = [0, 0, 0, 0];
+  /** What they do to its own getup. */
+  readonly oki = [0, 0, 0];
   jumps = 0;
   shots = 0;
   /** Fight frames watched (for the rates). */
@@ -44,6 +54,8 @@ export class Habits {
   private blockedAt = -1;
   private wokeAt = -1;
   private wasGetup = false;
+  /** The step its own getup ends on (-1: not on the floor). */
+  private ownUpAt = -1;
 
   constructor(
     /** Imaginary answers of each kind to start with; 0 learns nothing. */
@@ -55,10 +67,22 @@ export class Habits {
     if (this.prior > 0) this.blockedAt = at;
   }
 
+  /** It is getting up, standing on step `at`: watch what they do about it. */
+  rising(at: number): void {
+    if (this.prior > 0) this.ownUpAt = at;
+  }
+
   /** The glimpse the CPU sees on this step, taken on step `at`. */
   see(g: Glimpse, at: number): void {
     if (this.prior === 0) return;
     this.watched++;
+    if (this.ownUpAt >= 0 && at >= this.ownUpAt - OKI_BEFORE) {
+      const k = g.fresh && g.throwing ? OKI_THROW : g.fresh && g.attacking ? OKI_STRIKE : at >= this.ownUpAt + OKI_AFTER ? OKI_WAIT : -1;
+      if (k >= 0) {
+        this.oki[k]++;
+        this.ownUpAt = -1;
+      }
+    }
     if (g.fresh && g.mode === 'prejump') this.jumps++;
     if (g.fresh && g.shooting) this.shots++;
     if (this.blockedAt >= 0 && at > this.blockedAt) {

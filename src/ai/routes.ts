@@ -8,7 +8,7 @@
  */
 import { BAR, fighterData, moveData, step, type MoveData, type SimEvent } from '../sim';
 import { fx, type Fx } from '../sim/fixed';
-import { GUIDE_DUMMY, guideInput, guideStart, guides, pressBits, type ComboGuide } from '../game/comboGuides';
+import { GUIDE_HEALTH, guideInput, guideStart, guides, pressBits, type ComboGuide } from '../game/comboGuides';
 
 /** What opens a route: a standing jab, a low, an overhead, a launcher (punish), or a launcher with bars to spend. */
 export type Opener = 'jab' | 'low' | 'overhead' | 'punish' | 'meter';
@@ -69,7 +69,7 @@ function trial(fighter: string, g: ComboGuide, gap: Fx): Trial {
     // Once it's over, it's over (a fire left burning isn't part of it).
     if (out.hits && d.combo === 0 && d.mode !== 'hitstun') break;
   }
-  out.pct = (dealt * 100) / fighterData(GUIDE_DUMMY).health;
+  out.pct = (dealt * 100) / GUIDE_HEALTH;
   return out;
 }
 
