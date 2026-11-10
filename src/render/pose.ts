@@ -80,31 +80,6 @@ export const STAND_INS: Readonly<Record<string, string>> = {
  * The asset tests let these through; the art side empties the list.
  */
 export const ART_PENDING: ReadonlySet<string> = new Set([
-  'rox:s.BP',
-  'rox:s.FK',
-  'rox:FP FP FK FK',
-  'rox:FP FP FK FK BP',
-  'hollis:s.FK',
-  'hollis:f.FK',
-  'hollis:BP FP FK',
-  // Air specials (0.38.0).
-  'dale:Downpour',
-  'dale:Downpour+',
-  'rox:Aerobic Dive',
-  'rox:Aerobic Dive+',
-  'mumbles:Cut the Strings',
-  'mumbles:Cut the Strings+',
-  'hollis:Searchlight',
-  'hollis:Searchlight+',
-  'margaret:On the Wire',
-  'margaret:On the Wire+',
-  'gus:Cleaver Toss',
-  'gus:Cleaver Toss+',
-  'gideon:Rapture',
-  'gideon:Rapture+',
-  // Retired in the pilot.
-  'hollis:FP BK',
-  'hollis:FK FK BP',
 ]);
 
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */

@@ -5,7 +5,7 @@ eyebrows, a "CH 0" pin and the forecast clicker. Zoner: keeps you out."""
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance
+from lib.anim import Stance, lerp_pose
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
@@ -212,7 +212,29 @@ class STANCE(Stance):
         return [(1, relaxed), (18, tie), (26, tug), (34, tie), (50, quiff), (62, quiff.but(hand_L={"pos": self.s((0.06, -0.06, 1.88)), "aim": (-0.3, -0.8, 0)})), (80, base), (90, base)]
 
 
+def _downpour(boosted):
+    def keys(st, base, mv):
+        """Downpour (air): the umbrella up over his head and he hangs under it
+        (1–16, 1–20 boosted), the free arm hurling hail down and forward on
+        12 (and 15 and 18 boosted)."""
+        s = st.s
+        brolly = base.but(chest=(-6, -10, 0), head=(-10, -4, 0),
+                          hand_R={"pos": s((-0.12, 0.02, 1.86)), "aim": (0.05, 0.05, 1)}).shaped(fist_R=1.0, jaw=0.3)
+        wind = brolly.but(hand_L={"pos": s((0.3, -0.25, 1.55)), "aim": (0.3, -0.2, 1)}, chest=(-10, -24, 0)).shaped(fist_L=1.0)
+        hurl = brolly.but(hand_L={"pos": s((0.22, 0.6, 0.95)), "aim": (0.15, 0.7, -0.7)}, chest=(14, 10, 0)).shaped(open_L=1.0, jaw=0.9)
+        out = [(4, brolly), (9, wind), (12, hurl)]
+        if boosted:
+            out += [(13, wind), (15, hurl), (16, wind), (18, hurl)]
+        hang = 20 if boosted else 16
+        out += [(hang, hurl.but(chest=(6, 0, 0))), (hang + 8, lerp_pose(brolly, base, 0.5)), (mv["total"], base)]
+        return out
+    return keys
+
+
 OVERRIDES = {
+    # Air specials (step 26): the umbrella held overhead, hail from the free hand.
+    "Downpour": {"keys": _downpour(False), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 16)}},
+    "Downpour+": {"keys": _downpour(True), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 20)}},
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
     "Isobar Lasso": {"limb": "hand.L", "prop": True},
     "Heat Lightning": {"limb": "hand.L", "style": "rising"},

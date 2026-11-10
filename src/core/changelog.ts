@@ -14,6 +14,22 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.44.0',
+    date: '2026-11-10',
+    title: 'House Styles',
+    notes: [
+      "Rox and Hollis fight like themselves: Rox claps, high-kicks, drops into the splits and steps on the beat, with a quick, springy rhythm; Hollis grabs collars, drives knees, barges with his shoulder and shoves with a stiff arm, loading up big and carrying his weight through.",
+    ],
+  },
+  {
+    version: '0.43.0',
+    date: '2026-11-10',
+    title: 'Airborne',
+    notes: [
+      "Every air special has its own animation: Dale's umbrella up as the hail comes down, Rox's heel-first dive, Mumbles dropping feet first after his strings snap, Hollis sweeping the floor with his flashlight, Margaret cutting straight across, Gus's cleaver toss and Gideon's rapture.",
+    ],
+  },
+  {
     version: '0.42.0',
     date: '2026-11-10',
     title: 'Clear Picture',
