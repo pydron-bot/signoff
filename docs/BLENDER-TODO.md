@@ -1445,6 +1445,40 @@ A spike's hit box reaches from 0.3 m below the feet to 1.8 m above them,
 so the swing starts high over the head and finishes low: the limb should
 pass through both ends of that during the active frames (6–9).
 
+### 29. Impact pass (Nov 10, game side)
+
+The game now draws a swing arc over heavy strikes, a shockwave from the
+contact, the light a blow throws, a jolt in the freeze and dust when a
+body lands (`docs/VISUALS.md`). The art can make the same moments land
+harder; none of this changes a clip's length or where its hits are.
+
+- [ ] **Smear frames on heavy attacks.** On the first active frame (or
+  the frame before) of every heavy strike in the clip table (55 damage and
+  up, launchers, knockdowns, bounces), stretch the striking limb along its
+  path: a stretched forearm or shin mesh, or a smear shape keyed visible
+  for one or two frames. The game's swing arc (`src/render/swoosh.ts`)
+  stands in until then and can be turned down once the clips carry it.
+- [ ] **Hold the anticipation.** Heavy normals and specials with 12 or
+  more frames of startup: reach the wind-up pose by about two-thirds of
+  the startup and hold it (a slight drift, not a freeze), then snap
+  through to the strike in two frames. The snap is what sells the hit.
+- [ ] **Overshoot on contact.** On the first active frame, push the strike
+  a few centimetres past the hitbox's far edge, then settle back: the
+  pose at contact should be the most extended of the move.
+- [ ] **Heavier hit reactions.** `hit_head_heavy`, `hit_body_heavy` and
+  `stagger` (step 22): the head snapping a full 30–40° on frame 2, the
+  spine following on 3–4. The freeze holds frame 1, so frame 2 is the one
+  people see as the hit lands.
+- [ ] **Impact fx meshes** in Dale's GLB (shared, like `fx_tape_skip`):
+  `fx_impact_ring` (a flat ring with a soft inner edge, 1 m radius, +y up)
+  and `fx_crack` (a starburst floor crack, 1.5 m across, dark, for wall
+  splats and ground bounces). The game draws its own rings and dust now;
+  these would replace them with painted ones.
+- [ ] **Named nodes on the sets that can move.** Per stage, a few nodes
+  the game can shake or swing on big hits: `shake_*` (props near the walls:
+  the weather map, the mirrors, the news monitors, the hanging pans) and
+  `swing_*` (hanging lamps, pivot at the top). Origins at their pivots.
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.

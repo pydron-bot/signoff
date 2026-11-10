@@ -897,6 +897,18 @@ renderer.setAnimationLoop((now) => {
   post.tear = glitch.tear;
   post.split = glitch.split;
   post.impact = glitch.impact;
+  // The shockwave, an ender's zoom and the meter spotlight: on screen only, not on the title's TV.
+  const fx = arena.impact(m);
+  const quiet = onTv || title;
+  post.shockX = fx.shockX;
+  post.shockY = fx.shockY;
+  post.shockR = fx.shockR;
+  post.shock = quiet ? 0 : fx.shock;
+  post.zoom = quiet ? 0 : fx.zoom;
+  post.focusX = fx.focusX;
+  post.focusY = fx.focusY;
+  post.focusR = fx.focusR;
+  post.focus = quiet ? 0 : fx.focus;
   renderer.info.reset();
   if (onTv) {
     // The fight on the TV, the room round it; leaving, the push ends in a burst of static as the picture takes the screen.
