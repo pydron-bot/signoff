@@ -23,6 +23,7 @@ import math
 import numpy as np
 
 from lib import paint as P
+from lib.bake import area, spot
 
 ID = "news"
 DENSE = ("header", "clock", "breaking", "desk")
@@ -85,6 +86,18 @@ EMISSION = {
     r"lamp\d_lens|fresnel_lens": 3,
     "breaking": 2,
     r"tally-?\d+": 2,
+}
+
+# The baked light (step 23 B): segment 1's grid Fresnels, a pool on the floor
+# under each and a wash on the back wall, and the globe's blue on the floor.
+# The Ticker and Lights Out use it too: the game dims it as the lamps fall.
+LIGHTMAPS = {
+    1: (("seg_headlines",), [
+        *[spot((x, 0.0 if k % 2 else -1.0, 6.0), (x, (0.0 if k % 2 else -1.0) + 0.8, 0), (255, 230, 190), 2000, angle=40, blend=0.5)
+          for k, x in enumerate(LAMP_X)],
+        area((0, -2.6, 7.6), (12.0, 0.5), (230, 225, 255), 300, aim=(0, WALL_F, 3.0)),
+        area((0, WALL_F + 0.08, GLOBE_U), (3.0, 3.0), (90, 150, 255), 250, aim=(0, 4.0, 0.5)),
+    ]),
 }
 
 
