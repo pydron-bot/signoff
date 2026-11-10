@@ -1129,7 +1129,7 @@ renderer.setAnimationLoop((now) => {
     post.grade = ROOM_GRADE;
     post.render(room.scene, room.camera, now);
     post.grade = arena.grade;
-  } else post.render(arena.scene, arena.camera, now);
+  } else post.render(arena.scene, arena.camera, now, quiet ? null : arena.cutIn(m));
   perf.frame(now, stepped);
 });
 

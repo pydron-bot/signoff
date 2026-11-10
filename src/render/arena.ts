@@ -32,6 +32,7 @@ import { Clutter } from './clutter';
 import { Dust } from './dust';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { SetFlash } from './setFlash';
+import { CutIn, type CutInRect } from './cutIn';
 import { Swoosh } from './swoosh';
 import { StageView } from './stageView';
 
@@ -205,6 +206,7 @@ export class Arena {
     this.rig.reduceMotion = on;
     this.impactScreen.reduceMotion = on;
     this.setFlash.reduceMotion = on;
+    this.cut.reduceMotion = on;
   }
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
@@ -235,6 +237,9 @@ export class Arena {
   private readonly light: ImpactLight;
   /** The fight's light on the set and the fighters: blows, lightning, projectiles, burning specials. */
   private readonly setFlash = new SetFlash();
+  /** The super cut-in: a close-up of the fighter in a band of the picture. */
+  private readonly cut = new CutIn();
+  private readonly inset: { camera: THREE.Camera; rect: CutInRect } = { camera: this.cut.camera, rect: this.cut.rect };
   /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
   private readonly impactScreen = new ImpactScreen();
   private readonly shadows: ContactShadows;
@@ -382,6 +387,7 @@ export class Arena {
     this.clutter.clear();
     this.light.clear();
     this.setFlash.clear();
+    this.cut.clear();
     this.impactScreen.clear();
     this.wear.reset();
     for (const v of this.fighters) v.echoes?.reset();
@@ -404,6 +410,8 @@ export class Arena {
     this.impactScreen.onEvents(ev);
     this.setFlash.onEvents(m, ev);
     this.setFlash.step(m);
+    this.cut.step();
+    this.cut.onEvents(ev);
     for (const e of ev) {
       if (e.type === 'hit') {
         const v = this.fighters[e.defender];
@@ -419,6 +427,11 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+  }
+
+  /** The super cut-in for the post pass this frame (null when there's none), after render(). */
+  cutIn(m: MatchState): { camera: THREE.Camera; rect: CutInRect } | null {
+    return this.cut.active && this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
   }
 
   /** The impact layer's numbers for the post pass, after render() has placed the camera. */
