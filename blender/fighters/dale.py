@@ -2,10 +2,12 @@
 shoulder pads and a pocket square, the widest striped tie on air, a
 side-parted quiff, a fixed, too-white grin under permanently raised
 eyebrows, a "CH 0" pin and the forecast clicker. Zoner: keeps you out."""
+import math
+
 import numpy as np
 
 from lib import paint as P
-from lib.anim import Stance, added, lerp_pose, toward
+from lib.anim import Stance, added, lerp_pose, moved, toward
 from lib.body import arms, clump, face_paint, grip, hair_cover, head, head_frame, legs, lerp, lit, mouth, torso
 
 ID = "dale"
@@ -360,6 +362,64 @@ def _held(show):
     return {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": show}
 
 
+def _cold_front(boosted):
+    def keys(st, base, mv):
+        """Cold Front (step 16 C): both hands drawn back to the rear hip, the
+        body turned away and low, then both palms shoved forward through
+        the front on the spawn (14), leaning into it, held while it rolls
+        away. Boosted, deeper and further, with a step in."""
+        s, k = st.s, st.k
+        g = 1.4 if boosted else 1.0
+        f = mv["spawns"][0]["frame"]
+        total = mv["total"]
+        palms = {"fist_L": 0.0, "fist_R": 0.0, "open_L": 0.7, "open_R": 0.7}
+        draw = base.but(hips={"offset": (0, -0.06 * k * g, -(st.drop + 0.06 * g) * k), "turn": (4, st.hips_yaw + 24 * g, 0)}, spine=(6, 16 * g, 0),
+                        chest=(10, 30 * g, 0), head=(4, -20, 0),
+                        hand_L={"pos": s((-0.04, -0.12, 1.02)), "aim": (-0.3, -0.4, 0.8)}, hand_R={"pos": s((-0.2, -0.18, 1.0)), "aim": (-0.3, -0.4, 0.8)}
+                        ).shaped(**palms, jaw=0.3)
+        lf = base.parts["foot_L"]
+        shove = base.but(hips={"offset": (0, 0.16 * k * g, -(st.drop + 0.04) * k), "turn": (10, st.hips_yaw - 24, 0)}, spine=(8, -36, 0),
+                         chest=(14, -50, 0), head=(0, -12, 0),
+                         hand_L={"pos": s((0.12, 0.62 + 0.08 * g, 1.3)), "aim": (0, 0.3, 1), "hint": (0, 1, 0)},
+                         hand_R={"pos": s((-0.1, 0.58 + 0.08 * g, 1.22)), "aim": (0, 0.3, 1), "hint": (0, 1, 0)},
+                         foot_L=moved(lf, s((0, 0.12 * (g - 1) * 2.5, 0)))).shaped(**palms, jaw=1.0)
+        hold = added(shove, hips={"offset": (0, 0.03 * k, 0)}, chest=(4, 0, 0))
+        return [(4, lerp_pose(base, draw, 0.6).shaped(**draw.parts["shapes"])), (f - 4, draw), (f - 2, toward(draw, base, -0.08)),
+                (f - 1, lerp_pose(draw, shove, 0.6).shaped(**shove.parts["shapes"])), (f, shove), (f + 8, hold), (f + 14, hold),
+                (f + 24, lerp_pose(hold, base, 0.6).shaped(open_L=0.3, open_R=0.3)), (total, base)]
+    return keys
+
+
+def _lasso(boosted):
+    def keys(st, base, mv):
+        """Isobar Lasso (step 16 C): the lead hand twirling the isobar over
+        his head (two turns, three boosted), thrown out on the hits, then
+        reeled back in hand over hand."""
+        s, k = st.s, st.k
+        h0, h1 = mv["hits"][0]["frames"]
+        total = mv["total"]
+        turns = 3 if boosted else 2
+        out = [(3, base.but(chest=(-4, -10, 0), hand_L={"pos": s((0.16, 0.06, 1.7)), "aim": (0.2, 0, 1), "hint": (0, 1, 0)}).shaped(fist_L=1.0))]
+        n = 4 * turns
+        span = h0 - 3 - 5
+        for i in range(n + 1):
+            a = 2 * math.pi * i / 4
+            f = 5 + round(span * i / n)
+            out.append((f, base.but(chest=(-6, -10 + 6 * math.sin(a), 0), head=(-10, 0, 0),
+                                    hand_L={"pos": s((0.14 + 0.18 * math.cos(a), 0.06 + 0.18 * math.sin(a), 2.0)), "aim": (math.cos(a), math.sin(a), 0.5), "hint": (0, 0, 1)}
+                                    ).shaped(fist_L=1.0, jaw=0.4)))
+        throw = base.but(hips={"offset": (0, 0.12 * k, -st.drop * k), "turn": (8, st.hips_yaw - 30, 0)}, spine=(6, -40, 0), chest=(10, -60, 0), head=(0, -14, 0),
+                         hand_L={"pos": s((0.1, 0.66, 1.3)), "aim": (0, 1, 0.1), "hint": (0, 0, 1)},
+                         hand_R={"pos": s((-0.3, -0.2, 1.2)), "aim": (-0.4, -0.7, 0.2)}).shaped(fist_L=0.0, open_L=0.6, jaw=1.0)
+        reel = [base.but(chest=(-10, -30, 0), head=(-4, -10, 0),
+                         hand_L={"pos": s((0.1, 0.5 - 0.2 * j, 1.3)), "aim": (0, 1, 0.1), "hint": (0, 0, 1)},
+                         hand_R={"pos": s((-0.06, 0.32 + 0.1 * (j % 2), 1.26)), "aim": (0, 1, 0.1), "hint": (0, 0, 1)}).shaped(fist_L=1.0, fist_R=1.0)
+                for j in range(3)]
+        return out + [(h0 - 2, out[-1][1].but(hand_L={"pos": s((0.0, -0.1, 1.95)), "aim": (-0.2, -0.5, 0.8), "hint": (0, 1, 0)})),
+                      (h0, throw), (h1, throw), (h1 + 4, reel[0]), (h1 + 8, reel[1]), (h1 + 12, reel[2]), (total - 4, lerp_pose(reel[2], base, 0.6)), (total, base)]
+    return keys
+
+
 OVERRIDES = {
     # The specials pass (step 28): the umbrella's tip makes every hit.
     "Low Pressure": {"limb": "hand.R", "keys": _low_pressure, "held": _held((2, 34))},
@@ -370,7 +430,11 @@ OVERRIDES = {
     "Downpour": {"keys": _downpour(False), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 16)}},
     "Downpour+": {"keys": _downpour(True), "held": {"key": "umbrella", "limb": "hand.R", "reach": UMBRELLA, "show": (1, 20)}},
     # The lasso does the reaching (it's an effect); Dale throws it with the lead hand.
-    "Isobar Lasso": {"limb": "hand.L", "prop": True},
+    "Isobar Lasso": {"limb": "hand.L", "prop": True, "keys": _lasso(False)},
+    "Isobar Lasso+": {"limb": "hand.L", "prop": True, "keys": _lasso(True)},
+    # Step 16 C: the signature specials, hand-keyed.
+    "Cold Front": {"keys": _cold_front(False)},
+    "Cold Front+": {"keys": _cold_front(True)},
     "Heat Lightning": {"limb": "hand.L", "style": "rising"},
     "Heat Lightning+": {"limb": "hand.L", "style": "rising", "keys": _heat_lightning_plus},
     "td": {"limb": "hand.R"},
