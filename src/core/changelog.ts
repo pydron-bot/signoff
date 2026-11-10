@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.56.0',
+    date: '2026-11-10',
+    title: 'Up All Night',
+    notes: [
+      "CPU VS CPU can be watched on the TV: set View to On the TV and you stay on the sofa at 3:33 a.m., the match on the set across the room with no health bars in the way. Tap the screen (or press Esc) for the menu.",
+      "Endless: the channel never goes off air. After each match the winner gets a moment, then the next random match starts by itself. Tap or press Esc between matches to stop.",
+    ],
+  },
+  {
     version: '0.55.0',
     date: '2026-11-10',
     title: 'CPU vs CPU',

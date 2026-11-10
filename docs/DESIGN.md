@@ -377,6 +377,10 @@ CPU at its own level, DIRECTOR included, with the HUD, the cold open and
 the sound. The players' inputs go nowhere; the pause menu runs it at half
 or double speed and shows the hit boxes. It isn't recorded, so the last
 match kept for WATCH REPLAY stays the player's.
+VIEW ON THE TV (0.56.0) keeps it on the living room's TV, seen from the
+sofa as on the title, with the HUD hidden; a tap or Esc opens the menu.
+ENDLESS gives the winner five seconds, then starts the next random match
+with no results menu; a tap or Esc between matches stops it.
 
 **Styles and leans (0.50.0).** Each style's choices (strings, throws,
 specials, pokes, lows, approaching, retreating, waiting, guarding,
