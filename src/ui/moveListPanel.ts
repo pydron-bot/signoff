@@ -3,7 +3,10 @@
  * controls legend, and frame data in training. Scrolls with up/down (keys
  * or pad) or a swipe; left/right switch fighter; OK, back or pause closes.
  */
+import { Cleared } from '../game/cleared';
 import { loadFound } from '../game/found';
+import { TRIALS_KEY, trialId } from '../game/trials';
+import { guides } from '../game/comboGuides';
 import type { MenuKey } from '../input/devices';
 import { moveList } from '../game/moveList';
 import { fighterData } from '../sim';
@@ -24,6 +27,8 @@ export class MoveListPanel {
   onClose: () => void = () => {};
   /** Plays a combo guide: the fighter and the guide's index. */
   onWatch: (fighter: string, guide: number) => void = () => {};
+  /** Opens a combo guide as a trial to clear. */
+  onTry: (fighter: string, guide: number) => void = () => {};
 
   constructor(parent: HTMLElement) {
     this.root = document.createElement('div');
@@ -48,7 +53,7 @@ export class MoveListPanel {
     return !this.root.hidden;
   }
 
-  /** Shows the moves of `fighters[first]`; left/right go through the others. `watch` offers to play the combo guides. */
+  /** Shows the moves of `fighters[first]`; left/right go through the others. `watch` offers to play the combo guides and try them as trials. */
   show(fighters: string[], first: number, frames: boolean, watch = false): void {
     this.fighters = fighters;
     this.index = first;
@@ -80,6 +85,8 @@ export class MoveListPanel {
     this.title.textContent = `${fighterData(id).name.toUpperCase()} · MOVE LIST`;
     this.body.replaceChildren();
     const found = loadFound();
+    const cleared = new Cleared(TRIALS_KEY);
+    const gs = guides(id);
     for (const s of moveList(id, (fin) => found.has(`${id}:${fin}`))) {
       const h = document.createElement('div');
       h.className = 'movelist-section';
@@ -99,7 +106,15 @@ export class MoveListPanel {
             this.onWatch(id, k);
           });
           watch.classList.add('movelist-watch');
-          row.querySelector('.movelist-name')!.append(watch);
+          // A tick once the trial's been cleared.
+          const done = gs[k] && cleared.has(trialId(id, gs[k].name));
+          const tryIt = button(done ? '✓ TRY' : 'TRY', () => {
+            this.root.hidden = true;
+            this.onTry(id, k);
+          });
+          tryIt.classList.add('movelist-watch', 'movelist-try');
+          if (done) tryIt.classList.add('cleared');
+          row.querySelector('.movelist-name')!.append(watch, tryIt);
         }
         this.body.append(row);
       }

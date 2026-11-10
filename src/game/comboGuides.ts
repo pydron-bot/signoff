@@ -80,8 +80,9 @@ export function pressText(press: string): string {
 export interface GuideStep {
   /** As the move list writes it, a boost as "SP SP". */
   input: string;
-  /** The move it brings out. */
+  /** The move it brings out, and its id (a boosted special's own id, as hit events name it). */
   move: string;
+  id: string;
   /** Pressed while they're in the air and well after the last hit: wait for the fall. */
   wait: boolean;
   /** The frame it's pressed on. */
@@ -119,14 +120,18 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
     // A boost: Special again just after a special.
     const boost = presses.length && presses.every(([, p]) => p === 'SP') && steps.length && steps[steps.length - 1].input.endsWith('SP') && t - steps[steps.length - 1].at <= 8;
     if (boost) steps[steps.length - 1].input += ' SP';
-    else for (const [, p] of presses) steps.push({ input: pressText(p), move: '', wait: d.y > 0 && t - lastHit > 14, at: t });
+    else for (const [, p] of presses) steps.push({ input: pressText(p), move: '', id: '', wait: d.y > 0 && t - lastHit > 14, at: t });
     ev.length = 0;
     step(m, guideInput(g, t, a.facing), 0, ev);
     for (const e of ev) {
-      // A boost turns the special just named into its boosted version.
+      // A boost turns the special already named into its boosted version (one boosted as it starts is named so when it starts).
       if (e.type === 'boost' && e.player === 0) {
-        const s = [...steps].reverse().find((x) => x.move);
-        if (s) s.move = moveData(fighter, e.move).name;
+        let s: GuideStep | undefined;
+        for (const x of steps) if (x.id && moveData(fighter, x.id).boost === e.move) s = x;
+        if (s) {
+          s.move = moveData(fighter, e.move).name;
+          s.id = e.move;
+        }
       }
       if (e.type !== 'hit' || e.attacker !== 0 || over) continue;
       if (e.combo !== hits + 1) unbroken = false;
@@ -138,7 +143,10 @@ export function runGuide(fighter: string, g: ComboGuide): GuideRun {
     // Each move that starts names the first step still unnamed.
     if (a.mode === 'move' && (a.move !== move || a.moveFrame < frame)) {
       const s = steps.find((x) => !x.move);
-      if (s) s.move = moveData(fighter, a.move).name;
+      if (s) {
+        s.move = moveData(fighter, a.move).name;
+        s.id = a.move;
+      }
     }
     move = a.mode === 'move' ? a.move : '';
     frame = a.mode === 'move' ? a.moveFrame : 0;

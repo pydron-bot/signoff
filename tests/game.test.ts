@@ -43,7 +43,7 @@ describe('training session', () => {
   it('starts in the fight with no clock, and shows frame advantage', () => {
     const s = new Session({ mode: 'training', p1: 'dale', p2: 'rox', level: 'normal', seed: 1 });
     expect(s.match.phase).toBe('fight');
-    s.dummy = 'block';
+    s.dummy.settings.guard = 'all';
     place(s.match, -0.3, 0.3);
     const ev: SimEvent[] = [];
     for (let t = 0; t < 60; t++) s.tick(t === 0 ? Input.BK : 0, 0, ev);
