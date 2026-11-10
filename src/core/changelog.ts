@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.39.1',
+    date: '2026-11-10',
+    title: 'Call Sheet',
+    notes: ['The recording script for the voices and hits is online at deeek.org/signoff/recording/, with takes to tick off during a session.'],
+  },
+  {
     version: '0.39.0',
     date: '2026-11-09',
     title: 'Sound Check',

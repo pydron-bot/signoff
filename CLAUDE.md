@@ -19,7 +19,7 @@ npm run combos         # best combos per fighter (frame-perfect and human), chec
 npm run combos:guides  # five or six forgiving guides per fighter (jab, low, overhead, punish, meter); rewrites the move list's combo guides (src/game/comboRoutes.ts) after changing moves
 npm run docs:clips     # rewrite the clip table in docs/BLENDER-TODO.md after changing moves
 node tools/audio-import.mjs <folder>  # recordings (WAV) into public/assets/audio as AAC (needs ffmpeg)
-npm run audio:index    # list the recordings for the game; update the shot list in docs/AUDIO-TODO.md
+npm run audio:index    # list the recordings for the game; update the shot list in docs/AUDIO-TODO.md and the page at /signoff/recording/
 npm run art            # headless Blender: art/*.blend and public/assets/fighters/*.glb
 npx -y -p playwright@1.63.0 node tools/art-check.mjs  # GLBs measured in three.js, screenshots
 npm run build          # tsc --noEmit && vite build

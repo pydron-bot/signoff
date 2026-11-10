@@ -9,6 +9,11 @@ sound, how to record it, where to get the hits, and how to get the files
 into the game. Hand it to whoever records: friends, hired actors or a sound
 designer.
 
+**For the people recording:** the same script, as a page with takes to tick
+off, is at https://deeek.org/signoff/recording/ (built from the game's own
+catalogue by `npm run audio:index`; the direction lives in
+`tools/recording/page.ts`).
+
 **Nothing has to be done all at once.** Every slot below keeps its
 synthesised sound until it has a recording, and the game uses however many
 takes there are (one is enough to start). Record Dale's efforts and pain on
