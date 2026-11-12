@@ -14,6 +14,14 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.60.1',
+    date: '2026-11-12',
+    title: 'Mic Check',
+    notes: [
+      "Fixed: the first match after opening the game often had a fighter's opening line babbled instead of spoken, because the voices were still loading. They now start loading as soon as the game opens, each one is ready the moment it arrives, and the cold open waits a moment for a line that's on its way.",
+    ],
+  },
+  {
     version: '0.60.0',
     date: '2026-11-12',
     title: 'Live on Air',
