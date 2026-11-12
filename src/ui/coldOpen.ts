@@ -13,6 +13,8 @@ const LEAD = 0.5;
 const TAIL = 0.5;
 /** A syllable every this many characters typed. */
 const SYLLABLE = 3;
+/** Longest the cold open holds for a line's recording still loading, before it babbles instead. */
+export const MAX_HOLD = 3;
 
 export class ColdOpen {
   readonly root: HTMLElement;
@@ -27,6 +29,8 @@ export class ColdOpen {
   /** Each line's recording started (no babble under it). */
   private voiced = [false, false];
   private spoken = [false, false];
+  /** Seconds spent holding for recordings still loading. */
+  private held = 0;
 
   constructor(
     parent: HTMLElement,
@@ -35,6 +39,10 @@ export class ColdOpen {
     /** Plays a line's recording if there is one; true if it's playing. */
     private readonly speak: (side: number, clip: string) => boolean,
     onSkip: () => void,
+    /** True while a line's recording is still loading: worth holding for. */
+    private readonly pending: (clip: string) => boolean = () => false,
+    /** A line's recording's length in seconds, or 0. */
+    private readonly seconds: (clip: string) => number = () => 0,
   ) {
     this.root = document.createElement('div');
     this.root.className = 'cold-open';
@@ -74,6 +82,7 @@ export class ColdOpen {
     this.typed = [0, 0];
     this.voiced = [false, false];
     this.spoken = [false, false];
+    this.held = 0;
     for (let k = 0; k < 2; k++) this.dur[k] = Math.max(lineSeconds(ex.lines[k]), recorded[k] + 0.4);
     for (let i = 0; i < 2; i++) {
       const f = this.fighters[i];
@@ -95,6 +104,15 @@ export class ColdOpen {
     const ex = this.ex;
     if (!ex) return false;
     this.t += dt;
+    // A line due whose recording is still loading: the clock holds at its start, a few seconds at most.
+    for (let k = 0; k < 2; k++) {
+      const due = k === 0 ? LEAD : LEAD + this.dur[0];
+      if (this.t > due && !this.spoken[k] && this.held < MAX_HOLD && this.pending(ex.clips[k])) {
+        this.held += this.t - due;
+        this.t = due;
+        break;
+      }
+    }
     const first = this.dur[0];
     const second = this.dur[1];
     const at = [LEAD, LEAD + first];
@@ -106,9 +124,11 @@ export class ColdOpen {
       this.plates[side].classList.toggle('in', shown);
       if (since < 0) continue;
       // The line's recording, if there is one, as it starts to type on.
-      if (!this.spoken[k]) {
+      if (!this.spoken[k] && !(this.held < MAX_HOLD && this.pending(ex.clips[k]))) {
         this.spoken[k] = true;
         this.voiced[k] = this.speak(side, ex.clips[k]);
+        // Loaded since the cold open began: the caption holds until it's said.
+        if (this.voiced[k]) this.dur[k] = Math.max(this.dur[k], this.seconds(ex.clips[k]) + 0.4);
       }
       const n = Math.min(line.length, Math.floor(since * TYPE_RATE));
       if (n > this.typed[k]) {

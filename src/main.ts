@@ -100,7 +100,11 @@ const coldOpen = new ColdOpen(
   (side, fighter) => sound.babble(side, fighter),
   (side, clip) => sound.line(side, clip),
   () => endColdOpen(),
+  (clip) => sound.linePending(clip),
+  (clip) => sound.lineSeconds(clip),
 );
+// The recordings start downloading now; they decode on the first tap, so the first cold open has its lines.
+sound.prefetch();
 /** What skips the cold open: an attack, Block, Special or Throw. */
 const SKIP_BITS = Input.FP | Input.BP | Input.FK | Input.BK | Input.BLOCK | Input.SPECIAL | Input.THROW;
 let coldOpenHeld = 0;

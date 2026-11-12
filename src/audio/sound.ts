@@ -304,6 +304,16 @@ export class Sound {
     return this.samples.seconds(key);
   }
 
+  /** True while a line's recording is on its way: the cold open holds a moment for it rather than babble. */
+  linePending(key: string): boolean {
+    return this.live && this.samples.pending(key);
+  }
+
+  /** Starts downloading the recordings (no gesture needed); they decode once audio starts. */
+  prefetch(): void {
+    this.samples.prefetch();
+  }
+
   /** A hit, layer by layer: each recorded layer plays its recording, the rest are synthesised. */
   private hit(w: HitWeight, t: Timbre): void {
     // Heavier hits play their recordings a little lower.
