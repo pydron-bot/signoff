@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.59.0',
+    date: '2026-11-12',
+    title: 'Foley',
+    notes: [
+      'Every hit is now a real recorded sound: the slap of a punch, the heavier crack of a kick, the body taking the weight, a crunch on the big ones and a boom on knockdowns and K.O.s. Blocks thump, throws slam, and bodies hit the studio floor.',
+      "Attacks cut the air: light and heavy swings whoosh as they come out. Gus's pan rings, his knives chop, and Hollis's nightstick knocks.",
+      'Hollis Bey sounds hurt when he is: real grunts of pain, a groan when he hits the floor, and a scream at the K.O.',
+    ],
+  },
+  {
     version: '0.58.0',
     date: '2026-11-10',
     title: 'Lights, Camera',
