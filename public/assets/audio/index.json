@@ -1,3 +1,28 @@
 {
-  "files": []
+  "files": [
+    "hits/blade_1.m4a",
+    "hits/blade_2.m4a",
+    "hits/block_1.m4a",
+    "hits/block_2.m4a",
+    "hits/block_3.m4a",
+    "hits/block_4.m4a",
+    "hits/metal_1.m4a",
+    "hits/metal_2.m4a",
+    "hits/metal_3.m4a",
+    "hits/snap_kick_1.m4a",
+    "hits/snap_kick_2.m4a",
+    "hits/snap_kick_3.m4a",
+    "hits/snap_kick_4.m4a",
+    "hits/snap_punch_1.m4a",
+    "hits/snap_punch_2.m4a",
+    "hits/snap_punch_3.m4a",
+    "hits/snap_punch_4.m4a",
+    "hits/thud_1.m4a",
+    "hits/thud_2.m4a",
+    "hits/thud_3.m4a",
+    "hits/thud_4.m4a",
+    "hits/wood_1.m4a",
+    "hits/wood_2.m4a",
+    "hits/wood_3.m4a"
+  ]
 }
