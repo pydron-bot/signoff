@@ -30,13 +30,7 @@ Where every library sound came from and its licence (CC-BY needs its credit here
 | `hits/whoosh_heavy_1` | Freesound: [Swosh Sword Swing](https://freesound.org/people/qubodup/sounds/59992/) (0.4 s from 0.036 s) | qubodup | CC0 |
 | `hits/whoosh_heavy_2` | Freesound: [Swosh / Whoosh / Air Cut](https://freesound.org/people/qubodup/sounds/60030/) (0.42 s from 0.053 s) | qubodup | CC0 |
 | `hits/whoosh_heavy_3` | Freesound: [Woosh (stick swung in the air)](https://freesound.org/people/Dalesome/sounds/352719/) (0.45 s from 0.096 s) | Dalesome | CC0 |
-| `hollis/pain_light_1` | Freesound: [Voice_AdultMale_PainGrunts_02.wav](https://freesound.org/people/MrFossy/sounds/547202/) (0.3 s from 0.009 s) | MrFossy | CC0 |
-| `hollis/pain_light_2` | Freesound: [Voice_AdultMale_PainGrunts_01.wav](https://freesound.org/people/MrFossy/sounds/547203/) (0.3 s from 0.012 s) | MrFossy | CC0 |
-| `hollis/pain_light_3` | Freesound: [Voice_AdultMale_PainGrunts_18.wav](https://freesound.org/people/MrFossy/sounds/547197/) (0.3 s from 0.011 s) | MrFossy | CC0 |
-| `hollis/pain_heavy_1` | Freesound: [Voice_AdultMale_PainGrunts_10.wav](https://freesound.org/people/MrFossy/sounds/547208/) (0.45 s from 0.023 s) | MrFossy | CC0 |
-| `hollis/pain_heavy_2` | Freesound: [Voice_AdultMale_PainGrunts_11.wav](https://freesound.org/people/MrFossy/sounds/547194/) (0.5 s from 0.009 s) | MrFossy | CC0 |
-| `hollis/pain_heavy_3` | Freesound: [Voice_AdultMale_PainGrunts_14.wav](https://freesound.org/people/MrFossy/sounds/547193/) (0.45 s from 0.011 s) | MrFossy | CC0 |
-| `hollis/oof_1` | Freesound: [Voice_AdultMale_PainGrunts_08.wav](https://freesound.org/people/MrFossy/sounds/547204/) (0.5 s from 0.013 s) | MrFossy | CC0 |
-| `hollis/oof_2` | Freesound: [Voice_AdultMale_PainGrunts_13.wav](https://freesound.org/people/MrFossy/sounds/547192/) (0.4 s from 0.011 s) | MrFossy | CC0 |
-| `hollis/scream_1` | Freesound: [Voice_AdultMale_DeathScream_03.wav](https://freesound.org/people/MrFossy/sounds/547182/) (1.3 s from 0.041 s) | MrFossy | CC0 |
-| `hollis/scream_2` | Freesound: [Voice_AdultMale_DeathScream_08.wav](https://freesound.org/people/MrFossy/sounds/547185/) (1.2 s from 0.013 s) | MrFossy | CC0 |
+
+## Voices
+
+Every fighter's voice (`dale/`, `rox/`, `hollis/`, `mumbles/`, `margaret/`, `gus/`, `gideon/`: the lines, round-win lines, efforts, shouts, pain sounds and screams) is generated with [ElevenLabs](https://elevenlabs.io) on a paid plan, whose terms cover commercial use. Each voice was designed for SIGN-OFF from a written description of the character (Voice Design, `eleven_ttv_v3`), not cloned from a real person, and is saved on the account as "SIGN-OFF – <name>". Lines use `eleven_v4`; efforts, shouts, pain and screams use `eleven_v3` with audio tags, cut to the effort itself. Takes were chosen by ear. A recording by a voice actor can still replace any slot, one at a time.

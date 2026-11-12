@@ -14,6 +14,16 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.60.0',
+    date: '2026-11-12',
+    title: 'Live on Air',
+    notes: [
+      "Everyone has a voice. All seven fighters speak in their own voice: Dale's broadcast smile, Rox's breathless count, Hollis's tired growl, Mister Mumbles' sing-song, Margaret's newsreader calm, Gus's kitchen bark and Gideon's sermon.",
+      'The cold open is spoken: the lines the two fighters trade before round 1 are heard, not babbled, and every round win ends on a line.',
+      'Fighters grunt as they attack, shout their specials and throws, cry out when hit, groan when they hit the floor and scream at the K.O.',
+    ],
+  },
+  {
     version: '0.59.0',
     date: '2026-11-12',
     title: 'Foley',
