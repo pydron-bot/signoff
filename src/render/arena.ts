@@ -23,6 +23,7 @@ import { FIGHT_LAYER } from './meshCopies';
 import { setShadowKey } from './shadow';
 import { SetMotion } from './setMotion';
 import { Alive } from './alive';
+import { Studio } from './studio';
 import { SetMover } from './setMover';
 import { Legibility, cutInWear } from './legible';
 import { CameraRig, FOV } from './camera';
@@ -137,6 +138,9 @@ const SWAY_OFFSET = 23;
 /** A seated fighter's bounds for culling: centre above the seat, and radius, metres. */
 const SEATED_Y = 0.5;
 const SEATED_R = 1.1;
+/** Where the crew stand when the stage has none (the studio still steps). */
+const CREW_X = [-6, 6];
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 /** Half a body's width plus its limbs, for what the foreground must keep clear of. */
 const BODY_REACH = 0.6;
 
@@ -221,6 +225,7 @@ export class Arena {
   private readonly viewProj = new THREE.Matrix4();
   private readonly seated = new THREE.Sphere();
   private readonly turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+  private readonly lean = new THREE.Quaternion();
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
   get reduceMotion(): boolean {
     return this.rig.reduceMotion;
@@ -254,6 +259,8 @@ export class Arena {
   private readonly setMotion = new SetMotion();
   /** Life on top of the clips: the head following the opponent, blinks, the face following the round. */
   private readonly alive = new Alive();
+  /** The studio working: the live camera's tally, the crew following the fight, the audience leaning in. */
+  private readonly studio = new Studio();
   private readonly setMover = new SetMover();
   /** Which effects give way to the fighters this step (src/render/legible.ts). */
   private readonly legible = new Legibility();
@@ -461,6 +468,7 @@ export class Arena {
     this.legible.reset();
     this.setMotion.clear();
     this.alive.reset();
+    this.studio.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -511,6 +519,8 @@ export class Arena {
     this.wear.step(m, ev);
     this.setMotion.onEvents(m, ev);
     this.setMotion.step();
+    const depth = this.stage.depth;
+    this.studio.step(m, ev, depth ? depth.crewX : CREW_X, depth ? depth.crewZ : 3);
     this.legible.step(m, ev, this.cut.who, this.wear.wear);
     // The echoes' trail keeps simulation time, so it's the same at any refresh rate.
     for (let i = 0; i < 2; i++) {
@@ -623,6 +633,7 @@ export class Arena {
     const ax = toFloat(m.fighters[0].x);
     const bx = toFloat(m.fighters[1].x);
     depth?.update(this.camera, Math.min(ax, bx) - BODY_REACH, Math.max(ax, bx) + BODY_REACH);
+    depth?.studio(this.studio);
     this.camera.updateMatrixWorld();
     this.viewProj.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.viewProj);
@@ -640,7 +651,10 @@ export class Arena {
       model.root.visible = this.frustum.intersectsSphere(this.seated);
       if (!model.root.visible) continue;
       // The seat's +z faces the fight; the model is turned a quarter to face +x, so turn it back.
-      seat.getWorldQuaternion(model.root.quaternion).multiply(this.turn);
+      seat.getWorldQuaternion(model.root.quaternion);
+      // Leaning in on an ender (not with Reduce Motion): forward is the seat's +z, toward the fight.
+      if (this.studio.lean > 0 && !this.reduceMotion) model.root.quaternion.multiply(this.lean.setFromAxisAngle(X_AXIS, this.studio.lean));
+      model.root.quaternion.multiply(this.turn);
       model.pose('sit_audience', this.frame + k * SWAY_OFFSET, true);
     }
   }
