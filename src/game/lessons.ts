@@ -138,7 +138,7 @@ export const LESSONS: readonly Lesson[] = [
       if (hitOnPlayer(ev, from)) return 'She landed it: hit her on the way down';
       return null;
     },
-    solution: () => [hold(30, 'd BP')],
+    solution: () => [hold(27, 'd BP')],
   },
   {
     id: 'punish',

@@ -25,8 +25,8 @@ export const PREJUMP_FRAMES = 3;
 export const JUMP_LAND_FRAMES = 2;
 export const AIR_ATTACK_LAND_FRAMES = 4;
 export const START_X = fx(1.5);
-/** The jump out of a launcher that hit (a jump cancel) is a hop: this % of the fighter's jump speed. */
-export const HOP_PCT = 75;
+/** The jump out of a launcher that hit (a jump cancel) is a hop, the same for everyone whatever their own jump's weight (it falls at GRAVITY), so a juggle into the air works alike: up about 1.2 m. */
+export const HOP_VY = fx(0.165);
 /** A jump cancel (once a combo) counts as this many extra hits for damage scaling. */
 export const JUMP_CANCEL_SCALE = 2;
 

@@ -284,8 +284,10 @@ export const ROX: FighterData = {
   health: 660,
   walkFwd: fx(0.06),
   walkBack: fx(0.04),
-  jumpVy: fx(0.2),
-  jumpVx: fx(0.065),
+  // Quick and low: off the floor and back in about 28 frames, 1.3 m up, travelling.
+  jumpVy: fx(0.19),
+  jumpVx: fx(0.075),
+  jumpGravity: fx(0.0135),
   dash: { frames: 14, speed: fx(0.1) },
   backdash: { frames: 18, speed: fx(0.08) },
   hurt: { stand: box(-0.3, 0.3, 0, 1.75), crouch: box(-0.3, 0.35, 0, 1.05), air: box(-0.3, 0.3, 0.2, 1.55), juggle: box(-0.8, 0.55, 0.2, 0.85) },

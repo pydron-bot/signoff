@@ -234,8 +234,8 @@ describe("The Eleven O'Clock News", () => {
   it('Headlines: the desk can be jumped', () => {
     const m = news(0);
     place(m, -0.6, 3);
-    // Player 2 jumps as the desk arrives (it travels about 3 m at 0.1 m a step).
-    const ev = run(m, 70, presses({ 0: INTERACT }), presses({ 18: UP }));
+    // Player 2 jumps as the desk arrives (it travels about 3 m at 0.1 m a step): Rox jumps low, so only just in time.
+    const ev = run(m, 70, presses({ 0: INTERACT }), presses({ 20: UP }));
     expect(count(ev, 'hit')).toBe(0);
     expect(m.props[0].mode).toBe('spent');
   });

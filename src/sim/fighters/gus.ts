@@ -260,8 +260,10 @@ export const GUS: FighterData = {
   health: 940,
   walkFwd: fx(0.036),
   walkBack: fx(0.032),
+  // Heavy: low and short, down fast (about 30 frames, 1.4 m up).
   jumpVy: fx(0.19),
   jumpVx: fx(0.05),
+  jumpGravity: fx(0.0125),
   dash: { frames: 17, speed: fx(0.075) },
   backdash: { frames: 20, speed: fx(0.075) },
   hurt: { stand: box(-0.35, 0.35, 0, 1.85), crouch: box(-0.35, 0.4, 0, 1.15), air: box(-0.35, 0.35, 0.2, 1.65), juggle: box(-0.85, 0.6, 0.2, 0.95) },

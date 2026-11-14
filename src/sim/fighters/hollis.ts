@@ -221,8 +221,10 @@ export const HOLLIS: FighterData = {
   health: 980,
   walkFwd: fx(0.032),
   walkBack: fx(0.028),
-  jumpVy: fx(0.18),
-  jumpVx: fx(0.045),
+  // Heavy: low and short, down fast (about 30 frames, 1.4 m up).
+  jumpVy: fx(0.185),
+  jumpVx: fx(0.05),
+  jumpGravity: fx(0.0125),
   dash: { frames: 18, speed: fx(0.07) },
   backdash: { frames: 22, speed: fx(0.065) },
   hurt: { stand: box(-0.35, 0.35, 0, 1.9), crouch: box(-0.35, 0.4, 0, 1.2), air: box(-0.35, 0.35, 0.2, 1.7), juggle: box(-0.85, 0.65, 0.2, 1.0) },

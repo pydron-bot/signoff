@@ -216,8 +216,10 @@ export const MUMBLES: FighterData = {
   health: 740,
   walkFwd: fx(0.055),
   walkBack: fx(0.05),
-  jumpVy: fx(0.22),
-  jumpVx: fx(0.07),
+  // Floaty: up slowly, a long hang, down slowly (about 45 frames, 2.1 m up).
+  jumpVy: fx(0.19),
+  jumpVx: fx(0.06),
+  jumpGravity: fx(0.0085),
   dash: { frames: 12, speed: fx(0.11) },
   backdash: { frames: 16, speed: fx(0.1) },
   hurt: { stand: box(-0.25, 0.25, 0, 1.3), crouch: box(-0.25, 0.3, 0, 0.8), air: box(-0.25, 0.25, 0.15, 1.15), juggle: box(-0.6, 0.45, 0.15, 0.7) },

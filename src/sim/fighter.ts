@@ -16,7 +16,7 @@ import {
   DELAYED_GETUP,
   GETUP_FRAMES,
   GRAVITY,
-  HOP_PCT,
+  HOP_VY,
   JUMP_CANCEL_SCALE,
   GROUND_BOUNCE_VY,
   JUGGLE_GRAVITY,
@@ -151,6 +151,15 @@ export function takeDamage(f: FighterState, dmg: number): boolean {
   return false;
 }
 
+/**
+ * The pull down in a fighter's own jump and their air moves: their weight.
+ * A jump cancel's hop falls alike for everyone, so the juggle off it works
+ * the same whoever chases; so does anything else in the air.
+ */
+function ownGravity(f: FighterState): Fx {
+  return !f.hop && (f.mode === 'air' || f.mode === 'move') ? (fighterData(f.fighter).jumpGravity ?? GRAVITY) : GRAVITY;
+}
+
 // ---- tick ----
 
 export function tick(m: MatchState, i: number, ev: SimEvent[]): void {
@@ -197,8 +206,7 @@ function endTimed(m: MatchState, i: number, ev: SimEvent[]): void {
     case 'prejump':
       f.mode = 'air';
       // Out of a launcher, a lower hop: it meets the body on its way up instead of sailing over it.
-      f.vy = f.hop ? Math.floor((d.jumpVy * HOP_PCT) / 100) : d.jumpVy;
-      f.hop = false;
+      f.vy = f.hop ? HOP_VY : d.jumpVy;
       f.vx = f.jumpDir * f.facing * d.jumpVx;
       f.airAttackUsed = false;
       f.airSpecialUsed = false;
@@ -441,6 +449,7 @@ export function footwork(m: MatchState, i: number, canJump: boolean): void {
   }
   if (canJump && held & UP) {
     f.mode = 'prejump';
+    f.hop = false;
     f.timer = PREJUMP_FRAMES - 1;
     f.jumpDir = held & fwd ? 1 : held & back ? -1 : 0;
     f.vx = 0;
@@ -648,8 +657,8 @@ export function physics(m: MatchState, i: number, ev: SimEvent[]): void {
     f.vy = 0;
     f.x += f.vx;
   } else if (airborne(f)) {
-    // A juggled body falls faster with every juggle hit.
-    f.vy -= f.mode === 'launched' && f.juggleable ? Math.floor((GRAVITY * (100 + JUGGLE_GRAVITY * f.juggle)) / 100) : GRAVITY;
+    // A juggled body falls faster with every juggle hit; a fighter in their own jump falls at their own weight.
+    f.vy -= f.mode === 'launched' ? (f.juggleable ? Math.floor((GRAVITY * (100 + JUGGLE_GRAVITY * f.juggle)) / 100) : GRAVITY) : ownGravity(f);
     f.y += f.vy;
     f.x += f.vx;
     if (f.bounce === 'wall' && Math.abs(f.x) >= wallX(m, f)) wallBounce(m, i, ev);
@@ -716,6 +725,7 @@ function wallBounce(m: MatchState, i: number, ev: SimEvent[]): void {
 }
 
 function land(f: FighterState, i: number, ev: SimEvent[]): void {
+  f.hop = false;
   switch (f.mode) {
     case 'air':
       f.mode = 'landing';

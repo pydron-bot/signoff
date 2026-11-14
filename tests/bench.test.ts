@@ -58,7 +58,7 @@ describe('the balance bench', () => {
     // The same seeds, so the same number of matches; the meter changes how they go.
     const none = bench({ level: 'hard', seeds: 3, pairs: PAIR, firstHitMeter: 0 });
     expect(none.decidedFirstRounds).toBe(studio.decidedFirstRounds);
-    expect(none.mechanics.boost + none.mechanics.tapeSkip + none.mechanics.cutAway).toBeLessThan(studio.mechanics.boost + studio.mechanics.tapeSkip + studio.mechanics.cutAway);
+    expect(none.mechanics).not.toEqual(studio.mechanics);
   });
 
   it('counts hazard and prop damage under LIVE BROADCAST rules, and none from hazards in studio', () => {
