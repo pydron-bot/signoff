@@ -6,12 +6,14 @@
  * between, which software GL could take minutes to do. Without the
  * parameter nothing is installed and the game never looks at it. The match
  * moves by inputs, as in play, but for one shortcut: the low-health moments
- * set both fighters' health down once the round is under way, and meter()
+ * set both fighters' health down once the round is under way, the wall
+ * splat and ground bounce throw player 2 as a launcher would, and meter()
  * sets the meter.
  */
 import type { Session } from './session';
 import { BLOCK, SPECIAL } from '../sim/input';
 import { BAR } from '../sim/constants';
+import { fx } from '../sim/fixed';
 import type { SimEvent } from '../sim';
 
 export type ShotMode = 'watch' | 'cpu' | 'training';
@@ -71,8 +73,19 @@ export function installShots(host: ShotHost): void {
       if (moment === 'start') ok = until(() => m.phase === 'fight');
       else if (moment === 'heavy') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 2));
       else if (moment === 'splat' || moment === 'bounce') {
+        // Too rare to wait for: player 2 is thrown at the right wall (or slammed at the floor) as a launcher would, and the sim does the rest.
         const how = moment === 'splat' ? 'wall' : 'ground';
-        ok = until((e) => e.some((x) => x.type === 'relaunch' && x.how === how), LIMIT * 4);
+        ok = until(() => m.phase === 'fight');
+        for (let i = 0; i < 60; i++) step();
+        const d = m.fighters[1];
+        d.mode = 'launched';
+        d.bounce = how;
+        d.juggleable = true;
+        d.x = how === 'wall' ? fx(5.5) : fx(1);
+        d.y = fx(how === 'wall' ? 1 : 1.4);
+        d.vx = how === 'wall' ? fx(0.12) : 0;
+        d.vy = how === 'wall' ? fx(0.02) : fx(-0.12);
+        ok &&= until((e) => e.some((x) => x.type === 'relaunch' && x.how === how), 240);
       } else if (moment === 'ender') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 3));
       else if (moment === 'ko') {
         ok = until(() => m.phase === 'fight');
