@@ -330,10 +330,10 @@ body {
 /* Rounds won: ON AIR lamps, dark until lit. */
 .hud-pip {
   padding: 0 4px;
-  font-size: 0.5rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  line-height: 1.5;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
   color: rgba(255, 90, 70, 0.35);
   background: rgba(40, 6, 6, 0.6);
   border: 1px solid rgba(255, 90, 70, 0.35);
@@ -473,7 +473,8 @@ body {
 }
 
 .hud-caption-main {
-  font-size: clamp(2rem, 8vw, 4.5rem);
+  /* By the screen's height too: on a phone on its side 8vw is a wall of letters. */
+  font-size: clamp(1.8rem, min(8vw, 12vh), 4.5rem);
   font-weight: 800;
   letter-spacing: 0.12em;
 }
@@ -1700,29 +1701,58 @@ body[data-motion='reduced'] .touch-btn {
   opacity: 0.75;
 }
 
-/* A phone on its side: smaller cards, no style line, the menu in the middle column's foot. */
+/* A phone on its side: the TV keeps the middle (the dial is the point), the cards and the menu take the sides. */
 @media (max-height: 500px) {
   .select {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
+    grid-template-columns: 29vw 1fr 29vw;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 6px 10px;
   }
   .select-card {
-    padding: 4px 6px;
+    gap: 2px 8px;
+    padding: 4px 8px;
   }
-  .select-style,
+  .select-portrait {
+    width: 44px;
+    height: 44px;
+  }
+  .select-name {
+    font-size: 1rem;
+  }
   .select-show {
     display: none;
   }
+  .select-style {
+    font-size: 0.6rem;
+  }
+  .select-channel {
+    font-size: 1.1rem;
+  }
+  .select-bar {
+    grid-template-columns: 4.6em 1fr;
+    font-size: 0.66rem;
+  }
+  .select-bar-track {
+    height: 8px;
+  }
+  .select-trials {
+    font-size: 0.85rem;
+  }
   .select .menu-select {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: end;
-    max-height: calc(100vh - 20px);
+    grid-column: 3;
+    grid-row: 2;
+    gap: 3px;
+    max-height: calc(100vh - 190px);
     overflow-y: auto;
   }
+  .select .menu-title {
+    display: none;
+  }
   .select .menu-row {
-    padding: 0.15rem 0.5rem;
-    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
   }
 }
 
@@ -1891,11 +1921,35 @@ body[data-motion='reduced'] .touch-btn {
   min-width: min(14rem, 30vw);
 }
 
+/* A phone at arm's length: the figures as big as the screen lets them be, the menu beside. */
 @media (max-height: 500px) {
+  .results {
+    gap: 12px;
+  }
+  .results-card {
+    padding: 6px 12px;
+  }
   .results-winner {
     margin-bottom: 4px;
   }
+  .results-portrait {
+    width: 52px;
+    height: 52px;
+  }
+  .results-name {
+    font-size: 1.4rem;
+  }
   .results-figures {
-    font-size: 0.65rem;
+    font-size: 0.92rem;
+    letter-spacing: 0.04em;
+  }
+  .results-figures td {
+    padding: 0 8px;
+  }
+  .results-figures th {
+    font-size: 0.8rem;
+  }
+  .results-line {
+    font-size: 0.75rem;
   }
 }

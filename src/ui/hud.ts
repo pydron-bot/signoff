@@ -20,6 +20,8 @@ import { CalloutQueue, SPEND_BOOST, SPEND_CUT, SPEND_SKIP, clockUrgent, comboSca
 export const HUD_TOP = 126;
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
 const DRAIN_HOLD = 32;
+/** How long the K.O. call keeps the callouts away (steps, as long as its caption). */
+const KO_CALL_STEPS = 150;
 const DRAIN_RATE = 0.012;
 /** How long the fighters' lower thirds stay up at the start of a match (steps). */
 const INTRO_STEPS = 100;
@@ -95,6 +97,8 @@ export class Hud {
   private readonly ticker: HTMLElement;
   private warningLeft = 0;
   private lastSpends = [-1, -1];
+  /** Steps left of the K.O. call, when no callout shows. */
+  private koCall = 0;
   private lastUrgent = false;
   private captionLeft = 0;
   private comboLeft = [0, 0];
@@ -231,6 +235,7 @@ export class Hud {
       s.callout.hidden = true;
     }
     this.lastSpends = [-1, -1];
+    this.koCall = 0;
     this.caption.textContent = '';
     this.captionSub.textContent = '';
     this.lastHealth = [-1, -1];
@@ -306,6 +311,12 @@ export class Hud {
           break;
         case 'ko':
           this.say('K.O.', '', 150);
+          // The K.O. call has the screen to itself: the callouts give way.
+          this.koCall = KO_CALL_STEPS;
+          for (const s of this.sides) {
+            s.callouts.clear();
+            this.showCallout(s);
+          }
           break;
         case 'roundOver':
           if (e.reason === 'time') this.say('TIME', e.winner < 0 ? 'DRAW' : '', 150);
@@ -337,12 +348,10 @@ export class Hud {
         case 'superReady':
           this.callout(e.player, 'SIGNAL RESTORED');
           break;
-        case 'firstHit': {
-          const c = this.sides[e.player].combo;
-          c.textContent = 'FIRST HIT';
-          this.comboLeft[e.player] = 70;
+        case 'firstHit':
+          // It pays nothing now (0.62.0): a small callout in its slot, not the combo counter's size.
+          this.callout(e.player, 'FIRST HIT');
           break;
-        }
         case 'cutAway':
           this.say('CUT AWAY', '', 40);
           break;
@@ -399,6 +408,7 @@ export class Hud {
 
   /** A word on one player's side for a moment: COUNTER, PUNISH, REVERSAL, FLAWLESS BLOCK. */
   private callout(player: number, text: string): void {
+    if (this.koCall > 0) return;
     const s = this.sides[player];
     const was = s.callouts.text;
     s.callouts.push(text);
@@ -437,6 +447,7 @@ export class Hud {
     }
     if (this.warningLeft > 0) this.warningLeft--;
     if (this.warning.hidden !== (this.warningLeft === 0)) this.warning.hidden = this.warningLeft === 0;
+    if (this.koCall > 0) this.koCall--;
     for (const s of this.sides) if (s.callouts.step()) this.showCallout(s);
   }
 
