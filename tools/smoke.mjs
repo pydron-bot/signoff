@@ -86,7 +86,8 @@ try {
     await page.waitForTimeout(300);
     const versus = await page.isVisible('.versus');
     await page.screenshot({ path: `smoke-out/${name}-versus.png` });
-    if (versus) await page.click('.versus');
+    // A tap skips it (it may have run its two seconds out already).
+    if (versus) await page.evaluate(() => document.querySelector('.versus:not([hidden])')?.dispatchEvent(new PointerEvent('pointerdown')));
     // The cold open: the two fighters' lines, then a tap skips the rest.
     await page.waitForTimeout(2500);
     const opened = await page.isVisible('.cold-open');
