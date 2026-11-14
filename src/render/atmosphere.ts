@@ -3,7 +3,8 @@
  * faint beams from the set's own lamps, behind the fighters so they add
  * depth without covering anyone, and dust drifting in the light. Two draw
  * calls (the beams are one instanced mesh, the dust one set of points); the
- * dust drifts in its shader, so nothing is updated per frame but a clock.
+ * dust drifts in its shader, so nothing is updated per frame but a clock
+ * (and a beam's matrix while its lamp swings).
  */
 import * as THREE from 'three';
 import type { MatchState } from '../sim';
@@ -54,6 +55,8 @@ const AIRS: Readonly<Record<string, readonly Air[]>> = {
 };
 
 const MAX_BEAMS = 8;
+/** A lamp's lens below its pivot on the grid (the News's fresnels: the grid at 6.8 m, the lens at 6.2). */
+const PIVOT_DROP = 0.6;
 const MOTES = 220;
 
 const BEAM_VERT = /* glsl */ `
@@ -119,6 +122,11 @@ export class Atmosphere {
   private readonly q = new THREE.Quaternion();
   private readonly dir = new THREE.Vector3();
   private readonly down = new THREE.Vector3(0, -1, 0);
+  private readonly at = new THREE.Vector3();
+  private readonly size = new THREE.Vector3();
+  /** The segment's beams, and the angle each was last drawn at (its lamp's swing). */
+  private air: Air = NONE;
+  private readonly drawn = new Float32Array(MAX_BEAMS);
 
   constructor(private readonly scene: THREE.Scene) {
     scene.fog = this.fog;
@@ -184,21 +192,50 @@ export class Atmosphere {
     this.fog.color.copy(this.scene.background as THREE.Color);
   }
 
+  /**
+   * The beams follow their lamps as they swing (src/render/setMover.ts): each
+   * beam takes the angle of the swinging lamp nearest it, if there's one
+   * within a metre. Matrices are rebuilt only for beams whose angle changed.
+   */
+  followLamps(xs: Float32Array, angles: Float32Array, lamps: number): void {
+    const beams = this.air.beams;
+    const n = Math.min(MAX_BEAMS, beams.length);
+    let changed = false;
+    for (let i = 0; i < n; i++) {
+      let a = 0;
+      for (let k = 0; k < lamps; k++) if (Math.abs(xs[k] - beams[i][0]) < 1) a = angles[k];
+      if (a === this.drawn[i]) continue;
+      this.place(i, beams[i], a);
+      changed = true;
+    }
+    if (changed) this.beams.instanceMatrix.needsUpdate = true;
+  }
+
+  /** Beam i from its lamp, the lamp swung `angle` about its pivot on the grid above. */
+  private place(i: number, [x, y, z, x2, z2, w]: Beam, angle: number): void {
+    this.drawn[i] = angle;
+    const s = Math.sin(angle);
+    const c = Math.cos(angle);
+    // The lens hangs PIVOT_DROP below the pivot: it moves across as the lamp swings, and the beam turns with it.
+    const dx = x2 - x;
+    const dy = -y;
+    this.dir.set(dx * c - dy * s, dx * s + dy * c, z2 - z);
+    const len = this.dir.length();
+    this.q.setFromUnitVectors(this.down, this.dir.normalize());
+    this.at.set(x + PIVOT_DROP * s, y + PIVOT_DROP * (1 - c), z);
+    this.m.compose(this.at, this.q, this.size.set(w, len, w));
+    this.beams.setMatrixAt(i, this.m);
+  }
+
   private use(a: Air): void {
+    this.air = a;
     this.fog.density = a.haze;
     (this.beamMat.uniforms.uColor.value as THREE.Color).setHex(a.beam);
     this.beamMat.uniforms.uStrength.value = a.beamStrength;
     (this.dustMat.uniforms.uColor.value as THREE.Color).setHex(a.dust);
     this.dustMat.uniforms.uAmount.value = a.dustAmount * 0.5;
     const n = Math.min(MAX_BEAMS, a.beams.length);
-    for (let i = 0; i < n; i++) {
-      const [x, y, z, x2, z2, w] = a.beams[i];
-      this.dir.set(x2 - x, -y, z2 - z);
-      const len = this.dir.length();
-      this.q.setFromUnitVectors(this.down, this.dir.normalize());
-      this.m.compose(new THREE.Vector3(x, y, z), this.q, new THREE.Vector3(w, len, w));
-      this.beams.setMatrixAt(i, this.m);
-    }
+    for (let i = 0; i < n; i++) this.place(i, a.beams[i], 0);
     this.beams.count = n;
     this.beams.instanceMatrix.needsUpdate = true;
     this.beams.visible = n > 0 && a.beamStrength > 0;

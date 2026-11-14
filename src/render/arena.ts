@@ -21,6 +21,8 @@ import { Atmosphere } from './atmosphere';
 import { Echoes } from './echo';
 import { FIGHT_LAYER } from './meshCopies';
 import { setShadowKey } from './shadow';
+import { SetMotion } from './setMotion';
+import { SetMover } from './setMover';
 import { Legibility, cutInWear } from './legible';
 import { CameraRig, FOV } from './camera';
 import { AUDIENCE_SHADE, SEATS } from './depth';
@@ -34,6 +36,7 @@ import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { Clutter } from './clutter';
 import { Dust } from './dust';
+import { Marks } from './marks';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { SetFlash } from './setFlash';
 import { CutIn, type CutInRect } from './cutIn';
@@ -225,6 +228,8 @@ export class Arena {
     this.impactScreen.reduceMotion = on;
     this.setFlash.reduceMotion = on;
     this.cut.reduceMotion = on;
+    this.setMotion.reduceMotion = on;
+    if (on) this.setMotion.clear();
   }
   /** Of the screen's height, how much the HUD takes at the top: the cut-in's band stays below it. */
   set hudClear(share: number) {
@@ -242,6 +247,9 @@ export class Arena {
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
   private readonly wear = new WearTracker();
+  /** The set answering the fight: props shaking, lamps swinging (src/render/setMotion.ts, setMover.ts). */
+  private readonly setMotion = new SetMotion();
+  private readonly setMover = new SetMover();
   /** Which effects give way to the fighters this step (src/render/legible.ts). */
   private readonly legible = new Legibility();
   /** A pose worked out in step(), for the echoes' trail. */
@@ -262,6 +270,8 @@ export class Arena {
   private readonly sparks: Sparks;
   private readonly burst: SignalBurst;
   private readonly dust: Dust;
+  /** Cracks and scuffs where bodies met the set (src/render/marks.ts). */
+  private readonly marks: Marks;
   private readonly clutter: Clutter;
   private readonly light: ImpactLight;
   /** Changing channel between the endless channel's matches. */
@@ -313,6 +323,7 @@ export class Arena {
     this.air = new Atmosphere(this.scene);
     this.burst = new SignalBurst(this.scene);
     this.dust = new Dust(this.scene);
+    this.marks = new Marks(this.scene);
     this.clutter = new Clutter(this.scene);
     this.light = new ImpactLight(this.scene);
     this.flip = new ChannelFlip(this.scene);
@@ -327,7 +338,12 @@ export class Arena {
       this.projectileFx.push(new EffectSlot(this.scene));
     }
     loadFighterArt(TAPE_SKIP_ART).then(
-      (art) => (this.shared = art.fx),
+      (art) => {
+        this.shared = art.fx;
+        // The impact pass's painted ring and crack live in the same GLB (step 29).
+        this.dust.useRing(art.fx.get('fx_impact_ring'));
+        this.marks.useCrack(art.fx.get('fx_crack'));
+      },
       () => undefined,
     );
     const edges = new THREE.EdgesGeometry(this.unit);
@@ -426,6 +442,7 @@ export class Arena {
     this.rig.reset();
     this.burst.clear();
     this.dust.clear();
+    this.marks.clear();
     this.clutter.clear();
     this.light.clear();
     this.setFlash.clear();
@@ -433,6 +450,7 @@ export class Arena {
     this.impactScreen.clear();
     this.wear.reset();
     this.legible.reset();
+    this.setMotion.clear();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -451,6 +469,8 @@ export class Arena {
     this.sparks.onEvents(ev);
     this.burst.onEvents(ev);
     this.dust.onEvents(m, ev);
+    this.marks.onEvents(m, ev);
+    this.marks.step();
     this.clutter.step(m, ev);
     this.light.onEvents(ev);
     this.impactScreen.onEvents(ev);
@@ -478,6 +498,8 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+    this.setMotion.onEvents(m, ev);
+    this.setMotion.step();
     this.legible.step(m, ev, this.cut.who, this.wear.wear);
     // The echoes' trail keeps simulation time, so it's the same at any refresh rate.
     for (let i = 0; i < 2; i++) {
@@ -530,6 +552,8 @@ export class Arena {
     // The cold open: nothing steps, so the camera frames the match from here (else it keeps the last match's shot).
     if (this.idling) this.rig.step(m, NO_EVENTS);
     this.stage.update(m, this.frame);
+    this.setMover.bind(this.stage.root, this.setMotion);
+    this.setMover.update(this.setMotion);
     this.clutter.update();
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
@@ -538,6 +562,7 @@ export class Arena {
     this.shadows.setKey(this.key);
     setShadowKey(this.key);
     this.air.update(m, this.frame / 60);
+    this.air.followLamps(this.setMover.lampX, this.setMover.lampAngle, this.setMover.lamps);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
