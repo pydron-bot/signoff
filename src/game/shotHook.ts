@@ -36,7 +36,8 @@ export interface ShotHost {
 }
 
 /** What a moment is: steps until it, and steps after it. */
-export type Moment = 'start' | 'heavy' | 'td' | 'ko';
+/** splat: a wall splat; bounce: a ground bounce; ender: any ender (a launch, knockdown, bounce or KO). */
+export type Moment = 'start' | 'heavy' | 'td' | 'ko' | 'splat' | 'bounce' | 'ender';
 
 const LIMIT = 6000;
 
@@ -69,6 +70,10 @@ export function installShots(host: ShotHost): void {
       input = 0;
       if (moment === 'start') ok = until(() => m.phase === 'fight');
       else if (moment === 'heavy') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 2));
+      else if (moment === 'splat' || moment === 'bounce') {
+        const how = moment === 'splat' ? 'wall' : 'ground';
+        ok = until((e) => e.some((x) => x.type === 'relaunch' && x.how === how), LIMIT * 4);
+      } else if (moment === 'ender') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 3));
       else if (moment === 'ko') {
         ok = until(() => m.phase === 'fight');
         // Both nearly out, so the next clean blow ends the round.
