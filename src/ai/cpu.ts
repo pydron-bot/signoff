@@ -959,6 +959,8 @@ export class Cpu {
       this.choose(me, [
         ['poke', 25, () => tap(BK)],
         ['low', 15, () => tap(DOWN | FK)],
+        // The palm that draws them in.
+        ['poke', d.normals.f.FK ? 10 : 0, () => tap(fwd | FK)],
         ['special', 15, () => this.special(me, fwd | SPECIAL)],
         ['approach', 20, () => hold(fwd, 10)],
         ['retreat', 25, () => hold(back, 10)],
@@ -986,6 +988,8 @@ export class Cpu {
       this.choose(me, [
         ['poke', 22, () => tap(BK)],
         ['poke', 16, () => tap(BP)],
+        // The whisk, three times through their guard.
+        ['poke', d.normals.f.FK ? 10 : 0, () => tap(fwd | FK)],
         ['low', 12, () => tap(DOWN | FK)],
         ['special', 10, () => this.special(me, DOWN | SPECIAL)],
         ['special', 12, () => this.special(me, fwd | SPECIAL)],

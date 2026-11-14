@@ -116,6 +116,10 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   'dale:b.FK BK': 's.BK',
   'margaret:s.BK': 'FK BK',
   'margaret:f.FK': 's.FK',
+  // Styles, part 2 (0.64.0, step 36): Gus's whisk, Gideon's two-beat Good Book and his palm.
+  'gus:f.FK': 's.FK',
+  'gideon:s.BP': 'BP BP',
+  'gideon:f.FK': 'Laying On of Hands',
   // Juggle reactions (step 16): the held end of `launched`.
   juggle_hit: 'launched',
   relaunch: 'launched',
@@ -138,6 +142,10 @@ export const ART_PENDING: ReadonlySet<string> = new Set([
   'dale:BP FK FK',
   'margaret:s.BK',
   'margaret:f.FK',
+  // Step 36: Gus (new), Gideon (retimed, new).
+  'gus:f.FK',
+  'gideon:s.BP',
+  'gideon:f.FK',
 ]);
 
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */

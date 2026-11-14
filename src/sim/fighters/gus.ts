@@ -1,8 +1,11 @@
 /**
  * Chef Gus Lamarre, host of a cooking show filmed in one take, every night,
- * forever. Mid-range: the longest reach in the game with cleaver and pans,
- * slow to start and slow to walk; fire on the floor, a pan set up in the air
- * that drops later, and a tenderising combo that crushes a guard.
+ * forever. Mid-range, and his style is the kitchen (docs/STYLES.md): every
+ * normal a utensil swung in a wide arc, slow to start and long to recover.
+ * The utensils reach further than he can be hit (only his arm can), the
+ * longest disjointed reach in the game, and a whisk that hits three times.
+ * Specials: fire on the floor, a pan set up in the air that drops later,
+ * and a tenderising combo that crushes a guard.
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
@@ -37,14 +40,49 @@ function pan(x: number, delay: number) {
 const moves = table(
   // Standing: long and slow. The cleaver and the pans out-reach everyone.
   normal('s.FP', { name: 'Taste Test', startup: 8, active: 2, recovery: 11, reach: [0.2, 1.1], at: [1.15, 1.5], height: 'high', damage: 35, hitstun: 16, blockstun: 13, chain: { FP: 'FP FP', BP: 'FP BP' } }),
-  normal('s.BP', { name: 'Skillet', startup: 12, active: 3, recovery: 17, reach: [0.2, 1.6], at: [0.75, 1.5], damage: 65, hitstun: 21, blockstun: 15, push: 0.06, chain: { BK: 'BP BK' } }),
+  // The skillet does the reaching: past 0.85 m there's only pan to hit.
+  move('s.BP', {
+    name: 'Skillet',
+    kind: 'normal',
+    total: 31,
+    hits: [strike({ frames: [12, 14], reach: [0.2, 1.6], at: [0.75, 1.5], damage: 65, hitstun: 21, blockstun: 15, push: 0.06 })],
+    hurt: [{ frames: [12, 23], box: box(0.2, 0.85, 0.9, 1.5) }],
+    chain: { BK: 'BP BK' },
+    cancel: [15, 21],
+  }),
   normal('s.FK', { name: 'Oven Door', startup: 10, active: 3, recovery: 14, reach: [0.2, 1.45], at: [0.5, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { FP: 'FK FP' } }),
-  normal('s.BK', { name: 'Cleaver', startup: 15, active: 3, recovery: 21, reach: [0.3, 1.85], at: [0.75, 1.5], damage: 80, hitstun: 22, blockstun: 16, push: 0.08 }),
+  // The longest disjointed reach in the game: a cleaver on a long arm, and only the arm can be hit.
+  move('s.BK', {
+    name: 'Cleaver',
+    kind: 'normal',
+    total: 38,
+    hits: [strike({ frames: [15, 17], reach: [0.3, 1.85], at: [0.75, 1.5], damage: 80, hitstun: 22, blockstun: 16, push: 0.08 })],
+    hurt: [{ frames: [15, 28], box: box(0.3, 1.0, 0.9, 1.5) }],
+    cancel: [18, 24],
+  }),
   // Crouching
   normal('c.FP', { name: 'Paring Knife', stance: 'crouch', startup: 8, active: 2, recovery: 10, reach: [0.2, 1.0], at: [0.6, 0.9], damage: 28, hitstun: 15, blockstun: 12, chain: { BK: 'c.FP BK' } }),
   normal('c.BP', { name: 'Rising Ladle', stance: 'crouch', startup: 10, active: 4, recovery: 20, reach: [0.1, 0.9], at: [0.75, 2.0], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
-  normal('c.FK', { name: 'Rolling Pin', stance: 'crouch', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.5], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 11 }),
-  normal('c.BK', { name: 'Sweep the Floor', stance: 'crouch', startup: 13, active: 3, recovery: 24, reach: [0.2, 1.7], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
+  // Rolled along the floor at their shins: the pin, not the hand, is out there.
+  move('c.FK', {
+    name: 'Rolling Pin',
+    kind: 'normal',
+    stance: 'crouch',
+    total: 25,
+    hits: [strike({ frames: [9, 11], reach: [0.2, 1.5], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 11 })],
+    hurt: [{ frames: [9, 18], box: box(0.2, 0.9, 0.3, 0.7) }],
+    cancel: [12, 18],
+  }),
+  // A broom across the floor in a wide arc.
+  move('c.BK', {
+    name: 'Sweep the Floor',
+    kind: 'normal',
+    stance: 'crouch',
+    total: 39,
+    hits: [strike({ frames: [13, 15], reach: [0.2, 1.7], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true })],
+    hurt: [{ frames: [13, 27], box: box(0.2, 1.0, 0.3, 0.7) }],
+    cancel: [16, 22],
+  }),
   // Command normals
   normal('f.BP', { name: 'Meat Mallet', startup: 21, active: 2, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.7], height: 'overhead', damage: 75, hitstun: 22, blockstun: 14 }),
   // Steps back as he swings: whiff-punishes from the tip of the cleaver.
@@ -54,8 +92,21 @@ const moves = table(
     total: 34,
     motion: [{ frames: [1, 8], vx: -0.04 }],
     hits: [strike({ frames: [13, 15], reach: [0.3, 1.7], at: [0.75, 1.4], damage: 55, hitstun: 20, blockstun: 14 })],
-    hurt: [{ frames: [13, 24], box: box(0.3, 1.6, 0.9, 1.4) }],
+    hurt: [{ frames: [13, 24], box: box(0.3, 0.9, 0.9, 1.4) }],
     cancel: [16, 22],
+  }),
+  // A whisk worked three times through their guard: the second and third keep them there.
+  move('f.FK', {
+    name: 'Whisk',
+    kind: 'normal',
+    total: 38,
+    hits: [
+      strike({ frames: [12, 13], reach: [0.2, 1.35], at: [0.75, 1.4], damage: 24, hitstun: 16, blockstun: 10, push: 0.005 }),
+      strike({ frames: [16, 17], reach: [0.2, 1.35], at: [0.75, 1.4], damage: 24, hitstun: 16, blockstun: 10, push: 0.005 }),
+      strike({ frames: [20, 21], reach: [0.2, 1.35], at: [0.75, 1.4], damage: 30, hitstun: 20, blockstun: 14, push: 0.05 }),
+    ],
+    hurt: [{ frames: [12, 28], box: box(0.2, 0.85, 0.9, 1.4) }],
+    cancel: [22, 28],
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Spoon', kind: 'air', startup: 6, active: 6, recovery: 6, reach: [0.1, 0.85], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
@@ -274,7 +325,7 @@ export const GUS: FighterData = {
     s: { FP: 's.FP', BP: 's.BP', FK: 's.FK', BK: 's.BK' },
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
-    f: { BP: 'f.BP' },
+    f: { BP: 'f.BP', FK: 'f.FK' },
     b: { BP: 'b.BP' },
   },
   specials: { n: 'Tenderise', f: 'Flambé', b: 'Mise en Place', d: 'Chop Chop' },

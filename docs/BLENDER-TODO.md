@@ -271,6 +271,7 @@ are authored facing right with the left foot and left hand leading.
 > 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor.
 > 20. **Step 31, jumps by weight** (Nov 14, open): eight jump clips at new lengths.
 > 21. **Step 35, fighting styles: Dale and Margaret** (Nov 14, open): timing profiles for both, three new clips and one re-key for Dale, two retimed for Margaret, two retired. On `play/styles-2`.
+> 22. **Step 36, fighting styles: Gus and Gideon** (Nov 14, open): timing profiles for both, a new whisk and four utensil re-keys for Gus, a retimed Good Book, a new palm and a re-keyed Rapture for Gideon. On `play/styles-2`.
 >
 > Steps 31 to 34 are on the branch `play/fair-fights` (0.62.0, which holds 0.61.0 too), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
 >
@@ -1805,6 +1806,69 @@ entry out as its clip lands.
 - [ ] Review in the art viewer at play size: could you name each of them
   from the silhouette of a strike, and does Margaret move least?
 
+### 36. Fighting styles: Gus and Gideon (Nov 14, game side)
+
+The second part (`docs/STYLES.md`): Gus the kitchen and Gideon the sermon.
+As in step 35: a timing profile each, then the clips. The game side is in
+(0.64.0); until a clip lands the game plays the stand-in in brackets, and
+`ART_PENDING` lists what's owed.
+
+**A. Rhythm: two more timing profiles** (`lib/anim.py`, `Stance`)
+
+- **Gus, the kitchen:** wide and heavy. `windup` big and late, the utensil
+  drawn back behind the shoulder or hip; `snap` an arc, not a line: every
+  swing travels round (a chop comes down, a pan comes across); `follow`
+  long, the utensil carried right through and the body turned after it;
+  `settle` slow, a wipe of the hands on the apron if there's time.
+- **Gideon, the sermon:** theatrical. `windup` a pose: the arm raised high
+  and *held* for a beat (the call) before it comes down (the response);
+  `snap` sudden after the hold; `follow` arms flung wide, palms out;
+  `settle` back to a preacher's stance, the book to the chest.
+
+**B. Gus: the kitchen** (shape: a utensil in every normal; the reach is the utensil's)
+
+The game now lets only his arm be hit, not the utensil: the hand must stay
+inside the hurtbox given, and the utensil does the reaching. The clips keep
+their lengths; re-key them so the silhouette is a man holding something long.
+
+- [ ] `s.BP` **Skillet** (same 31 frames, re-key): a skillet swung flat
+  across in a wide arc, the pan at 0.75–1.5 m out to 1.6 m on 12–14, the
+  hand no further than 0.85 m.
+- [ ] `s.BK` **Cleaver** (same 38 frames, re-key): a big overhand chop, the
+  blade at 1.85 m on 15–17, the hand at 1.0 m.
+- [ ] `c.FK` **Rolling Pin** (same 25 frames, re-key): crouched, the pin
+  rolled out along the floor to 1.5 m on 9–11, the hand at 0.9 m.
+- [ ] `c.BK` **Sweep the Floor** (same 39 frames, re-key): a broom (or the
+  long ladle) swept across the floor in a wide arc to 1.7 m on 13–15, the
+  hands at 1.0 m.
+- [ ] `b.BP` **Back of the Pan** (same 34 frames, re-key): the hand at
+  0.9 m now, the pan reaching 1.7 m.
+- [ ] `f.FK` **Whisk** (new, 38 frames; stand-in `s.FK`): a whisk worked
+  hard three times at chest height, 0.75–1.4 m, out to 1.35 m, on 12–13,
+  16–17 and 20–21, the last a big flourish; the hand inside 0.85 m. A new
+  prop: `prop_whisk` in his accessories, like the cleaver and pans.
+
+**C. Gideon: the sermon** (shape: the Good Book, palms, arms flung wide)
+
+- [ ] `s.BP` **Good Book** (retimed, 36 frames, was 29; stand-in `BP BP`):
+  call and response. The book raised high over the head and a quick tap
+  with it on 11–12 (0.75–1.55 m, out to 1.2 m), held up a beat (13–18),
+  then brought down hard on 19–21.
+- [ ] `c.BP` **Rapture** (same frames, re-key): rising out of the crouch
+  with both arms flung out wide to either side and up: it now hits from
+  0.5 m *behind* him to 0.8 m in front, 0.75–2.0 m high, on 9–12.
+- [ ] `f.FK` **Come Forward** (new, 31 frames; stand-in `Laying On of
+  Hands`): a step of the front foot and a palm planted on their forehead
+  at 1.1–1.6 m, 1.4 m out, on 13–15; the game draws them in to 0.75 m, so
+  the palm pulls back to his chest as they come.
+
+**Checks**
+
+- [ ] Exact frame counts, strikes in their hitboxes, and Gus's hands inside
+  the hurtboxes the game gives each utensil move.
+- [ ] Empty `ART_PENDING` of Gus's and Gideon's entries as their clips land.
+- [ ] Review at play size: could you name each from a strike's silhouette?
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -2088,7 +2152,7 @@ plain one), `interact` is kicking a stage prop.
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.50, y 0.30…1.60 (mid) |
 
-#### Chef Gus Lamarre (`gus`): 39 move clips
+#### Chef Gus Lamarre (`gus`): 40 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -2102,6 +2166,7 @@ plain one), `interact` is kicking a stage prop.
 | `c.BK` | Sweep the Floor | normal | crouch | 39 | 13–15: x 0.20…1.70, y 0.00…0.30 (low) |
 | `f.BP` | Meat Mallet | normal | stand | 40 | 21–22: x 0.20…1.25, y 0.75…1.70 (overhead) |
 | `b.BP` | Back of the Pan | normal | stand | 34 | 13–15: x 0.30…1.70, y 0.75…1.40 (mid) |
+| `f.FK` | Whisk | normal | stand | 38 | 12–13: x 0.20…1.35, y 0.75…1.40 (mid); 16–17: x 0.20…1.35, y 0.75…1.40 (mid); 20–21: x 0.20…1.35, y 0.75…1.40 (mid) |
 | `j.FP` | Jumping Spoon | air | air | 17 | 6–11: x 0.10…0.85, y 0.60…1.10 (overhead) |
 | `j.BP` | Jumping Skillet | air | air | 20 | 9–13: x 0.10…1.10, y 0.70…1.30 (overhead) |
 | `j.FK` | Jumping Clog | air | air | 19 | 7–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
@@ -2132,19 +2197,20 @@ plain one), `interact` is kicking a stage prop.
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.80, y 0.30…1.60 (mid) |
 
-#### Rev. Gideon Price (`gideon`): 41 move clips
+#### Rev. Gideon Price (`gideon`): 42 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
 | `s.FP` | Hand Raised | normal | stand | 18 | 7–8: x 0.20…1.00, y 1.20…1.50 (high) |
-| `s.BP` | Good Book | normal | stand | 29 | 11–13: x 0.20…1.20, y 0.75…1.55 (mid) |
+| `s.BP` | Good Book | normal | stand | 36 | 11–12: x 0.20…1.20, y 0.75…1.55 (mid); 19–21: x 0.20…1.20, y 0.75…1.55 (mid) |
 | `s.FK` | Testify | normal | stand | 24 | 9–11: x 0.20…1.30, y 0.50…0.90 (mid) |
 | `s.BK` | Pulpit Kick | normal | stand | 34 | 13–15: x 0.20…1.45, y 0.75…1.35 (mid) |
 | `c.FP` | Kneel | normal | crouch | 17 | 7–8: x 0.20…0.90, y 0.60…0.90 (mid) |
-| `c.BP` | Rapture | normal | crouch | 31 | 9–12: x 0.10…0.80, y 0.75…2.00 (mid) |
+| `c.BP` | Rapture | normal | crouch | 31 | 9–12: x -0.50…0.80, y 0.75…2.00 (mid) |
 | `c.FK` | Low Offering | normal | crouch | 22 | 8–9: x 0.20…1.20, y 0.00…0.30 (low) |
 | `c.BK` | Bow Down | normal | crouch | 36 | 12–14: x 0.20…1.35, y 0.00…0.30 (low) |
 | `f.BP` | Smite | normal | stand | 38 | 20–21: x 0.20…1.05, y 0.75…1.70 (overhead) |
+| `f.FK` | Come Forward | normal | stand | 31 | 13–15: x 0.20…1.40, y 1.10…1.60 (high) |
 | `j.FP` | Jumping Blessing | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
 | `j.BP` | Descending Book | air | air | 19 | 8–12: x 0.10…0.95, y 0.60…1.20 (overhead) |
 | `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |

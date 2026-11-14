@@ -6093,6 +6093,56 @@
      }
     ]
    },
+   "f.FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 38,
+    "startup": 12,
+    "lastActive": 21,
+    "hits": [
+     {
+      "frames": [
+       12,
+       13
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0.75,
+       1.4
+      ],
+      "height": "mid"
+     },
+     {
+      "frames": [
+       16,
+       17
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0.75,
+       1.4
+      ],
+      "height": "mid"
+     },
+     {
+      "frames": [
+       20,
+       21
+      ],
+      "box": [
+       0.2,
+       1.35,
+       0.75,
+       1.4
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
    "j.FP": {
     "kind": "air",
     "stance": "air",
@@ -6930,14 +6980,14 @@
    "s.BP": {
     "kind": "normal",
     "stance": "stand",
-    "total": 29,
+    "total": 36,
     "startup": 11,
-    "lastActive": 13,
+    "lastActive": 21,
     "hits": [
      {
       "frames": [
        11,
-       13
+       12
       ],
       "box": [
        0.2,
@@ -6945,8 +6995,20 @@
        0.75,
        1.55
       ],
-      "height": "mid",
-      "heavy": true
+      "height": "mid"
+     },
+     {
+      "frames": [
+       19,
+       21
+      ],
+      "box": [
+       0.2,
+       1.2,
+       0.75,
+       1.55
+      ],
+      "height": "mid"
      }
     ],
     "spawns": [],
@@ -7038,7 +7100,7 @@
        12
       ],
       "box": [
-       0.1,
+       -0.5,
        0.8,
        0.75,
        2
@@ -7119,6 +7181,30 @@
       ],
       "height": "overhead",
       "heavy": true
+     }
+    ],
+    "spawns": [],
+    "motion": []
+   },
+   "f.FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 31,
+    "startup": 13,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       13,
+       15
+      ],
+      "box": [
+       0.2,
+       1.4,
+       1.1,
+       1.6
+      ],
+      "height": "high"
      }
     ],
     "spawns": [],

@@ -1,9 +1,12 @@
 /**
  * Rev. Gideon Price, a late-night televangelist who promises miracles for a
- * donation. All-rounder with a second resource: the Collection Plate goes out
- * and comes back, and every time it connects it collects a donation (up to
- * five). Laying On of Hands and Fire and Brimstone spend them automatically
- * when he has enough: a heal, and a far bigger blast.
+ * donation. All-rounder, and his style is the sermon (docs/STYLES.md):
+ * theatrical, arms flung wide, call and response. His Good Book hits twice,
+ * a beat apart; his Rapture is flung out to both sides; and he lays a palm
+ * on them and draws them forward. A second resource: the Collection Plate
+ * goes out and comes back, and every time it connects it collects a donation
+ * (up to five). Laying On of Hands and Fire and Brimstone spend them
+ * automatically when he has enough: a heal, and a far bigger blast.
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
@@ -28,16 +31,31 @@ function plate(speed: number, back: number, damage: number) {
 const moves = table(
   // Standing: middle of the road in everything; good reach, fair speed.
   normal('s.FP', { name: 'Hand Raised', startup: 7, active: 2, recovery: 10, reach: [0.2, 1.0], at: [1.2, 1.5], height: 'high', damage: 32, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
-  normal('s.BP', { name: 'Good Book', startup: 11, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.55], damage: 62, hitstun: 21, blockstun: 15, chain: { BP: 'BP BP' } }),
+  // Call and response: the book raised (the call), then brought down a beat later (the response).
+  move('s.BP', {
+    name: 'Good Book',
+    kind: 'normal',
+    total: 36,
+    hits: [
+      strike({ frames: [11, 12], reach: [0.2, 1.2], at: [0.75, 1.55], damage: 30, hitstun: 18, blockstun: 10, push: 0.005 }),
+      strike({ frames: [19, 21], reach: [0.2, 1.2], at: [0.75, 1.55], damage: 45, hitstun: 21, blockstun: 15 }),
+    ],
+    hurt: [{ frames: [11, 28], box: box(0.2, 1.1, 0.75, 1.55) }],
+    chain: { BP: 'BP BP' },
+    cancel: [22, 28],
+  }),
   normal('s.FK', { name: 'Testify', startup: 9, active: 3, recovery: 13, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'FK BK' } }),
   normal('s.BK', { name: 'Pulpit Kick', startup: 13, active: 3, recovery: 19, reach: [0.2, 1.45], at: [0.75, 1.35], damage: 75, hitstun: 22, blockstun: 16, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Kneel', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.6, 0.9], damage: 26, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
-  normal('c.BP', { name: 'Rapture', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [0.75, 2.0], damage: 68, hitstun: 24, blockstun: 12, launch: 0.17 }),
+  // Arms flung wide and up: it catches a jump from either side.
+  normal('c.BP', { name: 'Rapture', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [-0.5, 0.8], at: [0.75, 2.0], damage: 68, hitstun: 24, blockstun: 12, launch: 0.17 }),
   normal('c.FK', { name: 'Low Offering', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 41, hitstun: 16, blockstun: 11 }),
   normal('c.BK', { name: 'Bow Down', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
   normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [0.75, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
+  // A palm on the forehead, and they come forward: drawn in to his sermon's range.
+  normal('f.FK', { name: 'Come Forward', startup: 13, active: 3, recovery: 16, reach: [0.2, 1.4], at: [1.1, 1.6], height: 'high', damage: 40, hitstun: 24, blockstun: 14, push: 0, pull: 0.75 }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Blessing', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BK: 'j.BK', BP: 'j.BP' } }),
   normal('j.BP', { name: 'Descending Book', kind: 'air', startup: 8, active: 5, recovery: 7, reach: [0.1, 0.95], at: [0.6, 1.2], height: 'overhead', damage: 58, hitstun: 18, blockstun: 12, chain: { FP: 'j.BP FP', BK: 'j.BP BK' } }),
@@ -256,7 +274,7 @@ export const GIDEON: FighterData = {
     s: { FP: 's.FP', BP: 's.BP', FK: 's.FK', BK: 's.BK' },
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
-    f: { BP: 'f.BP' },
+    f: { BP: 'f.BP', FK: 'f.FK' },
     b: {},
   },
   specials: { n: 'Fire and Brimstone', f: 'Collection Plate', b: 'Begone', d: 'Laying On of Hands' },

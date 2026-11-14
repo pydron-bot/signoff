@@ -42,9 +42,9 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 | Chef Gus Lamarre | 1 | human | 7 | 35.0% | 23 | ↓BP › BK › Chop Chop+ › BP › Tenderise ×3 |
 | Chef Gus Lamarre | 3 | frame-perfect | 10 | 43.6% | 1 | ↓BP › BK › Chop Chop+ › FK › FK FP › Tenderise+ › j.FP › Belly Flop+ › FP › FP BP |
 | Chef Gus Lamarre | 3 | human | 9 | 41.9% | 16 | ↓BP › BK › Chop Chop+ › FP › FP BP › Tenderise+ › BP › Chop Chop+ › BK |
-| Rev. Gideon Price | 0 | frame-perfect | 6 | 29.6% | 19 | ↓BP › BP › BP BP › BP BP BK › BK › Begone |
-| Rev. Gideon Price | 0 | human | 6 | 29.6% | 19 | ↓BP › BP › BP BP › BP BP BK › BK › Begone |
-| Rev. Gideon Price | 1 | frame-perfect | 8 | 39.5% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › Laying On of Hands › Laying On of Hands BK |
-| Rev. Gideon Price | 1 | human | 6 | 35.4% | 7 | ↓BP › Fire and Brimstone+ › BP › BP BP › BP BP BK › FK |
-| Rev. Gideon Price | 3 | frame-perfect | 11 | 47.6% | 1 | ↓BP › BK › Fire and Brimstone+ › BP › BP BP › BP BP BK › FK › Laying On of Hands+ › FP › Laying On of Hands+ › Begone |
+| Rev. Gideon Price | 0 | frame-perfect | 7 | 24.9% | 1 | ↓BP ×2 › BK › Collection Plate ×2 › FK › FK BK |
+| Rev. Gideon Price | 0 | human | 7 | 24.9% | 7 | ↓BP ×2 › BK › Collection Plate ×2 › FK › FK BK |
+| Rev. Gideon Price | 1 | frame-perfect | 8 | 37.7% | 3 | ↓BP › BK › Fire and Brimstone+ › j.BP › j.BP FP › j.BP BK › FK › FK BK |
+| Rev. Gideon Price | 1 | human | 5 | 31.5% | 8 | ↓BP › Fire and Brimstone+ › BK › Laying On of Hands › Laying On of Hands BK |
+| Rev. Gideon Price | 3 | frame-perfect | 7 | 47.0% | 1 | ↓BP › BK › Fire and Brimstone+ › →BP › Laying On of Hands+ › j.BK › Rapture+ |
 | Rev. Gideon Price | 3 | human | 6 | 47.0% | 7 | ↓BP › Fire and Brimstone+ › Rapture+ › BK › Laying On of Hands+ › j.FK |

@@ -12,8 +12,8 @@ limb (front punch is always a lead-hand jab, aimed at the hitbox). See
 
 **Pilot (0.37.0): Rox and Hollis**, the two furthest apart. The rest follow
 in three parts (`docs/LOOK-AND-PLAY-PLAN.md`, D): **Dale and Margaret**
-(0.63.0, art in `docs/BLENDER-TODO.md` step 35), then Gus and Gideon, then
-Mumbles.
+(0.63.0, art in `docs/BLENDER-TODO.md` step 35), **Gus and Gideon** (0.64.0,
+step 36), then Mumbles.
 
 ## What makes a style
 
@@ -105,6 +105,32 @@ start and stop dead, the best frame data.*
 | Properties | Fast, safe normals | The best frame data: her pokes are level or near it on block (`s.BP`, `s.FK` 0; `c.FK` −1; `s.BK` −1 at 1.55 m), all her strings safe; the fastest long poke (`s.BK` Anchor Kick, 12 frames); a disjointed Script Slash (`f.FK`, 1.55 m, only the arm can be hit) |
 | Strings | 8, one unsafe low | 8, Small Print now safe too |
 
+## Chef Gus Lamarre: the kitchen (0.64.0)
+
+*Mid-range: a utensil in every normal, wide arcs, long recoveries, and the
+longest disjointed reach in the game.*
+
+| | Before | Now |
+| --- | --- | --- |
+| Shape | Cleaver and pans, but swung like fists | A utensil in every normal, held long: skillet, cleaver, rolling pin, broom, whisk |
+| Rhythm | Same as everyone | Wide and heavy: a big late wind-up, every swing an arc, carried right through |
+| Space | The longest reach | Holds the tip of the cleaver: his reach is the utensil's, so whatever reaches for him meets the pan |
+| Properties | Long, slow normals | Disjointed: on `s.BP`, `s.BK`, `c.FK`, `c.BK` and `b.BP` only his arm can be hit, never the utensil; a three-hit Whisk (`f.FK`, new) |
+| Strings | 8 | 8, unchanged: recipes that end on a cleaver or a launch |
+
+## Rev. Gideon Price: the sermon (0.64.0)
+
+*All-rounder: theatrical, arms flung wide, call and response, laying on
+hands.*
+
+| | Before | Now |
+| --- | --- | --- |
+| Shape | Generic jab, cross, front kick | A preacher: the Good Book raised and brought down, palms, arms flung out to both sides |
+| Rhythm | Same as everyone | Theatrical: the arm raised and held a beat (the call), then down (the response) |
+| Space | Middle of the road | Draws them in: Come Forward (`f.FK`, new) pulls them to his sermon's range |
+| Properties | None of his own | A two-beat Good Book (`s.BP`, two hits a beat apart); a Rapture flung wide (`c.BP` hits 0.5 m behind him too, an anti-air for a cross-up); a palm that pulls |
+| Strings | 8 | 8, unchanged |
+
 ## The rest (after the pilot)
 
 Short notes to build from, from the roster review:
@@ -112,7 +138,3 @@ Short notes to build from, from the roster review:
 - **Mister Mumbles (trickster):** wrong. Limbs bend the wrong way, he
   ducks under highs, hops over lows, switches sides mid-string, jerks on his
   strings; floppy follow-through.
-- **Gus (mid-range):** the kitchen. Every normal a utensil, wide arcs, long
-  recovery, the longest disjointed reach.
-- **Gideon (all-rounder):** the sermon. Theatrical, two-beat call and
-  response hits, laying on hands, arms flung wide.

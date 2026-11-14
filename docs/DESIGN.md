@@ -255,7 +255,8 @@ meter. Every number below is a starting value to tune.
     weigh spending bars to extend against the bars the defender is holding.
 - Each fighter's normals do their own job, and each fighter has a style of
   their own (`docs/STYLES.md`: shape, rhythm, space, properties, strings;
-  Rox and Hollis first, in 0.37.0; Dale and Margaret in 0.63.0): Dale is
+  Rox and Hollis first, in 0.37.0; Dale and Margaret in 0.63.0, Gus and
+  Gideon in 0.64.0): Dale is
   the forecast: unhurried, the longest pokes (the Umbrella Jab and, out of
   the step-back kick, the Long-Range Forecast reach 1.75 and 1.85 m, and
   only his arm can be hit, not the umbrella), two normals that step back
@@ -276,7 +277,14 @@ meter. Every number below is a starting value to tune.
   pokes are level or near it on block, all her strings safe), the
   fastest long poke (Anchor Kick, 12 frames at 1.55 m, for whatever they
   whiff), a Script Slash whose pages reach 1.55 m and can't be hit, and a
-  stagger (Breaking) that leaves time for a normal after it.
+  stagger (Breaking) that leaves time for a normal after it; Gus is the
+  kitchen: a utensil in every normal swung in a wide arc, the longest
+  disjointed reach (on the Skillet, Cleaver, Rolling Pin, broom and Back of
+  the Pan only his arm can be hit, never the utensil), and a Whisk that
+  hits three times; Gideon is the sermon: a Good Book that hits twice, a
+  beat apart (call and response), a Rapture flung out to both sides that
+  catches a jump from behind, and Come Forward, a palm on the forehead that
+  draws them in.
 - Specials: 6 to 8 per fighter (on the ground, in the air and as
   follow-ups), entered as direction + Special (or classic motions on
   keyboard and gamepad, see Controls), a follow-up as a button while its
