@@ -6,7 +6,7 @@
 // and reaches each moment through the ?shots hook (src/game/shotHook.ts),
 // which steps the match without drawing. Writes each shot and one sheet per
 // profile (sheet-desktop.png, sheet-iphone.png) to --out.
-//   PLAYWRIGHT=/opt/node-tools node tools/shots.mjs --out /tmp/shots [--no-build] [--stages weather,burn]
+//   PLAYWRIGHT=/opt/node-tools node tools/shots.mjs --out /tmp/shots [--no-build] [--stages weather,burn] [--set-only]
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -77,7 +77,8 @@ try {
     await page.goto(URL);
     await page.waitForFunction(() => window.__shots, null, { timeout: 60000 });
     const cells = [];
-    for (const s of STAGES) {
+    // --set-only: just the set's sheet.
+    for (const s of process.argv.includes('--set-only') ? [] : STAGES) {
       for (const mo of MOMENTS) {
         await page.evaluate((o) => window.__shots.start(o), { mode: mo.mode, p1: s.p1, p2: s.p2, stage: s.stage, seed: s.seed });
         const ok = await page.evaluate(([m, a]) => window.__shots.to(m, a), [mo.name, mo.after]);
@@ -104,7 +105,7 @@ try {
       setCells.push({ label: `${s.stage} · ${s.name}${ok ? '' : ' (not reached)'} · ${calls} calls`, file });
     }
     await ctx.close();
-    await sheet(profile, cells, opts.viewport);
+    if (cells.length) await sheet(profile, cells, opts.viewport);
     await sheet(`set-${profile}`, setCells, opts.viewport);
   }
 } finally {
