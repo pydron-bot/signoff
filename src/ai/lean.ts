@@ -59,8 +59,8 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
   },
   hollis: {
     rox: { ...EVEN, special: 2.5 },
-    // 0.62.0: Mumbles ducks his jab; his specials reach him.
-    mumbles: { ...EVEN, special: 1.6 },
+    // 0.62.0: Mumbles ducks his jab; his specials reach him (0.65.0: more of them, now Mumbles ducks his Head Bonk too).
+    mumbles: { ...EVEN, special: 2.5 },
   },
   rox: {
     mumbles: { ...EVEN, string: 2.5, throw: 0.6, special: 2.5, approach: 0.6, guard: 0.6 },
@@ -70,6 +70,8 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
   mumbles: {
     // 0.62.0: more strings and mix-ups still (she has more health now).
     margaret: { ...EVEN, string: 2.5, special: 0.6, mix: 2.5, jump: 0.6 },
+    // 0.65.0: lighter than 0.62.0's (his style does the rest); without it Gideon wins 60:40.
+    gideon: { ...EVEN, mix: 1.6 },
   },
 };
 

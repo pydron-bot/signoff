@@ -441,7 +441,10 @@ jumping Gus's pans a little more; Gus goes low and mixes up Mumbles, and
 spends specials on Dale; Margaret spends specials and mixes up Gus, and
 mixes up Gideon; Gideon spends specials on Gus; Hollis spends specials on
 Mumbles. Mixing up more was the
-strongest single change in most of these searches. On defence it
+strongest single change in most of these searches. The styles of 0.63.0
+to 0.65.0 moved a few: Dale needs none against Gus now and only mix-ups
+against Rox; Mumbles jumps less at Margaret and mixes up Gideon less;
+Hollis spends more specials on Mumbles, who ducks his Head Bonk too. On defence it
 learns what the opponent does to its getup and ducks a habitual throw
 (throws are highs), keeps its guard a moment after a blockstun when the
 attacker can carry on, and guards a projectile it sees coming from
