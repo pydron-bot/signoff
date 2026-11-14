@@ -97,7 +97,7 @@ banner that blocks part of the screen, a laugh track that slows both fighters
 for a second, a power cut that leaves only silhouettes for 3 seconds.
 
 **Set dressing.** Each stage has a few loose odds and ends on its floor
-(mugs, scripts, dumbbells, onions) that nobody can use: feet kick them,
+(mugs, scripts, dumbbells, tomatoes) that nobody can use: feet kick them,
 hits and knockdowns throw them, the storm blows them about and the flood
 floats them. They're presentation only, so they never change a fight
 (docs/BLENDER-TODO.md, step 30).

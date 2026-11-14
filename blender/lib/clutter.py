@@ -121,16 +121,27 @@ def bin(p):
         p.blob(f"bin_paper{k}", (s, f, u), (0.045, 0.045, 0.035), PAPER, "set", 1, mat=1, paint=lambda t: lit(t, lo=0.85))
 
 
-def onion(p):
-    """A brown onion: 0.13 across, 0.12 high, with its sprout."""
+def tomato(p):
+    """A ripe red tomato: 0.16 across, 0.15 high with its green calyx.
+
+    Was an onion (0.13, brown): from the game camera it was a few brown
+    pixels on the checked floor. Red reads against black and white.
+    """
     def skin(t):
         a = np.arctan2(t.fwd, t.side)
-        c = P.shade(t.c, P.lines(a, 0.5, 0.06), 0.82)
+        # Faint lobes round the middle, and a paler shoulder on top.
+        c = P.shade(t.c, P.lines(a, 0.9, 0.12), 0.88)
+        c = P.put(c, t.up > 0.05, (236, 92, 70))
         t.c = c
-        return lit(t, lo=0.8)
+        return lit(t, lo=0.78)
 
-    p.blob("onion", (0, 0, -0.005), (0.065, 0.065, 0.055), (196, 136, 62), "set", 1, mat=1, paint=skin)
-    p.seg("onion_tip", (0, 0, 0.04), (0.006, 0.004, 0.06), 0.012, 0.003, (150, 110, 60), "set", verts=5, mat=1)
+    p.blob("tomato", (0, 0, -0.007), (0.08, 0.08, 0.066), (214, 38, 28), "set", 1, mat=1, paint=skin)
+    green = (58, 130, 46)
+    for k in range(5):
+        a = 2 * math.pi * k / 5 + 0.3
+        p.seg(f"tomato_leaf{k}", (0, 0, 0.058), (0.042 * math.cos(a), 0.042 * math.sin(a), 0.054),
+              0.012, 0.003, green, "set", verts=4, mat=1)
+    p.seg("tomato_stem", (0, 0, 0.056), (0.004, 0.0, 0.074), 0.006, 0.004, (70, 110, 50), "set", verts=5, mat=1)
 
 
 def lid(p):

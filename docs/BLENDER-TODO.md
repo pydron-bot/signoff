@@ -1578,11 +1578,11 @@ it). `tests/assets.test.ts` checks each object's size against
 | Weather | `clipboard` (0.3 × 0.03 × 0.4, flat), `mug` (0.15 × 0.14 × 0.11, *CH 0*), `tape` (gaffer roll, 0.2 × 0.2 × 0.07, rolls) | 2, 2, 1; all float on the flood |
 | Burn | `dumbbell` (pink vinyl, 0.16 × 0.16 × 0.34, rolls), `bottle` (0.09 × 0.09 × 0.26, rolls), `towel` (0.5 × 0.04 × 0.32, flat) | 2, 2, 2 |
 | News | `script` (0.22 × 0.025 × 0.3, flat), `mug` (navy, *NEWS*), `bin` (wastebasket with paper balls, 0.3 × 0.36 × 0.3) | 3, 1, 1 |
-| Kitchen | `onion` (0.13 × 0.12 × 0.13, rolls), `lid` (0.32 × 0.05 × 0.32, flat), `spoon` (wooden, 0.36 × 0.03 × 0.07, flat) | 3, 1, 2 |
+| Kitchen | `tomato` (0.16 × 0.15 × 0.16, rolls), `lid` (0.32 × 0.05 × 0.32, flat), `spoon` (wooden, 0.36 × 0.03 × 0.07, flat) | 3, 1, 2 |
 
 - [x] The objects above in each stage's GLB. *Done (Nov 10): 24 to 240 triangles each, about 0.03 MB a stage.*
 - [x] Game side: physics, stand-ins, wired to the step's events (0.54.0).
-- [ ] Look at them in a match at phone size: Kitchen's onions are small and brown on the checked floor and may want to be bigger or a brighter colour (tomatoes?).
+- [x] Look at them in a match at phone size: Kitchen's onions are small and brown on the checked floor and may want to be bigger or a brighter colour (tomatoes?). *Done (Nov 14): seen in Training at 852×393, the onions were a few brown pixels. Now `clutter_tomato` (`lib/clutter.py`), 0.16 × 0.15 × 0.16, bright red with a paler shoulder and a five-leaf calyx, 96 triangles; it reads at phone size. `clutterData.ts` follows (kind `tomato`, same places and mass). `kitchen.glb` 1.84 MB.*
 
 ### State clips (every fighter)
 

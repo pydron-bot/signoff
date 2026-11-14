@@ -394,7 +394,7 @@ def build(make):
     make("fx_flare", flare)
     make("fx_mark", mark)
     # Set dressing the game knocks about (step 30), each round its middle.
-    make("clutter_onion", C.onion)
+    make("clutter_tomato", C.tomato)
     make("clutter_lid", C.lid)
     make("clutter_spoon", C.spoon)
 

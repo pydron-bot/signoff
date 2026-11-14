@@ -14,6 +14,12 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.60.2',
+    date: '2026-11-14',
+    title: 'Tomatoes',
+    notes: ["The kitchen's onions are now ripe red tomatoes: the onions were lost on the checked floor on a phone."],
+  },
+  {
     version: '0.60.1',
     date: '2026-11-12',
     title: 'Mic Check',

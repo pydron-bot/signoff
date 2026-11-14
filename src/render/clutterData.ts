@@ -10,7 +10,7 @@
 
 /**
  * How a piece moves on the floor: `roll` rolls along the stage about its
- * own z axis (a bottle or roll of tape on its side, an onion); `flat` slides
+ * own z axis (a bottle or roll of tape on its side, a tomato); `flat` slides
  * and spins and lands on a face (paper, a towel, a lid); `box` slides and
  * comes to rest on any side (a mug standing or knocked over, a bin).
  */
@@ -96,14 +96,14 @@ export const CLUTTER: Readonly<Record<string, StageClutter>> = {
   },
   kitchen: {
     kinds: [
-      { id: 'onion', shape: 'roll', size: [0.13, 0.12, 0.13], mass: 0.5 },
+      { id: 'tomato', shape: 'roll', size: [0.16, 0.15, 0.16], mass: 0.5 },
       { id: 'lid', shape: 'flat', size: [0.32, 0.05, 0.32], mass: 0.8 },
       { id: 'spoon', shape: 'flat', size: [0.36, 0.03, 0.07], mass: 0.3 },
     ],
     places: [
-      { kind: 'onion', x: -0.6, z: 0.35, yaw: 0 },
-      { kind: 'onion', x: 0.4, z: -0.4, yaw: 0 },
-      { kind: 'onion', x: 2.4, z: 0.2, yaw: 0 },
+      { kind: 'tomato', x: -0.6, z: 0.35, yaw: 0 },
+      { kind: 'tomato', x: 0.4, z: -0.4, yaw: 0 },
+      { kind: 'tomato', x: 2.4, z: 0.2, yaw: 0 },
       { kind: 'lid', x: -2.2, z: -0.35, yaw: 0 },
       { kind: 'spoon', x: -3.9, z: 0.3, yaw: 0.7 },
       { kind: 'spoon', x: 3.9, z: -0.3, yaw: -0.4 },
