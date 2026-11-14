@@ -239,3 +239,50 @@ describe('slow motion', () => {
     expect(n).toBeLessThanOrEqual(31);
   });
 });
+
+describe('the launcher tilt-up', () => {
+  function launched(): MatchState {
+    const m = ready('rox', 'dale');
+    place(m, -0.5, 0.5);
+    const d = m.fighters[1];
+    d.mode = 'launched';
+    d.juggleable = true;
+    d.juggle = 0;
+    d.vy = fx(0.2);
+    return m;
+  }
+
+  it('a launcher raises the look target ahead of the body for a few steps, then lets it go', () => {
+    const m = launched();
+    const rig = settled(m, ASPECTS.desktop);
+    const before = rig.shot.ty;
+    const y = rig.shot.y;
+    rig.step(m, [hit(1)]);
+    let peak = 0;
+    for (let i = 0; i < 10; i++) {
+      rig.step(m, []);
+      peak = Math.max(peak, rig.shot.ty - before);
+    }
+    expect(peak).toBeGreaterThan(0.3);
+    // The camera stays where it is: it tilts.
+    expect(Math.abs(rig.shot.y - y)).toBeLessThan(0.05);
+    for (let i = 0; i < 30; i++) rig.step(m, []);
+    expect(rig.shot.ty - before).toBeLessThan(0.02);
+  });
+
+  it('not for a knockdown, nor with Reduce Motion', () => {
+    const m = launched();
+    m.fighters[1].juggleable = false;
+    const rig = settled(m, ASPECTS.desktop);
+    const before = rig.shot.ty;
+    rig.step(m, [hit(1)]);
+    for (let i = 0; i < 5; i++) rig.step(m, []);
+    expect(rig.shot.ty - before).toBeLessThan(0.02);
+    const calm = launched();
+    const still = settled(calm, ASPECTS.desktop, true);
+    const b2 = still.shot.ty;
+    still.step(calm, [hit(1)]);
+    for (let i = 0; i < 5; i++) still.step(calm, []);
+    expect(Math.abs(still.shot.ty - b2)).toBeLessThan(0.02);
+  });
+});

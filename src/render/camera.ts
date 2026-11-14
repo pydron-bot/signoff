@@ -5,7 +5,7 @@
  * jumps and juggles, and stopping short of the walls. Hits move it by their
  * weight: a shake (trauma, squared, so small hits barely stir it), a lean
  * the way the blow travels, and a quick push in on enders, launches, wall
- * splats and boosts. A KO swings it round and in on the loser while the
+ * splats and boosts, and a launcher tilts it up after the body. A KO swings it round and in on the loser while the
  * game runs in slow motion (src/game/slowMo.ts). Each round opens on an
  * establishing shot, wide and high, that settles on the fighters as the
  * intro ends. Pure: no three.js, no
@@ -64,6 +64,11 @@ const RECOIL_DECAY = 0.6;
 const FOV_PUNCH = 2.5;
 const FOV_STEPS = 12;
 
+/** A launcher that lands: the look target rises ahead of the body (m) for these steps, so the juggle is framed before it happens. */
+const LIFT = 0.45;
+const LIFT_STEPS = 10;
+const LIFT_EASE = 0.3;
+
 /** The round's establishing shot: how much further back, higher, and round to the side it starts. */
 const INTRO_BACK = 0.75;
 const INTRO_UP = 1.1;
@@ -111,6 +116,9 @@ export class CameraRig {
   private recoilT = 0;
   private heldLean = 0;
   private punch = 0;
+  /** The launcher's tilt-up: how far the look target is raised now (m), and steps left of raising it. */
+  private lift = 0;
+  private liftT = 0;
 
   /** Jump straight to the framing on the next step (a new match, a replay seek, a new round). */
   reset(): void {
@@ -118,6 +126,7 @@ export class CameraRig {
     this.trauma = this.lean = this.push = this.pushTarget = this.recoil = this.heldLean = this.punch = 0;
     this.recoilT = 0;
     this.koT = -1;
+    this.lift = this.liftT = 0;
   }
 
   /** Once per simulation step, after it, with that step's events. */
@@ -176,6 +185,8 @@ export class CameraRig {
       this.heldLean = 0;
     } else if (this.recoilT === 0) this.recoil *= RECOIL_DECAY;
     this.punch = Math.max(0, this.punch - 1 / FOV_STEPS);
+    this.lift += ((this.liftT > 0 ? LIFT : 0) - this.lift) * LIFT_EASE;
+    if (this.liftT > 0) this.liftT--;
     if (this.koT >= 0 && ++this.koT > KO_IN + KO_HOLD + KO_OUT) this.koT = -1;
     this.compose();
   }
@@ -196,6 +207,8 @@ export class CameraRig {
           this.heldLean += e.dir * LEAN[e.weight];
           this.punch = 1;
         } else this.lean = Math.max(-0.25, Math.min(0.25, this.lean + e.dir * LEAN[e.weight]));
+        // Launched from the ground into a juggle (not a knockdown or a KO, which aren't juggled).
+        if (isLaunch(m, e.defender)) this.liftT = LIFT_STEPS;
         break;
       case 'guardCrush':
         this.kick(0.35, 0.15);
@@ -266,6 +279,8 @@ export class CameraRig {
     s.x = s.tx + Math.sin(orbit) * d;
     s.z = Math.cos(orbit) * d;
     s.y = s.ty + d * TILT;
+    // The tilt-up: the camera stays, the look target rises.
+    if (!calm) s.ty += this.lift;
     s.roll = 0;
     if (calm || this.trauma <= 0) return;
     const amp = this.trauma * this.trauma;
@@ -278,6 +293,12 @@ export class CameraRig {
     s.ty += sy * 0.5;
     s.roll = amp * SHAKE_ROLL * wobble(t, 2);
   }
+}
+
+/** A hit has just launched fighter i from the ground into a juggle. */
+function isLaunch(m: MatchState, i: number): boolean {
+  const d = m.fighters[i];
+  return d.mode === 'launched' && d.juggleable && d.juggle === 0 && d.vy > 0;
 }
 
 /** Shake noise in -1..1 that changes every step without repeating soon: two sines, out of step. */
