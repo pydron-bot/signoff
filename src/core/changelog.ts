@@ -14,6 +14,20 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.61.0',
+    date: '2026-11-14',
+    title: 'Clear Picture',
+    notes: [
+      'The fighters come through the tape clearer: the colour smear and the grain go easier on them than on the set, and the effects take turns instead of piling up on a fighter who is low on health.',
+      "Technical Difficulties cuts to a close-up you can see: the fighter's face, at any health, below the health bars and clear of the touch buttons.",
+      'Afterimages trail real speed (a dash, a lunge, the start of a special) and look the same at any refresh rate.',
+      'A blow lights the side of the body it came from, amber on a counter hit. Armour and boosted specials glow round the edges.',
+      'Fighters cast their own shadow on the floor, and ease between standing, walking, crouching and landing. Attacks still come out on the frame.',
+      'The camera looks up ahead of a launched body, so the juggle is in frame before it starts.',
+      "The darkest sets give the fighters a stronger rim of light, and Kitchen Live's first segment is dimmed a little so the cooks stand out.",
+    ],
+  },
+  {
     version: '0.60.1',
     date: '2026-11-12',
     title: 'Mic Check',
