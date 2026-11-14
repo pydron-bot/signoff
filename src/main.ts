@@ -42,6 +42,7 @@ import { InputDisplay } from './ui/inputDisplay';
 import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 import { installShots } from './game/shotHook';
+import { loadFonts } from './ui/fonts';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
 // The menu's levels; the DIRECTOR plays Arcade's last fight (arcade.ts) and CPU VS CPU.
@@ -72,6 +73,8 @@ const SKIP_STEPS = 5 * 60;
 /** Settings → VHS LOOK (off, low, full): how much tape the post pass puts on the picture. */
 const VHS_AMOUNT = [0, 0.5, 1] as const;
 
+// The faces start loading first; the title shows once they're in (or after a moment).
+void loadFonts().then(() => delete document.body.dataset.fonts);
 const app = document.getElementById('app')!;
 const title = document.getElementById('title')!;
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });

@@ -7,6 +7,18 @@
   display: none !important;
 }
 
+:root {
+  /* The game's faces (src/ui/fonts.ts): display for the logo and callouts, condensed for names, the HUD and menus, mono for numbers. */
+  --font-display: 'SignOff Display', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --font-cond: 'SignOff Condensed', 'Arial Narrow', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'SignOff Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* The title waits a moment for the faces, so it doesn't jump when they swap in. */
+body[data-fonts='loading'] .title {
+  visibility: hidden;
+}
+
 html,
 body {
   margin: 0;
@@ -14,7 +26,7 @@ body {
   overflow: hidden;
   background: #0b0b0f;
   color: #f1ede0;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-cond);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -1288,7 +1300,7 @@ body[data-vhs='1'] .vhs {
   flex-direction: column;
   gap: 2px;
   pointer-events: none;
-  font: 600 clamp(0.6rem, 1.6vw, 0.8rem) / 1.2 ui-monospace, Menlo, Consolas, monospace;
+  font: 400 clamp(0.75rem, 2vw, 1rem) / 1.1 var(--font-mono);
   z-index: 6;
 }
 
@@ -1349,7 +1361,7 @@ body[data-vhs='1'] .vhs {
   padding: 4px 7px;
   background: rgba(0, 0, 0, 0.6);
   color: #cfe8cf;
-  font: 11px/1.35 ui-monospace, Menlo, monospace;
+  font: 13px/1.2 var(--font-mono);
   pointer-events: none;
   z-index: 30;
   white-space: nowrap;
@@ -1419,4 +1431,30 @@ body[data-vhs='1'] .vhs {
   font-size: 0.55rem;
   letter-spacing: 0.3em;
   color: rgba(241, 237, 224, 0.55);
+}
+
+/* ---- Type: which face says what (src/ui/fonts.ts) ---- */
+.title-logo,
+.hud-caption-main,
+.hud-break-ad,
+.standby-card,
+.hud-signoff-show,
+.hud-signoff-stamp,
+.arcade-title,
+.hud-combo,
+.hud-warning,
+.hud-counter {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.hud-clock,
+.hud-logo,
+.title-version,
+.replay-time,
+.hud-frames,
+.school-key {
+  font-family: var(--font-mono);
+  font-weight: 400;
 }
