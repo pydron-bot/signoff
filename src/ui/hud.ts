@@ -14,6 +14,8 @@ import { METER_STEPS, type FrameMeter } from '../game/frameMeter';
 import { FIGHTER_COLORS } from '../core/fighterLook';
 import { tickerText } from './ticker';
 
+/** CSS pixels the HUD takes at the top of the screen, down to the foot of the station bug (style.css, .hud-logo): the cut-in stays below. */
+export const HUD_TOP = 112;
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
 const DRAIN_HOLD = 32;
 const DRAIN_RATE = 0.012;

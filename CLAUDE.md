@@ -25,7 +25,9 @@ npm run art            # headless Blender: art/*.blend and public/assets/fighter
 npx -y -p playwright@1.63.0 node tools/art-check.mjs  # GLBs measured in three.js, screenshots
 npm run build          # tsc --noEmit && vite build
 SIGNOFF_BASE=/signoff/ npx vite build   # what the Pages deploy builds
-npx -y -p playwright@1.63.0 node tools/smoke.mjs      # smoke test
+npx -y -p playwright@1.63.0 node tools/smoke.mjs      # smoke test (and the draw-call budget in Burn's busiest frames)
+npx -y -p playwright@1.63.0 node tools/shots.mjs --out shots-out [--dist <other build>]  # contact sheets: the same moments on every stage, both profiles (before and after a look change)
+npx -y -p playwright@1.63.0 node tools/readability.mjs --out readability-out  # each fighter against the set behind them, every segment
 npx -y -p playwright@1.63.0 node tools/make-icons.mjs # PWA icons
 ```
 

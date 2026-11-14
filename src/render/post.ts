@@ -3,7 +3,8 @@
  * buffer (multisampled, so no jaggies), a glow is pulled out of whatever is
  * brighter than white and blurred down a short chain of smaller buffers, and
  * one last shader puts it on screen as a tape would: sharp brightness with
- * the colour smeared sideways, a tracking tear and a colour split on big
+ * the colour smeared sideways (a little less on the fighters, who mark
+ * themselves in the buffer's alpha), a tracking tear and a colour split on big
  * hits, the glow, a highlight roll-off, the segment's grade, a vignette, a little
  * grain and the flash of an impact frame; a heavy hit's shockwave and an
  * ender's zoom blur, and the spotlight on a fighter spending meter. On the title, the picture is a CRT
@@ -28,6 +29,9 @@ export interface Grade {
 }
 
 export const NEUTRAL_GRADE: Readonly<Grade> = { lift: [0, 0, 0], gain: [1, 1, 1], saturation: 1.05, contrast: 1.05, bloom: 0.55 };
+
+/** How much less colour smear and grain the fighters get than the set. */
+const SPARE = 0.4;
 
 /** The glow's chain: half, quarter, eighth and sixteenth size, then back up. */
 const LEVELS = 4;
@@ -117,6 +121,7 @@ uniform vec4 uDrain;
 uniform vec4 uSpeed;
 uniform vec4 uCut;
 uniform float uCutOn;
+uniform float uSpare;
 varying vec2 vUv;
 
 float hash(float n) { return fract(sin(n) * 43758.5453); }
@@ -154,7 +159,10 @@ void main() {
     uv -= normalize(fromHit + 1e-6) * wave * uShock.w;
   }
 
-  vec3 c0 = texture2D(tScene, uv).rgb;
+  vec4 scene0 = texture2D(tScene, uv);
+  vec3 c0 = scene0.rgb;
+  // The fighters marked themselves with alpha 0 (fighterLight.ts): the smear and the grain spare them a little.
+  float spare = (1.0 - scene0.a) * uSpare;
   if (uZoom > 0.0) {
     // An ender's zoom blur, toward the contact: the picture rushing in on it.
     vec3 acc = c0;
@@ -171,7 +179,7 @@ void main() {
     float ci = dot(sum, vec3(0.596, -0.274, -0.322));
     float cq = dot(sum, vec3(0.211, -0.523, 0.312));
     vec3 bled = vec3(y + 0.956 * ci + 0.621 * cq, y - 0.272 * ci - 0.647 * cq, y - 1.106 * ci + 1.703 * cq);
-    col = mix(c0, max(bled, 0.0), uVhs);
+    col = mix(c0, max(bled, 0.0), uVhs * (1.0 - spare));
   }
   if (uSplit > 0.0) {
     // A big hit knocks the guns out of line: red one way, blue the other.
@@ -233,7 +241,7 @@ void main() {
 
   vec2 vig = vUv - 0.5;
   col *= 1.0 - dot(vig, vig) * (0.55 + 0.35 * uVhs);
-  col += (hash2(vUv * 913.0 + frame) - 0.5) * uGrain;
+  col += (hash2(vUv * 913.0 + frame) - 0.5) * uGrain * (1.0 - spare);
   col *= uDim;
 
   if (crt > 0.0) {
@@ -356,6 +364,7 @@ export class Post {
         uSpeed: { value: new THREE.Vector4() },
         uCut: { value: new THREE.Vector4() },
         uCutOn: { value: 0 },
+        uSpare: { value: SPARE },
       },
     });
   }
@@ -407,7 +416,7 @@ export class Post {
   }
 
   /** Draws a scene through the pass; `inset` is a second view of it (the super cut-in) in a band of the picture. */
-  render(scene: THREE.Scene, camera: THREE.Camera, timeMs: number, inset?: { camera: THREE.Camera; rect: CutInRect } | null): void {
+  render(scene: THREE.Scene, camera: THREE.Camera, timeMs: number, inset?: { camera: THREE.Camera; rect: CutInRect; before?: () => void; after?: () => void } | null): void {
     const r = this.renderer;
     const t = this.scene;
     r.setRenderTarget(t);
@@ -428,7 +437,9 @@ export class Post {
         t.scissor.set(cx0, y0, cx1 - cx0, y1 - y0);
         t.scissorTest = true;
         r.setRenderTarget(t);
+        inset!.before?.();
         r.render(scene, inset!.camera);
+        inset!.after?.();
         t.viewport.set(0, 0, w, h);
         t.scissor.set(0, 0, w, h);
         t.scissorTest = false;

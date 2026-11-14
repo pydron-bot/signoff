@@ -340,3 +340,27 @@ export class PoseTracker {
     }
   }
 }
+
+/** Steps a cross-fade between clips lasts. */
+export const BLEND_STEPS = 3;
+/** State clips a cross-fade may end in: never a move, so a move's startup and active frames are always its clip's alone. */
+export const BLEND_INTO: ReadonlySet<string> = new Set(['idle', 'walk_fwd', 'walk_back', 'crouch', 'crouch_idle', 'land', 'land_attack']);
+/** State clips a cross-fade may start from (and a move, once it's in recovery). */
+const BLEND_FROM: ReadonlySet<string> = new Set([...BLEND_INTO, 'getup']);
+
+/**
+ * Whether the change from clip `from` (last shown at frame `fromFrame`) to
+ * `to` cross-fades: between state clips, and out of a move's recovery (past
+ * its last active frame) into one. Pure: `move` gives a fighter's move data.
+ */
+export function crossFades(from: string, fromFrame: number, to: string, move: (clip: string) => { lastActive: number } | undefined): boolean {
+  if (!BLEND_INTO.has(to) || from === to) return false;
+  if (BLEND_FROM.has(from)) return true;
+  const mv = move(from);
+  return mv !== undefined && fromFrame > mv.lastActive;
+}
+
+/** The old clip's weight `since` steps into a cross-fade (0 on the new clip's first step): 3/4, 1/2, 1/4, then gone. */
+export function fadeWeight(since: number): number {
+  return Math.max(0, 1 - (since + 1) / (BLEND_STEPS + 1));
+}

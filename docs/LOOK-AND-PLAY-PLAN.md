@@ -1,6 +1,16 @@
 # SIGN-OFF — Look and play: a plan
 
-Nov 14, 2026 · a proposal for review. Nothing here is built.
+Nov 14, 2026 · releases A to F approved (G and H not); the rest of this
+page is the proposal as reviewed.
+
+**Status.** A, Clear Picture: built, 0.61.0 on `look/clear-picture`.
+B, Fair Fights: built, 0.62.0 on `play/fair-fights` (which holds A too).
+C to F: in progress. Nothing is on `main` yet. Where the build differs
+from the proposal: the openings-to-win band is 8 to 11.5 as the bench
+counts openings (not 3.5 to 5) and is reported, not an alarm; the round
+clock stays at 60 seconds; counter hits were left alone (they were never
+rare: the old figure counted something else); E and F do need a little
+Blender after all (BLENDER-TODO steps 33 and 34).
 
 How to make the game better to look at and better to play, in the order
 worth doing. It sits beside `docs/VISUALS.md` (the impact pass, mostly

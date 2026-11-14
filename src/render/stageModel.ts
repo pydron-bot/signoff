@@ -39,6 +39,8 @@ export interface SegmentLights {
   mirror?: number;
   /** Darkens the whole set, never the fighters (game side). */
   setDim?: number;
+  /** Scales the fighters' rim, for a set they'd sink into (game side). */
+  fighterRim?: number;
   /** How strongly the baked light map lights the set, 0 to 2 (docs/BLENDER-TODO.md, step 23). */
   lightMap?: number;
   /** The baked light map for this segment: a file beside the GLB in public/assets/stages/. */

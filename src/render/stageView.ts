@@ -11,6 +11,7 @@ import { StageDepth } from './depth';
 import { KitchenSet } from './kitchenSet';
 import { NewsSet } from './newsSet';
 import { setFalloff } from './look';
+import { setFighterRim } from './fighterLight';
 import { setReflections } from './reflection';
 import type { Grade } from './post';
 import { applyLightMap, loadStageArt, type SegmentLights, type StageArt } from './stageModel';
@@ -47,6 +48,7 @@ export function applyLights(scene: THREE.Scene, lights: StageLights, spec: Segme
     grade.bloom = spec.grade.bloom;
   }
   setFalloff(spec.falloff ?? 0.5, spec.setDim ?? 0);
+  setFighterRim(spec.fighterRim ?? 1);
   setReflections(spec.gloss ?? 0, spec.floorY ?? 0, spec.mirror ?? 0);
   if (art) applyLightMap(art, spec);
   key.color.set(spec.key.color);

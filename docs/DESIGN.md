@@ -552,7 +552,8 @@ more it reacts to a big one than a small one.
   body.
 - **The camera** keeps the fighters about half the screen's height up
   close, pulls back only as far as the gap between them needs, rises with
-  jumps and juggles, and stops short of the walls. It shakes by weight
+  jumps and juggles (a launcher tilts it up after the body for a moment, so
+  the juggle is framed before it happens), and stops short of the walls. It shakes by weight
   (small hits barely stir it), leans the way the blow travels, and pushes
   in on enders, launches, wall splats, boosts and Technical Difficulties.
 - **The KO.** The game drops to 30% speed for half a second of game time
@@ -566,9 +567,16 @@ more it reacts to a big one than a small one.
   for a stun of 26 frames or more (a crushed guard, Breaking).
 - **The fighters' own light:** a rim on their edges in the segment's rim
   colour, the key light stepped into lit, half-lit and shade, and a dark
-  outline, so they stand out from busy sets; a soft contact shadow that
-  falls away from the key light and shrinks as they leave the floor; and
-  their reflections in the floor (and in Burn's mirrors).
+  outline, so they stand out from busy sets; a blow flashes the rim on the
+  side it came from (amber on a counter), and armour, a boosted special, an
+  unblockable winding up and Technical Difficulties glow round the edges
+  like an aura. Their shadow is their own silhouette flattened onto the
+  floor away from the key light, fading with height, over a soft contact
+  shadow that shrinks as they leave the floor; and their reflections in the
+  floor (and in Burn's mirrors). Clips cross-fade over three steps between
+  standing, walking, crouching, landing and getting up, and out of a move's
+  recovery; a move's own startup and active frames are always its clip
+  alone, so the pose matches the boxes.
 - **The impact pass** (`docs/VISUALS.md`): heavy hits and enders send a
   shockwave out from the contact that bends the picture (an ender adds a
   zoom blur toward it); every blow throws light, a glow at the contact and
@@ -588,9 +596,19 @@ more it reacts to a big one than a small one.
   frame tears and holds like the tape catching; and Technical
   Difficulties (or a boost, briefly) cuts to a close-up of the fighter's
   face in a band of colour bars.
-- **Echoes and impact frames:** fast moves (dashes, lunges, specials, Tape
-  Skip) trail a cyan and a magenta afterimage a few frames behind, like a
-  tape's colour lagging; an ender or a KO lands on two frames of negative.
+- **Echoes and impact frames:** fast moves (dashes, lunges, Tape Skip, the
+  first frames of a special) trail a cyan and a magenta afterimage a few
+  simulation steps behind, like a tape's colour lagging (the same trail at
+  any refresh rate); an ender or a KO lands on two frames of negative.
+- **Effects take turns** (`src/render/legible.ts`): the fighter always wins
+  the frame. No echoes during a cut-in, a cinematic, a finisher or an
+  impact frame, and half as strong on a fighter past half wear; a fighter
+  attacking, in the cut-in or playing a cinematic has the snow bands of
+  their signal damage held back (the dulling stays). The cut-in's close-up
+  shows its fighter with the damage capped and no snow, so Technical
+  Difficulties, which only comes under 30% health, cuts to a face; its band
+  sits below the health bars and the station bug, on the side away from the
+  touch buttons when they're up.
 - **The cold open** (0.38.0): before round 1 of a match against someone,
   the two trade a line each in captions on their sides of the screen, typed
   on with their voices babbling under them, in the half-lit studio before
@@ -602,7 +620,7 @@ more it reacts to a big one than a small one.
 - **Signal damage** (0.38.0): a hurt fighter's picture breaks up. As health
   falls, bands of the body drop out to snow, the colour comes apart at the
   bands' edges, specks of snow show and the picture under it dulls like a
-  bruise; 60% of it carries over the commercial break, so the loser of a
+  bruise (the bands give way while they attack: *Effects take turns*); 60% of it carries over the commercial break, so the loser of a
   round starts the next one already breaking up. A few lines in the
   fighters' shader with a per-fighter value: no draw calls. VHS LOOK turns
   the tape part down or off (the dulling stays); Reduce Motion holds it
@@ -626,15 +644,21 @@ more it reacts to a big one than a small one.
   would: sharp brightness with the colour smeared sideways, a tracking
   tear and a colour split on big hits, a glow from anything brighter than
   white, a roll-off for highlights that leaves the darks alone, the
-  segment's colour grade, a vignette and grain. Scanlines stay in CSS so
-  they cover the HUD too. A phone draws the scene at 1.5x, not 2x. VHS
+  segment's colour grade, a vignette and grain. The fighters mark
+  themselves in the buffer's alpha and get 40% less of the smear and the
+  grain; the tears, the split and the scanlines still cover everything, so
+  it reads as one tape. Scanlines stay in CSS so they cover the HUD too. A phone draws the scene at 1.5x, not 2x. VHS
   LOOK in Settings turns the tape down or off; Reduce Motion drops the
   tears.
 - **Studio light** (`src/render/look.ts`): each segment's rig is relit
   with less flat ambient and more key, a sky-and-ground ambient with the
   floor's bounce colour, and a falloff that darkens the set behind the
-  fight, at the sides and up high, so the fighters read first. The set
-  takes baked occlusion, light maps and emission from the art as it lands
+  fight, at the sides and up high, so the fighters read first. Measured
+  (`tools/readability.mjs`: each fighter's brightness against the set
+  behind them, every segment), the dark sets give the fighters a stronger
+  rim (the storm, Burn Out, the late news) and Kitchen Live's first
+  segment dims its set further for Gus's whites and Gideon's pale suit.
+  The set takes baked occlusion, light maps and emission from the art as it lands
   (docs/BLENDER-TODO.md, step 23). Haze, beams from the set's own lamps
   and drifting dust (`src/render/atmosphere.ts`) give the air depth.
 - **The title** is the attract mode on the TV in a living room at 3:33
@@ -797,8 +821,13 @@ effects listen to them.
   under 100 draw calls on the iPhone profile, a fixed light setup per
   segment, and every shader compiled during loading (hidden objects
   included). The picture's passes are about 9 draw calls; each fighter's
-  outline, floor reflection and (on Burn) mirror reflection are one more
-  per mesh, and the echoes only draw while they show.
+  outline, shadow, floor reflection and (on Burn) mirror reflection are one
+  more per mesh, and the echoes only draw while they show. The cut-in's
+  close-up leaves the reflections, shadows and echoes out (a layer of their
+  own). The smoke test plays the busiest moments on Burn and fails over 100;
+  `tools/shots.mjs` makes a before-and-after sheet of the same moments on
+  every stage, and `tools/readability.mjs` measures each fighter against the
+  set behind them in every segment.
 
 **Deploy.** The repo pydron-bot/signoff builds to https://deeek.org/signoff/
 with a copy of Curbside's Pages workflow and base path `/signoff/`. Storage

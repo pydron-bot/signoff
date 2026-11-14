@@ -10,13 +10,16 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { publicUrl } from '../core/paths';
 import { FIGHTERS } from '../sim';
 import { STEPS_PER_SECOND } from '../sim/constants';
-import { addRim } from './fighterLight';
+import { addRim, fighterSignal } from './fighterLight';
 import { addSetLight } from './look';
 import { addOutline } from './outline';
 import { FLOOR, MIRROR, addReflection } from './reflection';
-import { HELD_STAND_INS, LOOPS, standIn } from './pose';
+import { addShadow } from './shadow';
+import { HELD_STAND_INS, LOOPS, crossFades, fadeWeight, standIn } from './pose';
 
 const loader = new GLTFLoader();
+/** The middle of the face above the head bone's root, metres. */
+const FACE_ABOVE_NECK = 0.1;
 const files = new Map<string, Promise<FighterArt>>();
 
 /** One fighter's loaded art, shared by every copy on screen. */
@@ -95,17 +98,22 @@ export class FighterModel {
   private readonly actions = new Map<string, { action: THREE.AnimationAction; frames: number }>();
   private readonly materials: THREE.MeshLambertMaterial[] = [];
   private current: THREE.AnimationAction | null = null;
+  /** A cross-fade (src/render/pose.ts): the clip fading out, and the frame the new one started on. */
+  private fading: THREE.AnimationAction | null = null;
+  private fadeStart = 0;
+  private readonly moveOf = (clip: string) => FIGHTERS[this.art.id]?.moves[clip];
   private clip = '';
   private frame = -1;
   private tint = -1;
-  /** This copy's signal damage, shared by its materials' shaders. */
-  private readonly wear = { value: 0 };
+  /** This copy's signal damage, shared by its materials' shaders: the wear, and how much of its snow shows (src/render/legible.ts). */
+  private readonly signal = fighterSignal();
   private readonly floorCopies: THREE.Mesh[];
   private readonly mirrorCopies: THREE.Mesh[];
   private readonly outline: THREE.Mesh[];
   private readonly reflectionMaterials: THREE.Material[];
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
+  private readonly head: THREE.Object3D | null;
 
   /**
    * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
@@ -139,7 +147,7 @@ export class FighterModel {
         mat.emissive.setHex(0);
         mat.emissiveMap = null;
         mat.emissiveIntensity = 1;
-        if (shade === undefined) addRim(mat, this.wear);
+        if (shade === undefined) addRim(mat, this.signal);
         else {
           // Lit as the set is, falling off into the dark past the walls.
           mat.color.multiplyScalar(shade);
@@ -154,7 +162,10 @@ export class FighterModel {
     // Reflections in the floor and Burn's mirrors: copies on the same skeleton.
     this.floorCopies = plain ? [] : addReflection(model, FLOOR);
     this.mirrorCopies = plain ? [] : addReflection(model, MIRROR);
-    this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies].map((c) => c.material as THREE.Material);
+    // A shadow on the floor, flattened from the same meshes.
+    const shadow = plain ? [] : addShadow(model);
+    for (const c of shadow) c.visible = true;
+    this.reflectionMaterials = [...this.floorCopies, ...this.mirrorCopies, ...shadow].map((c) => c.material as THREE.Material);
     // A dark line round the fighter (after the reflections, so they aren't outlined).
     this.outline = plain ? [] : addOutline(model);
     for (const c of this.outline) c.visible = true;
@@ -162,6 +173,7 @@ export class FighterModel {
     // GLTFLoader drops the dot from bone names (hand.L is handL).
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
+    this.head = model.getObjectByName('head') ?? null;
     this.mixer = new THREE.AnimationMixer(model);
     const moves = FIGHTERS[art.id]?.moves;
     for (const [name, c] of art.clips) {
@@ -197,6 +209,17 @@ export class FighterModel {
     return out;
   }
 
+  /**
+   * Where the face is, into `out` (the head bone, a little up from where it
+   * joins the neck): false if the model has no head bone. Call after pose().
+   */
+  facePosition(out: THREE.Vector3): boolean {
+    if (!this.head) return false;
+    this.root.updateMatrixWorld(true);
+    this.head.getWorldPosition(out).y += FACE_ABOVE_NECK;
+    return true;
+  }
+
   /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */
   pose(clip: string, frame: number, loop: boolean): void {
     if (clip === this.clip && frame === this.frame) return;
@@ -209,10 +232,31 @@ export class FighterModel {
     }
     if (!a) return;
     if (a.action !== this.current) {
-      this.current?.stop();
+      // Between state clips, and out of a move's recovery, the old pose fades out over a few steps; never into a move.
+      const fade = this.current !== null && this.frame >= 0 && crossFades(this.clip, this.frame, clip, this.moveOf);
+      this.fading?.stop();
+      this.fading = null;
+      if (fade) {
+        this.fading = this.current;
+        this.fadeStart = frame;
+      } else this.current?.stop();
       a.action.play();
       a.action.paused = true;
+      // A clip stopped mid-fade keeps the weight it had.
+      a.action.setEffectiveWeight(1);
       this.current = a.action;
+    }
+    if (this.fading) {
+      // Frames counted from the new clip's first; a loop's frame keeps counting up.
+      const w = fadeWeight(frame - this.fadeStart);
+      if (w <= 0 || frame < this.fadeStart) {
+        this.fading.stop();
+        this.fading = null;
+        a.action.setEffectiveWeight(1);
+      } else {
+        this.fading.setEffectiveWeight(w);
+        a.action.setEffectiveWeight(1 - w);
+      }
     }
     const n = a.frames;
     const f = loop ? (fr - 1) % n : Math.min(Math.max(fr, 1), n) - 1;
@@ -228,9 +272,20 @@ export class FighterModel {
     for (const c of this.mirrorCopies) c.visible = mirror;
   }
 
-  /** How broken up this fighter's picture is (src/render/wear.ts), 0 to 1. */
-  setWear(v: number): void {
-    this.wear.value = v;
+  /** How broken up this fighter's picture is (src/render/wear.ts), 0 to 1, and how much of its snow shows. */
+  setWear(v: number, snow = 1): void {
+    this.signal.wear.value = v;
+    this.signal.snow.value = snow;
+  }
+
+  /** The rim flashing on the side a blow came from: its direction on screen (x, y, unit), strength (0 none) and whether it was a counter. */
+  setHitSide(x: number, y: number, strength: number, counter: boolean): void {
+    this.signal.hit.value.set(x, y, strength, counter ? 1 : 0);
+  }
+
+  /** A glow round the edges (armour, a boost): its colour as a hex, times `strength`; 0 for none. */
+  setAura(hex: number, strength: number): void {
+    this.signal.aura.value.setHex(hex).multiplyScalar(strength);
   }
 
   /** An emissive tint over the whole fighter (hit flash, armour, guard): 0 for none. */

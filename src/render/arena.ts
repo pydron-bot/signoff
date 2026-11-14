@@ -6,7 +6,8 @@
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
  * are some, else boxes. It reads the latest match step and the step's events
  * and never changes the match. About 19 draw calls (the signal spray is
- * one, the contact shadows two), plus 3 to 7 a model; the impact layer
+ * one, the contact shadows two), plus 3 to 7 a model and as many again for
+ * its shadow (src/render/shadow.ts) and each reflection; the impact layer
  * (src/render/impact.ts, dust.ts, swoosh.ts) adds up to six while it shows;
  * the knocked-about set dressing (clutter.ts) three.
  */
@@ -18,6 +19,9 @@ import { toFloat } from '../sim/fixed';
 import type { Box } from '../sim/types';
 import { Atmosphere } from './atmosphere';
 import { Echoes } from './echo';
+import { FIGHT_LAYER } from './meshCopies';
+import { setShadowKey } from './shadow';
+import { Legibility, cutInWear } from './legible';
 import { CameraRig, FOV } from './camera';
 import { AUDIENCE_SHADE, SEATS } from './depth';
 import { ContactShadows, setRim, setSignal } from './fighterLight';
@@ -46,6 +50,14 @@ const PROJECTILE = 0x9fe8ff;
 /** The hit flash by weight (light, medium, heavy, ender): steps, and how bright. */
 const FLASH_STEPS = [3, 4, 6, 8] as const;
 const FLASH = [0x303030, 0x404040, 0x585858, 0x808080] as const;
+/** The rim flashes on the side a blow came from, by weight, fading over these steps. */
+const HIT_RIM = [0.7, 0.9, 1.2, 1.6] as const;
+const HIT_RIM_STEPS = 8;
+/** The aura round the edges: armour, a boosted special, an unblockable winding up, Technical Difficulties. */
+const AURA_ARMOR = 0xff8a30;
+const AURA_BOOST = 0x9fe8ff;
+const AURA_UNBLOCKABLE = 0xc060ff;
+const AURA_SUPER = 0xff3040;
 /** A counter hit flashes warm. */
 const COUNTER_FLASH = 0x705020;
 /** The body jolting in the freeze of a hit, by weight (m either way), and of a block. */
@@ -134,6 +146,11 @@ interface FighterView {
   flashColor: number;
   /** How hard the body jolts while frozen in a hit's freeze. */
   jolt: number;
+  /** The hit-side rim: the side the blow came from (−1 left, 1 right), its strength, steps left, and whether it was a counter. */
+  hitSide: number;
+  hitRim: number;
+  hitLeft: number;
+  hitCounter: boolean;
   /** A heavy blow's swing. */
   swoosh: Swoosh;
   /** The 3D model once loaded, and which fighter it's for. */
@@ -209,15 +226,26 @@ export class Arena {
     this.setFlash.reduceMotion = on;
     this.cut.reduceMotion = on;
   }
+  /** Of the screen's height, how much the HUD takes at the top: the cut-in's band stays below it. */
+  set hudClear(share: number) {
+    this.cut.hudClear = share;
+  }
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
     this.rig.buttons = share;
+    this.cut.buttons = share;
   }
   private readonly corner = new THREE.Vector3();
   showBoxes = false;
+  /** The set without the fighters (tools/readability.mjs measures what stands behind them). */
+  hideFighters = false;
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
   private readonly wear = new WearTracker();
+  /** Which effects give way to the fighters this step (src/render/legible.ts). */
+  private readonly legible = new Legibility();
+  /** A pose worked out in step(), for the echoes' trail. */
+  private readonly stepPose: Pose = { clip: '', frame: 1, loop: false };
   /** The cold open: the match isn't running yet, so the fighters idle on display time, and the camera frames them close. */
   get idling(): boolean {
     return this.rig.opening;
@@ -242,7 +270,16 @@ export class Arena {
   private readonly setFlash = new SetFlash();
   /** The super cut-in: a close-up of the fighter in a band of the picture. */
   private readonly cut = new CutIn();
-  private readonly inset: { camera: THREE.Camera; rect: CutInRect } = { camera: this.cut.camera, rect: this.cut.rect };
+  /** The close-up shows its fighter's face: wear capped, no snow (and no echoes: they're on a layer its camera leaves out). */
+  private readonly inset: { camera: THREE.Camera; rect: CutInRect; before: () => void; after: () => void } = {
+    camera: this.cut.camera,
+    rect: this.cut.rect,
+    before: () => this.fighters[this.cut.who]?.model?.setWear(cutInWear(this.wear.wear[this.cut.who]), 0),
+    after: () => {
+      const i = this.cut.who;
+      this.fighters[i]?.model?.setWear(this.wear.wear[i], this.legible.snow[i]);
+    },
+  };
   /** The big-hit layer for the post pass: the shockwave, an ender's zoom and the meter spotlight. */
   private readonly impactScreen = new ImpactScreen();
   private readonly shadows: ContactShadows;
@@ -259,6 +296,7 @@ export class Arena {
 
   constructor() {
     this.scene.background = new THREE.Color(0x07070c);
+    this.camera.layers.enable(FIGHT_LAYER);
     const ambient = new THREE.HemisphereLight(0xffffff, 0x404048, 1.1);
     this.scene.add(ambient);
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -311,7 +349,7 @@ export class Arena {
     const limb = new THREE.Mesh(this.unit, limbMat);
     group.add(body, head, limb);
     this.scene.add(group);
-    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], jolt: 0, swoosh: new Swoosh(this.scene, 0xffffff), model: null, echoes: null, id: '', effect: new EffectSlot(this.scene) };
+    return { group, body, head, limb, bodyMat, limbMat, flash: 0, flashColor: FLASH[2], jolt: 0, hitSide: 1, hitRim: 0, hitLeft: 0, hitCounter: false, swoosh: new Swoosh(this.scene, 0xffffff), model: null, echoes: null, id: '', effect: new EffectSlot(this.scene) };
   }
 
   /**
@@ -394,6 +432,7 @@ export class Arena {
     this.cut.clear();
     this.impactScreen.clear();
     this.wear.reset();
+    this.legible.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -402,7 +441,10 @@ export class Arena {
     this.poses.step(m, ev);
     this.sparks.update();
     this.burst.update();
-    for (const v of this.fighters) if (v.flash > 0) v.flash--;
+    for (const v of this.fighters) {
+      if (v.flash > 0) v.flash--;
+      if (v.hitLeft > 0) v.hitLeft--;
+    }
     this.dust.step();
     this.light.step();
     this.impactScreen.step();
@@ -422,6 +464,11 @@ export class Arena {
         v.flash = FLASH_STEPS[e.weight] + (e.counter ? 2 : 0);
         v.flashColor = e.counter ? COUNTER_FLASH : FLASH[e.weight];
         v.jolt = JOLT[e.weight] * (e.counter ? 1.3 : 1);
+        // The blow travels along dir: it came from the other side.
+        v.hitSide = -e.dir;
+        v.hitRim = HIT_RIM[e.weight];
+        v.hitLeft = HIT_RIM_STEPS;
+        v.hitCounter = e.counter;
       } else if (e.type === 'block') {
         const v = this.fighters[e.defender];
         v.flash = 3;
@@ -431,11 +478,29 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+    this.legible.step(m, ev, this.cut.who, this.wear.wear);
+    // The echoes' trail keeps simulation time, so it's the same at any refresh rate.
+    for (let i = 0; i < 2; i++) {
+      const v = this.fighters[i];
+      if (!v.echoes || !this.models) continue;
+      const f = m.fighters[i];
+      v.echoes.trail.step(f, this.poses.pose(m, i, this.stepPose), toFloat(f.x), toFloat(f.y), this.shownNow(f), !this.reduceMotion);
+    }
+  }
+
+  /** Whether a fighter is on screen (not mid-teleport, not hidden for a measurement). */
+  private shownNow(f: FighterState): boolean {
+    const mv = f.mode === 'move' ? moveData(f.fighter, f.move) : null;
+    return !this.hideFighters && !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
   }
 
   /** The super cut-in for the post pass this frame (null when there's none), after render(). */
   cutIn(m: MatchState): { camera: THREE.Camera; rect: CutInRect } | null {
-    return this.cut.active && this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
+    if (!this.cut.active) return null;
+    // Framed on the model's own face (a chef's hat or a quiff would push a guess from the hurtbox off it).
+    const model = this.models ? this.fighters[this.cut.who].model : null;
+    this.cut.hasModelFace = model?.facePosition(this.cut.modelFace) ?? false;
+    return this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
   }
 
   /** The impact layer's numbers for the post pass, after render() has placed the camera. */
@@ -471,6 +536,7 @@ export class Arena {
     // The signal damage flickers on display time; held still for Reduce Motion.
     setSignal(this.reduceMotion ? 0 : this.frame / 60, this.tape);
     this.shadows.setKey(this.key);
+    setShadowKey(this.key);
     this.air.update(m, this.frame / 60);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
@@ -622,7 +688,7 @@ export class Arena {
     v.group.position.set(0, 0, 0);
     // Off screen mid-teleport.
     const mv = f.mode === 'move' ? moveData(f.fighter, f.move) : null;
-    const shown = !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
+    const shown = this.shownNow(f);
     v.group.visible = shown;
     v.body.visible = !model;
     if (v.model) v.model.root.visible = shown && model !== null;
@@ -645,9 +711,9 @@ export class Arena {
         p.loop = true;
       }
       model.pose(p.clip, p.frame, p.loop);
-      model.setWear(this.wear.wear[i]);
+      model.setWear(this.wear.wear[i], this.legible.snow[i]);
       model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
-      v.echoes?.update(f, p, x, y, shown, !this.reduceMotion);
+      v.echoes?.draw(this.legible.echo[i]);
     } else if (lying) {
       // Flat on the floor; rising during getup.
       const h = f.mode === 'getup' ? 0.4 : 0.3;
@@ -688,13 +754,27 @@ export class Arena {
     const base = COLORS[f.fighter] ?? 0xcccccc;
     v.bodyMat.color.setHex(v.flash > 0 ? 0xffffff : base);
     // Glows: armour orange, an unblockable winding up purple, guarding blue.
+    // With a model, armour, a boost and the rest glow round the edges too, like an aura (a fresnel term in its shader).
     let glow = 0;
-    if (f.mode === 'cinematic') glow = 0x401010;
-    else if (f.mode === 'guard' || f.mode === 'blockstun') glow = 0x10203a;
-    else if (mv && mv.armor && !f.armorUsed && f.moveFrame >= mv.armor[0] && f.moveFrame <= mv.armor[1]) glow = 0x803000;
-    else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') glow = 0x501070;
+    let aura = 0;
+    let auraK = 1;
+    if (f.mode === 'cinematic') {
+      glow = 0x401010;
+      if (!f.victim) aura = AURA_SUPER;
+    } else if (f.mode === 'guard' || f.mode === 'blockstun') glow = 0x10203a;
+    else if (mv && mv.armor && !f.armorUsed && f.moveFrame >= mv.armor[0] && f.moveFrame <= mv.armor[1]) {
+      glow = model ? 0x502000 : 0x803000;
+      aura = AURA_ARMOR;
+      auraK = 1.4;
+    } else if (mv && f.moveFrame < mv.startup && mv.hits.length && mv.hits[0].height === 'unblockable') {
+      glow = 0x501070;
+      aura = AURA_UNBLOCKABLE;
+    } else if (mv && f.move.endsWith('+') && (mv.hits.length === 0 || f.moveFrame <= mv.hits[mv.hits.length - 1].frames[1])) aura = AURA_BOOST;
     v.bodyMat.emissive.setHex(glow);
     model?.setTint(v.flash > 0 ? v.flashColor : glow);
+    model?.setAura(aura, auraK);
+    // 0.97, 0.24: mostly from the side, a little from above.
+    model?.setHitSide(v.hitSide * 0.97, 0.24, v.hitLeft > 0 ? (v.hitRim * v.hitLeft) / HIT_RIM_STEPS : 0, v.hitCounter);
     // The body's box always shows with the hit boxes; faded when nothing can hit it (on the floor, a knockdown, the juggle limit).
     const o = this.hurtOverlays[i];
     o.visible = this.showBoxes && shown;

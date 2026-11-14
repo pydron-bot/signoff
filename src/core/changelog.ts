@@ -14,6 +14,32 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.62.0',
+    date: '2026-11-14',
+    title: 'Fair Fights',
+    notes: [
+      'Everyone now has between 850 and 1020 health (it was 660 to 990), so Rox and Mister Mumbles no longer go down in two combos. They pay for it with lighter hits; Rox\'s boosted Star Jump and Count of Eight hit harder, so her meter still pays.',
+      'Jumps have weight: Mister Mumbles floats, Hollis and Gus jump short and heavy, Rox is quick and low. The hop out of a launcher is the same height for everyone, so air combos work alike whoever is chasing.',
+      'The first hit of a round no longer earns a bar of Signal.',
+      "Dale's Cold Front and Gideon's Collection Plate and Low Offering hit a little harder. Hollis's boosted specials hit a little lighter, since his new jump let him carry a juggle too far.",
+      'The CPU has new plans for ten matchups. The most one-sided matchup between two CPUs is now 61 to 39, where it was 70 to 30.',
+    ],
+  },
+  {
+    version: '0.61.0',
+    date: '2026-11-14',
+    title: 'Clear Picture',
+    notes: [
+      'The fighters come through the tape clearer: the colour smear and the grain go easier on them than on the set, and the effects take turns instead of piling up on a fighter who is low on health.',
+      "Technical Difficulties cuts to a close-up you can see: the fighter's face, at any health, below the health bars and clear of the touch buttons.",
+      'Afterimages trail real speed (a dash, a lunge, the start of a special) and look the same at any refresh rate.',
+      'A blow lights the side of the body it came from, amber on a counter hit. Armour and boosted specials glow round the edges.',
+      'Fighters cast their own shadow on the floor, and ease between standing, walking, crouching and landing. Attacks still come out on the frame.',
+      'The camera looks up ahead of a launched body, so the juggle is in frame before it starts.',
+      "The darkest sets give the fighters a stronger rim of light, and Kitchen Live's first segment is dimmed a little so the cooks stand out.",
+    ],
+  },
+  {
     version: '0.60.1',
     date: '2026-11-12',
     title: 'Mic Check',

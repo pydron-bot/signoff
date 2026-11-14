@@ -29,3 +29,21 @@ export async function launch() {
   const { chromium } = await playwright();
   return chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 }
+
+/**
+ * `vite preview` of a build on a port, run with node directly (through npx,
+ * killing it would leave vite serving the old build to the next run). Fails
+ * if something else already answers on the port.
+ */
+export async function serve(dir, port, env = {}) {
+  const { spawn } = await import('node:child_process');
+  const url = `http://localhost:${port}/`;
+  if (await fetch(url).then(() => true, () => false)) throw new Error(`port ${port} is already serving: stop it first`);
+  const vite = path.join(process.cwd(), 'node_modules', 'vite', 'bin', 'vite.js');
+  const server = spawn(process.execPath, [vite, 'preview', '--outDir', dir, '--port', String(port), '--strictPort'], { env: { ...process.env, ...env }, stdio: 'ignore' });
+  for (let i = 0; i < 100; i++) {
+    if (await fetch(url).then((r) => r.status < 500, () => false)) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  return server;
+}

@@ -79,13 +79,16 @@ medium, heavy, ender) and counter hits, as the freeze and shake already do.
   say *this costs something*. Done in the composite (no extra pass). It
   doesn't move the picture, so it stays with Reduce Motion.
 
-## 3. Camera (done in 0.58.0, but for the launcher tilt-up)
+## 3. Camera (done in 0.58.0; the launcher tilt-up in Clear Picture)
 
 - **Directional kick** (done). On enders the camera is knocked 0.16 m
   *against* the blow for 3 steps before it leans with it, then springs
   back. Pure maths in `camera.ts`. Off with Reduce Motion.
-- **Launcher tilt-up** (small). On a launch, the look target rises ahead
-  of the body for 10 frames so the juggle is framed before it happens.
+- **Launcher tilt-up** (done, Clear Picture). On a launch from the ground
+  into a juggle, the look target rises 0.45 m ahead of the body for 10
+  steps (easing in and out; the camera itself stays) so the juggle is
+  framed before it happens. Not for knockdowns or KOs. Off with Reduce
+  Motion.
 - **Ender FOV punch** (done). 2.5° narrower on enders, wall splats and a
   super's hit, easing back over 12 steps (`CameraRig.fov`). One
   `updateProjectionMatrix` a frame while it runs.
@@ -125,14 +128,18 @@ medium, heavy, ender) and counter hits, as the freeze and shake already do.
   set's and fighters' Lambert shaders (shared uniforms, so nothing
   recompiles); the fighters take 60% of it. Fixed cost, every frame.
 
-## 5. Character shading (proposed)
+## 5. Character shading (hit-side light and aura done in Clear Picture)
 
-- **Hit-side light** (medium). Flash the rim on the side the hit came
-  from (the rim's direction is a shared uniform; swing it toward the
-  attacker for a few steps). No recompile.
-- **Fresnel glow on armour and boosts** (small). The armour glow is a flat
-  emissive; a rim term scaled by a per-fighter uniform would read as an
-  aura. A few lines in the fighter shader's existing rim chunk.
+- **Hit-side light** (done, `fighterLight.ts`, `arena.ts`). A blow flashes
+  a hard rim on the side it came from, by weight, amber on a counter,
+  fading over 8 steps. Done as a per-fighter uniform (the side and its
+  strength) rather than swinging the shared rim, so only the fighter hit
+  lights up. No recompile, no draw calls.
+- **Fresnel glow on armour and boosts** (done, same place). A rim term
+  scaled by a per-fighter colour: orange on armour (the flat emissive is
+  halved under it), pale blue on a boosted special up to its last active
+  frame, violet on an unblockable winding up, red on Technical
+  Difficulties' cinematic. It reads as an aura round the edges.
 - **Squash and stretch on enders** (small, art-sensitive). Scale the
   defender 5% along the blow for two frames on enders. Test it in the
   viewer first: on faceted models it can look rubbery.
