@@ -266,6 +266,12 @@ are authored facing right with the left foot and left hand leading.
 > 14. ~~**Step 27, three boosts** and **step 28, the specials pass**~~ *done (Nov 10): all 41 clips.* Was: **Step 28, the specials pass** (Nov 10, game side): 38 new move clips: an air special on Down for everyone, a follow-up special for everyone, Gideon's Begone, and the new air strings' middle steps and spikes. Each has a stand-in until its clip lands.
 > 15. ~~**Step 29, the impact pass**~~ *done (Nov 10); the game side can take up the smears, `fx_impact_ring`, `fx_crack` and the `shake_*`/`swing_*` nodes.* Was: **Step 29, the impact pass** (Nov 10, game side): smear frames, held wind-ups, overshoot, heavier hit reactions, two fx meshes and named set nodes that can shake.
 > 16. ~~**Step 30, set dressing that gets knocked about**~~ *done (Nov 10): three `clutter_*` kinds on each of the four stages, game side in.*
+> 17. **Step 32, fighters against the set** (Nov 14, open): paint changes to Margaret, Gideon and Gus, Burn's mirror wall and Kitchen's later segments, checked with `tools/readability.mjs`. Needs nothing from the game side: start here.
+> 18. **Step 34, six more things to use** (Nov 14, open): six `prop_*` objects and `fx_foam`, ahead of the game side.
+> 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor.
+> 20. **Step 31, jumps by weight** (open once `play/fair-fights` is pushed): eight jump clips at new lengths.
+>
+> Steps 32 to 34 are on the branch `look/clear-picture` (0.61.0), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1583,6 +1589,116 @@ it). `tests/assets.test.ts` checks each object's size against
 - [x] The objects above in each stage's GLB. *Done (Nov 10): 24 to 240 triangles each, about 0.03 MB a stage.*
 - [x] Game side: physics, stand-ins, wired to the step's events (0.54.0).
 - [ ] Look at them in a match at phone size: Kitchen's onions are small and brown on the checked floor and may want to be bigger or a brighter colour (tomatoes?).
+
+### 32. Fighters against the set (Nov 14, game side)
+
+*Step 31 (jumps by weight: new `jump_up` and `jump_fall` lengths for
+Mumbles, Hollis, Gus and Rox) arrives with `play/fair-fights` (0.62.0).
+Steps 32 to 34 are on `look/clear-picture` (0.61.0): branch from there, or
+from whatever has been stacked on it since.*
+
+0.61.0 measures how well each fighter stands out from the set behind them
+(`tools/readability.mjs`: every fighter in every segment, drawn with and
+without them). A fighter passes a segment when at least half their pixels
+differ from the set by 24 or more (brightness, 0 to 255) and their mean is
+16 or more from the set's. 147 of 168 pass. The game side has done what
+lighting can (a stronger rim on the dark sets, Kitchen's first segment
+dimmed); what is left is the paint. Segments count from 0 in the tool's
+output.
+
+| Who | Where | Fighter | Set | Pixels apart |
+| --- | --- | --- | --- | --- |
+| Margaret | Weather, the storm (1) | 45 | 20 | 48% |
+| Margaret | Burn, Burnout (2) | 45 | 11 | 45% |
+| Gideon | Kitchen, all three | 72 to 134 | 71 to 135 | 39 to 70%, means 4 to 16 apart |
+| Gus | Kitchen, all three | 88 to 146 | 75 to 133 | 65 to 74%, means 1 to 13 apart |
+| Gideon | Burn, Warm-Up and Double Time (0, 1) | 106 to 130 | 96 to 127 | means 3 to 15 apart |
+| Dale, Rox, Mumbles | Burn, Warm-Up (0) | 78 to 85 | 89 to 99 | means 8 to 14 apart |
+| Rox, Mumbles, Dale | Kitchen, The Oven (2) | 57 to 58 | 67 to 73 | means 9 to 16 apart |
+
+- [ ] **Margaret's suit.** Most of her is one dark value, so on a dark set
+  only the rim separates her. Lift the suit a step (toward 60 to 70 where
+  it is about 45 now), or break it up: a pinstripe that survives at phone
+  size, paler lapels and cuffs, a brighter blouse showing further down.
+  Hollis passes everywhere, but his darks sit close to hers: look at him
+  on the same two sets while there.
+- [ ] **Gideon's pale suit and Gus's whites.** Both sit at Kitchen's
+  middle brightness, and dimming the set helps one as it hurts the other.
+  Give each a dark edge that reads at 100 px tall: Gideon a darker
+  waistcoat, tie and trouser, or a dark trim on the jacket; Gus darker
+  apron shading, a checked trouser, a dark neckerchief. The aim is light
+  and dark *within* the fighter, so some of him differs from any set.
+- [ ] **Burn's mirror wall** (Warm-Up and Double Time). It is lit by its
+  own light map and barely darkens when the game dims the set, and the
+  mid-tone fighters (Dale, Rox, Mumbles, Gideon) match it. Darken the
+  mirror tint and the wall behind the fight by about a fifth (set means of
+  75 to 80, where they are 90 to 127), keeping the windows' glow.
+- [ ] **Kitchen, Grease Fire and The Oven.** The band of the set behind
+  the fighters (y = 0.3 to 1.9 m, the counters' fronts and the wall above
+  them) is the same brightness as the cooks. A darker counter front, or a
+  paler tiled wall above it, would give every fighter something to stand
+  against.
+- [ ] Check: `npx -y -p playwright@1.63.0 node tools/readability.mjs --out
+  readability-out` (about 12 minutes) and note the new count here. Nothing
+  that passes now should fail after.
+
+### 33. Life in the fighters and the studio (Nov 14, spec ahead of the game side)
+
+For the release that makes the sets answer the fight (`docs/LOOK-AND-PLAY-PLAN.md`,
+E). The game will use the `shake_*` and `swing_*` nodes, `fx_crack` and
+`fx_impact_ring` from step 29 as they are. These are the pieces it still
+lacks; until each lands the game leaves that part out.
+
+- [ ] **A `blink` shape key on every fighter**, beside `hurt`, `ko` and
+  `win`: both lids closed, nothing else moved. No clip keys it (the game
+  drives it, a blink every few seconds, never during a hit reaction).
+  Mumbles' painted face has no lids: a painted lid that drops over each
+  eye, like a doll's, would suit him.
+- [ ] **Tally lights the game can switch.** On each stage's cameras
+  (`fg_left`, `fg_right`, the dollies on Weather), the red tally light as
+  its own small mesh, `tally_left` and `tally_right` (and
+  `tally_dolly_left`, `tally_dolly_right`), in a material of its own
+  (`tally`, emissive red, strength 2) so the game can light only the
+  camera that is live. A child of the camera it sits on.
+- [ ] **Crew at the cameras.** `crew_left` and `crew_right` in every
+  stage: a camera operator standing at each foreground camera (headset,
+  one hand on the pan handle), drawn like the rest of the foreground as a
+  near-black shape, under 300 triangles each, in `props`. The head and
+  headset as a child node, `crew_left_head` and `crew_right_head`, origin
+  at the neck, so the game can turn it to follow the fight. Same limits as
+  `fg_left` and `fg_right` (step 24 A): no higher than 2.2 m, never
+  between x = −4.5 and 4.5.
+- [ ] **Kitchen's hanging pans** (offered in step 29): `swing_pans`, a
+  rail of three or four pans over the counter, pivot on the rail, under
+  `set`.
+- [ ] **Floor marks on the News.** Weather's floor has tape marks; the
+  News floor is bare. Tape T-marks at the anchor positions and a run of
+  cable to each camera, painted into `set`'s floor.
+
+### 34. Six more things to use (Nov 14, spec ahead of the game side)
+
+For the release that gives every later segment something to use (the same
+plan, F). Today all six props are in first segments. The sizes below are
+what the simulation will use, so please keep to them; what each one *does*
+may still change. Each is its own object in the stage's GLB, in `props`,
+origin at its bottom centre, exported at the origin (the game places it),
+with a light-map unwrap as the other `prop_*` have. Until each lands the
+game draws one of step 30's loose objects in its place.
+
+| Stage, segment | Object | What | The game |
+| --- | --- | --- | --- |
+| Weather, the storm | `prop_windsock` | A wind sock on a tripod stand, 0.6 × 1.9 × 0.6 m, the sock orange and white, a sandbag on one leg. Origin where the legs meet the floor, so it can tip from there | Tipped over toward the opponent: it falls flat along x and hits high |
+| Weather, the flood | `prop_crate` | A flight case stencilled *CH 0*, 0.8 × 0.5 × 0.5 m, metal corners, a handle each end | Floats at the water's height (0.22 m) and is shoved along it |
+| Burn, Burnout | `prop_shard` | A long shard of mirror lying on the floor, 0.5 × 0.06 × 0.2 m (thicker than glass, so it reads at phone size), bright on its face | Picked up and thrown low, spinning |
+| News, The Ticker | `prop_prompter` | A teleprompter on a wheeled stand, 0.6 × 1.4 × 0.6 m: the hooded glass at the top with green text on it (emissive, strength 1.5), three castors | Shoved, rolls like a dolly but taller: it can't be jumped |
+| News, Lights Out | `prop_lamp` | A fresnel lamp that has come down off the grid, 0.4 × 0.4 × 0.5 m lying on its side, lens lit (emissive, strength 2.5), a tail of cable | Kicked along the floor; the game makes it the only moving light in the dark |
+| Kitchen, Grease Fire | `prop_extinguisher` | A red fire extinguisher, 0.2 × 0.55 × 0.2 m, standing, hose and horn | Used where it stands: puts the flare out for one cycle |
+
+- [ ] The six objects above.
+- [ ] `fx_foam` in Kitchen's GLB: the extinguisher's cloud, about 1.2 m
+  across and 0.8 m tall, white, soft-edged (a few crossed cards or a
+  faceted puff), origin at the bottom centre. The game scales it up over
+  ten frames and fades it.
 
 ### State clips (every fighter)
 
