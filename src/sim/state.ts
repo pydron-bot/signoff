@@ -50,7 +50,7 @@ export interface FighterState {
   jumpDir: -1 | 0 | 1;
   airAttackUsed: boolean;
   airSpecialUsed: boolean;
-  /** The jump being taken off is a jump cancel's hop. */
+  /** The jump being taken off, or in the air, is a jump cancel's hop (until it lands). */
   hop: boolean;
   /** In a dash: frames until it can be cancelled (Tape Skip's never can). */
   dashFree: number;
@@ -155,6 +155,8 @@ export interface MatchState {
   roundFrame: number;
   /** The round's first hit has landed (it's worth a bar). */
   firstHit: boolean;
+  /** What that first hit is worth in meter. */
+  firstHitMeter: number;
   /** This round's wind push per frame (signed), 0 for none. */
   wind: Fx;
   hazards: HazardState[];

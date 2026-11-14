@@ -33,23 +33,45 @@ export const LEANS: Readonly<Record<string, Lean>> = {
 export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean>>>> = {
   gus: {
     rox: { ...EVEN, string: 1.6, throw: 0.6, retreat: 0.6, mix: 2.5 },
+    // 0.62.0 (health into a band): low and mixed up on the small one.
+    mumbles: { ...EVEN, low: 2.5, mix: 2.5 },
+    // 0.62.0: specials from range, where Dale's pokes would win.
+    dale: { ...EVEN, special: 2.5 },
   },
   gideon: {
-    hollis: { ...EVEN, string: 1.6, throw: 1.6, approach: 1.6, retreat: 0.6, wait: 0.6 },
+    // 0.62.0: strings and mix-ups rather than waiting (searched again with Hollis's new health).
+    hollis: { ...EVEN, string: 2.5, mix: 2.5 },
+    // 0.62.0: his specials from range against Gus's reach.
+    gus: { ...EVEN, special: 2.5 },
+  },
+  dale: {
+    // 0.62.0: Rox's quick jump gets in over his zoning; he presses her instead.
+    rox: { ...EVEN, string: 2.5, mix: 2.5 },
+    // 0.62.0: mix-ups on the heavies, and a few more jumps over Gus's pans.
+    hollis: { ...EVEN, mix: 2.5 },
+    gus: { ...EVEN, jump: 1.6, mix: 2.5 },
   },
   // 0.51.0: the new moves moved three matchups past 70:30.
   margaret: {
     dale: { ...EVEN, low: 1.6 },
+    // 0.62.0: her specials and mix-ups, not footsies, against his reach.
+    gus: { ...EVEN, special: 2.5, mix: 2.5 },
+    gideon: { ...EVEN, mix: 2.5 },
   },
   hollis: {
     rox: { ...EVEN, special: 2.5 },
+    // 0.62.0: Mumbles ducks his jab; his specials reach him.
+    mumbles: { ...EVEN, special: 1.6 },
   },
   rox: {
     mumbles: { ...EVEN, string: 2.5, throw: 0.6, special: 2.5, approach: 0.6, guard: 0.6 },
-    margaret: { ...EVEN, low: 1.6 },
+    // 0.62.0: her strings and specials, not her lows, against Margaret's guard.
+    margaret: { ...EVEN, string: 2.5, special: 2.5 },
   },
   mumbles: {
-    margaret: { ...EVEN, string: 1.6, special: 0.6, mix: 1.6 },
+    // 0.62.0: more strings and mix-ups still (she has more health now).
+    margaret: { ...EVEN, string: 2.5, special: 0.6, mix: 2.5 },
+    gideon: { ...EVEN, mix: 2.5 },
   },
 };
 

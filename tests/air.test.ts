@@ -2,10 +2,79 @@
 // cancel off a launcher that hit, which is how a juggle goes up after them.
 import { describe, expect, it } from 'vitest';
 import { FIGHTERS, Input } from '../src/sim';
-import { JUMP_CANCEL_SCALE } from '../src/sim/constants';
+import { HOP_VY, JUMP_CANCEL_SCALE } from '../src/sim/constants';
+import { toFloat } from '../src/sim/fixed';
 import { count, place, presses, ready, run } from './sim-helpers';
 
 const { UP, RIGHT, DOWN, FP, BP, FK, SPECIAL } = Input;
+
+/** A neutral jump from the floor: frames in the air, the height it reaches (m) and, held forward, how far it travels (m). */
+function jumpOf(id: string, dir = 0): { frames: number; apex: number; reach: number } {
+  const m = ready(id, id === 'dale' ? 'rox' : 'dale');
+  place(m, -4, 4);
+  const a = m.fighters[0];
+  const x0 = a.x;
+  let frames = 0;
+  let apex = 0;
+  run(m, 90, (mm, t) => {
+    const f = mm.fighters[0];
+    if (f.y > 0) frames++;
+    apex = Math.max(apex, f.y);
+    return t === 0 ? UP | dir : 0;
+  });
+  return { frames, apex: toFloat(apex), reach: toFloat(a.x - x0) };
+}
+
+describe('jumps by weight', () => {
+  const j = Object.fromEntries(Object.keys(FIGHTERS).map((id) => [id, jumpOf(id)]));
+  it('Mumbles floats: the longest and highest jump', () => {
+    for (const id of Object.keys(FIGHTERS).filter((x) => x !== 'mumbles')) {
+      expect(j.mumbles.frames, id).toBeGreaterThan(j[id].frames);
+      expect(j.mumbles.apex, id).toBeGreaterThan(j[id].apex);
+    }
+    expect(j.mumbles.frames).toBeGreaterThanOrEqual(42);
+  });
+  it('Hollis and Gus are heavy: lower than the standard jump and not as far; Rox quick and low', () => {
+    const on = (id: string) => jumpOf(id, RIGHT).reach;
+    for (const id of ['hollis', 'gus']) {
+      expect(j[id].apex, id).toBeLessThan(j.dale.apex);
+      expect(on(id), id).toBeLessThan(on('dale') * 0.85);
+    }
+    // Hollis is the heaviest: low and short.
+    expect(j.hollis.frames).toBeLessThanOrEqual(j.dale.frames - 5);
+    expect(j.hollis.apex).toBeLessThan(j.dale.apex * 0.8);
+    // Rox is the quickest off the floor and back, and the lowest.
+    for (const id of Object.keys(FIGHTERS).filter((x) => x !== 'rox')) {
+      expect(j.rox.frames, id).toBeLessThanOrEqual(j[id].frames);
+      expect(j.rox.apex, id).toBeLessThanOrEqual(j[id].apex);
+    }
+  });
+  it('every jump clears 1.2 m, so a desk or a low projectile can still be jumped', () => {
+    for (const id of Object.keys(FIGHTERS)) expect(j[id].apex, id).toBeGreaterThan(1.2);
+  });
+  it("a jump cancel's hop is the same for everyone, whatever their weight", () => {
+    // It falls at the standard pull, so a juggle into the air works alike for all (tests/specials.test.ts lands every spiked air string off one).
+    const hop = (id: string) => {
+      const m = ready(id, 'dale');
+      place(m, -0.4, 0.4);
+      let apex = 0;
+      let frames = 0;
+      const ev = run(m, 90, (mm, t) => {
+        const f = mm.fighters[0];
+        apex = Math.max(apex, f.y);
+        if (f.y > 0) frames++;
+        if (t === 0) return DOWN | BP;
+        return f.mode === 'move' && f.contact === 'hit' ? UP : 0;
+      });
+      expect(count(ev, 'jumpCancel'), id).toBe(1);
+      return [apex, frames];
+    };
+    const want = hop('dale');
+    expect(toFloat(want[0])).toBeGreaterThan(1.1);
+    for (const id of ['rox', 'hollis', 'mumbles', 'gus']) expect(hop(id), id).toEqual(want);
+    expect(HOP_VY).toBeLessThan(FIGHTERS.dale.jumpVy);
+  });
+});
 
 describe('air specials', () => {
   for (const f of Object.values(FIGHTERS)) {

@@ -25,8 +25,8 @@ export const PREJUMP_FRAMES = 3;
 export const JUMP_LAND_FRAMES = 2;
 export const AIR_ATTACK_LAND_FRAMES = 4;
 export const START_X = fx(1.5);
-/** The jump out of a launcher that hit (a jump cancel) is a hop: this % of the fighter's jump speed. */
-export const HOP_PCT = 75;
+/** The jump out of a launcher that hit (a jump cancel) is a hop, the same for everyone whatever their own jump's weight (it falls at GRAVITY), so a juggle into the air works alike: up about 1.2 m. */
+export const HOP_VY = fx(0.165);
 /** A jump cancel (once a combo) counts as this many extra hits for damage scaling. */
 export const JUMP_CANCEL_SCALE = 2;
 
@@ -114,8 +114,13 @@ export const TECH_PUSH = fx(0.07);
 
 // Signal meter
 export const BAR = 1000;
-/** The first hit of a round is worth a bar. */
-export const FIRST_HIT_METER = BAR;
+/**
+ * Meter for the round's first hit. It was a bar until 0.62.0, when the bench
+ * weighed it (docs/MATCHUPS.md, "The first hit's worth"): with none, rounds
+ * last as long and the first hit still wins the round nearly as often, so
+ * the smallest bonus that keeps rounds in their 25 to 50 seconds is none.
+ */
+export const FIRST_HIT_METER: number = 0;
 export const METER_MAX = 3 * BAR;
 /**
  * Boosting: Special (or METER) again within this many frames of the special

@@ -269,9 +269,9 @@ are authored facing right with the left foot and left hand leading.
 > 17. **Step 32, fighters against the set** (Nov 14, open): paint changes to Margaret, Gideon and Gus, Burn's mirror wall and Kitchen's later segments, checked with `tools/readability.mjs`. Needs nothing from the game side: start here.
 > 18. **Step 34, six more things to use** (Nov 14, open): six `prop_*` objects and `fx_foam`, ahead of the game side.
 > 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor.
-> 20. **Step 31, jumps by weight** (open once `play/fair-fights` is pushed): eight jump clips at new lengths.
+> 20. **Step 31, jumps by weight** (Nov 14, open): eight jump clips at new lengths.
 >
-> Steps 32 to 34 are on the branch `look/clear-picture` (0.61.0), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
+> Steps 31 to 34 are on the branch `play/fair-fights` (0.62.0, which holds 0.61.0 too), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1590,12 +1590,44 @@ it). `tests/assets.test.ts` checks each object's size against
 - [x] Game side: physics, stand-ins, wired to the step's events (0.54.0).
 - [ ] Look at them in a match at phone size: Kitchen's onions are small and brown on the checked floor and may want to be bigger or a brighter colour (tomatoes?).
 
-### 32. Fighters against the set (Nov 14, game side)
+### 31. Jumps by weight (Nov 14, game side)
 
-*Step 31 (jumps by weight: new `jump_up` and `jump_fall` lengths for
-Mumbles, Hollis, Gus and Rox) arrives with `play/fair-fights` (0.62.0).
-Steps 32 to 34 are on `look/clear-picture` (0.61.0): branch from there, or
-from whatever has been stacked on it since.*
+Everyone used to jump the same arc (about 36 frames, 1.8 m up). Since
+0.62.0 the jump carries the fighter's weight (`jumpVy`, `jumpVx` and
+`jumpGravity` in each fighter's data): Mumbles floats, Hollis and Gus are
+heavy, Rox is quick and low. `jump_up` and `jump_fall` are held clips, split
+at the apex, so every clip still plays: the game holds the last frame of
+`jump_up` until the fighter starts down, and of `jump_fall` until they
+land. No stand-ins. A jump cancel's hop is now the same for everyone (15
+frames up, about 1.2 m), whatever their own jump. Damage changed for Rox and
+Mumbles but no clip's length or hitbox did, and every hit that was heavy
+(step 29's smears) still is.
+
+The new arcs, rise and fall in frames (the old one was 18 and 18):
+
+| Fighter | Up | Down | Height | Notes |
+| --- | --- | --- | --- | --- |
+| Dale, Margaret, Gideon | 18 | 18 | 1.8 m | As before |
+| Mumbles | 22 | 22 | 2.1 m | Floaty: drifts up, hangs, drifts down |
+| Hollis | 15 | 15 | 1.4 m | Heavy: a short, low effort, down hard |
+| Gus | 17 | 18 | 1.7 m | Heavy: a big man's jump that doesn't get far |
+| Rox | 14 | 14 | 1.3 m | Quick and low: snappy, tucked |
+
+- [ ] `mumbles:jump_up` (22 frames) and `mumbles:jump_fall` (22): the
+  strings lift him slowly, limbs dangling a beat behind the body, a hang
+  at the top (frames 18–22 of `jump_up` nearly still), and a slow,
+  loose-limbed descent; feet only reach for the floor in the last 6.
+- [ ] `hollis:jump_up` (15) and `hollis:jump_fall` (15): a heavy push off
+  both feet, knees barely tucking, arms out for balance; the fall is a
+  drop, shoulders hunched, the landing taken in the knees.
+- [ ] `gus:jump_up` (17) and `gus:jump_fall` (18): the belly leads, the
+  apron flaps up on the way down; little forward travel (1.5 m), so the
+  legs cycle less than the others'.
+- [ ] `rox:jump_up` (14) and `rox:jump_fall` (14): a quick tuck jump, knees
+  high, arms pumping once; the fall straightens into a dancer's landing.
+- [ ] `land` after the heavies' jumps: Hollis and Gus could sink a little
+  deeper into the 2 frames (the game doesn't change its length).
+### 32. Fighters against the set (Nov 14, game side)
 
 0.61.0 measures how well each fighter stands out from the set behind them
 (`tools/readability.mjs`: every fighter in every segment, drawn with and
@@ -1712,7 +1744,7 @@ Loop where noted; lengths are suggestions unless given.
 | `crouch` | 6 | Into crouch; then `crouch_idle` (40, loop) |
 | `block_stand`, `block_crouch` | 4, then hold | Guard up |
 | `prejump` | 3 | Exactly 3 frames |
-| `jump_up`, `jump_fall` | hold | Split at the apex; the jump lasts about 36 frames |
+| `jump_up`, `jump_fall` | hold | Split at the apex; the jump lasts about 36 frames (Mumbles 45, Gus 35, Hollis 30, Rox 28: step 31) |
 | `land` | 2 | Exactly 2 frames (4 after an air attack: `land_attack`) |
 | `dash` | Dale 16, Rox 14 | Exactly these |
 | `tape_skip` | 10 | Exactly 10: the Tape Skip dash (0.11 m a frame), low and leaning |

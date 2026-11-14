@@ -5,6 +5,7 @@
  */
 import {
   BREAK_FRAMES,
+  FIRST_HIT_METER,
   INTRO_FRAMES,
   KO_FRAMES,
   MAX_ROUNDS,
@@ -30,6 +31,8 @@ export interface MatchOptions {
   seed?: number;
   /** Studio rules: the stage stays on its first segment. */
   studio?: boolean;
+  /** Meter for the round's first hit (FIRST_HIT_METER): the balance bench weighs other values. */
+  firstHitMeter?: number;
 }
 
 export function createMatch(o: MatchOptions): MatchState {
@@ -46,6 +49,7 @@ export function createMatch(o: MatchOptions): MatchState {
     timer: ROUND_FRAMES,
     roundFrame: 0,
     firstHit: false,
+    firstHitMeter: o.firstHitMeter ?? FIRST_HIT_METER,
     wind: 0,
     hazards: [],
     props: [],

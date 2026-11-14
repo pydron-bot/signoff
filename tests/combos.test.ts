@@ -6,7 +6,7 @@
 // catches a stunned opponent (never one who blocked), and his Nightstick
 // links into the jab.
 import { describe, expect, it } from 'vitest';
-import { BAR, FIGHTERS, Input, JUGGLE_POP, MAX_JUGGLE, METER_SCALE_MIN, METER_SCALE_STEP, REPEAT_KEEP, SCALE_STEP, step, type MatchState, type SimEvent } from '../src/sim';
+import { BAR, FIGHTERS, FIRST_HIT_METER, Input, JUGGLE_POP, MAX_JUGGLE, METER_SCALE_MIN, METER_SCALE_STEP, REPEAT_KEEP, SCALE_STEP, step, type MatchState, type SimEvent } from '../src/sim';
 import { fx } from '../src/sim/fixed';
 import { GUIDE_HEALTH } from '../src/game/comboGuides';
 import { count, place, ready } from './sim-helpers';
@@ -145,13 +145,16 @@ describe('MK-style juggles', () => {
     expect(count(ev, 'knockdown')).toBeGreaterThanOrEqual(1);
   });
 
-  it('the first hit of the round is worth a bar, once', () => {
-    const m = ready('rox', 'dale');
-    place(m, -0.4, 0.4);
-    const ev = route(m, [['now', FP], ['s.FP@8', FP]]);
-    expect(ev.filter((e) => e.type === 'firstHit')).toEqual([{ type: 'firstHit', player: 0 }]);
-    expect(m.fighters[0].meter).toBeGreaterThanOrEqual(BAR);
-    expect(m.firstHit).toBe(true);
+  it('the first hit of the round is called, once, and pays its meter (none since 0.62.0; a bar before)', () => {
+    for (const firstHitMeter of [undefined, BAR]) {
+      const m = ready('rox', 'dale', { firstHitMeter });
+      place(m, -0.4, 0.4);
+      const ev = route(m, [['now', FP], ['s.FP@8', FP]]);
+      expect(ev.filter((e) => e.type === 'firstHit')).toEqual([{ type: 'firstHit', player: 0 }]);
+      expect(m.fighters[0].meter).toBeGreaterThanOrEqual(firstHitMeter ?? FIRST_HIT_METER);
+      expect(m.fighters[0].meter).toBeLessThan((firstHitMeter ?? FIRST_HIT_METER) + BAR / 4);
+      expect(m.firstHit).toBe(true);
+    }
   });
 
   it('a boosted special relaunches a juggled body (1 bar), ends the special and puts them in reach', () => {
@@ -241,10 +244,11 @@ describe("Rox's signature routes", () => {
     return { hits: h.length, pct: ((d.maxHealth - d.health) * 100) / GUIDE_HEALTH };
   }
 
-  it('meterless: 10 or more hits, strings and specials (no launcher loop), about 30%', () => {
+  it('meterless: 10 or more hits, strings and specials (no launcher loop), over a fifth', () => {
     const r = damage(meterless, 0);
     expect(r.hits).toBeGreaterThanOrEqual(10);
-    expect(r.pct).toBeGreaterThan(25);
+    // Under the others' 30% since 0.62.0: she has 850 health now, not 660, and pays for it in route damage.
+    expect(r.pct).toBeGreaterThan(20);
     expect(r.pct).toBeLessThan(36);
   });
 

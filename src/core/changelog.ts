@@ -14,6 +14,33 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.63.0',
+    date: '2026-11-14',
+    title: "Tonight's Line-Up",
+    notes: [
+      'Channel 0 has its own type: a rounded station face for the big calls, a condensed caption face for names and menus, and a CRT face for the clock.',
+      'The title is four rows beside the TV: FIGHT, LEARN, WATCH and SETTINGS. Everything that was there before is inside one of them.',
+      "Picking a fighter turns the living room's dial: the TV flips to each fighter live on their own set, with a portrait and bars for health, speed, reach and difficulty worked out from how they really play.",
+      "Every match opens on a versus card and ends on the night's figures: damage, best combo, first hits, counter hits, punishes, flawless blocks and time on air, with REMATCH and CHANGE FIGHTERS underneath.",
+      'The meter sits under your health bar, three times the size, and lights BOOST, SKIP and CUT AWAY when you can afford them. Touch has its own METER key.',
+      'The combo counter grows with the combo, callouts keep to their own slot at each side instead of stacking on the fighters, the clock turns urgent in the last ten seconds, and rounds won show as ON AIR lamps.',
+      "The touch buttons are a remote's keys that press in and light.",
+      "The K.O.'s static hits hard and then clears, so you can see who fell.",
+    ],
+  },
+  {
+    version: '0.62.0',
+    date: '2026-11-14',
+    title: 'Fair Fights',
+    notes: [
+      'Everyone now has between 850 and 1020 health (it was 660 to 990), so Rox and Mister Mumbles no longer go down in two combos. They pay for it with lighter hits; Rox\'s boosted Star Jump and Count of Eight hit harder, so her meter still pays.',
+      'Jumps have weight: Mister Mumbles floats, Hollis and Gus jump short and heavy, Rox is quick and low. The hop out of a launcher is the same height for everyone, so air combos work alike whoever is chasing.',
+      'The first hit of a round no longer earns a bar of Signal.',
+      "Dale's Cold Front and Gideon's Collection Plate and Low Offering hit a little harder. Hollis's boosted specials hit a little lighter, since his new jump let him carry a juggle too far.",
+      'The CPU has new plans for ten matchups. The most one-sided matchup between two CPUs is now 61 to 39, where it was 70 to 30.',
+    ],
+  },
+  {
     version: '0.61.0',
     date: '2026-11-14',
     title: 'Clear Picture',

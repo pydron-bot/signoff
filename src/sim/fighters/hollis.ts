@@ -39,8 +39,8 @@ const moves = table(
   normal('j.BK', { name: 'Body Drop', kind: 'air', startup: 10, active: 6, recovery: 8, reach: [-0.3, 1.0], at: [0, 0.5], height: 'overhead', damage: 80, hitstun: 20, blockstun: 13 }),
   // String steps
   // Air string steps: the nightstick swung up under them, then both fists brought down like a door.
-  airStep('j.FK BP', { name: 'Baton Swing', damage: 38, startup: 6, chain: { BK: 'j.BP BK' } }),
-  airSpike('j.BP BK', { name: 'Hammer Fist', damage: 45 }),
+  airStep('j.FK BP', { name: 'Baton Swing', damage: 32, startup: 6, chain: { BK: 'j.BP BK' } }),
+  airSpike('j.BP BK', { name: 'Hammer Fist', damage: 40 }),
   normal('FP FP', { name: 'Pat Down', startup: 9, active: 2, recovery: 13, reach: [0.2, 1.1], at: [1.1, 1.5], height: 'high', damage: 45, hitstun: 18, blockstun: 15, chain: { BP: 'FP FP BP', FK: 'FP FP FK' } }),
   // The string's grab: catches them still reeling from the pat down (never if they blocked it).
   move('FP FP FK', {
@@ -87,7 +87,7 @@ const moves = table(
     name: 'Flashlight (boosted)',
     kind: 'special',
     total: 37,
-    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.75, 1.8], damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
+    hits: [strike({ frames: [14, 17], reach: [0.4, 2.6], at: [0.75, 1.8], damage: 35, hitstun: 40, blockstun: 22, armorBreak: true })],
   }),
   move('Key Ring', {
     name: 'Key Ring',
@@ -105,7 +105,7 @@ const moves = table(
     total: 40,
     hits: [
       strike({ frames: [12, 14], reach: [0.4, 1.9], at: [0, 0.4], height: 'low', damage: 55, hitstun: 20, blockstun: 12 }),
-      strike({ frames: [20, 22], reach: [0.4, 1.9], at: [0.75, 1.5], damage: 60, hitstun: 0, blockstun: 14, launch: 0.15 }),
+      strike({ frames: [20, 22], reach: [0.4, 1.9], at: [0.75, 1.5], damage: 55, hitstun: 0, blockstun: 14, launch: 0.15 }),
     ],
   }),
   // Walks through one hit to get in.
@@ -125,7 +125,7 @@ const moves = table(
     total: 39,
     armor: [1, 22],
     motion: [{ frames: [4, 18], vx: 0.09 }],
-    hits: [strike({ frames: [16, 19], reach: [0.1, 1.1], at: [0.6, 1.6], damage: 70, hitstun: 0, blockstun: 18, knockdown: true, push: 0.08 })],
+    hits: [strike({ frames: [16, 19], reach: [0.1, 1.1], at: [0.6, 1.6], damage: 50, hitstun: 0, blockstun: 18, knockdown: true, push: 0.08 })],
   }),
   // In the air: he hangs there and sweeps the flashlight down across the floor. It blinds and goes through armour.
   move('Searchlight', {
@@ -145,7 +145,7 @@ const moves = table(
     total: 38,
     hover: [1, 22],
     landing: 8,
-    hits: [strike({ frames: [12, 16], reach: [0.2, 2.5], at: [-1.9, 0.5], height: 'overhead', damage: 50, hitstun: 40, blockstun: 22, armorBreak: true })],
+    hits: [strike({ frames: [12, 16], reach: [0.2, 2.5], at: [-1.9, 0.5], height: 'overhead', damage: 25, hitstun: 40, blockstun: 22, armorBreak: true })],
   }),
   // Down + Special in the air: all of him, elbow first, through anything on the way (armoured).
   move('Elbow Drop', {
@@ -169,7 +169,7 @@ const moves = table(
     hover: [1, 6],
     dive: { frame: 7, vx: 0.03, vy: -0.16 },
     landing: 14,
-    hits: [strike({ frames: [8, 34], reach: [-0.25, 0.9], at: [-0.2, 0.7], height: 'overhead', damage: 60, hitstun: 0, blockstun: 16, knockdown: true, groundBounce: true })],
+    hits: [strike({ frames: [8, 34], reach: [-0.25, 0.9], at: [-0.2, 0.7], height: 'overhead', damage: 45, hitstun: 0, blockstun: 16, knockdown: true, groundBounce: true })],
   }),
   throwMove(130),
   interactMove(),
@@ -218,11 +218,13 @@ export const HOLLIS: FighterData = {
   id: 'hollis',
   name: 'Hollis Bey',
   style: 'grappler',
-  health: 980,
+  health: 1020,
   walkFwd: fx(0.032),
   walkBack: fx(0.028),
-  jumpVy: fx(0.18),
-  jumpVx: fx(0.045),
+  // Heavy: low and short, down fast (about 30 frames, 1.4 m up).
+  jumpVy: fx(0.185),
+  jumpVx: fx(0.05),
+  jumpGravity: fx(0.0125),
   dash: { frames: 18, speed: fx(0.07) },
   backdash: { frames: 22, speed: fx(0.065) },
   hurt: { stand: box(-0.35, 0.35, 0, 1.9), crouch: box(-0.35, 0.4, 0, 1.2), air: box(-0.35, 0.35, 0.2, 1.7), juggle: box(-0.85, 0.65, 0.2, 1.0) },

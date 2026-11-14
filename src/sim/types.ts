@@ -229,6 +229,8 @@ export interface FighterData {
   readonly walkBack: Fx;
   readonly jumpVy: Fx;
   readonly jumpVx: Fx;
+  /** The pull down in their own jump, per frame per frame (GRAVITY if not given): the jump's weight. Hit into the air, everyone falls alike. */
+  readonly jumpGravity?: Fx;
   readonly dash: { readonly frames: number; readonly speed: Fx };
   readonly backdash: { readonly frames: number; readonly speed: Fx };
   /** Hurtboxes standing, crouching and in the air; `juggle` is the long, low box for a body thrown up and falling back. */

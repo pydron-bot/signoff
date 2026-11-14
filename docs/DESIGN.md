@@ -116,6 +116,14 @@ meter. Every number below is a starting value to tune.
 
 - Walk, jump (neutral, forward, back), crouch, a forward dash and a
   backdash. No sidestep: the 3D is for looks.
+- **Jumps by weight (0.62.0).** Each fighter's jump has its own speed and
+  pull (`jumpGravity`): most go about 1.8 m up and land in 36 frames;
+  Mumbles floats (2.1 m, 45 frames), Hollis is heavy (1.4 m, 30 frames)
+  and Gus heavy and short on distance (1.7 m, 35 frames, 1.5 m along), Rox
+  quick and low (1.3 m, 28 frames). Hit into the air, everyone falls
+  alike, so juggles don't depend on who is juggled. Gus's first heavy jump
+  was lower still, and made him the bench's strongest fighter: the CPU
+  couldn't anti-air it. Every jump still clears the News desk.
 - **Dash cancel (0.46.0).** After its first 6 frames a forward dash can be
   cancelled into Block (it stops dead, guarding), a normal, a throw or a
   special, but not a jump or another dash: dash, Block, dash is how to
@@ -156,8 +164,9 @@ meter. Every number below is a starting value to tune.
   **Air strings** chain one jumping normal into another, on hit or block,
   and an air normal that hits cancels into the air special as a ground one
   cancels into a special. A **jump cancel**: a launcher (or bounce) that
-  hits can be cancelled into a hop (75% of a jump) with Up, which meets the
-  body on the way up, so a juggle can go into the air. Once a combo, and it
+  hits can be cancelled into a hop with Up (the same for everyone, whatever
+  their jump: 15 frames up, about 1.2 m), which meets the body on the way
+  up, so a juggle can go into the air. Once a combo, and it
   counts as two more hits for damage scaling, and from then on the
   combo's scaling bottoms out at 20% instead of 30% (0.51.0): the air adds
   style, not damage. The combo search (`npm run combos`) tries jump
@@ -237,7 +246,10 @@ meter. Every number below is a starting value to tune.
     a combo (down to 10%), so a combo can't pay for its own relaunches.
     The defender's gain isn't scaled, which keeps Cut Away in reach.
   - **First hit.** The first hit of each round (strike, throw or super) is
-    worth a bar of Signal.
+    called on screen. Until 0.62.0 it was worth a bar of Signal; the bench
+    found the bar made rounds no shorter and only a little more likely to
+    go to whoever landed it (60% against 57% without), so it's worth
+    nothing now (`FIRST_HIT_METER`).
   - **Breaking out.** The defender's answer to a long combo is Cut Away,
     which takes a full meter and spends all of it: the attacker has to
     weigh spending bars to extend against the bars the defender is holding.
@@ -264,8 +276,8 @@ meter. Every number below is a starting value to tune.
 
 ### Signal meter
 
-3 bars, fills from dealing and taking damage; the first hit of a round is
-worth a bar.
+3 bars, fills from dealing and taking damage (the first hit of a round
+was worth a bar until 0.62.0).
 
 | Spend | Cost | Effect |
 | --- | --- | --- |
@@ -398,12 +410,19 @@ jumping, mix-ups) are weighted options, and each fighter's CPU has a lean
 (`src/ai/lean.ts`) that scales those weights. Where a matchup needs it,
 the losing side has matchup knowledge too: a lean for that opponent only,
 searched to win that matchup, so the winner's play is never made worse to
-even things up (Gus against Rox mixes up more and throws less; Gideon
-presses Hollis instead of waiting; Rox stays out of Mumbles' reach and
-uses her specials; Mumbles strings Margaret rather than spending
-specials into her counter, and mixes her up (0.51.0); Rox goes low on
-Margaret; since 0.51.0 Margaret goes low on Dale and Hollis spends his
-specials on Rox). On defence it
+even things up (Gus against Rox mixes up more and throws less; Rox stays
+out of Mumbles' reach and uses her specials; since 0.51.0 Margaret goes
+low on Dale and Hollis spends his specials on Rox). 0.62.0 searched them
+again with health in its band, on seeds the bench doesn't play: Gideon
+strings and mixes up Hollis instead of pressing; Mumbles strings and
+mixes up Margaret harder, and mixes up Gideon; Rox strings Margaret and
+spends specials rather than going low; Dale strings and mixes up Rox
+(her quick jump gets in over his zoning) and mixes up Hollis and Gus,
+jumping Gus's pans a little more; Gus goes low and mixes up Mumbles, and
+spends specials on Dale; Margaret spends specials and mixes up Gus, and
+mixes up Gideon; Gideon spends specials on Gus; Hollis spends specials on
+Mumbles. Mixing up more was the
+strongest single change in most of these searches. On defence it
 learns what the opponent does to its getup and ducks a habitual throw
 (throws are highs), keeps its guard a moment after a blockstun when the
 attacker can carry on, and guards a projectile it sees coming from
@@ -763,21 +782,50 @@ is pure, deterministic code that knows nothing about rendering.
 - The CPU opponent sends inputs through the same interface as a player, so
   it can't cheat by reading state the player can't see.
 
-**Health is the balance between styles (0.50.0):** Dale 990, Gideon
-970, Hollis 980, Gus 960, Margaret 820, Mumbles 740, Rox 660. The fast
-fighters who convert hardest have the least to lose (Rox's routes reach
-the design's 30% from a 6-frame jab). Combos are measured as a share of
-1000 health whoever the dummy is, so health can change without moving
-the ceilings.
+**Health in a band (0.62.0).** Hollis 1020, Gideon 960, Gus 940, Dale
+920, Mumbles 870, Margaret 860, Rox 850: a spread of a fifth, where
+0.50.0's ran from Rox's 660 to Dale's 990 and carried the balance between
+styles on its own (a one-bar combo took more than half of Rox's bar).
+Rox and Mumbles pay for their extra health where they were strong:
+every Rox hit about 15% lighter, her Leg Warmer Lariat a quarter and her
+throw 70, but her boosted Star Jump and Count of Eight harder, so a bar
+still pays; every Mumbles hit a tenth lighter (a hit that was 55 or more
+stays at least 55, so it still lands heavy). Dale's Cold Front and
+Gideon's Collection Plate and Low Offering hit a fifth harder. Hollis's
+heavier jump let him follow a relaunch with a whole air string, past the
+three-bar ceiling, so his boosted Night Shift, Key Ring, Flashlight,
+Searchlight and Elbow Drop and his air strings' last steps hit lighter.
+The CPU's matchup knowledge was searched again. Combos are measured as a
+share of 1000 health whoever the dummy is, so health can change without
+moving the ceilings; Rox's routes now do 21 to 29% without meter.
 
 **Balance is measured.** `npm run combos` holds every fighter's combos
 between the floor and the ceilings above. `npm run matchups` plays the
 CPU against itself over every pair (100 seeds each, studio rules, the
-stages in turn) and writes `docs/MATCHUPS.md`: win rates, round length
-and time-outs, damage by source, how often each mechanic is used and
-each fighter's most damaging moves. It fails on a matchup worse than
-30:70, rounds averaging under 25 or over 50 seconds, or more than 10% of
-rounds timing out. The CPU isn't the truth about a matchup, but the
+stages in turn, at hard and DIRECTOR; the engine is `tests/bench.ts`, each
+measure with a test over fixed seeds) and writes `docs/MATCHUPS.md`: win
+rates; **openings to win a round** (the opponent's health over the
+average damage of an opening that hits, a hit on its own counting as
+one), per pair and per fighter, against a band of the plan's width (about
+1.4 to 1) placed where the CPU's openings sit, 8 to 11.5; comebacks
+(rounds won from under 30% health, matches won after losing round 1);
+time-outs and round length by matchup; time at each range; damage by
+source; how often each mechanic is used and each fighter's most damaging
+moves. Since 0.62.0 it also plays the hard bench again with the first hit
+worth a bar, half a bar and nothing; under LIVE BROADCAST rules (the
+share of damage from hazards and props, and how far each matchup moves
+from its studio result); and counts the rarer mechanics at every CPU
+level beside how often the CPU tried them (counter hits turned out to be
+about three a round; what the bench used to call counters were
+Teleprompter reads). It fails on a matchup worse than 35:65 (30:70 until
+0.62.0), rounds averaging under 25 or over 50 seconds, or more than 10%
+of rounds timing out. Not every pair sits in the openings band: the
+zoners' openings are mostly single pokes and projectiles, so Dale,
+Gideon and Gus need 11 to 13 against the heavies, and making their
+openings bigger would make them different fighters. Time-outs come from
+the zoners too (Dale's mirror goes to time most rounds, then Gideon's,
+then Dale or Gus against Gideon), not from a short clock, so the
+60-second round stays. The CPU isn't the truth about a matchup, but the
 bench catches a fighter falling off a cliff after a change.
 
 **Moves as data.** Each fighter is a data file: every move's frames,
