@@ -6,10 +6,12 @@
  * between, which software GL could take minutes to do. Without the
  * parameter nothing is installed and the game never looks at it. The match
  * moves by inputs, as in play, but for one shortcut: the low-health moments
- * set both fighters' health down once the round is under way.
+ * set both fighters' health down once the round is under way, and meter()
+ * sets the meter.
  */
 import type { Session } from './session';
 import { BLOCK, SPECIAL } from '../sim/input';
+import { BAR } from '../sim/constants';
 import type { SimEvent } from '../sim';
 
 export type ShotMode = 'watch' | 'cpu' | 'training';
@@ -90,6 +92,11 @@ export function installShots(host: ShotHost): void {
       return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     },
     hideFighters: (on: boolean) => host.hideFighters(on),
+    /** Both fighters' meter set to `bars` (0 to 3), to show the HUD's meter and its tags. */
+    meter(bars: number): void {
+      const m = host.session()?.match;
+      if (m) for (const f of m.fighters) f.meter = Math.round(bars * BAR);
+    },
     calls: () => host.calls(),
     rects: () => host.rects(),
     phase: () => host.session()?.match.phase ?? '',

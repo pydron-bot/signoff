@@ -159,6 +159,8 @@ function applySettings(): void {
   arena.tape = VHS_AMOUNT[settings.vhs];
   post.stillGrain = rm;
   document.body.dataset.vhs = String(settings.vhs);
+  // For the CSS: what moves (a pulse, a pop) stops with Reduce Motion, the system's or the setting's.
+  document.body.dataset.motion = rm ? 'reduced' : 'full';
   sound.setMusicVolume(MUSIC_VOLUME[settings.music]);
   touch.root.style.setProperty('--touch-scale', String(TOUCH_SCALE[settings.touchSize]));
   touch.root.dataset.side = String(settings.touchSide);

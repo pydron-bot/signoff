@@ -315,15 +315,25 @@ body {
   gap: 4px;
 }
 
+/* Rounds won: ON AIR lamps, dark until lit. */
 .hud-pip {
-  width: 10px;
-  height: 10px;
-  border: 1px solid #f1ede0;
-  border-radius: 50%;
+  padding: 0 4px;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  color: rgba(255, 90, 70, 0.35);
+  background: rgba(40, 6, 6, 0.6);
+  border: 1px solid rgba(255, 90, 70, 0.35);
+  border-radius: 2px;
 }
 
 .hud-pip.on {
-  background: #ff4a3a;
+  color: #fff3e8;
+  background: #e0201a;
+  border-color: #ff8a70;
+  box-shadow: 0 0 8px rgba(255, 60, 40, 0.8);
+  text-shadow: none;
 }
 
 .hud-clock {
@@ -492,27 +502,69 @@ body {
   padding: 0.2rem 0.8rem;
 }
 
-.hud-meters {
-  position: absolute;
-  left: calc(env(safe-area-inset-left) + 14px);
-  right: calc(env(safe-area-inset-right) + 14px);
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
+/* The Signal meter: under the health bar, three cells, the spends it pays for beside it. */
+.hud-meter-row {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.hud-side-1 .hud-meter-row {
+  flex-direction: row-reverse;
 }
 
 .hud-meter {
   display: flex;
   gap: 3px;
-  padding: 6px;
+  flex: 0 1 62%;
+  /* Room round it to tap (touch: tapping spends), without moving it. */
+  padding: 4px;
+  margin: -4px;
   pointer-events: auto;
 }
 
 .hud-meter-cell {
-  width: 46px;
-  height: 9px;
+  flex: 1;
+  height: 12px;
   background: rgba(241, 237, 224, 0.15);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
   overflow: hidden;
+  transform: skewX(-12deg);
+}
+
+.hud-side-1 .hud-meter-cell {
+  transform: skewX(12deg);
+}
+
+.hud-side-1 .hud-meter-fill {
+  transform-origin: right;
+}
+
+.hud-tags {
+  display: flex;
+  gap: 5px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hud-side-1 .hud-tags {
+  flex-direction: row-reverse;
+}
+
+.hud-tag {
+  padding: 0 4px;
+  color: rgba(241, 237, 224, 0.3);
+  border: 1px solid rgba(241, 237, 224, 0.15);
+}
+
+.hud-tag.on {
+  color: #0b0b0f;
+  background: #7affd8;
+  border-color: #7affd8;
+  text-shadow: none;
 }
 
 .hud-meter-fill {
@@ -531,12 +583,55 @@ body {
   outline: 2px solid #f1ede0;
 }
 
+/* The combo counter: grows with the hits (--combo-scale, hud.ts), and a heavy last hit turns it hot. */
 .hud-combo {
   position: absolute;
-  top: 26%;
-  font-size: 1.4rem;
-  font-weight: 800;
+  top: calc(env(safe-area-inset-top) + 150px);
+  font-size: calc(clamp(1.6rem, 4.4vw, 2.2rem) * var(--combo-scale, 1));
   color: #e8e04a;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8), 1px 0 rgba(255, 0, 60, 0.5), -1px 0 rgba(0, 200, 255, 0.5);
+  white-space: nowrap;
+}
+
+.hud-combo.heavy {
+  color: #ff9a3c;
+}
+
+.hud-combo.pop {
+  animation: combo-pop 0.18s ease-out;
+}
+
+@keyframes combo-pop {
+  0% { transform: scale(1.3); }
+}
+
+/* One callout slot a side, under the HUD: they queue there (hudReadout.ts) instead of stacking on the fighters. */
+.hud-callout {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 118px);
+  padding: 1px 10px;
+  font-size: clamp(0.8rem, 2.4vw, 1.05rem);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0b0b0f;
+  background: #ffe040;
+  text-shadow: none;
+  transform: skewX(-12deg);
+}
+
+.hud-callout-0 {
+  left: calc(env(safe-area-inset-left) + 16px);
+}
+
+.hud-callout-1 {
+  right: calc(env(safe-area-inset-right) + 16px);
+}
+
+/* The last ten seconds. */
+.hud-clock.urgent {
+  color: #fff3e8;
+  background: linear-gradient(180deg, #ff4a3a, #b01c10 55%, #700c08);
+  animation: weak-pulse 0.5s steps(2) infinite;
 }
 
 .hud-combo-0 {
@@ -735,6 +830,7 @@ body[data-tv='1'] .pause-btn {
   height: 230px;
 }
 
+/* The keys of a 1987 TV remote: rubbery, rounded, raised on a dark body; pressed, they sink and light up. */
 .touch-btn {
   position: absolute;
   width: 58px;
@@ -742,31 +838,62 @@ body[data-tv='1'] .pause-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  gap: 2px;
+  box-sizing: border-box;
+  border-radius: 14px;
   border: 2px solid rgba(241, 237, 224, 0.4);
-  background: rgba(20, 22, 40, 0.45);
-  font-size: 0.75rem;
-  font-weight: 700;
+  background: linear-gradient(180deg, rgba(78, 80, 98, 0.62), rgba(26, 27, 40, 0.62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 3px 0 rgba(0, 0, 0, 0.55);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   white-space: pre;
   text-align: center;
   line-height: 1;
   transition: opacity 0.12s, background-color 0.12s;
 }
 
+/* A fist for the punches, a foot for the kicks. */
+.touch-btn[data-icon]::before {
+  content: '';
+  width: 13px;
+  height: 13px;
+  background: currentColor;
+  opacity: 0.8;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.touch-btn[data-icon='fist'] {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6h2V3.5a1 1 0 0 1 2 0V6h1V3a1 1 0 0 1 2 0v3h1V3.5a1 1 0 0 1 2 0V10a5 5 0 0 1-5 5H7a4 4 0 0 1-4-4z'/%3E%3C/svg%3E");
+}
+
+.touch-btn[data-icon='foot'] {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 1h4v8l5 2.5a1.5 1.5 0 0 1 1 1.4V15H2v-3l3-1z'/%3E%3C/svg%3E");
+}
+
 .touch-btn.down {
-  background: rgba(241, 237, 224, 0.45);
+  transform: translateY(3px);
   color: #0b0b0f;
+  background: linear-gradient(180deg, rgba(255, 248, 200, 0.95), rgba(232, 224, 74, 0.9));
+  border-color: #fff8c8;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 240, 150, 0.6);
 }
 
 /* A fighter behind it: the fight shows through (still pressable, and still lit while held). */
 .touch-btn.clear {
   opacity: 0.4;
   background: rgba(20, 22, 40, 0.1);
+  box-shadow: none;
 }
 
 .touch-btn.clear.down {
-  background: rgba(241, 237, 224, 0.3);
+  opacity: 0.85;
+  background: rgba(255, 248, 200, 0.75);
 }
+
+/* Its own key for the meter (Tape Skip, Cut Away, boosting): 56 points or more, as the design asks. */
+.t-meter { right: 196px; top: 128px; border-color: #7affd8; font-size: 0.6rem; letter-spacing: 0.08em; }
 
 .t-special { right: 98px; top: 0; border-color: #4ad0ff; }
 .t-fp { right: 130px; top: 64px; }
@@ -911,14 +1038,6 @@ body[data-tv='1'] .pause-btn {
   font-weight: 800;
   letter-spacing: 0.25em;
   animation: blink 0.5s steps(1) infinite;
-}
-
-.hud-counter {
-  position: absolute;
-  top: 34%;
-  font-weight: 800;
-  color: #ffe040;
-  letter-spacing: 0.15em;
 }
 
 .t-interact { right: 196px; top: 64px; border-color: #7affd8; font-size: 0.65rem; }
@@ -1443,7 +1562,7 @@ body[data-vhs='1'] .vhs {
 .arcade-title,
 .hud-combo,
 .hud-warning,
-.hud-counter {
+.hud-callout {
   font-family: var(--font-display);
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -1457,4 +1576,13 @@ body[data-vhs='1'] .vhs {
 .school-key {
   font-family: var(--font-mono);
   font-weight: 400;
+}
+
+/* Reduce Motion, the system's or the game's own setting: nothing pulses or pops. */
+body[data-motion='reduced'] .hud-combo.pop,
+body[data-motion='reduced'] .hud-clock.urgent,
+body[data-motion='reduced'] .hud-health-fill.weak,
+body[data-motion='reduced'] .touch-btn {
+  animation: none;
+  transition: none;
 }

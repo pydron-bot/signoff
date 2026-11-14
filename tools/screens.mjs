@@ -73,6 +73,8 @@ try {
     // The fight's HUD: the meter empty, at one bar, full.
     await page.evaluate(() => window.__shots.start({ mode: 'cpu', p1: 'rox', p2: 'gus', stage: 'burn', seed: 9 }));
     await page.evaluate(() => window.__shots.to('start', 90));
+    // The push in through the title's TV runs on display time.
+    await page.waitForTimeout(2000);
     for (const [name, bars] of [['fight · meter 0', 0], ['fight · meter 1', 1], ['fight · meter full', 3]]) {
       if (bars > 0 && !(await has('meter'))) continue;
       if (await has('meter')) await page.evaluate((b) => window.__shots.meter(b), bars);
