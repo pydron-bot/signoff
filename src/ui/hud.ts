@@ -16,8 +16,8 @@ import { FIGHTER_COLORS } from '../core/fighterLook';
 import { tickerText } from './ticker';
 import { CalloutQueue, SPEND_BOOST, SPEND_CUT, SPEND_SKIP, clockUrgent, comboScale, spendsReady } from './hudReadout';
 
-/** CSS pixels the HUD takes at the top of the screen, down to the foot of the station bug (style.css, .hud-logo): the cut-in stays below. */
-export const HUD_TOP = 112;
+/** CSS pixels the HUD takes at the top of the screen, down to the foot of the station bug (style.css, .hud-logo: under the meter, the ON AIR lamps and Gideon's coins): the cut-in stays below. */
+export const HUD_TOP = 126;
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
 const DRAIN_HOLD = 32;
 const DRAIN_RATE = 0.012;

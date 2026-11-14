@@ -44,6 +44,7 @@ import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 import { installShots } from './game/shotHook';
 import { loadFonts } from './ui/fonts';
 import { TitleScreen } from './ui/screens/title';
+import { LearnScreens } from './ui/screens/learn';
 import { SelectScreen, type SelectFor } from './ui/screens/select';
 import { VersusCard } from './ui/screens/versus';
 import { ResultsScreen } from './ui/screens/results';
@@ -158,6 +159,17 @@ const selectScreen = new SelectScreen(document.body, new Menu(document.body, 'me
   start: () => startSelected(),
   back: () => leaveSelect(),
   save: () => saveSetup(),
+});
+const learn = new LearnScreens(titleMenu, {
+  ids: FIGHTER_IDS,
+  fighter: () => setup.p1,
+  setFighter: (v) => ((setup.p1 = v), saveSetup()),
+  lessonsDone,
+  schoolDone,
+  startLesson: (id) => startLesson(id),
+  startSchool: (c, part) => startSchool(c, part),
+  watch: (c) => showcase(c.fighter, c.guide),
+  back: () => titleScreen.showList('title-learn'),
 });
 const versus = new VersusCard(document.body);
 const resultsScreen = new ResultsScreen(document.body, new Menu(document.body, 'menu-results'));
@@ -560,49 +572,18 @@ function replayAction(a: ReplayAction): void {
 replayBar.onAction = replayAction;
 replayBar.onSeek = (f) => seekReplay(f);
 
-const names = FIGHTER_IDS.map((id) => `${fighterData(id).name} · ${fighterData(id).style}`);
 /** The move list's row on the title, with the trials player 1's fighter has cleared (they're played from there). */
 function moveListLabel(): string {
   const [n, of] = trialCount(trialsDone, FIGHTER_IDS[setup.p1]);
   return `MOVE LIST · TRIALS ${n}/${of}`;
 }
 
-/** The lessons, as the player's fighter (from the title). */
 function showLessons(): void {
-  titleMenu.show(`LESSONS · AS ${fighterData(FIGHTER_IDS[setup.p1]).name.toUpperCase()}`, [
-    ...LESSONS.map((l) => ({ label: `${lessonsDone.has(l.id) ? '✓ ' : ''}${l.name.toUpperCase()}`, id: `lesson-${l.id}`, run: () => startLesson(l.id) })),
-    // The fighter left the title for the select screen: lessons and the school pick their own.
-    { label: 'FIGHTER', options: names, value: setup.p1, onChange: (v: number) => ((setup.p1 = v), saveSetup(), showLessons()) },
-    { label: 'BACK', run: () => titleScreen.showList('title-learn') },
-  ]);
+  learn.lessons();
 }
 
-/** Combo School, as player 1's fighter: a course for every combo guide, easiest first. */
 function showSchool(): void {
-  const id = FIGHTER_IDS[setup.p1];
-  const cs = courses(id);
-  titleMenu.show(`COMBO SCHOOL · ${fighterData(id).name.toUpperCase()}`, [
-    ...cs.map((c, k) => {
-      const n = coursePassed(schoolDone, c);
-      const meter = c.bars ? ` · ${c.bars} BAR${c.bars > 1 ? 'S' : ''}` : '';
-      return { label: `${n === c.parts.length ? '✓ ' : ''}${c.name.toUpperCase()}${meter} · ${n}/${c.parts.length}`, id: `school-${k}`, run: () => showCourse(c) };
-    }),
-    { label: 'FIGHTER', options: names, value: setup.p1, onChange: (v: number) => ((setup.p1 = v), saveSetup(), showSchool()) },
-    { label: 'BACK', run: () => titleScreen.showList('title-learn') },
-  ]);
-}
-
-/** One course: its parts (each a few more moves of the combo), and the whole combo to watch first. */
-function showCourse(c: Course): void {
-  titleMenu.show(`${fighterData(c.fighter).name.toUpperCase()} · ${c.name.toUpperCase()}`, [
-    ...c.parts.map((moves, p) => ({
-      label: `${schoolDone.has(schoolId(c.fighter, c.name, p)) ? '✓ ' : ''}PART ${p + 1}: ${p === c.parts.length - 1 ? `THE WHOLE COMBO (${moves} MOVES)` : `THE FIRST ${moves} MOVES`}`,
-      id: `school-part-${p}`,
-      run: () => startSchool(c, p),
-    })),
-    { label: 'WATCH IT', run: () => showcase(c.fighter, c.guide) },
-    { label: 'BACK', run: showSchool },
-  ]);
+  learn.school();
 }
 
 /** A part of a course, as a trial with its coach: its start, against its dummy. */

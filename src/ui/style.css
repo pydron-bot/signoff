@@ -364,11 +364,11 @@ body {
   visibility: hidden;
 }
 
-/* The station bug, clear of the coins under P2's health. */
+/* The station bug, clear of the meter, the lamps and the coins under P2's health. */
 .hud-logo {
   position: absolute;
   right: calc(env(safe-area-inset-right) + 16px);
-  top: calc(env(safe-area-inset-top) + 84px);
+  top: calc(env(safe-area-inset-top) + 106px);
   font-weight: 800;
   opacity: 0.5;
   letter-spacing: 0.1em;
@@ -598,7 +598,7 @@ body {
 /* The combo counter: grows with the hits (--combo-scale, hud.ts), and a heavy last hit turns it hot. */
 .hud-combo {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 150px);
+  top: calc(env(safe-area-inset-top) + 160px);
   font-size: calc(clamp(1.6rem, 4.4vw, 2.2rem) * var(--combo-scale, 1));
   color: #e8e04a;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8), 1px 0 rgba(255, 0, 60, 0.5), -1px 0 rgba(0, 200, 255, 0.5);
@@ -620,7 +620,7 @@ body {
 /* One callout slot a side, under the HUD: they queue there (hudReadout.ts) instead of stacking on the fighters. */
 .hud-callout {
   position: absolute;
-  top: calc(env(safe-area-inset-top) + 118px);
+  top: calc(env(safe-area-inset-top) + 132px);
   padding: 1px 10px;
   font-size: clamp(0.8rem, 2.4vw, 1.05rem);
   font-weight: 800;
@@ -1043,7 +1043,7 @@ body[data-tv='1'] .pause-btn {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(env(safe-area-inset-top) + 108px);
+  top: calc(env(safe-area-inset-top) + 124px);
   padding: 4px 0;
   background: #b0121a;
   text-align: center;
