@@ -13,7 +13,7 @@ limb (front punch is always a lead-hand jab, aimed at the hitbox). See
 **Pilot (0.37.0): Rox and Hollis**, the two furthest apart. The rest follow
 in three parts (`docs/LOOK-AND-PLAY-PLAN.md`, D): **Dale and Margaret**
 (0.63.0, art in `docs/BLENDER-TODO.md` step 35), **Gus and Gideon** (0.64.0,
-step 36), then Mumbles.
+step 36) and **Mumbles** (0.65.0, step 37). Every fighter has a style now.
 
 ## What makes a style
 
@@ -131,10 +131,19 @@ hands.*
 | Properties | None of his own | A two-beat Good Book (`s.BP`, two hits a beat apart); a Rapture flung wide (`c.BP` hits 0.5 m behind him too, an anti-air for a cross-up); a palm that pulls |
 | Strings | 8 | 8, unchanged |
 
-## The rest (after the pilot)
+## Mister Mumbles: wrong (0.65.0)
 
-Short notes to build from, from the roster review:
+*Trickster: limbs that bend the wrong way, jerked into each strike by his
+strings and floppy after it; under highs, round behind you, yanked in.*
 
-- **Mister Mumbles (trickster):** wrong. Limbs bend the wrong way, he
-  ducks under highs, hops over lows, switches sides mid-string, jerks on his
-  strings; floppy follow-through.
+| | Before | Now |
+| --- | --- | --- |
+| Shape | A small fighter's jab, kicks and a head bonk | A dummy on strings: folds the wrong way, wooden head first, feet trailing, jaw clacking |
+| Rhythm | Same as everyone | Jerked: no wind-up, yanked into the strike; dead weight after it, then a twitch back up |
+| Space | Close, with a string that reels them in | Everywhere: a string step that switches sides (`FP FP BP`), yanked forward on his strings (`f.FK`), the String Pull from range |
+| Properties | Ducks under highs on `s.FK` | Ducks on `s.BP` too (Head Bonk now crouching); a string that teleports him behind them mid-string; Yanked, fast and level on block |
+| Strings | 8 | 9: **Now You See Me** (`s.FP FP BP`) |
+
+Not built: the cartwheel hop over lows from the roster review. A ground
+normal that leaves the floor is an engine change (stance and physics), so
+it waits; Yanked has the `f.FK` slot meanwhile.

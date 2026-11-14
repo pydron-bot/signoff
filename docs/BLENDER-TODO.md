@@ -272,8 +272,9 @@ are authored facing right with the left foot and left hand leading.
 > 20. **Step 31, jumps by weight** (Nov 14, open): eight jump clips at new lengths.
 > 21. **Step 35, fighting styles: Dale and Margaret** (Nov 14, open): timing profiles for both, three new clips and one re-key for Dale, two retimed for Margaret, two retired. On `play/styles-2`.
 > 22. **Step 36, fighting styles: Gus and Gideon** (Nov 14, open): timing profiles for both, a new whisk and four utensil re-keys for Gus, a retimed Good Book, a new palm and a re-keyed Rapture for Gideon. On `play/styles-2`.
+> 23. **Step 37, fighting styles: Mumbles** (Nov 14, open): a timing profile, a re-keyed Head Bonk, a string step that switches sides and a yank on his strings. On `play/styles-2`.
 >
-> Steps 31 to 34 are on the branch `play/fair-fights` (0.62.0, which holds 0.61.0 too), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
+> Steps 31 to 34 are on the branch `play/fair-fights` (0.62.0, which holds 0.61.0 too), not yet on `main`: branch from it. Steps 35 to 37 (the other five fighters' styles) are on `play/styles-2`.
 >
 > Do 17–20 before 16 C–D: they replace grey boxes people see in every match, where 16 C–D polish what's already there. Unless Derek says otherwise.
 >
@@ -1869,6 +1870,51 @@ their lengths; re-key them so the silhouette is a man holding something long.
 - [ ] Empty `ART_PENDING` of Gus's and Gideon's entries as their clips land.
 - [ ] Review at play size: could you name each from a strike's silhouette?
 
+### 37. Fighting styles: Mister Mumbles (Nov 14, game side)
+
+The last part (`docs/STYLES.md`): Mumbles is *wrong*. The game side is in
+(0.65.0); until a clip lands the game plays the stand-in in brackets, and
+`ART_PENDING` lists what's owed. (He has his own skeleton; the rig's
+limits are the art side's call.)
+
+**A. Rhythm: his timing profile** (`lib/anim.py`, `Stance`)
+
+- **Mumbles, wrong:** jerked, not driven. `windup` none: he is *yanked*
+  into each strike in a frame or two, as if a string went taut; `snap`
+  instant, the limb arriving before the body; `follow` floppy: on the
+  frames after the active ones the limbs drop and dangle (a beat of dead
+  weight), the head lolls, the jaw drops open; `settle` a twitch back up
+  into stance, as if the strings take the slack. Joints may bend the wrong
+  way for a frame where it reads (elbows and knees backwards on the
+  floppy frames).
+
+**B. Mumbles: wrong** (shape: wooden head, hinged jaw, limbs on strings)
+
+- [ ] `s.BP` **Head Bonk** (same 24 frames, re-key): it ducks now (the
+  game gives him his crouching hurtbox). He folds in half the wrong way,
+  backwards at the hips, and butts with the top of his wooden head at
+  0.5–1.0 m, out to 0.95 m, on 9–10; flops back upright.
+- [ ] `FP FP BP` **Now You See Me** (new, 32 frames; stand-in `Strings
+  Attached FP`): the strings snatch him straight up out of the string on
+  2–7 (the game takes him round behind them on frame 8: in the clip he
+  drops back down from above, facing them again), then a two-handed bonk
+  at 0.6–1.2 m, out to 1.0 m, on 14–15; floppy follow-through.
+- [ ] `f.FK` **Yanked** (new, 26 frames; stand-in `s.BP`): pulled forward
+  on his strings, the game moves him 0.1 m a frame on 2–9; his feet trail
+  behind off the floor, arms flung back, head first into them at
+  0.6–1.2 m on 10–11; then dead weight and a twitch back up.
+
+**Not built (needs the engine):** the roster review's cartwheel hop over
+lows (`f.FK` airborne) needs a ground normal that leaves the floor, which
+the simulation doesn't have; the yank stands in that slot instead.
+
+**Checks**
+
+- [ ] Exact frame counts and strikes in their hitboxes; in `s.BP` the whole
+  body stays under 0.8 m (his crouching hurtbox) through the move.
+- [ ] Empty `ART_PENDING` of Mumbles' entries as their clips land.
+- [ ] Review at play size: is he the one fighter who moves *wrong*?
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -2061,12 +2107,12 @@ plain one), `interact` is kicking a stage prop.
 | `interact` | Interact | interact | stand | 22 | 8: kicks the prop |
 | `td` | Technical Difficulties | super | stand | 45 | 12–15: x 0.10…1.60, y 0.30…1.60 (mid) |
 
-#### Mister Mumbles (`mumbles`): 39 move clips
+#### Mister Mumbles (`mumbles`): 41 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
 | `s.FP` | Wooden Jab | normal | stand | 16 | 6–7: x 0.15…0.90, y 0.75…1.10 (mid) |
-| `s.BP` | Head Bonk | normal | stand | 24 | 9–10: x 0.15…0.95, y 0.75…1.35 (mid) |
+| `s.BP` | Head Bonk | normal | crouch | 24 | 9–10: x 0.15…0.95, y 0.50…1.00 (mid) |
 | `s.FK` | Shin Kick | normal | crouch | 20 | 7–8: x 0.15…1.05, y 0.20…0.50 (mid) |
 | `s.BK` | Spin Kick | normal | stand | 29 | 11–13: x -0.50…1.15, y 0.40…0.90 (mid) |
 | `c.FP` | Knee Poke | normal | crouch | 16 | 6–7: x 0.15…0.85, y 0.40…0.65 (mid) |
@@ -2074,6 +2120,7 @@ plain one), `interact` is kicking a stage prop.
 | `c.FK` | Ankle Biter | normal | crouch | 20 | 7–8: x 0.15…1.15, y 0.00…0.25 (low) |
 | `c.BK` | Leg Sweep | normal | crouch | 32 | 10–12: x 0.15…1.25, y 0.00…0.25 (low) |
 | `b.BP` | Peekaboo | normal | stand | 33 | 18–19: x 0.15…1.00, y 0.70…1.40 (overhead) |
+| `f.FK` | Yanked | normal | stand | 26 | 10–11: x 0.15…0.90, y 0.60…1.20 (mid) |
 | `b.FP` | String Pull | normal | stand | 32 | 14–16: x 0.60…2.00, y 0.75…1.40 (mid) |
 | `j.FP` | Jumping Bonk | air | air | 14 | 4–9: x 0.10…0.85, y 0.30…0.80 (overhead) |
 | `j.BP` | Jumping Clap | air | air | 15 | 5–9: x 0.10…0.90, y 0.40…0.90 (overhead) |
@@ -2082,6 +2129,7 @@ plain one), `interact` is kicking a stage prop.
 | `j.FK FP` | Clackety-Clack | air | air | 14 | 4–7: x 0.10…0.95, y 0.30…1.70 (overhead) |
 | `j.BP FK` | Pratfall | air | air | 17 | 5–8: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Ha-Ha | normal | stand | 18 | 7–8: x 0.15…1.00, y 0.75…1.15 (mid) |
+| `FP FP BP` | Now You See Me | normal | stand | 32 | 14–15: x 0.15…1.00, y 0.60…1.20 (mid); 8: reappears behind the opponent |
 | `FP FP FP` | Ha-Ha-Ha | normal | stand | 22 | 9–10: x 0.15…1.10, y 0.75…1.20 (mid) |
 | `FP FP FP BK` | Punchline | normal | stand | 36 | 12–14: x -0.50…1.25, y 0.40…1.00 (mid) |
 | `BP FK` | Clatter | normal | stand | 23 | 8–9: x 0.15…1.15, y 0.20…0.50 (mid) |

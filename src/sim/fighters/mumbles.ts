@@ -3,7 +3,10 @@
  * ventriloquist. Trickster: small (high attacks can sail over him), light,
  * quick, and hard to pin down: he vanishes on his strings and reappears
  * behind you or far away, leaves a hand puppet as a decoy, and tells a
- * knock-knock joke that can't be blocked, only jumped.
+ * knock-knock joke that can't be blocked, only jumped. His style is wrong
+ * (docs/STYLES.md): limbs that bend the wrong way, jerked into each strike
+ * by his strings and flopping after it. Two normals duck under highs, a
+ * string step whisks him round behind you, and his strings yank him in.
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
@@ -15,7 +18,8 @@ const decoy = (hits: number, life: number) =>
 const moves = table(
   // Standing
   normal('s.FP', { name: 'Wooden Jab', startup: 6, active: 2, recovery: 9, reach: [0.15, 0.9], at: [0.75, 1.1], damage: 35, hitstun: 14, blockstun: 11, chain: { FP: 'FP FP' } }),
-  normal('s.BP', { name: 'Head Bonk', startup: 9, active: 2, recovery: 14, reach: [0.15, 0.95], at: [0.75, 1.35], damage: 70, hitstun: 18, blockstun: 13, chain: { FK: 'BP FK' } }),
+  // Folds in half the wrong way and butts with the top of his head: as low as a crouch, so highs pass over.
+  normal('s.BP', { name: 'Head Bonk', stance: 'crouch', startup: 9, active: 2, recovery: 14, reach: [0.15, 0.95], at: [0.5, 1.0], damage: 70, hitstun: 18, blockstun: 13, chain: { FK: 'BP FK' } }),
   // Ducks as he kicks: high attacks pass over.
   normal('s.FK', { name: 'Shin Kick', stance: 'crouch', startup: 7, active: 2, recovery: 12, reach: [0.15, 1.05], at: [0.2, 0.5], damage: 55, hitstun: 15, blockstun: 12, chain: { FK: 'FK FK' } }),
   normal('s.BK', { name: 'Spin Kick', startup: 11, active: 3, recovery: 16, reach: [-0.5, 1.15], at: [0.4, 0.9], damage: 65, hitstun: 19, blockstun: 13 }),
@@ -26,6 +30,16 @@ const moves = table(
   normal('c.BK', { name: 'Leg Sweep', stance: 'crouch', startup: 10, active: 3, recovery: 20, reach: [0.15, 1.25], at: [0, 0.25], height: 'low', damage: 61, hitstun: 0, blockstun: 10, knockdown: true }),
   // Command normal: back + BP hops into an overhead.
   normal('b.BP', { name: 'Peekaboo', startup: 18, active: 2, recovery: 14, reach: [0.15, 1.0], at: [0.7, 1.4], height: 'overhead', damage: 78, hitstun: 18, blockstun: 14 }),
+  // Yanked forward on his strings, feet trailing, head first into them: fast, and level on block.
+  move('f.FK', {
+    name: 'Yanked',
+    kind: 'normal',
+    total: 26,
+    motion: [{ frames: [2, 9], vx: 0.1 }],
+    hits: [strike({ frames: [10, 11], reach: [0.15, 0.9], at: [0.6, 1.2], damage: 45, hitstun: 17, blockstun: 16 })],
+    hurt: [{ frames: [10, 18], box: box(0.15, 0.8, 0.6, 1.2) }],
+    cancel: [12, 18],
+  }),
   // A string from his own control bar: long, weak, and it reels them in.
   move('b.FP', {
     name: 'String Pull',
@@ -44,7 +58,16 @@ const moves = table(
   // Air string steps: his jaw clacking at them, then he sits down on them, hard, and they bounce.
   airStep('j.FK FP', { name: 'Clackety-Clack', damage: 29, startup: 4, chain: { FK: 'j.BP FK' } }),
   airSpike('j.BP FK', { name: 'Pratfall', damage: 30, startup: 5 }),
-  normal('FP FP', { name: 'Ha-Ha', startup: 7, active: 2, recovery: 10, reach: [0.15, 1.0], at: [0.75, 1.15], damage: 35, hitstun: 15, blockstun: 11, chain: { FP: 'FP FP FP' } }),
+  normal('FP FP', { name: 'Ha-Ha', startup: 7, active: 2, recovery: 10, reach: [0.15, 1.0], at: [0.75, 1.15], damage: 35, hitstun: 15, blockstun: 11, chain: { FP: 'FP FP FP', BP: 'FP FP BP' } }),
+  // Now you see me: the strings whisk him round behind them mid-string, and he bonks them from the other side.
+  move('FP FP BP', {
+    name: 'Now You See Me',
+    kind: 'normal',
+    total: 32,
+    teleport: { frame: 8, to: 'behind' },
+    hits: [strike({ frames: [14, 15], reach: [0.15, 1.0], at: [0.6, 1.2], damage: 45, hitstun: 18, blockstun: 13 })],
+    hurt: [{ frames: [14, 22], box: box(0.15, 0.9, 0.6, 1.2) }],
+  }),
   normal('FP FP FP', { name: 'Ha-Ha-Ha', startup: 9, active: 2, recovery: 12, reach: [0.15, 1.1], at: [0.75, 1.2], damage: 43, hitstun: 16, blockstun: 12, chain: { BK: 'FP FP FP BK' } }),
   normal('FP FP FP BK', { name: 'Punchline', startup: 12, active: 3, recovery: 22, reach: [-0.5, 1.25], at: [0.4, 1.0], damage: 88, hitstun: 0, blockstun: 13, push: 0.07, knockdown: true }),
   normal('BP FK', { name: 'Clatter', startup: 8, active: 2, recovery: 14, reach: [0.15, 1.15], at: [0.2, 0.5], damage: 55, hitstun: 16, blockstun: 12, chain: { BP: 'BP FK BP' } }),
@@ -230,7 +253,7 @@ export const MUMBLES: FighterData = {
     s: { FP: 's.FP', BP: 's.BP', FK: 's.FK', BK: 's.BK' },
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
-    f: {},
+    f: { FK: 'f.FK' },
     b: { BP: 'b.BP', FP: 'b.FP' },
   },
   specials: { n: 'Hand Puppet', f: 'Strings Attached', b: 'Exit Stage Left', d: 'Knock-Knock' },
@@ -250,6 +273,7 @@ export const MUMBLES: FighterData = {
   strings: [
     { name: 'Ha-Ha', path: ['s.FP', 'FP'], safe: true },
     { name: 'Ha-Ha-Ha', path: ['s.FP', 'FP', 'FP'], safe: true },
+    { name: 'Now You See Me', path: ['s.FP', 'FP', 'BP'], safe: true },
     { name: 'Punchline', path: ['s.FP', 'FP', 'FP', 'BK'], safe: false },
     { name: 'Clatter', path: ['s.BP', 'FK'], safe: true },
     { name: 'Curtain Call', path: ['s.BP', 'FK', 'BP'], safe: true },

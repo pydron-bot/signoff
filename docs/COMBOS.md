@@ -25,10 +25,10 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 | Hollis Bey | 3 | frame-perfect | 12 | 51.3% | 1 | ↓BP › BK › Key Ring+ › BP › BP FP › Night Shift+ › j.FK › j.FK BP › j.BP BK › Searchlight+ › FP › FK |
 | Hollis Bey | 3 | human | 8 | 45.9% | 8 | ↓BP › BK › Key Ring+ › BP › BP FP › Flashlight+ › j.FK › Elbow Drop+ |
 | Mister Mumbles | 0 | frame-perfect | 5 | 26.6% | 1 | ↓BP › ←BP › BP › BP FK › Hand Puppet |
-| Mister Mumbles | 0 | human | 6 | 23.7% | 8 | FK › FK FK › FK FK FK › BP › FK › Hand Puppet |
+| Mister Mumbles | 0 | human | 8 | 22.4% | 8 | FK › FK FK › FK FK FK › j.FP › j.BP › j.BP FK › BK › Hand Puppet |
 | Mister Mumbles | 1 | frame-perfect | 8 | 38.5% | 1 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet |
 | Mister Mumbles | 1 | human | 8 | 38.5% | 9 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet |
-| Mister Mumbles | 3 | frame-perfect | 13 | 47.2% | 1 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet+ › FP › FP FP › Hand Puppet+ › ↓BP › FK |
+| Mister Mumbles | 3 | frame-perfect | 12 | 47.1% | 1 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet+ › BK › Hand Puppet+ › ↓BP › FK |
 | Mister Mumbles | 3 | human | 8 | 47.9% | 6 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet+ › j.BP › j.BP FK › Cut the Strings+ › j.BK |
 | Margaret Okafor | 0 | frame-perfect | 13 | 31.8% | 1 | →BP › Breaking › BP › BP BP › BP BP BK › j.FK › j.BP › j.BP BK › ↓BP ×2 › FP › FP FP › FP FP BP |
 | Margaret Okafor | 0 | human | 10 | 31.1% | 8 | j.BK › Cut to Commercial › Breaking › BP › BP BP › BP BP BK › BP › BP BP › BP BP BK › BK |

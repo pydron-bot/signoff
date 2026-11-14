@@ -120,6 +120,9 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   'gus:f.FK': 's.FK',
   'gideon:s.BP': 'BP BP',
   'gideon:f.FK': 'Laying On of Hands',
+  // Styles, part 3 (0.65.0, step 37): Mumbles' string that switches sides, and the yank.
+  'mumbles:FP FP BP': 'Strings Attached FP',
+  'mumbles:f.FK': 's.BP',
   // Juggle reactions (step 16): the held end of `launched`.
   juggle_hit: 'launched',
   relaunch: 'launched',
@@ -146,6 +149,9 @@ export const ART_PENDING: ReadonlySet<string> = new Set([
   'gus:f.FK',
   'gideon:s.BP',
   'gideon:f.FK',
+  // Step 37: Mumbles (new).
+  'mumbles:FP FP BP',
+  'mumbles:f.FK',
 ]);
 
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */

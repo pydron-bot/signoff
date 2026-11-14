@@ -3705,7 +3705,7 @@
    },
    "s.BP": {
     "kind": "normal",
-    "stance": "stand",
+    "stance": "crouch",
     "total": 24,
     "startup": 9,
     "lastActive": 10,
@@ -3718,8 +3718,8 @@
       "box": [
        0.15,
        0.95,
-       0.75,
-       1.35
+       0.5,
+       1
       ],
       "height": "mid",
       "heavy": true
@@ -3900,6 +3900,38 @@
     ],
     "spawns": [],
     "motion": []
+   },
+   "f.FK": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 26,
+    "startup": 10,
+    "lastActive": 11,
+    "hits": [
+     {
+      "frames": [
+       10,
+       11
+      ],
+      "box": [
+       0.15,
+       0.9,
+       0.6,
+       1.2
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [
+     {
+      "frames": [
+       2,
+       9
+      ],
+      "vx": 0.1
+     }
+    ]
    },
    "b.FP": {
     "kind": "normal",
@@ -4096,6 +4128,34 @@
     ],
     "spawns": [],
     "motion": []
+   },
+   "FP FP BP": {
+    "kind": "normal",
+    "stance": "stand",
+    "total": 32,
+    "startup": 14,
+    "lastActive": 15,
+    "hits": [
+     {
+      "frames": [
+       14,
+       15
+      ],
+      "box": [
+       0.15,
+       1,
+       0.6,
+       1.2
+      ],
+      "height": "mid"
+     }
+    ],
+    "spawns": [],
+    "motion": [],
+    "teleport": {
+     "frame": 8,
+     "to": "behind"
+    }
    },
    "FP FP FP": {
     "kind": "normal",

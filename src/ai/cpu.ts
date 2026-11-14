@@ -1120,6 +1120,8 @@ export class Cpu {
         ['special', 12, () => this.special(me, fwd | SPECIAL)],
         ['special', 8 * puppet, () => this.special(me, SPECIAL)],
         ['approach', 55, () => this.dash(me)],
+        // Yanked in on his strings, head first.
+        ['approach', d.normals.f.FK && dist < fx(1.6) ? 10 : 0, () => tap(fwd | FK)],
         ['jump', 13, () => hold(UP | fwd, 4)],
         ['approach', 12, () => hold(fwd, 14)],
       ]);

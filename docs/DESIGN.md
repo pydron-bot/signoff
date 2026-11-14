@@ -256,7 +256,7 @@ meter. Every number below is a starting value to tune.
 - Each fighter's normals do their own job, and each fighter has a style of
   their own (`docs/STYLES.md`: shape, rhythm, space, properties, strings;
   Rox and Hollis first, in 0.37.0; Dale and Margaret in 0.63.0, Gus and
-  Gideon in 0.64.0): Dale is
+  Gideon in 0.64.0, Mumbles in 0.65.0): Dale is
   the forecast: unhurried, the longest pokes (the Umbrella Jab and, out of
   the step-back kick, the Long-Range Forecast reach 1.75 and 1.85 m, and
   only his arm can be hit, not the umbrella), two normals that step back
@@ -271,8 +271,11 @@ meter. Every number below is a starting value to tune.
   (Door Kick, Rising Clothesline, a barging Shoulder Check), a slow Stiff
   Arm that crushes a guard, and short strings, two of them ending in a
   grab (Cuff 'Em, Frisk);
-  Mumbles ducks under high attacks, reels people in on a string, and ends
-  combos with his Hand Puppet; Margaret is precision: the least movement
+  Mumbles is wrong: jerked into each strike on his strings and floppy
+  after it, two normals that duck under highs (Shin Kick, and a Head Bonk
+  folded the wrong way), a string step that whisks him round behind them
+  (Now You See Me), a yank forward on his strings (Yanked), a string that
+  reels them in (String Pull), and his Hand Puppet to end combos; Margaret is precision: the least movement
   of anyone, strikes that start and stop dead, the best frame data (her
   pokes are level or near it on block, all her strings safe), the
   fastest long poke (Anchor Kick, 12 frames at 1.55 m, for whatever they

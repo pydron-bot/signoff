@@ -70,7 +70,6 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
   mumbles: {
     // 0.62.0: more strings and mix-ups still (she has more health now).
     margaret: { ...EVEN, string: 2.5, special: 0.6, mix: 2.5, jump: 0.6 },
-    gideon: { ...EVEN, mix: 2.5 },
   },
 };
 
