@@ -6,7 +6,8 @@
  * hit). Projectiles and effect hits use the fighters' fx meshes where there
  * are some, else boxes. It reads the latest match step and the step's events
  * and never changes the match. About 19 draw calls (the signal spray is
- * one, the contact shadows two), plus 3 to 7 a model; the impact layer
+ * one, the contact shadows two), plus 3 to 7 a model and as many again for
+ * its shadow (src/render/shadow.ts) and each reflection; the impact layer
  * (src/render/impact.ts, dust.ts, swoosh.ts) adds up to six while it shows;
  * the knocked-about set dressing (clutter.ts) three.
  */
@@ -232,6 +233,7 @@ export class Arena {
   /** The touch buttons' share of the screen's width (+ right, − left, 0 none): the camera frames the fight beside them. */
   set buttons(share: number) {
     this.rig.buttons = share;
+    this.cut.buttons = share;
   }
   private readonly corner = new THREE.Vector3();
   showBoxes = false;
@@ -494,7 +496,11 @@ export class Arena {
 
   /** The super cut-in for the post pass this frame (null when there's none), after render(). */
   cutIn(m: MatchState): { camera: THREE.Camera; rect: CutInRect } | null {
-    return this.cut.active && this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
+    if (!this.cut.active) return null;
+    // Framed on the model's own face (a chef's hat or a quiff would push a guess from the hurtbox off it).
+    const model = this.models ? this.fighters[this.cut.who].model : null;
+    this.cut.hasModelFace = model?.facePosition(this.cut.modelFace) ?? false;
+    return this.cut.place(m, this.camera.aspect).on > 0 ? this.inset : null;
   }
 
   /** The impact layer's numbers for the post pass, after render() has placed the camera. */

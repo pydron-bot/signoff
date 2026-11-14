@@ -153,3 +153,19 @@ describe('echoes step with the simulation', () => {
     expect(trail.amount).toBe(0);
   });
 });
+
+describe('the cut-in and the touch buttons', () => {
+  it('with buttons up on one side, the band comes in from the other', () => {
+    const m = ready('rox', 'dale');
+    place(m, -1, 1);
+    for (const [buttons, left] of [[0.3, true], [-0.3, false]] as const) {
+      const c = new CutIn();
+      c.buttons = buttons;
+      // Player 1 stands on the right, but the buttons decide.
+      c.onEvents([{ type: 'superStart', player: 1 }]);
+      for (let i = 0; i < 6; i++) c.step();
+      const r = c.place(m, 852 / 393);
+      expect(r.x0 < 0.5).toBe(left);
+    }
+  });
+});

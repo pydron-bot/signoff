@@ -47,10 +47,15 @@ export class CutIn {
   readonly rect: CutInRect = { x0: 0, y0: BAND_TOP - BAND_H, x1: 0, y1: BAND_TOP, on: 0 };
   /** Of the picture's height, how much the HUD takes at the top (the health bars and the station bug): the band sits below it. */
   hudClear = 0;
+  /** The touch buttons' side (+ right, − left, 0 none): with them up, the band comes in from the other side. */
+  buttons = 0;
   private player = 0;
   private left = 0;
   private life = 1;
   private readonly face = new THREE.Vector3();
+  /** The face from the model's head bone this frame (the arena sets it), else it's guessed from the hurtbox. */
+  readonly modelFace = new THREE.Vector3();
+  hasModelFace = false;
 
   onEvents(ev: readonly SimEvent[]): void {
     for (const e of ev) {
@@ -97,8 +102,8 @@ export class CutIn {
     }
     const f = m.fighters[this.player];
     const o = m.fighters[1 - this.player];
-    // From the side of the screen the fighter is on.
-    const fromLeft = f.x <= o.x;
+    // From the side of the screen the fighter is on, or away from the touch buttons.
+    const fromLeft = this.buttons !== 0 ? this.buttons > 0 : f.x <= o.x;
     const t = this.life - this.left;
     const slide = this.reduceMotion ? 1 : Math.min(1, t / SLIDE, this.left / SLIDE);
     const ease = 1 - (1 - slide) * (1 - slide);
@@ -112,7 +117,8 @@ export class CutIn {
     r.on = 1;
     // The face: near the top of the hurtbox, looked at from where they face, a little toward us.
     const box = hurtBox(f);
-    this.face.set(toFloat(f.x), toFloat(f.y) + toFloat(box.y + box.h) - FACE_DOWN, 0);
+    if (this.hasModelFace) this.face.copy(this.modelFace);
+    else this.face.set(toFloat(f.x), toFloat(f.y) + toFloat(box.y + box.h) - FACE_DOWN, 0);
     this.camera.aspect = (BAND_W * aspect) / BAND_H;
     this.camera.position.set(this.face.x + f.facing * OUT, this.face.y + 0.05, TOWARD);
     this.camera.lookAt(this.face);

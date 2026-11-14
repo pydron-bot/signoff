@@ -18,6 +18,8 @@ import { addShadow } from './shadow';
 import { HELD_STAND_INS, LOOPS, crossFades, fadeWeight, standIn } from './pose';
 
 const loader = new GLTFLoader();
+/** The middle of the face above the head bone's root, metres. */
+const FACE_ABOVE_NECK = 0.1;
 const files = new Map<string, Promise<FighterArt>>();
 
 /** One fighter's loaded art, shared by every copy on screen. */
@@ -111,6 +113,7 @@ export class FighterModel {
   private readonly reflectionMaterials: THREE.Material[];
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
+  private readonly head: THREE.Object3D | null;
 
   /**
    * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
@@ -170,6 +173,7 @@ export class FighterModel {
     // GLTFLoader drops the dot from bone names (hand.L is handL).
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
+    this.head = model.getObjectByName('head') ?? null;
     this.mixer = new THREE.AnimationMixer(model);
     const moves = FIGHTERS[art.id]?.moves;
     for (const [name, c] of art.clips) {
@@ -203,6 +207,17 @@ export class FighterModel {
     this.handR.getWorldPosition(out);
     if (ly > out.y) this.handL.getWorldPosition(out);
     return out;
+  }
+
+  /**
+   * Where the face is, into `out` (the head bone, a little up from where it
+   * joins the neck): false if the model has no head bone. Call after pose().
+   */
+  facePosition(out: THREE.Vector3): boolean {
+    if (!this.head) return false;
+    this.root.updateMatrixWorld(true);
+    this.head.getWorldPosition(out).y += FACE_ABOVE_NECK;
+    return true;
   }
 
   /** Shows `clip` at move frame `frame` (1-based): sampled at (frame - 1)/60 s. */
