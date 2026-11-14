@@ -617,9 +617,36 @@ more it reacts to a big one than a small one.
 
 - Health bars are channel-strength meters, leaving a red chunk where the
   last hits landed that drains a moment later; names sit on caption plates
-  with each fighter's show; the round timer is a broadcast clock; round
-  announcements are on-screen captions with a station logo (and a blinking
-  LIVE) in the corner.
+  with each fighter's show; the round timer is a broadcast clock that turns
+  red and pulses in the last ten seconds; rounds won light ON AIR lamps;
+  round announcements are on-screen captions with a station logo (and a
+  blinking LIVE) in the corner. The Signal meter sits under each health
+  bar, three cells about three times their old size, with BOOST, SKIP and
+  CUT AWAY tags that light when the meter pays for them (on touch the bar
+  is tappable and METER has a key of its own). The combo counter grows with
+  the hits and turns hot on a heavy last hit; the callouts (COUNTER,
+  PUNISH, FLAWLESS BLOCK, DUCKED, REVERSAL...) have one slot a side under
+  the HUD and queue there (`src/ui/hudReadout.ts`).
+- **Type** (`src/ui/fonts.ts`, `tools/fonts.mjs`): three open-licence
+  faces, subset and bundled (about 47 KB): Righteous, a rounded display
+  face, for the logo, round calls and callouts; Barlow Condensed, the
+  caption generator's heavy sans, for names, the HUD and menus; VT323, a
+  CRT terminal's monospace, for the clock, CH 0, the channel flip and the
+  overlays.
+- **The screens round the fight** (`src/ui/screens/`): the title's four
+  rows, FIGHT, LEARN, WATCH and SETTINGS, beside the TV, each a short
+  list; the fighter select, "the dial", where the living room's TV changes
+  channel to each fighter live on their own set and a caption plate beside
+  it gives their portrait, style, bars for health, speed, reach and
+  difficulty (worked out from the data, `src/game/fighterStats.ts`) and
+  trials cleared, then the stage, CPU level and rules; a two-second versus
+  card in colour bars before the cold open (any button skips it); and the
+  results, the winner's close-up and a line of theirs over the night's
+  figures from the match's events (`src/game/matchFigures.ts`): damage,
+  best combo, first hits, counter hits, punishes, flawless blocks, time on
+  air. Portraits are rendered from the models by `tools/portraits.mjs`.
+- The K.O.'s static hits hard for four steps, then thins to a veil the
+  K.O. pose reads through in the slow motion.
 - **The picture** (`src/render/post.ts`): the scene is drawn into a
   multisampled high-range buffer, and one pass puts it on screen as a tape
   would: sharp brightness with the colour smeared sideways, a tracking
@@ -683,6 +710,10 @@ Every move can be done the same way on every device: specials are direction
 meter. Classic motion inputs (quarter circles and the like) work on keyboard
 and gamepad as an alternative and give exactly the same move, with no bonus.
 
+The touch buttons are drawn as the keys of a 1987 TV remote, a fist or a foot
+beside the attack letters, and sink and light up while pressed (iOS Safari
+can't vibrate, so the picture says "pressed").
+
 | Action | Touch (landscape) | Keyboard | Gamepad (Xbox labels) |
 | --- | --- | --- | --- |
 | Move, jump, crouch | Floating stick on the left half of the screen | W A S D | Left stick or D-pad |
@@ -695,7 +726,7 @@ and gamepad as an alternative and give exactly the same move, with no bonus.
 | Air special on Down | Down + Special while jumping (other directions give the first air special) | S + O in the air | Down + RT in the air |
 | Throw | Small button beside Block | U + J | LB |
 | Interact with the stage | Button that appears only near an object | ; | LT |
-| Tape Skip / Cut Away | Tap the meter (Cut Away when being hit) | Space | Y + B |
+| Tape Skip / Cut Away | The METER key left of the diamond, or tap the meter under the health bar (Cut Away when being hit) | Space | Y + B |
 | Technical Difficulties | Button that appears below 30% health | Block + Special | RB + RT |
 
 ### Input rules
