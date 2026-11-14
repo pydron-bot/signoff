@@ -7,6 +7,7 @@
  * along normals averaged over each position, worked out once per geometry.
  */
 import * as THREE from 'three';
+import { FIGHTER_MASK } from './fighterLight';
 import { copyMeshes } from './meshCopies';
 
 /** Shared by every outline. */
@@ -70,6 +71,8 @@ function outlineMaterial(): THREE.MeshBasicMaterial {
           'gl_Position.xy += normalize(onClip.xy + 1e-6) * uOutlineWidth * 2.0 / uOutlineHeight * gl_Position.w * vec2(projectionMatrix[0][0] / projectionMatrix[1][1], 1.0);',
         ].join('\n'),
       );
+    // The outline is part of the fighter: the tape spares it too.
+    shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${FIGHTER_MASK}`);
   };
   m.customProgramCacheKey = () => 'signoff-outline';
   return m;

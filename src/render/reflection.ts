@@ -9,7 +9,7 @@
  * fighter for the floor, as many again for the mirror.
  */
 import * as THREE from 'three';
-import { copyMeshes } from './meshCopies';
+import { FIGHT_LAYER, copyMeshes } from './meshCopies';
 
 /** A plane's reflection, shared by every fighter's copies of it. */
 interface Plane {
@@ -106,5 +106,7 @@ export function reflectionMaterial(src: THREE.MeshLambertMaterial, p: ReflectPla
 
 /** Copies of each mesh in a fighter for one plane, drawn after the set and the contact shadows. */
 export function addReflection(model: THREE.Object3D, p: ReflectPlane): THREE.Mesh[] {
-  return copyMeshes(model, (src) => reflectionMaterial(src as THREE.MeshLambertMaterial, p), 2);
+  const copies = copyMeshes(model, (src) => reflectionMaterial(src as THREE.MeshLambertMaterial, p), 2);
+  for (const c of copies) c.layers.set(FIGHT_LAYER);
+  return copies;
 }

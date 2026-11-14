@@ -25,6 +25,8 @@ export interface ShotHost {
   hideFighters(on: boolean): void;
   /** Draw calls in the last frame drawn. */
   calls(): number;
+  /** Where each fighter is on screen, in CSS pixels: left, top, right, bottom for each. */
+  rects(): number[];
 }
 
 /** What a moment is: steps until it, and steps after it. */
@@ -89,6 +91,7 @@ export function installShots(host: ShotHost): void {
     },
     hideFighters: (on: boolean) => host.hideFighters(on),
     calls: () => host.calls(),
+    rects: () => host.rects(),
     phase: () => host.session()?.match.phase ?? '',
   };
   (window as unknown as { __shots: typeof api }).__shots = api;

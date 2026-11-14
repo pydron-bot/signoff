@@ -6,6 +6,12 @@
  */
 import * as THREE from 'three';
 
+/**
+ * The layer of what only the fight's camera draws (reflections, shadows,
+ * echoes): the cut-in's close-up leaves them out, so it costs fewer draw calls.
+ */
+export const FIGHT_LAYER = 1;
+
 /** A copy of each original mesh in `model` (never of another copy), with the material `material` makes for its source's. Hidden until shown. */
 export function copyMeshes(model: THREE.Object3D, material: (src: THREE.Material) => THREE.Material, renderOrder: number): THREE.Mesh[] {
   const sources: THREE.Mesh[] = [];

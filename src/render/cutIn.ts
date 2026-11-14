@@ -1,7 +1,7 @@
 /**
  * The super cut-in: as a fighter starts Technical Difficulties (or boosts a
  * special, more briefly), the broadcast cuts to a close-up of their face in
- * a band across the top of the picture, framed in colour bars, sliding in
+ * a band below the HUD, framed in colour bars, sliding in
  * from their side. The close-up is the same scene from a second camera, drawn
  * into the post pass's buffer before the tape effects (src/render/post.ts),
  * so it looks like part of the same signal; the bars are drawn by the
@@ -18,10 +18,12 @@ const SUPER_STEPS = 32;
 const BOOST_STEPS = 16;
 /** Steps to slide in and out. */
 const SLIDE = 4;
-/** The band, in uv of the picture: its height range, and its width. */
-const BAND_Y0 = 0.58;
-const BAND_Y1 = 0.84;
+/** The band, in uv of the picture: its height and width, and the highest its top goes. */
+const BAND_H = 0.26;
 const BAND_W = 0.4;
+const BAND_TOP = 0.84;
+/** Of the picture's height, how much the frame of colour bars adds round the band (post.ts draws them). */
+const BARS = 0.016;
 /** The close-up: lens, and where the camera sits from the face (toward where they look, and toward us). */
 const LENS = 18;
 const OUT = 0.85;
@@ -42,7 +44,9 @@ export class CutIn {
   /** No slide in or out. */
   reduceMotion = false;
   readonly camera = new THREE.PerspectiveCamera(LENS, 2.5, 0.1, 40);
-  readonly rect: CutInRect = { x0: 0, y0: BAND_Y0, x1: 0, y1: BAND_Y1, on: 0 };
+  readonly rect: CutInRect = { x0: 0, y0: BAND_TOP - BAND_H, x1: 0, y1: BAND_TOP, on: 0 };
+  /** Of the picture's height, how much the HUD takes at the top (the health bars and the station bug): the band sits below it. */
+  hudClear = 0;
   private player = 0;
   private left = 0;
   private life = 1;
@@ -68,6 +72,11 @@ export class CutIn {
   clear(): void {
     this.left = 0;
     this.rect.on = 0;
+  }
+
+  /** The fighter in the close-up, or -1 when there's none. */
+  get who(): number {
+    return this.left > 0 ? this.player : -1;
   }
 
   /** Whether it shows now. */
@@ -98,13 +107,13 @@ export class CutIn {
     const end = fromLeft ? 0.04 : 0.96 - BAND_W;
     r.x0 = start + (end - start) * ease;
     r.x1 = r.x0 + BAND_W;
-    r.y0 = BAND_Y0;
-    r.y1 = BAND_Y1;
+    r.y1 = Math.min(BAND_TOP, 1 - this.hudClear - BARS);
+    r.y0 = r.y1 - BAND_H;
     r.on = 1;
     // The face: near the top of the hurtbox, looked at from where they face, a little toward us.
     const box = hurtBox(f);
     this.face.set(toFloat(f.x), toFloat(f.y) + toFloat(box.y + box.h) - FACE_DOWN, 0);
-    this.camera.aspect = (BAND_W * aspect) / (BAND_Y1 - BAND_Y0);
+    this.camera.aspect = (BAND_W * aspect) / BAND_H;
     this.camera.position.set(this.face.x + f.facing * OUT, this.face.y + 0.05, TOWARD);
     this.camera.lookAt(this.face);
     this.camera.updateProjectionMatrix();

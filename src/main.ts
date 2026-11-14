@@ -31,7 +31,7 @@ import { Post } from './render/post';
 import { ROOM_GRADE, Room, TV_ASPECT } from './render/room';
 import { FIGHTERS, Input, STAGES, STAGE_IDS, canTD, fighterData, type SimEvent } from './sim';
 import { propInReach } from './sim/stage';
-import { Hud } from './ui/hud';
+import { HUD_TOP, Hud } from './ui/hud';
 import { Glitch } from './ui/glitch';
 import { Menu } from './ui/menu';
 import { ArcadeCard } from './ui/arcadeCard';
@@ -1008,6 +1008,7 @@ function resize(): void {
   setOutlineSize(h * pr * post.drawScale);
   arena.setPixelHeight(h * pr * post.drawScale);
   if (!onTv) arena.resize(w, h);
+  arena.hudClear = HUD_TOP / h;
   room.resize(w, h);
   layoutTouch();
 }
@@ -1240,6 +1241,7 @@ if (new URLSearchParams(location.search).has('shots'))
     hold: (on) => (shotHold = on),
     hideFighters: (on) => (arena.hideFighters = on),
     calls: () => renderer.info.render.calls,
+    rects: () => (arena.screenRects(session!.match, window.innerWidth, window.innerHeight, bodyRects), [...bodyRects]),
   });
 
 document.getElementById('version')!.textContent = `v${VERSION} · ${BUILD_ID}`;
