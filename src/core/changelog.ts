@@ -14,6 +14,19 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.64.0',
+    date: '2026-11-14',
+    title: 'The Set Answers',
+    notes: [
+      "The studio answers the fight. Shelves, mirrors, speakers and the weather map rattle when someone is slammed near them, and the News's lamps swing on the big blows with their beams swinging after them.",
+      'A wall splat or a bounce off the floor leaves a crack, and a body leaves a scuff where it lands. They stay for the round.',
+      "Rain lashes the lens in Weather's storm, Burn's mirrors flash white on a combo's last blow, the News ticker glitches, and Kitchen's burners spark when a body bounces beside them.",
+      'The fighters keep their eyes on each other, wince as the round goes against them and grin through a long combo.',
+      "In Arcade, the fighters you've beaten lean in from the bleachers on the big hits.",
+      'On phones: the fighter select keeps the TV in view while you turn the dial, the results are bigger, and FIRST HIT keeps to its corner and stays out of the K.O. call.',
+    ],
+  },
+  {
     version: '0.63.0',
     date: '2026-11-14',
     title: "Tonight's Line-Up",
