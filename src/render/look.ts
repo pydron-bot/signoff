@@ -33,6 +33,8 @@ interface Look {
   mirror?: number;
   /** Darkens the whole set (never the fighters), 0 to 1: a bright set that the fighters get lost in. */
   setDim?: number;
+  /** Scales the fighters' rim: a dark set that dark costumes sink into. */
+  fighterRim?: number;
 }
 
 function g(lift: [number, number, number], gain: [number, number, number], saturation: number, contrast: number, bloom: number): Grade {
@@ -42,22 +44,22 @@ function g(lift: [number, number, number], gain: [number, number, number], satur
 /** By stage, one per segment. */
 const LOOKS: Readonly<Record<string, readonly Look[]>> = {
   weather: [
-    { ground: '#4a4250', falloff: 0.55, grade: g([0, 0.004, 0.012], [1.02, 1, 1], 1.1, 1.08, 0.55), gloss: 0.22 },
-    { ground: '#2a3040', falloff: 0.7, grade: g([0, 0.006, 0.02], [0.94, 0.98, 1.06], 0.88, 1.12, 0.7), gloss: 0.32 },
-    { ground: '#1e5060', falloff: 0.7, grade: g([0, 0.01, 0.014], [0.92, 1.02, 1.04], 0.95, 1.1, 0.7), gloss: 0.5, floorY: 0.22 },
+    { ground: '#4a4250', falloff: 0.55, grade: g([0, 0.004, 0.012], [1.02, 1, 1], 1.1, 1.08, 0.55), gloss: 0.22, fighterRim: 1.5 },
+    { ground: '#2a3040', falloff: 0.8, grade: g([0, 0.006, 0.02], [0.94, 0.98, 1.06], 0.88, 1.12, 0.7), gloss: 0.32, fighterRim: 2.4 },
+    { ground: '#1e5060', falloff: 0.7, grade: g([0, 0.01, 0.014], [0.92, 1.02, 1.04], 0.95, 1.1, 0.7), gloss: 0.5, floorY: 0.22, fighterRim: 1.9 },
   ],
   burn: [
     { ground: '#8a5030', falloff: 0.45, grade: g([0.01, 0.002, 0.006], [1.06, 1, 0.94], 1.15, 1.06, 0.6), gloss: 0.16, mirror: 0.5 },
     { ground: '#9a5a34', falloff: 0.4, grade: g([0.008, 0, 0.008], [1.06, 1, 0.98], 1.22, 1.08, 0.8), gloss: 0.18, mirror: 0.55 },
-    { ground: '#180c24', falloff: 0.85, grade: g([0.012, 0, 0.02], [1, 0.96, 1.04], 1.05, 1.15, 0.8), gloss: 0.14 },
+    { ground: '#180c24', falloff: 0.85, grade: g([0.012, 0, 0.02], [1, 0.96, 1.04], 1.05, 1.15, 0.8), gloss: 0.14, fighterRim: 2.4 },
   ],
   news: [
     { ground: '#262c38', falloff: 0.55, grade: g([0, 0.004, 0.016], [0.98, 1, 1.04], 1.05, 1.1, 0.6), gloss: 0.4 },
     { ground: '#2e1a20', falloff: 0.55, grade: g([0.008, 0, 0.01], [1.03, 0.99, 1], 1.08, 1.1, 0.65), gloss: 0.4 },
-    { ground: '#0a0a10', falloff: 0.9, grade: g([0, 0.002, 0.014], [1, 0.98, 1.02], 0.95, 1.18, 0.8), gloss: 0.22 },
+    { ground: '#0a0a10', falloff: 0.9, grade: g([0, 0.002, 0.014], [1, 0.98, 1.02], 0.95, 1.18, 0.8), gloss: 0.22, fighterRim: 2.4 },
   ],
   kitchen: [
-    { ground: '#6a5a4c', falloff: 0.8, grade: g([0.006, 0.003, 0], [1.03, 1, 0.94], 1.05, 1.12, 0.5), gloss: 0.2, setDim: 0.22 },
+    { ground: '#6a5a4c', falloff: 0.8, grade: g([0.006, 0.003, 0], [1.03, 1, 0.94], 1.05, 1.12, 0.5), gloss: 0.2, setDim: 0.34, fighterRim: 1.3 },
     { ground: '#6a2a0c', falloff: 0.6, grade: g([0.014, 0.004, 0], [1.08, 0.96, 0.84], 1.12, 1.12, 0.85), gloss: 0.24 },
     { ground: '#5a1806', falloff: 0.7, grade: g([0.014, 0.002, 0], [1.08, 0.92, 0.8], 1.1, 1.15, 0.85), gloss: 0.2 },
   ],
@@ -80,6 +82,7 @@ export function relight(stage: string, rigs: readonly SegmentLights[]): SegmentL
       floorY: r.floorY ?? look.floorY ?? 0,
       mirror: r.mirror ?? look.mirror ?? 0,
       setDim: r.setDim ?? look.setDim ?? 0,
+      fighterRim: r.fighterRim ?? look.fighterRim ?? 1,
     };
   });
 }

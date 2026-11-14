@@ -8,3 +8,5 @@ dev-dist/
 __pycache__/
 smoke-out/
 art-out/
+shots-out/
+readability-out/
