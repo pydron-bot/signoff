@@ -41,6 +41,7 @@ import { MoveListPanel } from './ui/moveListPanel';
 import { InputDisplay } from './ui/inputDisplay';
 import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
+import { installShots } from './game/shotHook';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
 // The menu's levels; the DIRECTOR plays Arcade's last fight (arcade.ts) and CPU VS CPU.
@@ -307,11 +308,15 @@ function keepReplay(r: Replay | null): void {
 }
 const ev: SimEvent[] = [];
 const clock = new FixedStep();
+/** The capture tools (?shots, src/game/shotHook.ts): a fixed seed, the frame loop not stepping by itself, and the models' load. */
+let shotSeed = 0;
+let shotHold = false;
+let loaded: Promise<void> = Promise.resolve();
 /** A KO runs in slow motion for a moment. */
 const slowMo = new SlowMo();
 
 function newSession(mode: Mode, p1: string, p2: string, stage: string, level: CpuLevel = LEVELS[setup.level], level1?: CpuLevel): Session {
-  const s = new Session({ mode, p1, p2, stage, level, level1, seed: (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
+  const s = new Session({ mode, p1, p2, stage, level, level1, seed: shotSeed || (Date.now() & 0x7fffffff) || 1, studio: mode !== 'demo' && setup.studio === 1, version: VERSION });
   return begin(s);
 }
 
@@ -330,7 +335,7 @@ function begin(s: Session): Session {
   // Arcade's beaten fighters watch from the bleachers.
   const seated = ladder && s.options.mode === 'cpu' ? beaten(ladder) : [];
   // Compile the models' shaders as they arrive, not on their first frame.
-  void Promise.all([arena.setFighters(s.match), arena.setAudience(seated)]).then(() => post.compileScene(arena.scene, arena.camera));
+  loaded = Promise.all([arena.setFighters(s.match), arena.setAudience(seated)]).then(() => post.compileScene(arena.scene, arena.camera));
   clock.reset();
   return s;
 }
@@ -1068,7 +1073,7 @@ renderer.setAnimationLoop((now) => {
     if (bits & ~coldOpenHeld & SKIP_BITS) endColdOpen();
     else if (!coldOpen.update(Math.min(0.1, (now - lastFrame) / 1000))) endColdOpen();
     coldOpenHeld = bits;
-  } else if (!paused && !over && !(replaying && replayPaused)) {
+  } else if (!paused && !over && !shotHold && !(replaying && replayPaused)) {
     // Replays can run at other speeds: scaled time, reset whenever the speed changes.
     const speed = replaying ? SPEEDS[replaySpeed] : s.options.mode === 'watch' ? SPEEDS[watchSpeed] : s.options.mode === 'showcase' ? SHOWCASE_SPEEDS[showcaseSpeed] : school?.session === s ? SHOWCASE_SPEEDS[schoolSpeed] : 1;
     const n = clock.advance(now * speed, slowMo.scale);
@@ -1210,6 +1215,32 @@ renderer.setAnimationLoop((now) => {
   } else post.render(arena.scene, arena.camera, now, quiet ? null : arena.cutIn(m));
   perf.frame(now, stepped);
 });
+
+// The capture tools only: never installed in play.
+if (new URLSearchParams(location.search).has('shots'))
+  installShots({
+    start: (mode, p1, p2, stage, seed) => {
+      shotSeed = seed;
+      start(mode, p2, stage, 'normal', p1);
+      shotSeed = 0;
+      endColdOpen();
+      return loaded;
+    },
+    session: () => session,
+    step: (p1, out) => {
+      const s = session!;
+      s.tick(p1, 0, out);
+      arena.step(s.match, out);
+      hud.onEvents(s.match, out);
+      hud.step();
+      glitch.onEvents(out);
+      glitch.step();
+      slowMo.step(s.match, out);
+    },
+    hold: (on) => (shotHold = on),
+    hideFighters: (on) => (arena.hideFighters = on),
+    calls: () => renderer.info.render.calls,
+  });
 
 document.getElementById('version')!.textContent = `v${VERSION} · ${BUILD_ID}`;
 

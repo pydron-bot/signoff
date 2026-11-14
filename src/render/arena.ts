@@ -215,6 +215,8 @@ export class Arena {
   }
   private readonly corner = new THREE.Vector3();
   showBoxes = false;
+  /** The set without the fighters (tools/readability.mjs measures what stands behind them). */
+  hideFighters = false;
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
   private readonly wear = new WearTracker();
@@ -622,7 +624,7 @@ export class Arena {
     v.group.position.set(0, 0, 0);
     // Off screen mid-teleport.
     const mv = f.mode === 'move' ? moveData(f.fighter, f.move) : null;
-    const shown = !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
+    const shown = !this.hideFighters && !(mv?.hidden && f.moveFrame >= mv.hidden[0] && f.moveFrame <= mv.hidden[1]);
     v.group.visible = shown;
     v.body.visible = !model;
     if (v.model) v.model.root.visible = shown && model !== null;
