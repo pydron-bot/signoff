@@ -155,6 +155,8 @@ export interface MatchState {
   roundFrame: number;
   /** The round's first hit has landed (it's worth a bar). */
   firstHit: boolean;
+  /** What that first hit is worth in meter. */
+  firstHitMeter: number;
   /** This round's wind push per frame (signed), 0 for none. */
   wind: Fx;
   hazards: HazardState[];

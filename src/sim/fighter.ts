@@ -13,7 +13,6 @@ import {
   CUT_AWAY_FRAMES,
   DASH_COMMIT,
   DOWN_FRAMES,
-  FIRST_HIT_METER,
   DELAYED_GETUP,
   GETUP_FRAMES,
   GRAVITY,
@@ -93,7 +92,7 @@ export function firstHit(m: MatchState, ai: number, ev: SimEvent[]): void {
   if (m.firstHit) return;
   m.firstHit = true;
   const a = m.fighters[ai];
-  a.meter = Math.min(METER_MAX, a.meter + FIRST_HIT_METER);
+  a.meter = Math.min(METER_MAX, a.meter + m.firstHitMeter);
   ev.push({ type: 'firstHit', player: ai });
 }
 
