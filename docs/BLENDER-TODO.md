@@ -270,6 +270,7 @@ are authored facing right with the left foot and left hand leading.
 > 18. **Step 34, six more things to use** (Nov 14, open): six `prop_*` objects and `fx_foam`, ahead of the game side.
 > 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor.
 > 20. **Step 31, jumps by weight** (Nov 14, open): eight jump clips at new lengths.
+> 21. **Step 35, fighting styles: Dale and Margaret** (Nov 14, open): timing profiles for both, three new clips and one re-key for Dale, two retimed for Margaret, two retired. On `play/styles-2`.
 >
 > Steps 31 to 34 are on the branch `play/fair-fights` (0.62.0, which holds 0.61.0 too), not yet on `main`: branch from it. More will follow as the plan in `docs/LOOK-AND-PLAY-PLAN.md` goes on (new clips for five fighters' styles).
 >
@@ -1732,6 +1733,78 @@ game draws one of step 30's loose objects in its place.
   faceted puff), origin at the bottom centre. The game scales it up over
   ten frames and fades it.
 
+### 35. Fighting styles: Dale and Margaret (Nov 14, game side)
+
+The first part of the rest of the cast (`docs/STYLES.md`, after the Rox and
+Hollis pilot of step 25): Dale and Margaret, the keep-away and the precise,
+the furthest apart of the five. Same method as step 25: a timing profile
+for each (`Stance`), then the moves whose clips changed. The game side is
+in (0.63.0): until a clip lands the game plays the stand-in in brackets,
+and `ART_PENDING` in `src/render/pose.ts` lists what's owed; take each
+entry out as its clip lands.
+
+**A. Rhythm: two more timing profiles** (`lib/anim.py`, `Stance`)
+
+- **Dale, the presenter:** unhurried and smooth. `windup` small and early
+  (a presenter's gesture, not a load); `snap` gentle, the arm still
+  gliding as it reaches the hitbox; `follow` long: the pointer or umbrella
+  *held out* at full stretch through the active frames and a beat after,
+  as if indicating the map; `settle` with a little turn back to camera and
+  the smile.
+- **Margaret, precision:** start and stop dead. `windup` none (the strike
+  leaves from the stance, no draw-back); `snap` hard, there on the first
+  active frame; `follow` none: the limb stops exactly at the hitbox's far
+  edge and holds still; `settle` a straight line back to stance, no
+  overshoot, no bounce. The body barely moves: shoulders level, spine
+  upright, head still, in every normal. Hers should be the least movement
+  of anyone's.
+
+**B. Dale: the forecast** (shape: the pointer, the umbrella held out like a pointer, the presenter's sweeping arm)
+
+- [ ] `s.BK` **Umbrella Jab** (same 35 frames, re-key): the umbrella held
+  out by its crook at arm's length, the closed tip reaching 1.75 m on
+  14–16. The game no longer lets his arm be hit past 0.85 m: keep the hand
+  at or inside 0.85 m and let the umbrella do the reaching (a long, thin
+  silhouette).
+- [ ] `b.BP` **Pointer** (new, 24 frames; stand-in `b.FK`): a step back
+  (0.05 m a frame on 1–7, the game moves him) while the free hand flicks
+  the telescopic pointer out at their face, tip at 1.0–1.45 m high and
+  1.45 m out on 8–9, held a beat, then tucked back. The other hand stays at
+  his tie.
+- [ ] `FP BK` **Front Moves In** (34 frames; stand-in `FP FP BK`): the old
+  `FP FP BK` clip, now straight off the jab: a sweeping backhand with the
+  umbrella across the body at 0.7–1.2 m, out to 1.35 m, on 12–14, as if
+  wiping a front across the map. Rename and re-key the old clip.
+- [ ] `b.FK BK` **Long-Range Forecast** (new, 34 frames; stand-in `s.BK`):
+  out of the step-back kick, the umbrella thrust like a fencer's lunge
+  without moving the feet, tip reaching 1.85 m at 0.75–1.4 m on 13–15
+  (the hand no further than 0.85 m); held out, then brought back to the
+  shoulder.
+- [ ] Retired: `FP FP BK` and `BP FK FK` are gone from the data; drop their
+  clips once `FP BK` exists.
+
+**C. Margaret: precision** (shape: the anchor's posture, the rolled script, a pointed shoe)
+
+- [ ] `s.BK` **Anchor Kick** (retimed, 29 frames, was 32; stand-in `FK
+  BK`): a side kick from a dead stop, the heel at 0.75–1.4 m, out to
+  1.55 m, on 12–14, then straight back down. No chamber to speak of.
+- [ ] `f.FK` **Script Slash** (new shape and timing, 27 frames, was Field
+  Report's 29 with a step; stand-in `s.FK`): no step now. The rolled script
+  in her lead hand slashed flat across at chest height (0.75–1.35 m),
+  the pages reaching 1.55 m while her hand stays inside 0.8 m, on 11–13.
+  Wrist only; the shoulders don't turn.
+
+**Checks**
+
+- [ ] Exact frame counts (the clip table below is regenerated), strikes in
+  their hitboxes, and the hand inside the hurtbox where a move's reach is
+  the umbrella or the script (Dale's `s.BK` and `b.FK BK`, Margaret's
+  `f.FK`).
+- [ ] Empty `ART_PENDING` of Dale's and Margaret's entries as their clips
+  land.
+- [ ] Review in the art viewer at play size: could you name each of them
+  from the silhouette of a strike, and does Margaret move least?
+
 ### State clips (every fighter)
 
 These aren't moves in the data; the game picks them from the fighter's state.
@@ -1784,7 +1857,7 @@ are the specials (`+` is the boosted version, which can share most of the
 plain one), `interact` is kicking a stage prop.
 <!-- clips:start (generated by `npm run docs:clips`; do not edit by hand) -->
 
-#### Dale Storm (`dale`): 40 move clips
+#### Dale Storm (`dale`): 41 move clips
 
 | Clip (= move id) | Name | Kind | Stance | Frames | Active frames and hitbox (metres, +x = forward, y = up from feet) |
 | --- | --- | --- | --- | --- | --- |
@@ -1798,6 +1871,7 @@ plain one), `interact` is kicking a stage prop.
 | `c.BK` | Ground Fog | normal | crouch | 38 | 12–14: x 0.20…1.35, y 0.00…0.30 (low) |
 | `f.BP` | Barometer Smash | normal | stand | 39 | 20–21: x 0.20…1.00, y 0.75…1.60 (overhead) |
 | `b.FK` | Step Back Kick | normal | stand | 26 | 9–10: x 0.20…1.30, y 0.50…0.90 (mid) |
+| `b.BP` | Pointer | normal | stand | 24 | 8–9: x 0.20…1.45, y 1.00…1.45 (high) |
 | `j.FP` | Jumping Jab | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
 | `j.BP` | Jumping Hammer | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Knee | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |
@@ -1805,12 +1879,12 @@ plain one), `interact` is kicking a stage prop.
 | `j.FK FP` | Updraft | air | air | 15 | 5–8: x 0.10…0.95, y 0.30…1.70 (overhead) |
 | `j.BP BK` | Downburst | air | air | 18 | 6–9: x 0.00…1.00, y -0.30…1.80 (overhead) |
 | `FP FP` | Five-Day Outlook | normal | stand | 21 | 8–9: x 0.20…1.15, y 1.10…1.45 (high) |
-| `FP FP BK` | Front Moves In | normal | stand | 34 | 12–14: x 0.20…1.35, y 0.70…1.20 (mid) |
+| `FP BK` | Front Moves In | normal | stand | 34 | 12–14: x 0.20…1.35, y 0.70…1.20 (mid) |
 | `FP BP` | Cloud Cover | normal | stand | 27 | 9–11: x 0.20…1.20, y 0.75…1.40 (mid) |
 | `BP FK` | High Pressure | normal | stand | 30 | 10–12: x 0.20…1.30, y 0.50…0.90 (mid) |
-| `BP FK FK` | Scattered Showers | normal | stand | 28 | 11–12: x 0.20…1.35, y 0.00…0.35 (low) |
 | `FK BP` | Doppler | normal | stand | 33 | 16–17: x 0.20…1.20, y 0.75…1.60 (overhead) |
 | `c.FP FK` | Ground Frost | normal | crouch | 30 | 9–10: x 0.20…1.35, y 0.00…0.30 (low) |
+| `b.FK BK` | Long-Range Forecast | normal | stand | 34 | 13–15: x 0.20…1.85, y 0.75…1.40 (mid) |
 | `f.BP BP` | Thunderhead | normal | stand | 32 | 12–14: x 0.20…1.25, y 0.75…1.40 (mid) |
 | `Cold Front` | Cold Front | special | stand | 48 | 14: spawns projectile at x 0.50, y 0.00 |
 | `Cold Front+` | Cold Front (boosted) | special | stand | 48 | 14: spawns projectile at x 0.50, y 0.00 |
@@ -1974,13 +2048,13 @@ plain one), `interact` is kicking a stage prop.
 | `s.FP` | Cue Card | normal | stand | 16 | 6–7: x 0.20…1.00, y 1.15…1.45 (high) |
 | `s.BP` | Lead Paragraph | normal | stand | 25 | 9–11: x 0.20…1.15, y 0.75…1.50 (mid) |
 | `s.FK` | Pointed Shoe | normal | stand | 24 | 9–11: x 0.20…1.40, y 0.55…0.90 (mid) |
-| `s.BK` | Anchor Kick | normal | stand | 32 | 13–15: x 0.20…1.55, y 0.75…1.40 (mid) |
+| `s.BK` | Anchor Kick | normal | stand | 29 | 12–14: x 0.20…1.55, y 0.75…1.40 (mid) |
 | `c.FP` | Footnote | normal | crouch | 17 | 7–8: x 0.20…0.95, y 0.60…0.90 (mid) |
 | `c.BP` | Rising Headline | normal | crouch | 31 | 9–12: x 0.10…0.80, y 0.75…1.90 (mid) |
 | `c.FK` | Low Bulletin | normal | crouch | 22 | 8–9: x 0.20…1.30, y 0.00…0.30 (low) |
 | `c.BK` | Cut the Wires | normal | crouch | 36 | 12–14: x 0.20…1.40, y 0.00…0.30 (low) |
 | `f.BP` | Paperweight | normal | stand | 37 | 19–20: x 0.20…1.00, y 0.75…1.60 (overhead) |
-| `f.FK` | Field Report | normal | stand | 29 | 12–14: x 0.20…1.30, y 0.60…1.00 (mid) |
+| `f.FK` | Script Slash | normal | stand | 27 | 11–13: x 0.20…1.55, y 0.75…1.35 (mid) |
 | `j.FP` | Jumping Cue | air | air | 16 | 5–10: x 0.10…0.80, y 0.60…1.10 (overhead) |
 | `j.BP` | Jumping Headline | air | air | 17 | 7–11: x 0.10…0.90, y 0.80…1.30 (overhead) |
 | `j.FK` | Jumping Heel | air | air | 19 | 6–13: x 0.10…0.90, y 0.10…0.60 (overhead) |

@@ -1,6 +1,10 @@
 /**
- * Dale Storm, Channel 0's weatherman. Zoner: long, slow normals, a slow
- * projectile, a hail drop from above and a lasso that pulls opponents in.
+ * Dale Storm, Channel 0's weatherman. Zoner, and his style is the forecast
+ * (docs/STYLES.md): the presenter at the map, pointer and umbrella held out
+ * at arm's length, unhurried. The longest pokes (the umbrella's tip can't
+ * be hit), two moves that step back, pokes that push them out, and short
+ * strings whose second hit holds them long enough for the Cold Front.
+ * Specials: a slow projectile, a hail drop from above and a lasso.
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
@@ -8,12 +12,20 @@ import { airSpike, airStep, box, followUp, interactMove, move, normal, projectil
 
 const moves = table(
   // Standing
-  normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], height: 'high', damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP' } }),
+  normal('s.FP', { name: 'Clipboard Jab', startup: 7, active: 2, recovery: 10, reach: [0.2, 0.95], at: [1.15, 1.45], height: 'high', damage: 30, hitstun: 16, blockstun: 12, chain: { FP: 'FP FP', BP: 'FP BP', BK: 'FP BK' } }),
   // Angled up: his anti-air, and what follows a launch.
   normal('s.BP', { name: 'Forecast Cross', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.05], at: [0.75, 2.0], damage: 60, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK' } }),
-  normal('s.FK', { name: 'Front Kick', startup: 11, active: 3, recovery: 13, reach: [0.2, 1.5], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, chain: { BP: 'FK BP' } }),
-  // The longest poke in the game: the umbrella, held out at arm's length.
-  normal('s.BK', { name: 'Umbrella Jab', startup: 14, active: 3, recovery: 19, reach: [0.2, 1.75], at: [0.75, 1.4], damage: 80, hitstun: 22, blockstun: 15, push: 0.07 }),
+  // A prim kick at the length of his leg; it pushes them back out to his range.
+  normal('s.FK', { name: 'Front Kick', startup: 11, active: 3, recovery: 13, reach: [0.2, 1.5], at: [0.6, 0.95], damage: 50, hitstun: 19, blockstun: 13, push: 0.06, chain: { BP: 'FK BP' } }),
+  // The longest poke in the game: the umbrella at arm's length. Only his arm can be hit, not the umbrella.
+  move('s.BK', {
+    name: 'Umbrella Jab',
+    kind: 'normal',
+    total: 35,
+    hits: [strike({ frames: [14, 16], reach: [0.2, 1.75], at: [0.75, 1.4], damage: 80, hitstun: 22, blockstun: 15, push: 0.07 })],
+    hurt: [{ frames: [14, 26], box: box(0.2, 0.85, 1.0, 1.4) }],
+    cancel: [17, 23],
+  }),
   // Crouching
   normal('c.FP', { name: 'Low Jab', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.7, 0.95], damage: 25, hitstun: 15, blockstun: 11, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rising Umbrella', stance: 'crouch', startup: 9, active: 4, recovery: 20, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 70, hitstun: 24, blockstun: 12, launch: 0.16 }),
@@ -21,7 +33,7 @@ const moves = table(
   normal('c.BK', { name: 'Ground Fog', stance: 'crouch', startup: 12, active: 3, recovery: 24, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normal
   normal('f.BP', { name: 'Barometer Smash', startup: 20, active: 2, recovery: 18, reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
-  // Steps back as it kicks: makes room for the forecast.
+  // Steps back as it kicks: makes room for the forecast. BK after it: the umbrella, all the way out.
   move('b.FK', {
     name: 'Step Back Kick',
     kind: 'normal',
@@ -29,7 +41,18 @@ const moves = table(
     motion: [{ frames: [1, 8], vx: -0.05 }],
     hits: [strike({ frames: [9, 10], reach: [0.2, 1.3], at: [0.5, 0.9], damage: 40, hitstun: 16, blockstun: 12 })],
     hurt: [{ frames: [9, 18], box: box(0.2, 1.2, 0.5, 0.9) }],
+    chain: { BK: 'b.FK BK' },
     cancel: [11, 17],
+  }),
+  // Backs off a step and flicks the pointer at their face: a whiff punisher that keeps his distance.
+  move('b.BP', {
+    name: 'Pointer',
+    kind: 'normal',
+    total: 24,
+    motion: [{ frames: [1, 7], vx: -0.05 }],
+    hits: [strike({ frames: [8, 9], reach: [0.2, 1.45], at: [1.0, 1.45], height: 'high', damage: 35, hitstun: 16, blockstun: 12, push: 0.05 })],
+    hurt: [{ frames: [8, 14], box: box(0.2, 0.7, 1.0, 1.45) }],
+    cancel: [10, 16],
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Jab', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { BP: 'j.BP' } }),
@@ -40,13 +63,22 @@ const moves = table(
   airStep('j.FK FP', { name: 'Updraft', damage: 35, chain: { BK: 'j.BP BK' } }),
   airSpike('j.BP BK', { name: 'Downburst', damage: 45 }),
   // String steps
-  normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], height: 'high', damage: 35, hitstun: 18, blockstun: 14, chain: { BK: 'FP FP BK' } }),
-  normal('FP FP BK', { name: 'Front Moves In', startup: 12, active: 3, recovery: 20, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 0, blockstun: 18, push: 0.07, knockdown: true }),
-  normal('FP BP', { name: 'Cloud Cover', startup: 9, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.4], damage: 50, hitstun: 20, blockstun: 13 }),
-  normal('BP FK', { name: 'High Pressure', startup: 10, active: 3, recovery: 18, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 55, hitstun: 20, blockstun: 14, chain: { FK: 'BP FK FK' } }),
-  normal('BP FK FK', { name: 'Scattered Showers', startup: 11, active: 2, recovery: 16, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 45, hitstun: 18, blockstun: 13 }),
-  normal('FK BP', { name: 'Doppler', startup: 16, active: 2, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.6], height: 'overhead', damage: 60, hitstun: 20, blockstun: 14 }),
-  normal('c.FP FK', { name: 'Ground Frost', stance: 'crouch', startup: 9, active: 2, recovery: 20, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 10 }),
+  // String steps: two hits and done. The second holds them in place (long stun, little push) for the Cold Front.
+  normal('FP FP', { name: 'Five-Day Outlook', startup: 8, active: 2, recovery: 12, reach: [0.2, 1.15], at: [1.1, 1.45], height: 'high', damage: 35, hitstun: 26, blockstun: 14, push: 0.01 }),
+  normal('FP BK', { name: 'Front Moves In', startup: 12, active: 3, recovery: 20, reach: [0.2, 1.35], at: [0.7, 1.2], damage: 70, hitstun: 0, blockstun: 18, push: 0.07, knockdown: true }),
+  normal('FP BP', { name: 'Cloud Cover', startup: 9, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.4], damage: 50, hitstun: 26, blockstun: 13, push: 0.01 }),
+  normal('BP FK', { name: 'High Pressure', startup: 10, active: 3, recovery: 18, reach: [0.2, 1.3], at: [0.5, 0.9], damage: 55, hitstun: 26, blockstun: 14, push: 0.01 }),
+  normal('FK BP', { name: 'Doppler', startup: 16, active: 2, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.6], height: 'overhead', damage: 60, hitstun: 24, blockstun: 14, push: 0.01 }),
+  normal('c.FP FK', { name: 'Ground Frost', stance: 'crouch', startup: 9, active: 2, recovery: 20, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 24, blockstun: 10, push: 0.01 }),
+  // Out of the step back: the umbrella thrust as far as it goes.
+  move('b.FK BK', {
+    name: 'Long-Range Forecast',
+    kind: 'normal',
+    total: 34,
+    hits: [strike({ frames: [13, 15], reach: [0.2, 1.85], at: [0.75, 1.4], damage: 65, hitstun: 26, blockstun: 16, push: 0.02 })],
+    hurt: [{ frames: [13, 24], box: box(0.2, 0.85, 1.0, 1.4) }],
+    cancel: [16, 22],
+  }),
   normal('f.BP BP', { name: 'Thunderhead', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.4], damage: 65, hitstun: 0, blockstun: 16, launch: 0.15 }),
   // Specials
   move('Cold Front', {
@@ -176,7 +208,7 @@ const finishers = [
     .strike('FP FP', { react: 'high', damage: 35 })
     .strike('s.BP', { react: 'high', damage: 60 })
     .strike('FK BP', { react: 'high', damage: 60 })
-    .strike('BP FK FK', { react: 'low', damage: 45 })
+    .strike('c.FP FK', { react: 'low', damage: 40 })
     .strike('c.BP', { react: 'launch', damage: 70, pop: 0.17 }, 4)
     .strike('Heat Lightning', { react: 'launch', damage: 75, pop: 0.2 }, 44)
     .strike('f.BP', { react: 'none', damage: 120 }, 0)
@@ -242,7 +274,7 @@ export const DALE: FighterData = {
     c: { FP: 'c.FP', BP: 'c.BP', FK: 'c.FK', BK: 'c.BK' },
     j: { FP: 'j.FP', BP: 'j.BP', FK: 'j.FK', BK: 'j.BK' },
     f: { BP: 'f.BP' },
-    b: { FK: 'b.FK' },
+    b: { FK: 'b.FK', BP: 'b.BP' },
   },
   specials: { n: 'Heat Lightning', f: 'Cold Front', d: 'Pressure Drop', b: 'Isobar Lasso' },
   airSpecials: { n: 'Downpour', d: 'Low Pressure' },
@@ -259,10 +291,10 @@ export const DALE: FighterData = {
   finishers,
   strings: [
     { name: 'Five-Day Outlook', path: ['s.FP', 'FP'], safe: true },
-    { name: 'Front Moves In', path: ['s.FP', 'FP', 'BK'], safe: true },
+    { name: 'Front Moves In', path: ['s.FP', 'BK'], safe: true },
     { name: 'Cloud Cover', path: ['s.FP', 'BP'], safe: true },
     { name: 'High Pressure', path: ['s.BP', 'FK'], safe: false },
-    { name: 'Scattered Showers', path: ['s.BP', 'FK', 'FK'], safe: true },
+    { name: 'Long-Range Forecast', path: ['b.FK', 'BK'], safe: true },
     { name: 'Doppler', path: ['s.FK', 'BP'], safe: true },
     { name: 'Ground Frost', path: ['c.FP', 'FK'], safe: false },
     { name: 'Thunderhead', path: ['f.BP', 'BP'], safe: true },

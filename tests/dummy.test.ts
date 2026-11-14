@@ -245,7 +245,8 @@ describe('training dummy: recording and playback', () => {
     const a = training({ guard: 'all', slot: 0, afterBlock: 'recording' });
     a.dummy.store(0, { frames: 2, runs: [FP, 1, 0, 1] });
     place(a.match, -0.4, 0.4);
-    const ev = play(a, 60, { 0: FK });
+    // The jab: Dale's front kick pushes them out of the recording's reach (0.63.0).
+    const ev = play(a, 60, { 0: FP });
     expect(ev.some((e) => e.type === 'block' && e.defender === 1)).toBe(true);
     expect(a.match.fighters[1].move === 's.FP' || ev.some((e) => e.type === 'hit' && e.attacker === 1)).toBe(true);
   });

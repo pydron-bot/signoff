@@ -110,6 +110,12 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   'gideon:Begone+': 'Laying On of Hands',
   'gideon:j.BP FP': 'j.FP',
   'gideon:j.BP BK': 'j.BP',
+  // Styles, part 1 (0.63.0, step 35): Dale's and Margaret's new and retimed normals until their clips land.
+  'dale:b.BP': 'b.FK',
+  'dale:FP BK': 'FP FP BK',
+  'dale:b.FK BK': 's.BK',
+  'margaret:s.BK': 'FK BK',
+  'margaret:f.FK': 's.FK',
   // Juggle reactions (step 16): the held end of `launched`.
   juggle_hit: 'launched',
   relaunch: 'launched',
@@ -124,6 +130,14 @@ export const STAND_INS: Readonly<Record<string, string>> = {
  * The asset tests let these through; the art side empties the list.
  */
 export const ART_PENDING: ReadonlySet<string> = new Set([
+  // Step 35: Dale (new, and two retired strings' clips), Margaret (retimed).
+  'dale:b.BP',
+  'dale:FP BK',
+  'dale:b.FK BK',
+  'dale:FP FP BK',
+  'dale:BP FK FK',
+  'margaret:s.BK',
+  'margaret:f.FK',
 ]);
 
 /** Stand-ins shown at their last frame, not played from the start (the juggle reactions hold `launched`'s pose). */

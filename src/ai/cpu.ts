@@ -1017,6 +1017,8 @@ export class Cpu {
         ['low', 12, () => tap(DOWN | BK)],
         ['special', 12, () => this.special(me, back | SPECIAL)],
         ['retreat', 14, () => taps([back, 0, back])],
+        // A poke that steps back out of their reach.
+        ['poke', d.normals.b.BP ? 10 : 0, () => tap(back | BP)],
       ]);
     } else if (dist > fx(2.6)) {
       this.choose(me, [
@@ -1196,7 +1198,7 @@ export class Cpu {
     const seq = stringMoves(d, s)!;
     const fwd = me.facing > 0 ? RIGHT : LEFT;
     const first = seq[0];
-    const startBits = first.startsWith('c.') ? DOWN : first.startsWith('f.') ? fwd : 0;
+    const startBits = first.startsWith('c.') ? DOWN : first.startsWith('f.') ? fwd : first.startsWith('b.') ? (me.facing > 0 ? LEFT : RIGHT) : 0;
     const btn = (b: string) => ({ FP, BP, FK, BK })[b as 'FP'] ?? 0;
     const pressed = new Set<number>();
     return (f, t) => {

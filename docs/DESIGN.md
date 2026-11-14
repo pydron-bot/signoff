@@ -255,8 +255,13 @@ meter. Every number below is a starting value to tune.
     weigh spending bars to extend against the bars the defender is holding.
 - Each fighter's normals do their own job, and each fighter has a style of
   their own (`docs/STYLES.md`: shape, rhythm, space, properties, strings;
-  Rox and Hollis first, in 0.37.0): Dale has the longest pokes and a
-  step-back kick; Rox is the routine: the closest range and the most plus,
+  Rox and Hollis first, in 0.37.0; Dale and Margaret in 0.63.0): Dale is
+  the forecast: unhurried, the longest pokes (the Umbrella Jab and, out of
+  the step-back kick, the Long-Range Forecast reach 1.75 and 1.85 m, and
+  only his arm can be hit, not the umbrella), two normals that step back
+  (Step Back Kick, Pointer), pokes that push them out, and short strings,
+  all two hits, whose second hit holds them still long enough for the Cold
+  Front; Rox is the routine: the closest range and the most plus,
   every string step stepping in, two-hit claps, a high kick that's an
   anti-air but sails over a croucher, a sliding splits sweep, and the
   longest strings (the Full Routine branches low or overhead at its fourth
@@ -266,9 +271,12 @@ meter. Every number below is a starting value to tune.
   Arm that crushes a guard, and short strings, two of them ending in a
   grab (Cuff 'Em, Frisk);
   Mumbles ducks under high attacks, reels people in on a string, and ends
-  combos with his Hand Puppet; Margaret has the best all-round normals
-  (fast, long enough, safe), a step-in kick, and a stagger (Breaking) that
-  leaves time for a normal after it.
+  combos with his Hand Puppet; Margaret is precision: the least movement
+  of anyone, strikes that start and stop dead, the best frame data (her
+  pokes are level or near it on block, all her strings safe), the
+  fastest long poke (Anchor Kick, 12 frames at 1.55 m, for whatever they
+  whiff), a Script Slash whose pages reach 1.55 m and can't be hit, and a
+  stagger (Breaking) that leaves time for a normal after it.
 - Specials: 6 to 8 per fighter (on the ground, in the air and as
   follow-ups), entered as direction + Special (or classic motions on
   keyboard and gamepad, see Controls), a follow-up as a button while its

@@ -11,7 +11,9 @@ limb (front punch is always a lead-hand jab, aimed at the hitbox). See
 `docs/ROSTER-REVIEW.md` for the audit.
 
 **Pilot (0.37.0): Rox and Hollis**, the two furthest apart. The rest follow
-once the pilot plays well.
+in three parts (`docs/LOOK-AND-PLAY-PLAN.md`, D): **Dale and Margaret**
+(0.63.0, art in `docs/BLENDER-TODO.md` step 35), then Gus and Gideon, then
+Mumbles.
 
 ## What makes a style
 
@@ -76,18 +78,40 @@ grab, and links.*
 | Properties | Armour on Door Kick | Collar Grab pulls in (`s.FP`), a close Knee that links (`s.FK`), armoured Rising Clothesline (`c.BP`) and Shoulder Check (`f.BP`, which also barges forward), a Stiff Arm that crushes a guard (`f.FK`, slow) |
 | Strings | 9, generic shapes, one grab | 8, short; two end in a grab (**Cuff 'Em**, **Frisk**) |
 
+## Dale Storm: the forecast (0.63.0)
+
+*Keep-away: the presenter at the map, unhurried, pointer and umbrella held
+out at arm's length; the longest pokes, steps back, and strings that set
+up the Cold Front.*
+
+| | Before | Now |
+| --- | --- | --- |
+| Shape | Generic jab, cross, front kick, an umbrella jab | The presenter: a telescopic pointer, the umbrella held out like a pointer and thrust like a foil, a sweeping arm across the map |
+| Rhythm | Same as everyone | Unhurried and smooth: small early wind-ups, the limb held out at full stretch through the active frames, a turn back to camera to settle |
+| Space | One step-back kick | Backwards: a second step-back normal (`b.BP` Pointer), pokes that push them out (`s.FK`, `s.BK`), the longest reach in the game out of the step back |
+| Properties | The longest poke | Disjointed reach: on `s.BK` (1.75 m) and `b.FK BK` (1.85 m) only his arm can be hit; long stun and little push on every string's second hit, so it holds them for the Cold Front |
+| Strings | 8, two of them three hits | 8, all two hits: **Long-Range Forecast** (`b.FK BK`) new, **Front Moves In** now straight off the jab (`FP BK`); Scattered Showers and the old three-hit Front Moves In retired |
+
+## Margaret Okafor: precision (0.63.0)
+
+*Footsies: the least movement of anyone, perfect posture, strikes that
+start and stop dead, the best frame data.*
+
+| | Before | Now |
+| --- | --- | --- |
+| Shape | Generic jab, cross, front kick, a step-in kick | The anchor: shoulders level and still, a rolled script slashed at chest height, a pointed shoe, a side kick from a dead stop |
+| Rhythm | Same as everyone | No wind-up, a hard snap, no follow-through, a straight line back to stance |
+| Space | Steps in (Field Report) | In place: the step-in kick is gone; she holds her ground at the tip of her pokes |
+| Properties | Fast, safe normals | The best frame data: her pokes are level or near it on block (`s.BP`, `s.FK` 0; `c.FK` −1; `s.BK` −1 at 1.55 m), all her strings safe; the fastest long poke (`s.BK` Anchor Kick, 12 frames); a disjointed Script Slash (`f.FK`, 1.55 m, only the arm can be hit) |
+| Strings | 8, one unsafe low | 8, Small Print now safe too |
+
 ## The rest (after the pilot)
 
 Short notes to build from, from the roster review:
 
-- **Dale (zoner):** keep-away. The longest pokes, step-backs, an angled
-  anti-air instead of a launcher, fewer strings that cancel into Cold Front.
 - **Mister Mumbles (trickster):** wrong. Limbs bend the wrong way, he
   ducks under highs, hops over lows, switches sides mid-string, jerks on his
   strings; floppy follow-through.
-- **Margaret (footsies):** precise. The least movement of anyone, perfect
-  posture, the best frame data, a disjointed script slash; strikes start
-  and stop dead.
 - **Gus (mid-range):** the kitchen. Every normal a utensil, wide arcs, long
   recovery, the longest disjointed reach.
 - **Gideon (all-rounder):** the sermon. Theatrical, two-beat call and

@@ -1,8 +1,11 @@
 /**
  * Margaret Okafor, the evening news anchor: calm, precise, never off-script.
- * Footsies: the best normals in the game (fast, long enough, safe), a stagger
- * strike that sets up a follow-up, a counter that reads the next attack, and
- * a live feed that goes out on a delay.
+ * Footsies, and her style is precision (docs/STYLES.md): the least movement
+ * of anyone, perfect posture, strikes that start and stop dead. The best
+ * frame data in the game (her pokes are the most plus on block), the fastest
+ * long poke (a whiff punisher) and a script slash whose pages can't be hit.
+ * Specials: a stagger strike that sets up a follow-up, a counter that reads
+ * the next attack, and a live feed that goes out on a delay.
  */
 import { fx } from '../fixed';
 import type { FighterData } from '../types';
@@ -25,25 +28,25 @@ function liveFeed(delay: number, hits = 1) {
 const moves = table(
   // Standing: quick, long enough, and safe.
   normal('s.FP', { name: 'Cue Card', startup: 6, active: 2, recovery: 9, reach: [0.2, 1.0], at: [1.15, 1.45], height: 'high', damage: 30, hitstun: 15, blockstun: 12, chain: { FP: 'FP FP', FK: 'FP FK' } }),
-  normal('s.BP', { name: 'Lead Paragraph', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.15], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 15, chain: { BP: 'BP BP' } }),
-  normal('s.FK', { name: 'Pointed Shoe', startup: 9, active: 3, recovery: 13, reach: [0.2, 1.4], at: [0.55, 0.9], damage: 45, hitstun: 18, blockstun: 14, chain: { BK: 'FK BK' } }),
-  normal('s.BK', { name: 'Anchor Kick', startup: 13, active: 3, recovery: 17, reach: [0.2, 1.55], at: [0.75, 1.4], damage: 70, hitstun: 22, blockstun: 16, push: 0.07 }),
+  normal('s.BP', { name: 'Lead Paragraph', startup: 9, active: 3, recovery: 14, reach: [0.2, 1.15], at: [0.75, 1.5], damage: 55, hitstun: 20, blockstun: 16, chain: { BP: 'BP BP' } }),
+  normal('s.FK', { name: 'Pointed Shoe', startup: 9, active: 3, recovery: 13, reach: [0.2, 1.4], at: [0.55, 0.9], damage: 45, hitstun: 18, blockstun: 15, chain: { BK: 'FK BK' } }),
+  // The fastest long poke in the game, and it stops dead: for whatever they whiff in front of her.
+  normal('s.BK', { name: 'Anchor Kick', startup: 12, active: 3, recovery: 15, reach: [0.2, 1.55], at: [0.75, 1.4], damage: 70, hitstun: 22, blockstun: 16, push: 0.07 }),
   // Crouching
   normal('c.FP', { name: 'Footnote', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.95], at: [0.6, 0.9], damage: 25, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rising Headline', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [0.75, 1.9], damage: 65, hitstun: 24, blockstun: 12, launch: 0.16 }),
-  normal('c.FK', { name: 'Low Bulletin', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.3], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 11 }),
+  normal('c.FK', { name: 'Low Bulletin', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.3], at: [0, 0.3], height: 'low', damage: 35, hitstun: 16, blockstun: 12 }),
   normal('c.BK', { name: 'Cut the Wires', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.4], at: [0, 0.3], height: 'low', damage: 65, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
   normal('f.BP', { name: 'Paperweight', startup: 19, active: 2, recovery: 17, reach: [0.2, 1.0], at: [0.75, 1.6], height: 'overhead', damage: 65, hitstun: 22, blockstun: 14, chain: { BP: 'f.BP BP' } }),
-  // Steps in as it kicks: closes the gap to the tip of her other normals.
+  // A rolled script slashed across at chest height, without a step: the pages reach further than her arm, and only the arm can be hit.
   move('f.FK', {
-    name: 'Field Report',
+    name: 'Script Slash',
     kind: 'normal',
-    total: 29,
-    motion: [{ frames: [1, 10], vx: 0.045 }],
-    hits: [strike({ frames: [12, 14], reach: [0.2, 1.3], at: [0.6, 1.0], damage: 50, hitstun: 18, blockstun: 14 })],
-    hurt: [{ frames: [12, 20], box: box(0.2, 1.2, 0.6, 1.0) }],
-    cancel: [15, 21],
+    total: 27,
+    hits: [strike({ frames: [11, 13], reach: [0.2, 1.55], at: [0.75, 1.35], damage: 50, hitstun: 18, blockstun: 15 })],
+    hurt: [{ frames: [11, 18], box: box(0.2, 0.8, 0.9, 1.35) }],
+    cancel: [14, 20],
   }),
   // Jumping (all overheads)
   normal('j.FP', { name: 'Jumping Cue', kind: 'air', startup: 5, active: 6, recovery: 6, reach: [0.1, 0.8], at: [0.6, 1.1], height: 'overhead', damage: 40, hitstun: 18, blockstun: 12, chain: { FK: 'j.FK', BP: 'j.BP' } }),
@@ -56,11 +59,11 @@ const moves = table(
   airSpike('j.BP BK', { name: 'Headline Drop', damage: 42 }),
   normal('FP FP', { name: 'Top Story', startup: 7, active: 2, recovery: 11, reach: [0.2, 1.05], at: [1.1, 1.45], height: 'high', damage: 30, hitstun: 17, blockstun: 14, chain: { BP: 'FP FP BP' } }),
   normal('FP FP BP', { name: 'And Finally', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.25], at: [0.75, 1.4], damage: 60, hitstun: 0, blockstun: 16, push: 0.07, knockdown: true }),
-  normal('FP FK', { name: 'Correspondent', startup: 9, active: 2, recovery: 15, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 40, hitstun: 18, blockstun: 12 }),
+  normal('FP FK', { name: 'Correspondent', startup: 9, active: 2, recovery: 15, reach: [0.2, 1.35], at: [0, 0.35], height: 'low', damage: 40, hitstun: 18, blockstun: 14 }),
   normal('BP BP', { name: 'Developing Story', startup: 10, active: 3, recovery: 16, reach: [0.2, 1.2], at: [0.75, 1.45], damage: 50, hitstun: 20, blockstun: 14, chain: { BK: 'BP BP BK' } }),
   normal('BP BP BK', { name: 'We Go Live', startup: 12, active: 3, recovery: 19, reach: [0.2, 1.3], at: [0.75, 1.6], damage: 70, hitstun: 0, blockstun: 16, launch: 0.15 }),
   normal('FK BK', { name: 'Weather and Sport', startup: 12, active: 3, recovery: 18, reach: [0.2, 1.45], at: [0.75, 1.4], damage: 60, hitstun: 20, blockstun: 15 }),
-  normal('c.FP FK', { name: 'Small Print', stance: 'crouch', startup: 9, active: 2, recovery: 18, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 10 }),
+  normal('c.FP FK', { name: 'Small Print', stance: 'crouch', startup: 9, active: 2, recovery: 18, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 40, hitstun: 16, blockstun: 14 }),
   normal('f.BP BP', { name: 'Exclusive', startup: 11, active: 3, recovery: 18, reach: [0.2, 1.2], at: [0.75, 1.4], damage: 60, hitstun: 0, blockstun: 15, knockdown: true }),
   // Specials
   // A fast strike that staggers: long enough to land a normal after it on hit, punishable on block.
@@ -284,7 +287,7 @@ export const MARGARET: FighterData = {
     { name: 'Developing Story', path: ['s.BP', 'BP'], safe: true },
     { name: 'We Go Live', path: ['s.BP', 'BP', 'BK'], safe: true },
     { name: 'Weather and Sport', path: ['s.FK', 'BK'], safe: true },
-    { name: 'Small Print', path: ['c.FP', 'FK'], safe: false },
+    { name: 'Small Print', path: ['c.FP', 'FK'], safe: true },
     { name: 'Exclusive', path: ['f.BP', 'BP'], safe: true },
   ],
 };

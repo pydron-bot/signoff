@@ -6,7 +6,7 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 
 | Fighter | Bars | Search | Hits | Damage | Tightest press, frames | Route (×n: hits of one move) |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dale Storm | 0 | frame-perfect | 8 | 30.9% | 1 | Low Pressure › ↓BP › →BP › →BP BP › ↓BP › BP › BP FK › BP FK FK |
+| Dale Storm | 0 | frame-perfect | 6 | 29.7% | 2 | Low Pressure › ↓BP › →BP › →BP BP › BP › Heat Lightning |
 | Dale Storm | 0 | human | 4 | 25.1% | 26 | →BP › →BP BP › BK › Heat Lightning |
 | Dale Storm | 1 | frame-perfect | 9 | 41.4% | 1 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › ↓BP › BP › BP FK › Heat Lightning |
 | Dale Storm | 1 | human | 7 | 38.8% | 7 | ↓BP › BK › Heat Lightning+ › →BP › →BP BP › BP › Heat Lightning |
@@ -30,12 +30,12 @@ The most damaging unbroken combo the simulation allows for each fighter, from a 
 | Mister Mumbles | 1 | human | 8 | 38.5% | 9 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet |
 | Mister Mumbles | 3 | frame-perfect | 13 | 47.2% | 1 | ↓BP › Knock-Knock+ › j.FP › j.BP › j.BP FK › BP › BP FK › Hand Puppet+ › FP › FP FP › Hand Puppet+ › ↓BP › FK |
 | Mister Mumbles | 3 | human | 8 | 47.9% | 6 | ↓BP › Knock-Knock+ › ←BP › Hand Puppet+ › j.BP › j.BP FK › Cut the Strings+ › j.BK |
-| Margaret Okafor | 0 | frame-perfect | 11 | 31.5% | 4 | j.BK › Cut to Commercial › ↓BP › BP › BP BP › BP BP BK › ↓BP › FP › FP FP › Breaking › Breaking BK |
+| Margaret Okafor | 0 | frame-perfect | 13 | 31.8% | 1 | →BP › Breaking › BP › BP BP › BP BP BK › j.FK › j.BP › j.BP BK › ↓BP ×2 › FP › FP FP › FP FP BP |
 | Margaret Okafor | 0 | human | 10 | 31.1% | 8 | j.BK › Cut to Commercial › Breaking › BP › BP BP › BP BP BK › BP › BP BP › BP BP BK › BK |
 | Margaret Okafor | 1 | frame-perfect | 9 | 39.4% | 14 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FP › FP FP › Breaking |
 | Margaret Okafor | 1 | human | 9 | 39.4% | 14 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FP › FP FP › Breaking |
-| Margaret Okafor | 3 | frame-perfect | 13 | 46.1% | 2 | ↓BP › Lead Story+ › BP › BP BP › BP BP BK › ↓BP › FK › Breaking+ › BK › Breaking+ › FP › FP FP › Breaking |
-| Margaret Okafor | 3 | human | 11 | 45.5% | 5 | ↓BP › Lead Story+ › BP › BP BP › BP BP BK › FK › Breaking+ › BK › Breaking+ › ↓BP › j.FK |
+| Margaret Okafor | 3 | frame-perfect | 12 | 46.0% | 1 | ↓BP › Lead Story+ › BP › BP BP › BP BP BK › ↓BP › →FK › Breaking+ › BK › Breaking+ › FP › FP FK |
+| Margaret Okafor | 3 | human | 10 | 43.9% | 17 | ↓BP › BK › Lead Story+ › BP › BP BP › BP BP BK › FK › Breaking+ › BK › Breaking+ |
 | Chef Gus Lamarre | 0 | frame-perfect | 9 | 29.3% | 1 | j.BP › j.BP BK › ↓BP › BK › Flambé ×2 › FK › Flambé › Chop Chop |
 | Chef Gus Lamarre | 0 | human | 7 | 26.6% | 5 | j.BP › j.BP BK › ↓BP › BK › Tenderise ×3 |
 | Chef Gus Lamarre | 1 | frame-perfect | 7 | 35.7% | 21 | ↓BP › BK › Chop Chop+ › →BP › Tenderise ×3 |

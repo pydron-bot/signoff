@@ -45,11 +45,10 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
     gus: { ...EVEN, special: 2.5 },
   },
   dale: {
-    // 0.62.0: Rox's quick jump gets in over his zoning; he presses her instead.
-    rox: { ...EVEN, string: 2.5, mix: 2.5 },
-    // 0.62.0: mix-ups on the heavies, and a few more jumps over Gus's pans.
+    // 0.62.0: Rox's quick jump gets in over his zoning; he mixes her up instead (0.63.0: lighter, his style does the rest).
+    rox: { ...EVEN, mix: 2.5 },
+    // 0.62.0: mix-ups on Hollis. (0.63.0: none needed against Gus now.)
     hollis: { ...EVEN, mix: 2.5 },
-    gus: { ...EVEN, jump: 1.6, mix: 2.5 },
   },
   // 0.51.0: the new moves moved three matchups past 70:30.
   margaret: {
@@ -70,7 +69,7 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
   },
   mumbles: {
     // 0.62.0: more strings and mix-ups still (she has more health now).
-    margaret: { ...EVEN, string: 2.5, special: 0.6, mix: 2.5 },
+    margaret: { ...EVEN, string: 2.5, special: 0.6, mix: 2.5, jump: 0.6 },
     gideon: { ...EVEN, mix: 2.5 },
   },
 };
