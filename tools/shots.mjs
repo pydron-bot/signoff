@@ -6,17 +6,18 @@
 // which steps the match without drawing. Writes each shot and one sheet per
 // profile (sheet-desktop.png, sheet-iphone.png) to --out.
 //   PLAYWRIGHT=/opt/node-tools node tools/shots.mjs --out /tmp/shots [--no-build] [--stages weather,burn]
-import { execSync, spawn } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { launch, playwright } from './pw.mjs';
+import { launch, playwright, serve } from './pw.mjs';
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : fallback;
 };
 const OUT = path.resolve(arg('--out', 'shots-out'));
-const DIST = path.join(OUT, 'dist');
+// --dist: an existing build (another checkout's, for the "before" sheet) instead of building this one.
+const DIST = path.resolve(arg('--dist', path.join(OUT, 'dist')));
 const PORT = 4197;
 const URL = `http://localhost:${PORT}/?shots`;
 mkdirSync(OUT, { recursive: true });
@@ -44,8 +45,8 @@ const PROFILES = {
   iphone: { ...devices['iPhone 15 Pro landscape'], viewport: { width: 852, height: 393 } },
 };
 
-if (!process.argv.includes('--no-build')) execSync(`npx vite build --outDir ${JSON.stringify(DIST)} --emptyOutDir`, { stdio: 'inherit' });
-const server = spawn('npx', ['vite', 'preview', '--outDir', DIST, '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+if (!process.argv.includes('--no-build') && !process.argv.includes('--dist')) execSync(`npx vite build --outDir ${JSON.stringify(DIST)} --emptyOutDir`, { stdio: 'inherit' });
+const server = await serve(DIST, PORT);
 const browser = await launch();
 let failed = false;
 try {

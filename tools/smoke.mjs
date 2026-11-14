@@ -1,11 +1,14 @@
 // Smoke test: builds for /signoff/, serves dist, and loads the game on
 // desktop and the iPhone 15 Pro landscape profile, then starts a fight
 // against the CPU and lets it run, failing on any page error, a blank
-// canvas or a HUD that never appears. Screenshots land in smoke-out/.
+// canvas or a HUD that never appears. Then it plays scripted moments on
+// Burn (mirrors: the most drawn) through the ?shots hook
+// (src/game/shotHook.ts) and fails if the busiest frame draws more than the
+// iPhone budget of 100 calls. Screenshots land in smoke-out/.
 //   npx -y -p playwright@1.63.0 node tools/smoke.mjs
-import { execSync, spawn } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
-import { launch, playwright } from './pw.mjs';
+import { launch, playwright, serve } from './pw.mjs';
 
 const { devices } = await playwright();
 
@@ -14,15 +17,21 @@ const URL = `http://localhost:${PORT}/signoff/`;
 mkdirSync('smoke-out', { recursive: true });
 
 execSync('npx vite build', { stdio: 'inherit', env: { ...process.env, SIGNOFF_BASE: '/signoff/' } });
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
-  env: { ...process.env, SIGNOFF_BASE: '/signoff/' },
-  stdio: 'ignore',
-});
+const server = await serve('dist', PORT, { SIGNOFF_BASE: '/signoff/' });
 
 const PROFILES = {
   desktop: { viewport: { width: 1280, height: 720 } },
   '852x393': { ...devices['iPhone 15 Pro landscape'], viewport: { width: 852, height: 393 } },
 };
+
+/** The iPhone budget (CLAUDE.md), and the moments that draw the most: Burn's first segment has the mirrors. */
+const DRAW_CALL_BUDGET = 100;
+const BUSY = [
+  ['burn', 'start', 30],
+  ['burn', 'heavy', 1],
+  ['burn', 'td', 8],
+  ['burn', 'ko', 3],
+];
 
 let failed = false;
 const browser = await launch();
@@ -76,8 +85,21 @@ try {
     const clock = await page.textContent('.hud-clock');
     await page.screenshot({ path: `smoke-out/${name}-fight.png` });
     const fought = opened && hud && /^0:\d\d$/.test(clock ?? '');
-    const ok = errors.length === 0 && drew && fought && /^v\d/.test(version ?? '');
-    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : '  (no fight)'}`);
+    // The draw-call budget, in the busiest scripted frames.
+    await page.goto(`${URL}?shots`);
+    await page.waitForFunction(() => window.__shots, null, { timeout: 60000 });
+    let worst = { calls: 0, at: '' };
+    for (const [stage, moment, after] of BUSY) {
+      await page.evaluate((o) => window.__shots.start(o), { mode: 'cpu', p1: 'rox', p2: 'gideon', stage, seed: 5 });
+      await page.evaluate(([m, a]) => window.__shots.to(m, a), [moment, after]);
+      await page.evaluate(() => window.__shots.frame());
+      const calls = await page.evaluate(() => window.__shots.calls());
+      if (calls > worst.calls) worst = { calls, at: `${stage} ${moment}` };
+    }
+    await page.screenshot({ path: `smoke-out/${name}-busiest.png` });
+    const budget = worst.calls > 0 && worst.calls <= DRAW_CALL_BUDGET;
+    const ok = errors.length === 0 && drew && fought && budget && /^v\d/.test(version ?? '');
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : '  (no fight)'}  busiest frame ${worst.calls} draw calls (${worst.at})${budget ? '' : ` over ${DRAW_CALL_BUDGET}`}`);
     for (const e of errors) console.log(`     ${e}`);
     failed ||= !ok;
     await ctx.close();
