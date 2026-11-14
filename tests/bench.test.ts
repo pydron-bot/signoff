@@ -2,7 +2,7 @@
 // seeds: a few matches, so it runs with the other tests (the whole bench is
 // `npm run matchups`).
 import { describe, expect, it } from 'vitest';
-import { BAR, Input, createMatch, fighterData } from '../src/sim';
+import { BAR, FIRST_HIT_METER, Input, createMatch, fighterData } from '../src/sim';
 import { bench, openingDamage, openingsToWin, pairKey } from './bench';
 import { place, ready, run } from './sim-helpers';
 
@@ -52,13 +52,15 @@ describe('the balance bench', () => {
       expect(ev.some((e) => e.type === 'firstHit')).toBe(true);
       return m.fighters[0].meter;
     };
-    const bar = meterAfterFirstHit();
+    const bar = meterAfterFirstHit(BAR);
+    expect(meterAfterFirstHit()).toBe(meterAfterFirstHit(FIRST_HIT_METER));
     expect(bar - meterAfterFirstHit(BAR / 2)).toBe(BAR / 2);
     expect(bar - meterAfterFirstHit(0)).toBe(BAR);
     // The same seeds, so the same number of matches; the meter changes how they go.
     const none = bench({ level: 'hard', seeds: 3, pairs: PAIR, firstHitMeter: 0 });
-    expect(none.decidedFirstRounds).toBe(studio.decidedFirstRounds);
-    expect(none.mechanics).not.toEqual(studio.mechanics);
+    const aBar = bench({ level: 'hard', seeds: 3, pairs: PAIR, firstHitMeter: BAR });
+    expect(none.decidedFirstRounds).toBe(aBar.decidedFirstRounds);
+    expect(none.mechanics).not.toEqual(aBar.mechanics);
   });
 
   it('counts hazard and prop damage under LIVE BROADCAST rules, and none from hazards in studio', () => {
@@ -74,15 +76,17 @@ describe('the balance bench', () => {
 
   it('counts the rarer mechanics beside how often they were tried', () => {
     const easy = bench({ level: 'easy', seeds: 2, pairs: [['margaret', 'hollis']] });
-    for (const b of [studio, easy]) {
+    const crush = bench({ level: 'hard', seeds: 3, pairs: [['gus', 'hollis']] });
+    for (const b of [studio, easy, crush]) {
       expect(b.mechanics.reversal).toBeLessThanOrEqual(b.tries.reversal);
       expect(b.mechanics.counter).toBeLessThanOrEqual(b.tries.counter);
       expect(b.mechanics.counterHit).toBeGreaterThan(0);
       expect(b.mechanics.counterHit).toBeLessThan(b.tries.strikes);
     }
-    // Only Margaret has a counter move (Rox and Gus have none); Gus's Tenderise crushes a guard.
+    // Only Margaret has a counter move (Rox and Gus have none); Gus's Tenderise and Hollis's Stiff Arm crush a guard.
     expect(studio.tries.counter).toBe(0);
     expect(easy.tries.counter).toBeGreaterThan(0);
-    expect(studio.tries.guardCrush).toBeGreaterThan(0);
+    expect(crush.tries.guardCrush).toBeGreaterThan(0);
+    expect(crush.mechanics.guardCrush).toBeLessThanOrEqual(crush.tries.guardCrush);
   });
 });

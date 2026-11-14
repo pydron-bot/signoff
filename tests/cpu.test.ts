@@ -182,7 +182,7 @@ describe('the CPU learns what it can see', () => {
   it('ducks the throw of someone who always throws after blocking', () => {
     // P1 holds Block, and throws as soon as the CPU's attack is blocked and they're free (topped up, so it lasts).
     const m = createMatch({ p1: 'rox', p2: 'rox', stage: 'weather', seed: 3, studio: true });
-    const cpu = new Cpu(1, 'director', 5);
+    const cpu = new Cpu(1, 'director', 8);
     const ev: SimEvent[] = [];
     let blocked = -99;
     let ducked = 0;

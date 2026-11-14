@@ -114,8 +114,13 @@ export const TECH_PUSH = fx(0.07);
 
 // Signal meter
 export const BAR = 1000;
-/** The first hit of a round is worth a bar. */
-export const FIRST_HIT_METER = BAR;
+/**
+ * Meter for the round's first hit. It was a bar until 0.62.0, when the bench
+ * weighed it (docs/MATCHUPS.md, "The first hit's worth"): with none, rounds
+ * last as long and the first hit still wins the round nearly as often, so
+ * the smallest bonus that keeps rounds in their 25 to 50 seconds is none.
+ */
+export const FIRST_HIT_METER: number = 0;
 export const METER_MAX = 3 * BAR;
 /**
  * Boosting: Special (or METER) again within this many frames of the special

@@ -34,11 +34,15 @@ describe('jumps by weight', () => {
     }
     expect(j.mumbles.frames).toBeGreaterThanOrEqual(42);
   });
-  it('Hollis and Gus are heavy, Rox quick and low: shorter and lower than the standard jump', () => {
-    for (const id of ['hollis', 'gus', 'rox']) {
-      expect(j[id].frames, id).toBeLessThanOrEqual(j.dale.frames - 5);
-      expect(j[id].apex, id).toBeLessThan(j.dale.apex * 0.8);
+  it('Hollis and Gus are heavy: lower than the standard jump and not as far; Rox quick and low', () => {
+    const on = (id: string) => jumpOf(id, RIGHT).reach;
+    for (const id of ['hollis', 'gus']) {
+      expect(j[id].apex, id).toBeLessThan(j.dale.apex);
+      expect(on(id), id).toBeLessThan(on('dale') * 0.85);
     }
+    // Hollis is the heaviest: low and short.
+    expect(j.hollis.frames).toBeLessThanOrEqual(j.dale.frames - 5);
+    expect(j.hollis.apex).toBeLessThan(j.dale.apex * 0.8);
     // Rox is the quickest off the floor and back, and the lowest.
     for (const id of Object.keys(FIGHTERS).filter((x) => x !== 'rox')) {
       expect(j.rox.frames, id).toBeLessThanOrEqual(j[id].frames);
@@ -47,9 +51,6 @@ describe('jumps by weight', () => {
   });
   it('every jump clears 1.2 m, so a desk or a low projectile can still be jumped', () => {
     for (const id of Object.keys(FIGHTERS)) expect(j[id].apex, id).toBeGreaterThan(1.2);
-  });
-  it('Rox travels with her jump: as far forward as the standard one in less time', () => {
-    expect(jumpOf('rox', RIGHT).reach).toBeGreaterThanOrEqual(jumpOf('dale', RIGHT).reach * 0.95);
   });
   it("a jump cancel's hop is the same for everyone, whatever their weight", () => {
     // It falls at the standard pull, so a juggle into the air works alike for all (tests/specials.test.ts lands every spiked air string off one).

@@ -260,10 +260,10 @@ export const GUS: FighterData = {
   health: 940,
   walkFwd: fx(0.036),
   walkBack: fx(0.032),
-  // Heavy: low and short, down fast (about 30 frames, 1.4 m up).
-  jumpVy: fx(0.19),
-  jumpVx: fx(0.05),
-  jumpGravity: fx(0.0125),
+  // Heavy: a big man's jump that doesn't get far (about 35 frames, 1.7 m up, 1.5 m on). Lower made him too hard to anti-air.
+  jumpVy: fx(0.2),
+  jumpVx: fx(0.042),
+  jumpGravity: fx(0.0115),
   dash: { frames: 17, speed: fx(0.075) },
   backdash: { frames: 20, speed: fx(0.075) },
   hurt: { stand: box(-0.35, 0.35, 0, 1.85), crouch: box(-0.35, 0.4, 0, 1.15), air: box(-0.35, 0.35, 0.2, 1.65), juggle: box(-0.85, 0.6, 0.2, 0.95) },

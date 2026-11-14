@@ -4,7 +4,8 @@
 // (who beats whom, how many openings win a round, how rounds go, where the
 // damage comes from, what gets used), then weighs the first hit's bonus,
 // plays a pass under LIVE BROADCAST rules and counts the rarer mechanics at
-// every CPU level. It fails on alarms: a matchup worse than 30:70, rounds
+// every CPU level. It fails on alarms: a matchup worse than 35:65 (30:70
+// before 0.62.0), rounds
 // that are too short or too long, too many time-outs. CPU results aren't
 // the truth about a matchup, but they catch a fighter falling off a cliff
 // after a data change. Slow (several minutes), so it runs only on request:
@@ -21,11 +22,15 @@ const SEEDS = Number(process.env.MATCHUP_SEEDS ?? 100);
 const LEVEL_SEEDS = Number(process.env.MATCHUP_LEVEL_SEEDS ?? 30);
 const LEVELS: readonly CpuLevel[] = ['hard', 'director'];
 /** Alarms: the worst matchup allowed, the average round's length in seconds, and the share of rounds that time out. */
-export const WORST_MATCHUP = 30;
+export const WORST_MATCHUP = 35;
 export const ROUND_SECONDS: readonly [number, number] = [25, 50];
 export const MOST_TIMEOUTS = 10;
-/** The band every pair's openings to win a round should sit in (reported, not an alarm). */
-export const OPENINGS_BAND: readonly [number, number] = [7, 10];
+/**
+ * The band every pair's openings to win a round should sit in (reported, not
+ * an alarm): the plan's width (3.5 to 5, about 1.4 to 1), placed where the
+ * CPU's openings sit, since a hit on its own counts as an opening.
+ */
+export const OPENINGS_BAND: readonly [number, number] = [8, 11.5];
 /** A move doing more than this share of a fighter's damage is called out (not an alarm). */
 const ONE_MOVE_SHARE = 35;
 /** Under LIVE BROADCAST rules a matchup moving further than this from its studio result is called out. */
@@ -137,7 +142,7 @@ function sourceLine(b: Bench): string {
 
 /** The first hit's bonus weighed: the same seeds with a bar, half a bar and nothing. */
 function firstHitReport(runs: [number, Bench][]): string {
-  const out = ['## The first hit\'s worth', '', `The hard bench again on the same seeds with the first hit worth other amounts of meter (the game uses ${FIRST_HIT_METER / BAR} bar${FIRST_HIT_METER === BAR ? '' : 's'}). The aim: the smallest bonus that keeps the average round inside ${ROUND_SECONDS[0]} to ${ROUND_SECONDS[1]} seconds (and the bench passing).`, ''];
+  const out = ['## The first hit\'s worth', '', `The hard bench again on the same seeds with the first hit worth other amounts of meter (the game uses ${FIRST_HIT_METER ? `${FIRST_HIT_METER / BAR} bar` : 'none'}). The aim: the smallest bonus that keeps the average round inside ${ROUND_SECONDS[0]} to ${ROUND_SECONDS[1]} seconds (and the bench passing).`, ''];
   out.push('| First hit | Average round, s | Time-outs | First hit wins the round | Cut Away a round | Furthest from even |', '| --- | --- | --- | --- | --- | --- |');
   for (const [meter, b] of runs) out.push(`| ${meter / BAR} bar | ${seconds(b).toFixed(1)} | ${pct(b.timeouts, b.rounds)}% | ${pct(b.firstHitWins, b.firstHitRounds)}% | ${(b.mechanics.cutAway / b.rounds).toFixed(2)} | ${worst(b, 3)} |`);
   out.push('');

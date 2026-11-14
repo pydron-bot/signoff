@@ -34,7 +34,7 @@ const moves = table(
   // Crouching
   normal('c.FP', { name: 'Kneel', stance: 'crouch', startup: 7, active: 2, recovery: 9, reach: [0.2, 0.9], at: [0.6, 0.9], damage: 26, hitstun: 15, blockstun: 12, chain: { FK: 'c.FP FK' } }),
   normal('c.BP', { name: 'Rapture', stance: 'crouch', startup: 9, active: 4, recovery: 19, reach: [0.1, 0.8], at: [0.75, 2.0], damage: 68, hitstun: 24, blockstun: 12, launch: 0.17 }),
-  normal('c.FK', { name: 'Low Offering', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 36, hitstun: 16, blockstun: 11 }),
+  normal('c.FK', { name: 'Low Offering', stance: 'crouch', startup: 8, active: 2, recovery: 13, reach: [0.2, 1.2], at: [0, 0.3], height: 'low', damage: 41, hitstun: 16, blockstun: 11 }),
   normal('c.BK', { name: 'Bow Down', stance: 'crouch', startup: 12, active: 3, recovery: 22, reach: [0.2, 1.35], at: [0, 0.3], height: 'low', damage: 70, hitstun: 0, blockstun: 12, knockdown: true }),
   // Command normals
   normal('f.BP', { name: 'Smite', startup: 20, active: 2, recovery: 17, reach: [0.2, 1.05], at: [0.75, 1.7], height: 'overhead', damage: 70, hitstun: 22, blockstun: 14 }),
@@ -60,13 +60,13 @@ const moves = table(
     kind: 'special',
     total: 40,
     boost: 'Collection Plate+',
-    spawns: [{ frame: 14, projectile: plate(0.11, 26, 26) }],
+    spawns: [{ frame: 14, projectile: plate(0.11, 26, 31) }],
   }),
   move('Collection Plate+', {
     name: 'Collection Plate (boosted)',
     kind: 'special',
     total: 40,
-    spawns: [{ frame: 14, projectile: plate(0.15, 24, 36) }],
+    spawns: [{ frame: 14, projectile: plate(0.15, 24, 43) }],
   }),
   // A palm to the forehead. With a donation to spend, it heals him too.
   move('Laying On of Hands', {
@@ -241,7 +241,7 @@ export const GIDEON: FighterData = {
   id: 'gideon',
   name: 'Rev. Gideon Price',
   style: 'allrounder',
-  health: 940,
+  health: 960,
   walkFwd: fx(0.042),
   walkBack: fx(0.037),
   jumpVy: fx(0.2),
