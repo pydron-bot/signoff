@@ -43,13 +43,19 @@ import { PerfOverlay } from './ui/perfOverlay';
 import { ReplayBar, SPEEDS, type ReplayAction } from './ui/replayBar';
 import { installShots } from './game/shotHook';
 import { loadFonts } from './ui/fonts';
+import { TitleScreen } from './ui/screens/title';
+import { SelectScreen, type SelectFor } from './ui/screens/select';
+import { VersusCard } from './ui/screens/versus';
+import { ResultsScreen } from './ui/screens/results';
+import { MatchFigures } from './game/matchFigures';
+import { winLine } from './game/banter';
+import { homeStage } from './sim';
 
 const FIGHTER_IDS = Object.keys(FIGHTERS);
 // The menu's levels; the DIRECTOR plays Arcade's last fight (arcade.ts) and CPU VS CPU.
 const LEVELS: CpuLevel[] = ['easy', 'normal', 'hard'];
 /** CPU VS CPU's levels: the DIRECTOR's included, since watching takes nothing from Arcade. */
 const WATCH_LEVELS: CpuLevel[] = ['easy', 'normal', 'hard', 'director'];
-const WATCH_LEVEL_NAMES = ['EASY', 'NORMAL', 'HARD', 'DIRECTOR'];
 const SOUND_MODES: SoundMode[] = ['on', 'novoice', 'off'];
 /** Cancellations players have found (signoff.found). */
 const found = loadFound();
@@ -138,6 +144,28 @@ const schoolPanel = new SchoolPanel(document.body);
 /** What counts as a press on Combo School's timing bar: an attack, Special, or Up (a jump cancel). */
 const SCHOOL_PRESS = Input.FP | Input.BP | Input.FK | Input.BK | Input.SPECIAL | Input.UP;
 const arcadeCard = new ArcadeCard(document.body);
+/** The screens round the fight (src/ui/screens/): the title's lists, the fighter select, the versus card, the results. */
+const titleScreen = new TitleScreen(titleMenu, {
+  run: (id) => titleAction(id),
+  replay: () => lastReplay !== null,
+  label: (id) => (id === 'move-list' ? moveListLabel() : undefined),
+});
+const selectScreen = new SelectScreen(document.body, new Menu(document.body, 'menu-select'), {
+  ids: FIGHTER_IDS,
+  stages: STAGE_IDS.map((id) => STAGES[id].name.toUpperCase()),
+  trials: (id) => trialCount(trialsDone, id),
+  turned: (player, index) => turnDial(player, index),
+  start: () => startSelected(),
+  back: () => leaveSelect(),
+  save: () => saveSetup(),
+});
+const versus = new VersusCard(document.body);
+const resultsScreen = new ResultsScreen(document.body, new Menu(document.body, 'menu-results'));
+/** The match's figures for the results screen, from its events. */
+const figures = new MatchFigures();
+/** What the select screen is choosing for, and the cold open waiting for the versus card. */
+let selectFor: SelectFor = 'cpu';
+let afterVersus: (() => void) | null = null;
 const perf = new PerfOverlay(document.body, renderer);
 perf.note = () => `POST ${post.hdr ? 'HDR' : '8-BIT'} ×${post.drawScale}`;
 initKeyboard();
@@ -337,6 +365,7 @@ function inputSides(s: Session | null): boolean[] {
 
 function begin(s: Session): Session {
   for (const d of inputDisplays) d.clear();
+  figures.reset();
   // Arcade's beaten fighters watch from the bleachers.
   const seated = ladder && s.options.mode === 'cpu' ? beaten(ladder) : [];
   // Compile the models' shaders as they arrive, not on their first frame.
@@ -361,6 +390,10 @@ function startDemo(): void {
   pauseBtn.hidden = true;
   pauseMenu.hide();
   arcadeCard.hide();
+  selectScreen.hide();
+  resultsScreen.hide();
+  versus.end();
+  afterVersus = null;
   ladder = null;
   replayBar.show(false);
   sound.stopMusic();
@@ -394,30 +427,23 @@ function start(mode: Mode, p2: string, stage: string, level?: CpuLevel, p1 = FIG
   if (mode === 'cpu' || mode === 'versus' || watching) {
     const o = session.options;
     const ex = banter(o.p1, o.p2, o.seed);
-    coldOpen.begin(o.p1, o.p2, ex, [sound.lineSeconds(ex.clips[0]), sound.lineSeconds(ex.clips[1])]);
+    // The versus card first, then the two of them trading a line.
+    endColdOpen();
+    versus.show(o.p1, o.p2, session.match.stage);
+    afterVersus = () => coldOpen.begin(o.p1, o.p2, ex, [sound.lineSeconds(ex.clips[0]), sound.lineSeconds(ex.clips[1])]);
     arena.idling = true;
     coldOpenHeld = ~0;
   } else endColdOpen();
   title.hidden = true;
   titleMenu.hide();
+  selectScreen.hide();
+  resultsScreen.hide();
   hud.start(session.match, session.training);
   // Watching: no buttons, only the pause button.
   setTouch(!watching);
   pauseBtn.hidden = false;
   replayBar.show(false);
   document.body.dataset.scene = 'fight';
-}
-
-/** CPU VS CPU: each side's level, then the fighters and stage chosen on the title. */
-function showWatch(): void {
-  titleMenu.show('CPU VS CPU', [
-    { label: 'START', id: 'watch-start', run: () => play('watch') },
-    { label: 'RANDOM MATCH', id: 'watch-random', run: () => watchRandom() },
-    { label: 'PLAYER 1 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch1, onChange: (v) => ((setup.watch1 = v), saveSetup()) },
-    { label: 'PLAYER 2 CPU', options: WATCH_LEVEL_NAMES, value: setup.watch2, onChange: (v) => ((setup.watch2 = v), saveSetup()) },
-    ...watchRows(),
-    { label: 'BACK', run: showTitle },
-  ]);
 }
 
 /** CPU VS CPU's view and endless channel, on its menu and when paused. */
@@ -545,7 +571,9 @@ function moveListLabel(): string {
 function showLessons(): void {
   titleMenu.show(`LESSONS · AS ${fighterData(FIGHTER_IDS[setup.p1]).name.toUpperCase()}`, [
     ...LESSONS.map((l) => ({ label: `${lessonsDone.has(l.id) ? '✓ ' : ''}${l.name.toUpperCase()}`, id: `lesson-${l.id}`, run: () => startLesson(l.id) })),
-    { label: 'BACK', run: showTitle },
+    // The fighter left the title for the select screen: lessons and the school pick their own.
+    { label: 'FIGHTER', options: names, value: setup.p1, onChange: (v: number) => ((setup.p1 = v), saveSetup(), showLessons()) },
+    { label: 'BACK', run: () => titleScreen.showList('title-learn') },
   ]);
 }
 
@@ -560,7 +588,7 @@ function showSchool(): void {
       return { label: `${n === c.parts.length ? '✓ ' : ''}${c.name.toUpperCase()}${meter} · ${n}/${c.parts.length}`, id: `school-${k}`, run: () => showCourse(c) };
     }),
     { label: 'FIGHTER', options: names, value: setup.p1, onChange: (v: number) => ((setup.p1 = v), saveSetup(), showSchool()) },
-    { label: 'BACK', run: showTitle },
+    { label: 'BACK', run: () => titleScreen.showList('title-learn') },
   ]);
 }
 
@@ -588,25 +616,69 @@ function startSchool(c: Course, part: number): void {
 }
 
 function showTitle(): void {
-  const moveList = { label: moveListLabel(), id: 'move-list', run: () => showMoves(FIGHTER_IDS[setup.p1], false, showTitle, true) };
-  titleMenu.show('', [
-    { label: 'ARCADE', id: 'play-arcade', run: startArcade },
-    { label: 'VS CPU', id: 'play-cpu', run: () => play('cpu') },
-    { label: 'TRAINING', id: 'play-training', run: () => play('training') },
-    { label: 'LESSONS', id: 'lessons', run: showLessons },
-    { label: 'COMBO SCHOOL', id: 'school', run: showSchool },
-    { label: 'VS PLAYER', id: 'play-versus', run: () => play('versus') },
-    { label: 'CPU VS CPU', id: 'play-watch', run: showWatch },
-    ...(lastReplay ? [{ label: 'WATCH LAST MATCH', id: 'watch-replay', run: () => watch(lastReplay!) }] : []),
-    moveList,
-    { label: 'SETTINGS', id: 'settings', run: () => showSettings(showTitle) },
-    // The move list's trial count follows player 1's fighter (the menu repaints labels after a change).
-    { label: 'PLAYER 1', options: names, value: setup.p1, onChange: (v) => ((setup.p1 = v), saveSetup(), (moveList.label = moveListLabel())) },
-    { label: 'PLAYER 2', options: names, value: setup.p2, onChange: (v) => ((setup.p2 = v), saveSetup()) },
-    { label: 'STAGE', options: STAGE_IDS.map((id) => STAGES[id].name.toUpperCase()), value: setup.stage, onChange: (v) => ((setup.stage = v), saveSetup()) },
-    { label: 'CPU', options: ['EASY', 'NORMAL', 'HARD'], value: setup.level, onChange: (v) => ((setup.level = v), saveSetup()) },
-    { label: 'RULES', options: ['LIVE BROADCAST', 'STUDIO'], value: setup.studio, onChange: (v) => ((setup.studio = v), saveSetup()) },
-  ]);
+  titleScreen.show();
+}
+
+/** The title's lists' items, by id (src/ui/screens/title.ts). */
+function titleAction(id: string): void {
+  switch (id) {
+    case 'play-arcade':
+      return openSelect('arcade');
+    case 'play-cpu':
+      return openSelect('cpu');
+    case 'play-versus':
+      return openSelect('versus');
+    case 'play-training':
+      return openSelect('training');
+    case 'play-watch':
+      return openSelect('watch');
+    case 'watch-random':
+      return watchRandom();
+    case 'watch-replay':
+      if (lastReplay) watch(lastReplay);
+      return;
+    case 'lessons':
+      return showLessons();
+    case 'school':
+      return showSchool();
+    case 'move-list':
+      return showMoves(FIGHTER_IDS[setup.p1], false, () => titleScreen.showList('title-learn'), true);
+    case 'title-settings':
+      return showSettings(() => titleScreen.show('title-settings'));
+  }
+}
+
+/** The fighter select, for a mode (src/ui/screens/select.ts): the TV behind it turns to player 1's channel. */
+function openSelect(mode: SelectFor): void {
+  selectFor = mode;
+  titleMenu.hide();
+  title.hidden = true;
+  document.body.dataset.scene = 'select';
+  selectScreen.show(mode, setup);
+  turnDial(0, setup.p1);
+}
+
+/** Turning the dial: the channel changes (static, the tuner's click) to that fighter live on their own set. */
+function turnDial(player: number, index: number): void {
+  const id = FIGHTER_IDS[index];
+  const other = FIGHTER_IDS[player === 0 ? setup.p2 : setup.p1];
+  const vs = other === id ? FIGHTER_IDS[(index + 1) % FIGHTER_IDS.length] : other;
+  session = newSession('demo', id, vs, homeStage(fighterData(id).show) ?? STAGE_IDS[setup.stage] ?? STAGE_IDS[0]);
+  arena.flip.start([`CH ${index + 2}`, fighterData(id).name.toUpperCase()]);
+  sound.channelChange();
+}
+
+function startSelected(): void {
+  selectScreen.hide();
+  if (selectFor === 'arcade') startArcade();
+  else play(selectFor);
+}
+
+function leaveSelect(): void {
+  selectScreen.hide();
+  title.hidden = false;
+  document.body.dataset.scene = 'title';
+  titleScreen.showList(selectFor === 'watch' ? 'title-watch' : selectFor === 'training' ? 'title-learn' : 'title-fight');
 }
 
 /**
@@ -916,19 +988,35 @@ function results(winner: number): void {
       return;
     }
     const s = session!;
-    pauseMenu.show(label, [
-      { label: 'REMATCH', id: 'rematch', run: () => (pauseMenu.hide(), restartWatch(s)) },
-      { label: 'RANDOM MATCH', id: 'watch-random', run: () => (pauseMenu.hide(), watchRandom()) },
-      { label: 'TITLE', run: startDemo },
+    showResults(winner, [
+      { label: 'REMATCH', id: 'rematch', run: () => (resultsScreen.hide(), restartWatch(s)) },
+      { label: 'RANDOM MATCH', id: 'watch-random', run: () => (resultsScreen.hide(), watchRandom()) },
+      { label: 'CHANGE FIGHTERS', id: 'change-fighters', run: () => (resultsScreen.hide(), startDemo(), openSelect('watch')) },
+      { label: 'TITLE', id: 'results-title', run: startDemo },
     ]);
     return;
   }
   const r = lastReplay;
-  pauseMenu.show(label, [
-    { label: 'REMATCH', id: 'rematch', run: () => (pauseMenu.hide(), play(session!.options.mode)) },
-    ...(r ? [{ label: 'WATCH REPLAY', id: 'watch-replay', run: () => watch(r) }] : []),
-    { label: 'TITLE', run: startDemo },
+  const mode = session!.options.mode;
+  showResults(winner, [
+    { label: 'REMATCH', id: 'rematch', run: () => (resultsScreen.hide(), play(mode)) },
+    ...(mode === 'cpu' || mode === 'versus' ? [{ label: 'CHANGE FIGHTERS', id: 'change-fighters', run: () => (resultsScreen.hide(), startDemo(), openSelect(mode)) }] : []),
+    ...(r ? [{ label: 'WATCH REPLAY', id: 'watch-replay', run: () => (resultsScreen.hide(), watch(r)) }] : []),
+    { label: 'TITLE', id: 'results-title', run: startDemo },
   ]);
+}
+
+/** The results screen (src/ui/screens/results.ts): the winner, their word, the night's figures, and `rows`. */
+function showResults(winner: number, rows: Parameters<Menu['show']>[1]): void {
+  const s = session!;
+  const m = s.match;
+  const ids = [m.fighters[0].fighter, m.fighters[1].fighter] as const;
+  const line = winner === 0 || winner === 1 ? winLine(ids[winner], s.options.seed) : '';
+  pauseMenu.hide();
+  hud.hide();
+  setTouch(false);
+  pauseBtn.hidden = true;
+  resultsScreen.show(ids, winner, line, figures, [m.fighters[0].maxHealth, m.fighters[1].maxHealth], rows);
 }
 
 pauseBtn.addEventListener('click', () => (actionReplay ? endActionReplay() : endlessLeft > 0 ? stopEndless() : pause(!paused)));
@@ -1034,7 +1122,9 @@ renderer.setAnimationLoop((now) => {
     else if (pauseMenu.open) {
       if (k === 'pause' && !over) pause(false);
       else pauseMenu.key(k);
-    } else if (titleMenu.open && demo) titleMenu.key(k);
+    } else if (resultsScreen.open) resultsScreen.key(k);
+    else if (selectScreen.open) selectScreen.key(k);
+    else if (titleMenu.open && demo) titleScreen.key(k);
     else if (k === 'pause') actionReplay ? endActionReplay() : endlessLeft > 0 ? stopEndless() : pause(true);
   }
   // The endless channel's next match, once the winner has had a moment.
@@ -1072,6 +1162,17 @@ renderer.setAnimationLoop((now) => {
         ev.length = 0;
       }
     }
+  } else if ((versus.active || afterVersus) && !paused) {
+    // The versus card: any new press (or a tap on it) skips it; then the cold open.
+    readInputs();
+    const bits = frame[0] | frame[1];
+    if (bits & ~coldOpenHeld & SKIP_BITS) versus.end();
+    else versus.update(Math.min(0.1, (now - lastFrame) / 1000));
+    coldOpenHeld = bits;
+    if (!versus.active) {
+      afterVersus?.();
+      afterVersus = null;
+    }
   } else if (coldOpen.active && !paused) {
     // Any new press skips it (not one still held from the menu).
     readInputs();
@@ -1099,6 +1200,7 @@ renderer.setAnimationLoop((now) => {
       if (school?.session === s && s.tracker!.clears >= REPS) schoolDone.mark(schoolId(school.course.fighter, school.course.name, school.part));
       if (s.lesson?.result === 'pass') lessonsDone.mark(s.lesson.lesson.id);
       arena.step(s.match, ev);
+      figures.step(s.match, ev);
       inputSides(s);
       for (let i = 0; i < 2; i++) if (sides[i]) inputDisplays[i].log.push(s.inputs[i], s.match.fighters[i].facing);
       if (!demo) {
@@ -1129,7 +1231,8 @@ renderer.setAnimationLoop((now) => {
   }
   // The action replay's match once it's rolling (the last picture while it rewinds).
   const m = actionReplay && rewindLeft <= 0 ? actionReplay.match : session!.match;
-  const title = document.body.dataset.scene === 'title';
+  // The title and the fighter select both look at the living room's TV.
+  const title = document.body.dataset.scene === 'title' || document.body.dataset.scene === 'select';
   // The title, or CPU VS CPU watched on the TV: from the sofa, its overlays hidden (style.css).
   const tvWatch = watchingTv();
   const sofa = title || tvWatch;
@@ -1229,6 +1332,8 @@ if (new URLSearchParams(location.search).has('shots'))
       shotSeed = seed;
       start(mode, p2, stage, 'normal', p1);
       shotSeed = 0;
+      versus.end();
+      afterVersus = null;
       endColdOpen();
       return loaded;
     },
@@ -1237,6 +1342,7 @@ if (new URLSearchParams(location.search).has('shots'))
       const s = session!;
       s.tick(p1, 0, out);
       arena.step(s.match, out);
+      figures.step(s.match, out);
       hud.onEvents(s.match, out);
       hud.step();
       glitch.onEvents(out);
@@ -1247,6 +1353,22 @@ if (new URLSearchParams(location.search).has('shots'))
     hideFighters: (on) => (arena.hideFighters = on),
     calls: () => renderer.info.render.calls,
     rects: () => (arena.screenRects(session!.match, window.innerWidth, window.innerHeight, bodyRects), [...bodyRects]),
+    screen: (name) => {
+      shotHold = false;
+      startDemo();
+      if (name === 'select') openSelect('cpu');
+      else if (name === 'versus') {
+        shotSeed = 7;
+        play('cpu');
+        shotSeed = 0;
+      }
+      return loaded;
+    },
+    matchOver: (winner) => {
+      // Not the action replay CPU VS CPU would play first: straight to the results.
+      setup.endless = 0;
+      results(winner);
+    },
   });
 
 document.getElementById('version')!.textContent = `v${VERSION} · ${BUILD_ID}`;

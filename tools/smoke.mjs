@@ -1,7 +1,9 @@
 // Smoke test: builds for /signoff/, serves dist, and loads the game on
 // desktop and the iPhone 15 Pro landscape profile, then starts a fight
 // against the CPU and lets it run, failing on any page error, a blank
-// canvas or a HUD that never appears. Then it plays scripted moments on
+// canvas or a HUD that never appears (title, FIGHT, VS CPU, the fighter
+// select, START, the versus card, the cold open, the fight), and a whole
+// match played out to the results screen. Then it plays scripted moments on
 // Burn (mirrors: the most drawn) through the ?shots hook
 // (src/game/shotHook.ts) and fails if the busiest frame draws more than the
 // iPhone budget of 100 calls. Screenshots land in smoke-out/.
@@ -73,8 +75,18 @@ try {
         ),
     );
     await page.screenshot({ path: `smoke-out/${name}.png` });
-    // Into a fight: the HUD shows and the clock runs.
+    // Title, FIGHT, VS CPU: the fighter select.
+    await page.click('#title-fight');
     await page.click('#play-cpu');
+    await page.waitForTimeout(800);
+    const selected = await page.isVisible('.select-card-0');
+    await page.screenshot({ path: `smoke-out/${name}-select.png` });
+    // START: the versus card, then (a tap skips it) the cold open.
+    await page.click('#select-start');
+    await page.waitForTimeout(300);
+    const versus = await page.isVisible('.versus');
+    await page.screenshot({ path: `smoke-out/${name}-versus.png` });
+    if (versus) await page.click('.versus');
     // The cold open: the two fighters' lines, then a tap skips the rest.
     await page.waitForTimeout(2500);
     const opened = await page.isVisible('.cold-open');
@@ -84,7 +96,7 @@ try {
     const hud = await page.isVisible('.hud');
     const clock = await page.textContent('.hud-clock');
     await page.screenshot({ path: `smoke-out/${name}-fight.png` });
-    const fought = opened && hud && /^0:\d\d$/.test(clock ?? '');
+    const fought = selected && versus && opened && hud && /^0:\d\d$/.test(clock ?? '');
     // The draw-call budget, in the busiest scripted frames.
     await page.goto(`${URL}?shots`);
     await page.waitForFunction(() => window.__shots, null, { timeout: 60000 });
@@ -97,9 +109,14 @@ try {
       if (calls > worst.calls) worst = { calls, at: `${stage} ${moment}` };
     }
     await page.screenshot({ path: `smoke-out/${name}-busiest.png` });
+    // A whole match played out, to the results.
+    await page.evaluate(() => window.__shots.screen('results'));
+    await page.waitForTimeout(800);
+    const results = (await page.isVisible('.results-figures')) && (await page.isVisible('#results-title'));
+    await page.screenshot({ path: `smoke-out/${name}-results.png` });
     const budget = worst.calls > 0 && worst.calls <= DRAW_CALL_BUDGET;
-    const ok = errors.length === 0 && drew && fought && budget && /^v\d/.test(version ?? '');
-    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : '  (no fight)'}  busiest frame ${worst.calls} draw calls (${worst.at})${budget ? '' : ` over ${DRAW_CALL_BUDGET}`}`);
+    const ok = errors.length === 0 && drew && fought && results && budget && /^v\d/.test(version ?? '');
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}  ${version}${drew ? '' : '  (blank canvas)'}${fought ? '' : `  (no fight: select ${selected}, versus ${versus}, cold open ${opened}, hud ${hud})`}${results ? '' : '  (no results)'}  busiest frame ${worst.calls} draw calls (${worst.at})${budget ? '' : ` over ${DRAW_CALL_BUDGET}`}`);
     for (const e of errors) console.log(`     ${e}`);
     failed ||= !ok;
     await ctx.close();

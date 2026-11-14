@@ -53,23 +53,27 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* Beside the TV (the middle of the living room), not over it. */
+  align-items: flex-start;
   justify-content: center;
   gap: 0.6rem;
+  box-sizing: border-box;
+  width: min(30rem, 30vw);
+  padding-left: calc(env(safe-area-inset-left) + clamp(16px, 3vw, 48px));
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   pointer-events: none;
   text-shadow: 2px 0 rgba(255, 0, 60, 0.55), -2px 0 rgba(0, 200, 255, 0.55);
 }
 
 .title-logo {
-  font-size: clamp(3rem, 12vw, 8rem);
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: clamp(2rem, min(6vw, 13vh), 5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
 }
 
 .title-caption {
-  font-size: clamp(0.8rem, 2.4vw, 1.2rem);
-  letter-spacing: 0.3em;
+  font-size: clamp(0.6rem, min(1.4vw, 3vh), 0.95rem);
+  letter-spacing: 0.25em;
   opacity: 0.85;
 }
 
@@ -83,7 +87,7 @@ body {
 }
 
 .title-version {
-  position: absolute;
+  position: fixed;
   right: calc(env(safe-area-inset-right) + 12px);
   bottom: calc(env(safe-area-inset-bottom) + 10px);
   font-size: 0.7rem;
@@ -113,9 +117,17 @@ body {
   }
 }
 
-/* ---- Title over the demo (the post pass dims it) ---- */
-.title-logo {
-  margin-top: -2rem;
+/* ---- The title's four rows, and their lists ---- */
+.menu.menu-title-screen {
+  min-width: 0;
+  width: 100%;
+}
+
+.menu.menu-title-screen .menu-row {
+  text-align: left;
+  font-size: clamp(0.9rem, min(2vw, 4.4vh), 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
 }
 
 /* ---- Menus ---- */
@@ -1371,17 +1383,12 @@ body[data-vhs='1'] .vhs {
   transform-origin: bottom left;
 }
 
-/* A phone on its side: a smaller logo and the title menu in two even columns, all inside the screen. */
+/* A phone on its side: a smaller logo, all inside the screen. */
 @media (max-height: 500px) {
   .title {
     gap: 0.25rem;
   }
 
-  .title-logo {
-    margin-top: 0;
-    font-size: clamp(2rem, 14vh, 5rem);
-    line-height: 1;
-  }
 
   .title-caption {
     font-size: clamp(0.6rem, 3.2vh, 0.9rem);
@@ -1393,22 +1400,6 @@ body[data-vhs='1'] .vhs {
     top: calc(env(safe-area-inset-top) + 8px);
   }
 
-  .menu-title-screen {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-width: 0;
-    width: min(44rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 24px));
-    margin-top: 0.4rem;
-    gap: 0.25rem 0.5rem;
-  }
-
-  .menu-title-screen .menu-row {
-    padding: clamp(0.2rem, 1.4vh, 0.35rem) 0.6rem;
-    font-size: clamp(0.65rem, 3.6vh, 0.85rem);
-    letter-spacing: 0.1em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 }
 
 /* ---- Input display: recent inputs down the side, newest at the top ---- */
@@ -1585,4 +1576,326 @@ body[data-motion='reduced'] .hud-health-fill.weak,
 body[data-motion='reduced'] .touch-btn {
   animation: none;
   transition: none;
+}
+
+/* ---- Fighter select: the dial (src/ui/screens/select.ts) ---- */
+.select {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(12rem, 0.8fr) 1fr;
+  align-items: center;
+  gap: clamp(8px, 2vw, 24px);
+  padding: calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 8;
+}
+
+/* The cards sit at the sides, the TV between them; the menu under player 1's card. */
+.select-cards {
+  display: contents;
+}
+
+.select-card {
+  align-self: start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  background: linear-gradient(90deg, rgba(8, 10, 30, 0.88), rgba(8, 10, 30, 0.6));
+  border-left: 4px solid var(--accent, #f1ede0);
+  text-shadow: none;
+}
+
+.select-card-0 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.select-card-1 {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.select .menu-select {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  min-width: 0;
+}
+
+.select[data-mode='watch'] .menu-select {
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.select-channel {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: #5dff6a;
+  line-height: 1;
+}
+
+.select-portrait {
+  grid-row: span 2;
+  width: clamp(48px, 9vw, 96px);
+  height: clamp(48px, 9vw, 96px);
+  object-fit: cover;
+  border: 2px solid var(--accent, #f1ede0);
+  background: #11131f;
+}
+
+.select-name {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.4vw, 1.6rem);
+  line-height: 1.05;
+}
+
+.select-show {
+  font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+
+.select-style {
+  margin-top: 2px;
+  font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.08em;
+  color: var(--accent, #f1ede0);
+}
+
+.select-bars {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 3px;
+}
+
+.select-bar {
+  display: grid;
+  grid-template-columns: 5.5em 1fr;
+  align-items: center;
+  font-size: clamp(0.55rem, 1.1vw, 0.75rem);
+  letter-spacing: 0.1em;
+}
+
+.select-bar-track {
+  height: 7px;
+  background: rgba(241, 237, 224, 0.15);
+  overflow: hidden;
+}
+
+.select-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent, #e8e04a);
+  transform-origin: left;
+}
+
+.select-trials {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: clamp(0.8rem, 1.6vw, 1rem);
+  opacity: 0.75;
+}
+
+/* A phone on its side: smaller cards, no style line, the menu in the middle column's foot. */
+@media (max-height: 500px) {
+  .select {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .select-card {
+    padding: 4px 6px;
+  }
+  .select-style,
+  .select-show {
+    display: none;
+  }
+  .select .menu-select {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+  }
+  .select .menu-row {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+  }
+}
+
+/* ---- The versus card (src/ui/screens/versus.ts) ---- */
+.versus {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: repeating-linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%, #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%, #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%, #0000c0 85.71% 100%);
+  overflow: hidden;
+}
+
+.versus-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6vw;
+  background: linear-gradient(90deg, rgba(8, 10, 30, 0.95), rgba(8, 10, 30, 0.7));
+  border-right: 6px solid var(--accent);
+  clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+  text-shadow: 2px 0 rgba(255, 0, 60, 0.55), -2px 0 rgba(0, 200, 255, 0.55);
+}
+
+.versus-side-1 {
+  align-items: flex-end;
+  text-align: right;
+  background: linear-gradient(270deg, rgba(8, 10, 30, 0.95), rgba(8, 10, 30, 0.7));
+  border-right: 0;
+  border-left: 6px solid var(--accent);
+  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.versus-portrait {
+  width: min(28vh, 22vw);
+  height: min(28vh, 22vw);
+  object-fit: cover;
+  border: 3px solid var(--accent);
+}
+
+.versus-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.versus-show {
+  font-size: clamp(0.7rem, 1.8vw, 1.1rem);
+  letter-spacing: 0.25em;
+  color: var(--accent);
+}
+
+.versus-mid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.versus-tonight,
+.versus-stage {
+  padding: 2px 12px;
+  background: #1b2fa8;
+  font-size: clamp(0.65rem, 1.6vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  white-space: nowrap;
+}
+
+.versus-vs {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 9vw, 6rem);
+  line-height: 1;
+  color: #ffe040;
+  text-shadow: 4px 4px 0 #0b0b0f;
+}
+
+/* ---- Results (src/ui/screens/results.ts) ---- */
+.results {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 40px);
+  padding: calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 12px);
+  box-sizing: border-box;
+  background: radial-gradient(ellipse at center, rgba(8, 10, 30, 0.55), rgba(4, 4, 10, 0.9));
+}
+
+.results-card {
+  padding: 12px 16px;
+  background: rgba(8, 10, 30, 0.9);
+  border: 2px solid #1b2fa8;
+  text-shadow: none;
+}
+
+.results-winner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-left: 8px;
+  border-left: 5px solid var(--accent, #f1ede0);
+}
+
+.results-portrait {
+  width: clamp(56px, 12vh, 110px);
+  height: clamp(56px, 12vh, 110px);
+  object-fit: cover;
+  border: 2px solid var(--accent, #f1ede0);
+}
+
+.results-tag {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  opacity: 0.7;
+}
+
+.results-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 4vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.results-line {
+  max-width: 26rem;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.results-figures {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  letter-spacing: 0.08em;
+}
+
+.results-figures th {
+  font-weight: 800;
+  text-align: right;
+  padding: 2px 8px;
+}
+
+.results-figures td {
+  padding: 1px 8px;
+  border-top: 1px solid rgba(241, 237, 224, 0.1);
+}
+
+.results-figures td + td {
+  font-family: var(--font-mono);
+  font-size: 1.2em;
+  text-align: right;
+}
+
+.results .menu-results {
+  min-width: min(14rem, 30vw);
+}
+
+@media (max-height: 500px) {
+  .results-winner {
+    margin-bottom: 4px;
+  }
+  .results-figures {
+    font-size: 0.65rem;
+  }
 }

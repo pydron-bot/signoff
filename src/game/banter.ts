@@ -111,3 +111,9 @@ export function lineSeconds(line: string): number {
 
 /** Characters shown at once while the line types on. */
 export const TYPE_RATE = 45;
+
+/** The winner's word on the results screen: one of their replies, picked by the match's seed. */
+export function winLine(fighter: string, seed: number): string {
+  const r = REPLIES[fighter] ?? REPLIES.dale;
+  return r[Math.abs(seed) % r.length];
+}

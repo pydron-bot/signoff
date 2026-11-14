@@ -58,8 +58,9 @@ try {
       await page.click(`#${id}`);
       await page.waitForTimeout(400);
       await shot(id.replace('title-', 'title · '));
+      // Keys are read once a frame, and software GL draws a few a second.
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(1500);
     }
     const has = (fn) => page.evaluate((f) => typeof window.__shots[f] === 'function', fn);
     if (await has('screen')) {
