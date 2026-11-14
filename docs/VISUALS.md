@@ -144,28 +144,36 @@ medium, heavy, ender) and counter hits, as the freeze and shake already do.
   defender 5% along the blow for two frames on enders. Test it in the
   viewer first: on faceted models it can look rubbery.
 
-## 6. The set answers (proposed)
+## 6. The set answers (done in The Set Answers)
 
-- **Set shake** (medium). Heavy hits near a wall shake the props nearest
-  it (the weather map, the mirrors, the news desk's monitor): a small
-  offset on a few named nodes in each stage GLB. Needs those nodes named
-  (art side, step 29).
-- **Lights swing** (medium). Enders and wall splats set the hanging studio
-  lamps swinging (the beams in `atmosphere.ts` follow). Needs pivots on
-  the lamps (art side).
-- **Floor scorch / scuff decals** (medium). Where a body lands, a dark
-  scuff that fades over the round. One instanced mesh, pooled.
-- **Audience reacts** (small). Arcade's beaten fighters in the bleachers
-  lean forward on enders (a clip offset), and the laugh track lands at the
-  wrong moment as it already does.
+- **Set shake** (done, `src/render/setMotion.ts`, `setMover.ts`). A heavy
+  hit within 1.6 m of a wall rocks that wall's `shake_*` nodes (the
+  weather map, Burn's mirrors and speakers, Kitchen's shelves; the other
+  wall's barely), a wall splat hard. A damped spring a node about its
+  pivot, stepped with the sim; no draw calls. Off with Reduce Motion.
+- **Lights swing** (done, same place). Enders and wall splats set the
+  `swing_*` lamps going (the News's six fresnels; Kitchen's pans when
+  they're in the GLB), slow to settle; the beams in `atmosphere.ts`
+  follow their lamps. Off with Reduce Motion.
+- **Cracks, rings and scuffs** (done, `src/render/marks.ts`, `dust.ts`).
+  `fx_crack` on the wall at a splat and on the floor at a ground bounce, a
+  dark scuff where a body lands; they hold for the round and fade over its
+  last ten seconds. The shock ring is the art's `fx_impact_ring`. One
+  pooled instanced mesh each: two draw calls while marks show.
+- **Audience reacts** (done, `src/render/studio.ts`). Arcade's beaten
+  fighters lean in on enders for under a second. The laugh track already
+  lands at the wrong moment.
+- **The studio working** (game side done, waiting on art, step 33): the
+  live camera's tally lit, the crew's heads following the fight.
 
-## 7. Per-stage dressing (proposed)
+## 7. Per-stage dressing (done in The Set Answers, `src/render/stageAnswers.ts`)
 
-- **Weather**: rain streaks across the camera in segment 2 (a scrolling
-  texture on a quad in front of the camera; one draw call).
-- **Burn**: the mirrors' reflections flash white on enders.
-- **News**: the ticker glitches on enders (it's HTML already: a CSS class).
-- **Kitchen**: sparks off the burners on a ground bounce near them.
+- **Weather**: rain streaks blown across the lens in the storm (a quad in
+  front of the camera, drawn in its shader; one draw call). Off with Reduce
+  Motion.
+- **Burn**: the mirrors' reflections flash white on enders (a uniform).
+- **News**: the ticker tears and splits its colour on enders (a CSS class).
+- **Kitchen**: sparks off the burners on a ground bounce within 1.4 m of one.
 
 ## 8. Art-side asks
 

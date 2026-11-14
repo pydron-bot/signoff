@@ -666,6 +666,20 @@ more it reacts to a big one than a small one.
   air. Portraits are rendered from the models by `tools/portraits.mjs`.
 - The K.O.'s static hits hard for four steps, then thins to a veil the
   K.O. pose reads through in the slow motion.
+- **The set answers the fight** (`docs/VISUALS.md` sections 6 and 7): props
+  by the walls shake on heavy hits near them, the hanging lamps swing on
+  enders and splats (their beams following), a splat or a ground bounce
+  cracks the wall or the floor and a landing scuffs it for the rest of the
+  round, the shock ring is the art's own; rain blows across the lens in the
+  storm, Burn's mirrors flash white on enders, the News's ticker glitches,
+  the Kitchen's burners spark; the live camera's tally lights and the crew
+  turn to follow (once the art has them), and Arcade's audience leans in.
+  All stepped with the simulation, so the freeze, slow motion and replays
+  hold it; what moves goes with Reduce Motion.
+- **The fighters look alive** (`src/render/alive.ts`): the head keeps the
+  opponent in view in the clips that leave it free, a blink every few
+  seconds (timed by the step count, so a replay blinks the same), the hurt
+  shape creeping in as health falls and a grin on a long combo.
 - **The picture** (`src/render/post.ts`): the scene is drawn into a
   multisampled high-range buffer, and one pass puts it on screen as a tape
   would: sharp brightness with the colour smeared sideways, a tracking
