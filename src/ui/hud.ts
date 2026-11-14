@@ -20,6 +20,8 @@ import { CalloutQueue, SPEND_BOOST, SPEND_CUT, SPEND_SKIP, clockUrgent, comboSca
 export const HUD_TOP = 126;
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
 const DRAIN_HOLD = 32;
+/** Steps the News's ticker glitches after an ender. */
+const TICKER_GLITCH_STEPS = 18;
 /** How long the K.O. call keeps the callouts away (steps, as long as its caption). */
 const KO_CALL_STEPS = 150;
 const DRAIN_RATE = 0.012;
@@ -97,6 +99,8 @@ export class Hud {
   private readonly ticker: HTMLElement;
   private warningLeft = 0;
   private lastSpends = [-1, -1];
+  /** Steps left of the ticker's glitch after an ender. */
+  private tickerGlitch = 0;
   /** Steps left of the K.O. call, when no callout shows. */
   private koCall = 0;
   private lastUrgent = false;
@@ -388,6 +392,11 @@ export class Hud {
           break;
         case 'hit':
           if (e.counter) this.callout(e.attacker, 'COUNTER');
+          // An ender knocks the News's ticker out of true for a moment.
+          if (e.weight === 3 && !this.ticker.hidden) {
+            this.tickerGlitch = TICKER_GLITCH_STEPS;
+            this.ticker.classList.add('glitch');
+          }
           this.comboDamage[e.attacker] = e.combo === 1 ? e.damage : this.comboDamage[e.attacker] + e.damage;
           if (e.combo >= 2) {
             const c = this.sides[e.attacker].combo;
@@ -448,6 +457,7 @@ export class Hud {
     if (this.warningLeft > 0) this.warningLeft--;
     if (this.warning.hidden !== (this.warningLeft === 0)) this.warning.hidden = this.warningLeft === 0;
     if (this.koCall > 0) this.koCall--;
+    if (this.tickerGlitch > 0 && --this.tickerGlitch === 0) this.ticker.classList.remove('glitch');
     for (const s of this.sides) if (s.callouts.step()) this.showCallout(s);
   }
 

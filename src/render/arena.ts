@@ -38,6 +38,7 @@ import { Sparks } from './sparks';
 import { Clutter } from './clutter';
 import { Dust } from './dust';
 import { Marks } from './marks';
+import { StageAnswers } from './stageAnswers';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { SetFlash } from './setFlash';
 import { CutIn, type CutInRect } from './cutIn';
@@ -230,6 +231,7 @@ export class Arena {
     this.setFlash.reduceMotion = on;
     this.cut.reduceMotion = on;
     this.setMotion.reduceMotion = on;
+    this.answers.reduceMotion = on;
     if (on) this.setMotion.clear();
   }
   /** Of the screen's height, how much the HUD takes at the top: the cut-in's band stays below it. */
@@ -275,6 +277,8 @@ export class Arena {
   private readonly dust: Dust;
   /** Cracks and scuffs where bodies met the set (src/render/marks.ts). */
   private readonly marks: Marks;
+  /** Each stage's own answer: rain on the lens, the mirrors' flash, the burners' sparks. */
+  private readonly answers: StageAnswers;
   private readonly clutter: Clutter;
   private readonly light: ImpactLight;
   /** Changing channel between the endless channel's matches. */
@@ -327,6 +331,7 @@ export class Arena {
     this.burst = new SignalBurst(this.scene);
     this.dust = new Dust(this.scene);
     this.marks = new Marks(this.scene);
+    this.answers = new StageAnswers(this.scene, this.sparks);
     this.clutter = new Clutter(this.scene);
     this.light = new ImpactLight(this.scene);
     this.flip = new ChannelFlip(this.scene);
@@ -446,6 +451,7 @@ export class Arena {
     this.burst.clear();
     this.dust.clear();
     this.marks.clear();
+    this.answers.clear();
     this.clutter.clear();
     this.light.clear();
     this.setFlash.clear();
@@ -474,6 +480,7 @@ export class Arena {
     this.burst.onEvents(ev);
     this.dust.onEvents(m, ev);
     this.marks.onEvents(m, ev);
+    this.answers.onEvents(m, ev);
     this.marks.step();
     this.clutter.step(m, ev);
     this.light.onEvents(ev);
@@ -607,6 +614,7 @@ export class Arena {
     // drawDepth has brought the camera's matrices up to date.
     this.setFlash.update(this.camera, this.frame);
     this.flip.update(this.camera, dt);
+    this.answers.update(this.camera);
   }
 
   /** The foreground kept off the fight, and the audience in their seats (drawn only when in view). */

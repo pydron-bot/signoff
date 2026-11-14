@@ -1953,3 +1953,19 @@ body[data-motion='reduced'] .touch-btn {
     font-size: 0.75rem;
   }
 }
+
+/* An ender knocks the News's ticker out of true (hud.ts): the line tears sideways and the colour splits. */
+.hud-ticker.glitch {
+  background: rgba(40, 10, 60, 0.9);
+  text-shadow: 3px 0 rgba(255, 0, 60, 0.9), -3px 0 rgba(0, 220, 255, 0.9);
+  animation: ticker-tear 0.09s steps(2) infinite;
+}
+
+@keyframes ticker-tear {
+  0% { transform: translateX(-6px) skewX(-8deg); clip-path: inset(0 0 45% 0); }
+  50% { transform: translateX(5px) skewX(6deg); clip-path: inset(30% 0 0 0); }
+}
+
+body[data-motion='reduced'] .hud-ticker.glitch {
+  animation: none;
+}
