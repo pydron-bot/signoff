@@ -114,6 +114,16 @@ export class FighterModel {
   private readonly handL: THREE.Object3D;
   private readonly handR: THREE.Object3D;
   private readonly head: THREE.Object3D | null;
+  /** The posed model (inside root), for turning the head in its own space. */
+  private readonly model: THREE.Object3D;
+  /** The face's shapes the game drives on top of the clip (src/render/alive.ts): each mesh's influences and the indices of hurt, win and blink (−1: not in the art). */
+  private readonly faces: { influences: number[]; hurt: number; win: number; blink: number; base: Float32Array }[] = [];
+  /** The head as the clip posed it, before the look is added. */
+  private readonly headBase = new THREE.Quaternion();
+  private readonly lookQ = new THREE.Quaternion();
+  private readonly parentQ = new THREE.Quaternion();
+  private readonly lookAxis = new THREE.Vector3();
+  private looking = false;
 
   /**
    * `ghost`: a stripped copy drawn in one flat material (the VHS echoes
@@ -174,6 +184,16 @@ export class FighterModel {
     this.handL = model.getObjectByName('handL') ?? model.getObjectByName('hand.L') ?? model;
     this.handR = model.getObjectByName('handR') ?? model.getObjectByName('hand.R') ?? model;
     this.head = model.getObjectByName('head') ?? null;
+    this.model = model;
+    if (!plain)
+      model.traverse((o) => {
+        const m = o as THREE.Mesh;
+        const dict = m.isMesh && !m.userData.copy ? m.morphTargetDictionary : undefined;
+        if (!dict || !m.morphTargetInfluences) return;
+        const at = (k: string) => dict[k] ?? -1;
+        if (at('hurt') < 0 && at('win') < 0 && at('blink') < 0) return;
+        this.faces.push({ influences: m.morphTargetInfluences, hurt: at('hurt'), win: at('win'), blink: at('blink'), base: new Float32Array(3) });
+      });
     this.mixer = new THREE.AnimationMixer(model);
     const moves = FIGHTERS[art.id]?.moves;
     for (const [name, c] of art.clips) {
@@ -264,6 +284,40 @@ export class FighterModel {
     this.mixer.update(0);
     this.clip = clip;
     this.frame = frame;
+    // What the clip set, before alive() adds to it.
+    for (const f of this.faces) {
+      f.base[0] = f.hurt >= 0 ? f.influences[f.hurt] : 0;
+      f.base[1] = f.win >= 0 ? f.influences[f.win] : 0;
+      f.base[2] = f.blink >= 0 ? f.influences[f.blink] : 0;
+    }
+    if (this.head) this.headBase.copy(this.head.quaternion);
+  }
+
+  /** Whether the art has a blink shape (docs/BLENDER-TODO.md, step 33). */
+  get canBlink(): boolean {
+    return this.faces.some((f) => f.blink >= 0);
+  }
+
+  /**
+   * Life on top of the clip, after pose(): the head pitched `look` radians
+   * toward the opponent (up positive), the lids `blink` shut, and the hurt
+   * and win shapes at least `hurt` and `win`. The clip's own pose stays
+   * underneath, so calling this again never adds up.
+   */
+  alive(look: number, blink: number, hurt: number, win: number): void {
+    for (const f of this.faces) {
+      if (f.hurt >= 0) f.influences[f.hurt] = Math.max(f.base[0], hurt);
+      if (f.win >= 0) f.influences[f.win] = Math.max(f.base[1], win);
+      if (f.blink >= 0) f.influences[f.blink] = Math.max(f.base[2], blink);
+    }
+    const h = this.head;
+    if (!h || (!this.looking && Math.abs(look) < 1e-4)) return;
+    this.looking = Math.abs(look) >= 1e-4;
+    // The model faces glTF +z: looking up is a turn about its own x axis, carried into the head's parent's space.
+    this.parentQ.identity();
+    for (let o = h.parent; o && o !== this.model; o = o.parent) this.parentQ.premultiply(o.quaternion);
+    this.lookAxis.set(1, 0, 0).applyQuaternion(this.parentQ.invert());
+    h.quaternion.copy(this.headBase).premultiply(this.lookQ.setFromAxisAngle(this.lookAxis, -look));
   }
 
   /** Shows the reflections the segment has (hidden, they cost no draw calls). */

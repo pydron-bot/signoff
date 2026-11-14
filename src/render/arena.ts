@@ -22,6 +22,7 @@ import { Echoes } from './echo';
 import { FIGHT_LAYER } from './meshCopies';
 import { setShadowKey } from './shadow';
 import { SetMotion } from './setMotion';
+import { Alive } from './alive';
 import { SetMover } from './setMover';
 import { Legibility, cutInWear } from './legible';
 import { CameraRig, FOV } from './camera';
@@ -249,6 +250,8 @@ export class Arena {
   private readonly wear = new WearTracker();
   /** The set answering the fight: props shaking, lamps swinging (src/render/setMotion.ts, setMover.ts). */
   private readonly setMotion = new SetMotion();
+  /** Life on top of the clips: the head following the opponent, blinks, the face following the round. */
+  private readonly alive = new Alive();
   private readonly setMover = new SetMover();
   /** Which effects give way to the fighters this step (src/render/legible.ts). */
   private readonly legible = new Legibility();
@@ -451,6 +454,7 @@ export class Arena {
     this.wear.reset();
     this.legible.reset();
     this.setMotion.clear();
+    this.alive.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -504,9 +508,12 @@ export class Arena {
     // The echoes' trail keeps simulation time, so it's the same at any refresh rate.
     for (let i = 0; i < 2; i++) {
       const v = this.fighters[i];
+      const p = this.poses.pose(m, i, this.stepPose);
+      // The head, the eyes and the face, on top of the clip (src/render/alive.ts).
+      this.alive.step(m, i, p.clip);
       if (!v.echoes || !this.models) continue;
       const f = m.fighters[i];
-      v.echoes.trail.step(f, this.poses.pose(m, i, this.stepPose), toFloat(f.x), toFloat(f.y), this.shownNow(f), !this.reduceMotion);
+      v.echoes.trail.step(f, p, toFloat(f.x), toFloat(f.y), this.shownNow(f), !this.reduceMotion);
     }
   }
 
@@ -736,6 +743,7 @@ export class Arena {
         p.loop = true;
       }
       model.pose(p.clip, p.frame, p.loop);
+      if (!this.idling) model.alive(this.alive.look[i], this.alive.blink[i], this.alive.hurt[i], this.alive.win[i]);
       model.setWear(this.wear.wear[i], this.legible.snow[i]);
       model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
       v.echoes?.draw(this.legible.echo[i]);
