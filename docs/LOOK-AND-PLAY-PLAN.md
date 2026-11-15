@@ -10,7 +10,23 @@ E, The Set Answers: built, 0.64.0 on `look/set-answers` (which holds A, B
 and C); blinks, tally lights, crew and Kitchen's pans wait on art.
 D, The Rest of the Cast: built, 0.65.0 on `play/styles-2` (which holds A,
 B, C and E); its new clips are BLENDER-TODO steps 35 to 37, and the
-openings-to-win band is still missed by 14 of 42 pairs. F: in progress. Nothing is on `main` yet. Where the build differs
+openings-to-win band is still missed by 14 of 42 pairs. A patch, 0.64.1
+(the biggest hits read), is on `look/set-answers` and merged here.
+F, Home Advantage: in progress on `play/home-advantage` (to ship as
+0.66.0), the newest branch and the one that holds everything.
+
+**To pick F up.** Its brief: the six props of BLENDER-TODO step 34 (names
+and sizes binding) with their drawing and CPU use, then the LIVE-rules
+bench alarms, then tie-ins (home stages first), then live interruptions.
+The first commit ("Six more things to use") is in; anything after it on
+the branch marked WIP is unfinished and untested. When F's game side is
+done it wants: the full checks (`npx vitest run`, `npm run build`,
+`npm run combos`, `npm run matchups`, the smoke test), a look pass on how
+the new props, tie-in markers and interruption banners read at phone
+size, then version 0.66.0 with a changelog entry. Nothing from A to F is
+on `main`: merging `play/home-advantage` (after `art/tomatoes`, whose
+0.60.2 entry sits below these) is the one step that ships all of it.
+ Nothing is on `main` yet. Where the build differs
 from the proposal: the openings-to-win band is 8 to 11.5 as the bench
 counts openings (not 3.5 to 5) and is reported, not an alarm; the round
 clock stays at 60 seconds; counter hits were left alone (they were never
