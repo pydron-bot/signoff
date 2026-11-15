@@ -45,9 +45,9 @@ export const MATCHUP_LEANS: Readonly<Record<string, Readonly<Record<string, Lean
     gus: { ...EVEN, special: 2.5 },
   },
   dale: {
-    // 0.62.0: Rox's quick jump gets in over his zoning; he mixes her up instead (0.63.0: lighter, his style does the rest).
+    // 0.62.0: Rox's quick jump gets in over his zoning; he mixes her up instead (0.65.0: lighter, his style does the rest).
     rox: { ...EVEN, mix: 2.5 },
-    // 0.62.0: mix-ups on Hollis. (0.63.0: none needed against Gus now.)
+    // 0.62.0: mix-ups on Hollis. (0.65.0: none needed against Gus now.)
     hollis: { ...EVEN, mix: 2.5 },
   },
   // 0.51.0: the new moves moved three matchups past 70:30.

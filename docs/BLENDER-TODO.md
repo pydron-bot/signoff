@@ -1741,7 +1741,7 @@ The first part of the rest of the cast (`docs/STYLES.md`, after the Rox and
 Hollis pilot of step 25): Dale and Margaret, the keep-away and the precise,
 the furthest apart of the five. Same method as step 25: a timing profile
 for each (`Stance`), then the moves whose clips changed. The game side is
-in (0.63.0): until a clip lands the game plays the stand-in in brackets,
+in (0.65.0): until a clip lands the game plays the stand-in in brackets,
 and `ART_PENDING` in `src/render/pose.ts` lists what's owed; take each
 entry out as its clip lands.
 
@@ -1811,7 +1811,7 @@ entry out as its clip lands.
 
 The second part (`docs/STYLES.md`): Gus the kitchen and Gideon the sermon.
 As in step 35: a timing profile each, then the clips. The game side is in
-(0.64.0); until a clip lands the game plays the stand-in in brackets, and
+(0.65.0); until a clip lands the game plays the stand-in in brackets, and
 `ART_PENDING` lists what's owed.
 
 **A. Rhythm: two more timing profiles** (`lib/anim.py`, `Stance`)

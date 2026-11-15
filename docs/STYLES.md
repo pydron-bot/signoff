@@ -12,8 +12,8 @@ limb (front punch is always a lead-hand jab, aimed at the hitbox). See
 
 **Pilot (0.37.0): Rox and Hollis**, the two furthest apart. The rest follow
 in three parts (`docs/LOOK-AND-PLAY-PLAN.md`, D): **Dale and Margaret**
-(0.63.0, art in `docs/BLENDER-TODO.md` step 35), **Gus and Gideon** (0.64.0,
-step 36) and **Mumbles** (0.65.0, step 37). Every fighter has a style now.
+(art in `docs/BLENDER-TODO.md` step 35), **Gus and Gideon** (step 36)
+and **Mumbles** (step 37), all in 0.65.0. Every fighter has a style now.
 
 ## What makes a style
 
@@ -78,7 +78,7 @@ grab, and links.*
 | Properties | Armour on Door Kick | Collar Grab pulls in (`s.FP`), a close Knee that links (`s.FK`), armoured Rising Clothesline (`c.BP`) and Shoulder Check (`f.BP`, which also barges forward), a Stiff Arm that crushes a guard (`f.FK`, slow) |
 | Strings | 9, generic shapes, one grab | 8, short; two end in a grab (**Cuff 'Em**, **Frisk**) |
 
-## Dale Storm: the forecast (0.63.0)
+## Dale Storm: the forecast (0.65.0)
 
 *Keep-away: the presenter at the map, unhurried, pointer and umbrella held
 out at arm's length; the longest pokes, steps back, and strings that set
@@ -92,7 +92,7 @@ up the Cold Front.*
 | Properties | The longest poke | Disjointed reach: on `s.BK` (1.75 m) and `b.FK BK` (1.85 m) only his arm can be hit; long stun and little push on every string's second hit, so it holds them for the Cold Front |
 | Strings | 8, two of them three hits | 8, all two hits: **Long-Range Forecast** (`b.FK BK`) new, **Front Moves In** now straight off the jab (`FP BK`); Scattered Showers and the old three-hit Front Moves In retired |
 
-## Margaret Okafor: precision (0.63.0)
+## Margaret Okafor: precision (0.65.0)
 
 *Footsies: the least movement of anyone, perfect posture, strikes that
 start and stop dead, the best frame data.*
@@ -105,7 +105,7 @@ start and stop dead, the best frame data.*
 | Properties | Fast, safe normals | The best frame data: her pokes are level or near it on block (`s.BP`, `s.FK` 0; `c.FK` −1; `s.BK` −1 at 1.55 m), all her strings safe; the fastest long poke (`s.BK` Anchor Kick, 12 frames); a disjointed Script Slash (`f.FK`, 1.55 m, only the arm can be hit) |
 | Strings | 8, one unsafe low | 8, Small Print now safe too |
 
-## Chef Gus Lamarre: the kitchen (0.64.0)
+## Chef Gus Lamarre: the kitchen (0.65.0)
 
 *Mid-range: a utensil in every normal, wide arcs, long recoveries, and the
 longest disjointed reach in the game.*
@@ -118,7 +118,7 @@ longest disjointed reach in the game.*
 | Properties | Long, slow normals | Disjointed: on `s.BP`, `s.BK`, `c.FK`, `c.BK` and `b.BP` only his arm can be hit, never the utensil; a three-hit Whisk (`f.FK`, new) |
 | Strings | 8 | 8, unchanged: recipes that end on a cleaver or a launch |
 
-## Rev. Gideon Price: the sermon (0.64.0)
+## Rev. Gideon Price: the sermon (0.65.0)
 
 *All-rounder: theatrical, arms flung wide, call and response, laying on
 hands.*

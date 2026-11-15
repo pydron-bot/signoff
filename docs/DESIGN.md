@@ -255,8 +255,7 @@ meter. Every number below is a starting value to tune.
     weigh spending bars to extend against the bars the defender is holding.
 - Each fighter's normals do their own job, and each fighter has a style of
   their own (`docs/STYLES.md`: shape, rhythm, space, properties, strings;
-  Rox and Hollis first, in 0.37.0; Dale and Margaret in 0.63.0, Gus and
-  Gideon in 0.64.0, Mumbles in 0.65.0): Dale is
+  Rox and Hollis first, in 0.37.0; the other five in 0.65.0): Dale is
   the forecast: unhurried, the longest pokes (the Umbrella Jab and, out of
   the step-back kick, the Long-Range Forecast reach 1.75 and 1.85 m, and
   only his arm can be hit, not the umbrella), two normals that step back
@@ -441,8 +440,8 @@ jumping Gus's pans a little more; Gus goes low and mixes up Mumbles, and
 spends specials on Dale; Margaret spends specials and mixes up Gus, and
 mixes up Gideon; Gideon spends specials on Gus; Hollis spends specials on
 Mumbles. Mixing up more was the
-strongest single change in most of these searches. The styles of 0.63.0
-to 0.65.0 moved a few: Dale needs none against Gus now and only mix-ups
+strongest single change in most of these searches. The styles of 0.65.0
+moved a few: Dale needs none against Gus now and only mix-ups
 against Rox; Mumbles jumps less at Margaret and mixes up Gideon less;
 Hollis spends more specials on Mumbles, who ducks his Head Bonk too. On defence it
 learns what the opponent does to its getup and ducks a habitual throw

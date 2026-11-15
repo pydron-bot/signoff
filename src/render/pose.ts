@@ -110,13 +110,13 @@ export const STAND_INS: Readonly<Record<string, string>> = {
   'gideon:Begone+': 'Laying On of Hands',
   'gideon:j.BP FP': 'j.FP',
   'gideon:j.BP BK': 'j.BP',
-  // Styles, part 1 (0.63.0, step 35): Dale's and Margaret's new and retimed normals until their clips land.
+  // Styles, part 1 (0.65.0, step 35): Dale's and Margaret's new and retimed normals until their clips land.
   'dale:b.BP': 'b.FK',
   'dale:FP BK': 'FP FP BK',
   'dale:b.FK BK': 's.BK',
   'margaret:s.BK': 'FK BK',
   'margaret:f.FK': 's.FK',
-  // Styles, part 2 (0.64.0, step 36): Gus's whisk, Gideon's two-beat Good Book and his palm.
+  // Styles, part 2 (0.65.0, step 36): Gus's whisk, Gideon's two-beat Good Book and his palm.
   'gus:f.FK': 's.FK',
   'gideon:s.BP': 'BP BP',
   'gideon:f.FK': 'Laying On of Hands',
