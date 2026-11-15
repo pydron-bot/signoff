@@ -14,6 +14,15 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.64.1',
+    date: '2026-11-15',
+    title: 'Clean Hit',
+    notes: [
+      "The biggest hits are easier to read. On a combo's last blow the set flashes and blurs but both fighters stay sharp and in colour, and the flash, the blur and the tape's tear now come one after another instead of all at once.",
+      'A body sent flying no longer trails ghost images: afterimages are for a fighter moving under their own power.',
+    ],
+  },
+  {
     version: '0.64.0',
     date: '2026-11-14',
     title: 'The Set Answers',
