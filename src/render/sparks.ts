@@ -53,6 +53,11 @@ export class Sparks {
     }
   }
 
+  /** A spark of the set's own (a burner, src/render/stageAnswers.ts): at (x, y), its colour, size and steps. */
+  burst(x: number, y: number, color: number, size: number, life: number): void {
+    this.spawn(x, y, color, size, life);
+  }
+
   private spawn(x: number, y: number, color: number, size: number, life: number): void {
     const k = this.next;
     this.next = (k + 1) % POOL;

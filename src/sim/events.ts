@@ -17,7 +17,8 @@ export type SimEvent =
   | { type: 'firstHit'; player: number }
   /** A juggled body popped back up: a boosted special (relaunch), the floor or the wall. */
   | { type: 'relaunch'; player: number; how: 'special' | 'ground' | 'wall'; x: Fx; y: Fx }
-  | { type: 'armor'; player: number; move: string }
+  /** Armour soaked a hit: `player` took `damage` and carried on. */
+  | { type: 'armor'; player: number; move: string; damage: number }
   /** Gideon's donations changed: collected by the plate, or spent on a tithed special. */
   | { type: 'donation'; player: number; total: number; spent: number }
   | { type: 'heal'; player: number; amount: number }

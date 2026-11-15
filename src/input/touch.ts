@@ -1,13 +1,14 @@
 /**
  * Touch controls for landscape phones: a floating stick on the left half,
  * and on the right the four attack buttons, Special above them, a big Block
- * under the thumb with Throw beside it. Tapping the meter spends it; the
+ * under the thumb with Throw beside it, drawn as the keys of a TV remote.
+ * METER has a key of its own, and tapping the HUD's meter spends it too; the
  * Technical Difficulties button shows only when it can be used. A button
  * with a fighter behind it fades so the fight shows through.
  */
 import { Input } from '../sim';
 
-const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT } = Input;
+const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT, METER } = Input;
 const DEAD = 14;
 /** sin 22.5°: an 8-way stick with equal sectors. */
 const SECTOR = 0.38;
@@ -48,24 +49,27 @@ export class TouchControls {
 
     const pad = el('div', 'touch-pad');
     this.pad = pad;
-    const btn = (cls: string, label: string, bit: number) => {
+    const btn = (cls: string, label: string, bit: number, icon = '') => {
       const b = el('div', `touch-btn ${cls}`);
       b.textContent = label;
+      // A fist or a foot beside the letters (style.css).
+      if (icon) b.dataset.icon = icon;
       this.bindHold(b, bit);
       pad.append(b);
       this.buttons.push(b);
       return b;
     };
     btn('t-special', 'SP', SPECIAL);
-    btn('t-fp', 'FP', FP);
-    btn('t-bp', 'BP', BP);
-    btn('t-fk', 'FK', FK);
-    btn('t-bk', 'BK', BK);
+    btn('t-fp', 'FP', FP, 'fist');
+    btn('t-bp', 'BP', BP, 'fist');
+    btn('t-fk', 'FK', FK, 'foot');
+    btn('t-bk', 'BK', BK, 'foot');
     btn('t-block', 'BLOCK', BLOCK);
     btn('t-throw', 'THR', THROW);
     this.td = btn('t-td', 'TECH\nDIFF', BLOCK | SPECIAL);
     this.td.hidden = true;
     this.interact = btn('t-interact', 'USE', INTERACT);
+    btn('t-meter', 'METER', METER);
     this.interact.hidden = true;
     this.root.append(pad);
     parent.append(this.root);

@@ -268,7 +268,7 @@ are authored facing right with the left foot and left hand leading.
 > 16. ~~**Step 30, set dressing that gets knocked about**~~ *done (Nov 10): three `clutter_*` kinds on each of the four stages, game side in.*
 > 17. **Step 32, fighters against the set** (Nov 14, open): paint changes to Margaret, Gideon and Gus, Burn's mirror wall and Kitchen's later segments, checked with `tools/readability.mjs`. Needs nothing from the game side: start here.
 > 18. **Step 34, six more things to use** (Nov 14, open): six `prop_*` objects and `fx_foam`, ahead of the game side.
-> 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor.
+> 19. **Step 33, life in the fighters and the studio** (Nov 14, open): a `blink` shape key, switchable tally lights, crew at the cameras, Kitchen's pans, the News floor. The game side is in (0.64.0) and picks each up by name.
 > 20. **Step 31, jumps by weight** (Nov 14, open): eight jump clips at new lengths.
 > 21. **Step 35, fighting styles: Dale and Margaret** (Nov 14, open): timing profiles for both, three new clips and one re-key for Dale, two retimed for Margaret, two retired. On `play/styles-2`.
 > 22. **Step 36, fighting styles: Gus and Gideon** (Nov 14, open): timing profiles for both, a new whisk and four utensil re-keys for Gus, a retimed Good Book, a new palm and a re-keyed Rapture for Gideon. On `play/styles-2`.
@@ -1680,7 +1680,9 @@ output.
 ### 33. Life in the fighters and the studio (Nov 14, spec ahead of the game side)
 
 For the release that makes the sets answer the fight (`docs/LOOK-AND-PLAY-PLAN.md`,
-E). The game will use the `shake_*` and `swing_*` nodes, `fx_crack` and
+E). *The game side is in (0.64.0, on `look/set-answers`): it looks for each
+name below when a GLB loads and uses it if it is there, so each piece
+starts working the moment it lands, with no game change.* The game will use the `shake_*` and `swing_*` nodes, `fx_crack` and
 `fx_impact_ring` from step 29 as they are. These are the pieces it still
 lacks; until each lands the game leaves that part out.
 
@@ -1706,6 +1708,11 @@ lacks; until each lands the game leaves that part out.
 - [ ] **Kitchen's hanging pans** (offered in step 29): `swing_pans`, a
   rail of three or four pans over the counter, pivot on the rail, under
   `set`.
+- [ ] **`fx_impact_ring` as a ring** (in `dale.glb`, step 29). The game
+  now draws it on ground bounces and knockdowns (0.64.0), and under
+  additive blending it reads as a filled golden disc. A thinner bright rim
+  (the outer 15% of the radius) falling off faster inward would read as a
+  ring. Same size, origin and name.
 - [ ] **Floor marks on the News.** Weather's floor has tape marks; the
   News floor is bare. Tape T-marks at the anchor positions and a run of
   cable to each camera, painted into `set`'s floor.

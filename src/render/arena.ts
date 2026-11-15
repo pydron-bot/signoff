@@ -21,6 +21,10 @@ import { Atmosphere } from './atmosphere';
 import { Echoes } from './echo';
 import { FIGHT_LAYER } from './meshCopies';
 import { setShadowKey } from './shadow';
+import { SetMotion } from './setMotion';
+import { Alive } from './alive';
+import { Studio } from './studio';
+import { SetMover } from './setMover';
 import { Legibility, cutInWear } from './legible';
 import { CameraRig, FOV } from './camera';
 import { AUDIENCE_SHADE, SEATS } from './depth';
@@ -34,6 +38,8 @@ import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { Clutter } from './clutter';
 import { Dust } from './dust';
+import { Marks } from './marks';
+import { StageAnswers } from './stageAnswers';
 import { ImpactLight, ImpactScreen, type ImpactTarget } from './impact';
 import { SetFlash } from './setFlash';
 import { CutIn, type CutInRect } from './cutIn';
@@ -132,6 +138,9 @@ const SWAY_OFFSET = 23;
 /** A seated fighter's bounds for culling: centre above the seat, and radius, metres. */
 const SEATED_Y = 0.5;
 const SEATED_R = 1.1;
+/** Where the crew stand when the stage has none (the studio still steps). */
+const CREW_X = [-6, 6];
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 /** Half a body's width plus its limbs, for what the foreground must keep clear of. */
 const BODY_REACH = 0.6;
 
@@ -216,6 +225,7 @@ export class Arena {
   private readonly viewProj = new THREE.Matrix4();
   private readonly seated = new THREE.Sphere();
   private readonly turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+  private readonly lean = new THREE.Quaternion();
   private readonly unit = new THREE.BoxGeometry(1, 1, 1);
   get reduceMotion(): boolean {
     return this.rig.reduceMotion;
@@ -225,6 +235,9 @@ export class Arena {
     this.impactScreen.reduceMotion = on;
     this.setFlash.reduceMotion = on;
     this.cut.reduceMotion = on;
+    this.setMotion.reduceMotion = on;
+    this.answers.reduceMotion = on;
+    if (on) this.setMotion.clear();
   }
   /** Of the screen's height, how much the HUD takes at the top: the cut-in's band stays below it. */
   set hudClear(share: number) {
@@ -242,6 +255,13 @@ export class Arena {
   /** VHS LOOK: how much tape the signal damage shows, 0 to 1. */
   tape = 1;
   private readonly wear = new WearTracker();
+  /** The set answering the fight: props shaking, lamps swinging (src/render/setMotion.ts, setMover.ts). */
+  private readonly setMotion = new SetMotion();
+  /** Life on top of the clips: the head following the opponent, blinks, the face following the round. */
+  private readonly alive = new Alive();
+  /** The studio working: the live camera's tally, the crew following the fight, the audience leaning in. */
+  private readonly studio = new Studio();
+  private readonly setMover = new SetMover();
   /** Which effects give way to the fighters this step (src/render/legible.ts). */
   private readonly legible = new Legibility();
   /** A pose worked out in step(), for the echoes' trail. */
@@ -262,6 +282,10 @@ export class Arena {
   private readonly sparks: Sparks;
   private readonly burst: SignalBurst;
   private readonly dust: Dust;
+  /** Cracks and scuffs where bodies met the set (src/render/marks.ts). */
+  private readonly marks: Marks;
+  /** Each stage's own answer: rain on the lens, the mirrors' flash, the burners' sparks. */
+  private readonly answers: StageAnswers;
   private readonly clutter: Clutter;
   private readonly light: ImpactLight;
   /** Changing channel between the endless channel's matches. */
@@ -313,6 +337,8 @@ export class Arena {
     this.air = new Atmosphere(this.scene);
     this.burst = new SignalBurst(this.scene);
     this.dust = new Dust(this.scene);
+    this.marks = new Marks(this.scene);
+    this.answers = new StageAnswers(this.scene, this.sparks);
     this.clutter = new Clutter(this.scene);
     this.light = new ImpactLight(this.scene);
     this.flip = new ChannelFlip(this.scene);
@@ -327,7 +353,12 @@ export class Arena {
       this.projectileFx.push(new EffectSlot(this.scene));
     }
     loadFighterArt(TAPE_SKIP_ART).then(
-      (art) => (this.shared = art.fx),
+      (art) => {
+        this.shared = art.fx;
+        // The impact pass's painted ring and crack live in the same GLB (step 29).
+        this.dust.useRing(art.fx.get('fx_impact_ring'));
+        this.marks.useCrack(art.fx.get('fx_crack'));
+      },
       () => undefined,
     );
     const edges = new THREE.EdgesGeometry(this.unit);
@@ -426,6 +457,8 @@ export class Arena {
     this.rig.reset();
     this.burst.clear();
     this.dust.clear();
+    this.marks.clear();
+    this.answers.clear();
     this.clutter.clear();
     this.light.clear();
     this.setFlash.clear();
@@ -433,6 +466,9 @@ export class Arena {
     this.impactScreen.clear();
     this.wear.reset();
     this.legible.reset();
+    this.setMotion.clear();
+    this.alive.reset();
+    this.studio.reset();
     for (const v of this.fighters) v.echoes?.reset();
   }
 
@@ -451,6 +487,9 @@ export class Arena {
     this.sparks.onEvents(ev);
     this.burst.onEvents(ev);
     this.dust.onEvents(m, ev);
+    this.marks.onEvents(m, ev);
+    this.answers.onEvents(m, ev);
+    this.marks.step();
     this.clutter.step(m, ev);
     this.light.onEvents(ev);
     this.impactScreen.onEvents(ev);
@@ -478,13 +517,20 @@ export class Arena {
     }
     this.rig.step(m, ev);
     this.wear.step(m, ev);
+    this.setMotion.onEvents(m, ev);
+    this.setMotion.step();
+    const depth = this.stage.depth;
+    this.studio.step(m, ev, depth ? depth.crewX : CREW_X, depth ? depth.crewZ : 3);
     this.legible.step(m, ev, this.cut.who, this.wear.wear);
     // The echoes' trail keeps simulation time, so it's the same at any refresh rate.
     for (let i = 0; i < 2; i++) {
       const v = this.fighters[i];
+      const p = this.poses.pose(m, i, this.stepPose);
+      // The head, the eyes and the face, on top of the clip (src/render/alive.ts).
+      this.alive.step(m, i, p.clip);
       if (!v.echoes || !this.models) continue;
       const f = m.fighters[i];
-      v.echoes.trail.step(f, this.poses.pose(m, i, this.stepPose), toFloat(f.x), toFloat(f.y), this.shownNow(f), !this.reduceMotion);
+      v.echoes.trail.step(f, p, toFloat(f.x), toFloat(f.y), this.shownNow(f), !this.reduceMotion);
     }
   }
 
@@ -530,6 +576,8 @@ export class Arena {
     // The cold open: nothing steps, so the camera frames the match from here (else it keeps the last match's shot).
     if (this.idling) this.rig.step(m, NO_EVENTS);
     this.stage.update(m, this.frame);
+    this.setMover.bind(this.stage.root, this.setMotion);
+    this.setMover.update(this.setMotion);
     this.clutter.update();
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
@@ -538,6 +586,7 @@ export class Arena {
     this.shadows.setKey(this.key);
     setShadowKey(this.key);
     this.air.update(m, this.frame / 60);
+    this.air.followLamps(this.setMover.lampX, this.setMover.lampAngle, this.setMover.lamps);
     for (let i = 0; i < 2; i++) this.drawFighter(m, i);
     for (let i = 0; i < this.projectiles.length; i++) {
       const p = m.projectiles[i];
@@ -575,6 +624,7 @@ export class Arena {
     // drawDepth has brought the camera's matrices up to date.
     this.setFlash.update(this.camera, this.frame);
     this.flip.update(this.camera, dt);
+    this.answers.update(this.camera);
   }
 
   /** The foreground kept off the fight, and the audience in their seats (drawn only when in view). */
@@ -583,6 +633,7 @@ export class Arena {
     const ax = toFloat(m.fighters[0].x);
     const bx = toFloat(m.fighters[1].x);
     depth?.update(this.camera, Math.min(ax, bx) - BODY_REACH, Math.max(ax, bx) + BODY_REACH);
+    depth?.studio(this.studio);
     this.camera.updateMatrixWorld();
     this.viewProj.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.viewProj);
@@ -600,7 +651,10 @@ export class Arena {
       model.root.visible = this.frustum.intersectsSphere(this.seated);
       if (!model.root.visible) continue;
       // The seat's +z faces the fight; the model is turned a quarter to face +x, so turn it back.
-      seat.getWorldQuaternion(model.root.quaternion).multiply(this.turn);
+      seat.getWorldQuaternion(model.root.quaternion);
+      // Leaning in on an ender (not with Reduce Motion): forward is the seat's +z, toward the fight.
+      if (this.studio.lean > 0 && !this.reduceMotion) model.root.quaternion.multiply(this.lean.setFromAxisAngle(X_AXIS, this.studio.lean));
+      model.root.quaternion.multiply(this.turn);
       model.pose('sit_audience', this.frame + k * SWAY_OFFSET, true);
     }
   }
@@ -711,6 +765,7 @@ export class Arena {
         p.loop = true;
       }
       model.pose(p.clip, p.frame, p.loop);
+      if (!this.idling) model.alive(this.alive.look[i], this.alive.blink[i], this.alive.hurt[i], this.alive.win[i]);
       model.setWear(this.wear.wear[i], this.legible.snow[i]);
       model.showReflections(FLOOR.strength.value > 0, MIRROR.strength.value > 0);
       v.echoes?.draw(this.legible.echo[i]);

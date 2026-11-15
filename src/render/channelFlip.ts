@@ -96,11 +96,11 @@ export class ChannelFlip {
       lines.forEach((line, i) => {
         // As big as it's meant to be, or as fits.
         let size = i === 0 ? 120 : 40;
-        g.font = `bold ${size}px ui-monospace, Menlo, monospace`;
+        g.font = `${size}px 'SignOff Mono', ui-monospace, Menlo, monospace`;
         const fit = (this.canvas.width - 24) / Math.max(1, g.measureText(line).width);
         if (fit < 1) {
           size = Math.floor(size * fit);
-          g.font = `bold ${size}px ui-monospace, Menlo, monospace`;
+          g.font = `${size}px 'SignOff Mono', ui-monospace, Menlo, monospace`;
         }
         g.lineWidth = i === 0 ? 10 : 6;
         g.strokeStyle = 'rgba(0, 20, 0, 0.85)';

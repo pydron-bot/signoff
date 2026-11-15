@@ -14,6 +14,48 @@ export interface Release {
 
 export const CHANGELOG: readonly Release[] = [
   {
+    version: '0.65.0',
+    date: '2026-11-15',
+    title: 'The Rest of the Cast',
+    notes: [
+      'Every fighter now has a style of their own. Rox and Hollis had theirs; these are the other five.',
+      'Dale, the forecast: the longest pokes in the game, two normals that step back as they strike (Pointer on back + Back Punch, Long-Range Forecast on back + Front Kick then Back Kick), and short strings that each set up a Cold Front. His umbrella can no longer be hit, only the arm holding it.',
+      'Margaret, precision: she no longer steps in. Script Slash (forward + Front Kick) is a long slash that cannot be hit back, her Anchor Kick is faster, and every one of her strings is safe when blocked.',
+      'Gus, the kitchen: a utensil in every normal, and only his arm can be hit, never the pan or the cleaver. His new Whisk (forward + Front Kick) hits three times.',
+      'Gideon, the sermon: the Good Book lands twice, a beat apart; Rapture catches a jump from either side; Come Forward (forward + Front Kick) lays a palm on you and draws you in.',
+      'Mister Mumbles, wrong: Head Bonk folds him under high attacks, Now You See Me (Front Punch, Front Punch, Back Punch) takes him round behind you in the middle of a string, and Yanked (forward + Front Kick) drags him across the floor head first.',
+      'The new and retimed moves play stand-in animation until their own arrives.',
+    ],
+  },
+  {
+    version: '0.64.0',
+    date: '2026-11-14',
+    title: 'The Set Answers',
+    notes: [
+      "The studio answers the fight. Shelves, mirrors, speakers and the weather map rattle when someone is slammed near them, and the News's lamps swing on the big blows with their beams swinging after them.",
+      'A wall splat or a bounce off the floor leaves a crack, and a body leaves a scuff where it lands. They stay for the round.',
+      "Rain lashes the lens in Weather's storm, Burn's mirrors flash white on a combo's last blow, the News ticker glitches, and Kitchen's burners spark when a body bounces beside them.",
+      'The fighters keep their eyes on each other, wince as the round goes against them and grin through a long combo.',
+      "In Arcade, the fighters you've beaten lean in from the bleachers on the big hits.",
+      'On phones: the fighter select keeps the TV in view while you turn the dial, the results are bigger, and FIRST HIT keeps to its corner and stays out of the K.O. call.',
+    ],
+  },
+  {
+    version: '0.63.0',
+    date: '2026-11-14',
+    title: "Tonight's Line-Up",
+    notes: [
+      'Channel 0 has its own type: a rounded station face for the big calls, a condensed caption face for names and menus, and a CRT face for the clock.',
+      'The title is four rows beside the TV: FIGHT, LEARN, WATCH and SETTINGS. Everything that was there before is inside one of them.',
+      "Picking a fighter turns the living room's dial: the TV flips to each fighter live on their own set, with a portrait and bars for health, speed, reach and difficulty worked out from how they really play.",
+      "Every match opens on a versus card and ends on the night's figures: damage, best combo, first hits, counter hits, punishes, flawless blocks and time on air, with REMATCH and CHANGE FIGHTERS underneath.",
+      'The meter sits under your health bar, three times the size, and lights BOOST, SKIP and CUT AWAY when you can afford them. Touch has its own METER key.',
+      'The combo counter grows with the combo, callouts keep to their own slot at each side instead of stacking on the fighters, the clock turns urgent in the last ten seconds, and rounds won show as ON AIR lamps.',
+      "The touch buttons are a remote's keys that press in and light.",
+      "The K.O.'s static hits hard and then clears, so you can see who fell.",
+    ],
+  },
+  {
     version: '0.62.0',
     date: '2026-11-14',
     title: 'Fair Fights',

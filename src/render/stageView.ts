@@ -28,6 +28,8 @@ export interface StageLights {
 }
 
 export interface StageSet {
+  /** What it puts in the scene: the GLB's set, once loaded, or the stand-ins. */
+  readonly root: THREE.Object3D;
   /** Loads the stage's GLB; resolves (either way) once the set is in the scene. */
   load(): Promise<void>;
   show(on: boolean): void;
@@ -91,6 +93,11 @@ export class StageView {
       () => undefined,
     );
     return Promise.all([set.load(), depth]).then(() => undefined);
+  }
+
+  /** The active stage's set (its moving nodes are found under it: src/render/setMover.ts). */
+  get root(): THREE.Object3D | null {
+    return this.sets[this.active]?.root ?? null;
   }
 
   /** The active stage's foreground and audience, once loaded. */

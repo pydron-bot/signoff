@@ -1,11 +1,12 @@
 // A contact sheet of the same moments on every stage, for judging a look
 // release before and after: a round start, a heavy hit, Technical
 // Difficulties at low health and a KO, from fixed seeds, on the desktop and
-// iPhone 15 Pro profiles. Builds the game to a folder of its own, serves it,
+// iPhone 15 Pro profiles, and a second sheet of the set answering the fight
+// (a wall splat, a ground bounce, the storm, enders on Burn and the News). Builds the game to a folder of its own, serves it,
 // and reaches each moment through the ?shots hook (src/game/shotHook.ts),
 // which steps the match without drawing. Writes each shot and one sheet per
 // profile (sheet-desktop.png, sheet-iphone.png) to --out.
-//   PLAYWRIGHT=/opt/node-tools node tools/shots.mjs --out /tmp/shots [--no-build] [--stages weather,burn]
+//   PLAYWRIGHT=/opt/node-tools node tools/shots.mjs --out /tmp/shots [--no-build] [--stages weather,burn] [--set-only]
 import { execSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -28,6 +29,14 @@ const ALL = [
   { stage: 'burn', p1: 'rox', p2: 'hollis', seed: 202 },
   { stage: 'news', p1: 'margaret', p2: 'gideon', seed: 303 },
   { stage: 'kitchen', p1: 'gus', p2: 'gideon', seed: 404 },
+];
+/** The set answering the fight (release E): each where it shows. */
+const SET_MOMENTS = [
+  { name: 'splat', stage: 'burn', p1: 'rox', p2: 'hollis', seed: 202, mode: 'watch', moment: 'splat', after: 4 },
+  { name: 'bounce', stage: 'kitchen', p1: 'gus', p2: 'gideon', seed: 404, mode: 'watch', moment: 'bounce', after: 6 },
+  { name: 'storm', stage: 'weather', p1: 'dale', p2: 'mumbles', seed: 101, mode: 'training', segment: 1, moment: 'start', after: 30 },
+  { name: 'ender', stage: 'burn', p1: 'rox', p2: 'hollis', seed: 202, mode: 'watch', moment: 'ender', after: 2 },
+  { name: 'news ender', stage: 'news', p1: 'margaret', p2: 'gideon', seed: 303, mode: 'watch', moment: 'ender', after: 6 },
 ];
 const only = arg('--stages', '');
 const STAGES = only ? ALL.filter((s) => only.split(',').includes(s.stage)) : ALL;
@@ -68,7 +77,8 @@ try {
     await page.goto(URL);
     await page.waitForFunction(() => window.__shots, null, { timeout: 60000 });
     const cells = [];
-    for (const s of STAGES) {
+    // --set-only: just the set's sheet.
+    for (const s of process.argv.includes('--set-only') ? [] : STAGES) {
       for (const mo of MOMENTS) {
         await page.evaluate((o) => window.__shots.start(o), { mode: mo.mode, p1: s.p1, p2: s.p2, stage: s.stage, seed: s.seed });
         const ok = await page.evaluate(([m, a]) => window.__shots.to(m, a), [mo.name, mo.after]);
@@ -81,8 +91,22 @@ try {
         cells.push({ label: `${s.stage} · ${mo.name}${ok ? '' : ' (not reached)'} · ${calls} calls`, file });
       }
     }
+    // The set answering: a sheet of its own.
+    const setCells = [];
+    for (const s of SET_MOMENTS) {
+      await page.evaluate((o) => window.__shots.start(o), { mode: s.mode, p1: s.p1, p2: s.p2, stage: s.stage, seed: s.seed, segment: s.segment });
+      const ok = await page.evaluate(([m, a]) => window.__shots.to(m, a), [s.moment, s.after]);
+      await page.evaluate(() => window.__shots.frame());
+      await page.evaluate(() => window.__shots.frame());
+      const calls = await page.evaluate(() => window.__shots.calls());
+      const file = path.join(OUT, `${profile}-set-${s.name.replace(' ', '-')}.png`);
+      await page.screenshot({ path: file });
+      console.log(`${profile} set ${s.name}: ${ok ? '' : '(moment not reached) '}${calls} draw calls`);
+      setCells.push({ label: `${s.stage} · ${s.name}${ok ? '' : ' (not reached)'} · ${calls} calls`, file });
+    }
     await ctx.close();
-    await sheet(profile, cells, opts.viewport);
+    if (cells.length) await sheet(profile, cells, opts.viewport);
+    await sheet(`set-${profile}`, setCells, opts.viewport);
   }
 } finally {
   await browser.close();

@@ -5,7 +5,12 @@ page is the proposal as reviewed.
 
 **Status.** A, Clear Picture: built, 0.61.0 on `look/clear-picture`.
 B, Fair Fights: built, 0.62.0 on `play/fair-fights` (which holds A too).
-C to F: in progress. Nothing is on `main` yet. Where the build differs
+C, Tonight's Line-Up: built, 0.63.0 on `look/line-up` (which holds A and B).
+E, The Set Answers: built, 0.64.0 on `look/set-answers` (which holds A, B
+and C); blinks, tally lights, crew and Kitchen's pans wait on art.
+D, The Rest of the Cast: built, 0.65.0 on `play/styles-2` (which holds A,
+B, C and E); its new clips are BLENDER-TODO steps 35 to 37, and the
+openings-to-win band is still missed by 14 of 42 pairs. F: in progress. Nothing is on `main` yet. Where the build differs
 from the proposal: the openings-to-win band is 8 to 11.5 as the bench
 counts openings (not 3.5 to 5) and is reported, not an alarm; the round
 clock stays at 60 seconds; counter hits were left alone (they were never

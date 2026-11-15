@@ -1,5 +1,7 @@
 /// <reference types="vitest/config" />
 import { execSync } from 'node:child_process';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -47,6 +49,15 @@ export default defineConfig({
     },
   },
   plugins: [
+    // The bundled typefaces' licences (public/assets/fonts, tools/fonts.mjs) join the licences the build ships.
+    {
+      name: 'signoff-font-licences',
+      // After the bundler has written its own licences file.
+      writeBundle(options) {
+        const out = join(options.dir ?? 'dist', 'licenses.md');
+        if (existsSync(out)) appendFileSync(out, `\n\n${readFileSync('public/assets/fonts/LICENSES.md', 'utf8')}`);
+      },
+    },
     VitePWA({
       disable: PREVIEW !== '',
       // A new version waits for a safe moment (not mid-match) to reload.
@@ -68,7 +79,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json,m4a}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,glb,ktx2,json,m4a,woff2,webp}'],
         // The fighter models are precached (~3 MB) so fights work offline.
         // The recording script (/recording/) is a page of its own, not part of the game.
         globIgnores: ['**/node_modules/**/*', '**/icons/*512.png', 'recording/**'],

@@ -3,11 +3,16 @@
  * every stage: the studio kit between the camera and the fight (`fg_left`,
  * `fg_right`, `fg_top`), drawn as near-black shapes against the lit set,
  * and the bleachers in the dark past the walls (`audience`), with the seats
- * (`seat_1` … `seat_6`) where Arcade's beaten fighters sit. A stage
- * without them in its GLB simply has none.
+ * (`seat_1` … `seat_6`) where Arcade's beaten fighters sit. And, from step
+ * 33, the studio working: the tally lights (`tally_left`, `tally_right`,
+ * `tally_dolly_*`, in their own `tally` material) lit on the live camera
+ * only, and the crew at the cameras (`crew_left`, `crew_right`) turning their
+ * heads (`crew_*_head`) to follow the fight (src/render/studio.ts). A stage
+ * without any of them in its GLB simply has none.
  */
 import * as THREE from 'three';
 import type { StageArt } from './stageModel';
+import type { Studio } from './studio';
 
 /** The foreground's colour: near black, so it reads as a shape; its tally lights keep their glow. */
 const SILHOUETTE = 0x0b0b10;
@@ -46,6 +51,15 @@ export class StageDepth {
   private left: THREE.Object3D | null = null;
   private right: THREE.Object3D | null = null;
   private readonly seats: THREE.Object3D[] = [];
+  /** Each tally light: its side and its own copy of the material, and whether it's lit now. */
+  private readonly tallies: { side: number; mat: THREE.MeshLambertMaterial; lit: boolean; glow: number }[] = [];
+  /** The crew's heads, as modelled, by side (left, right); where the crew stand (x), and how far in front of the fight. */
+  private readonly heads: (THREE.Object3D | null)[] = [null, null];
+  private readonly headBase = [new THREE.Quaternion(), new THREE.Quaternion()];
+  private readonly turn = new THREE.Quaternion();
+  private readonly upAxis = new THREE.Vector3(0, 1, 0);
+  readonly crewX = [-6, 6];
+  crewZ = FG_Z;
 
   /** Takes the stage's depth pieces, if it has them. */
   useArt(art: StageArt): void {
@@ -54,15 +68,41 @@ export class StageDepth {
     for (const n of ['fg_left', 'fg_right', 'fg_top']) {
       const piece = o.get(n);
       if (!piece) continue;
-      piece.traverse((c) => {
+      this.darken(piece);
+      this.root.add(piece);
+    }
+    // The crew at the cameras, drawn as the kit is.
+    const find = (name: string): THREE.Object3D | null => {
+      for (const obj of o.values()) {
+        const f = obj.name === name ? obj : obj.getObjectByName(name);
+        if (f) return f;
+      }
+      return null;
+    };
+    const at = new THREE.Vector3();
+    (['left', 'right'] as const).forEach((side, i) => {
+      const crew = find(`crew_${side}`);
+      if (!crew) return;
+      this.darken(crew);
+      if (!crew.parent) this.root.add(crew);
+      crew.updateMatrixWorld(true);
+      crew.getWorldPosition(at);
+      this.crewX[i] = at.x;
+      this.crewZ = at.z;
+      const head = crew.getObjectByName(`crew_${side}_head`) ?? null;
+      this.heads[i] = head;
+      if (head) this.headBase[i].copy(head.quaternion);
+    });
+    for (const name of ['tally_left', 'tally_right', 'tally_dolly_left', 'tally_dolly_right']) {
+      const t = find(name);
+      t?.traverse((c) => {
         const m = c as THREE.Mesh;
         if (!m.isMesh) return;
+        // Its own copy, so lighting one camera's leaves the other's dark.
         const mat = (m.material as THREE.MeshLambertMaterial).clone();
-        mat.color.setHex(SILHOUETTE);
-        mat.map = null;
         m.material = mat;
+        this.tallies.push({ side: name.endsWith('left') ? -1 : 1, mat, lit: true, glow: mat.emissiveIntensity });
       });
-      this.root.add(piece);
     }
     this.left = o.get('fg_left') ?? null;
     this.right = o.get('fg_right') ?? null;
@@ -78,6 +118,32 @@ export class StageDepth {
       this.seats.push(s);
     }
     this.root.updateMatrixWorld(true);
+  }
+
+  /** Near black, as a shape: the kit and the crew (their tally lights keep their own material). */
+  private darken(piece: THREE.Object3D): void {
+    piece.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (!m.isMesh || m.name.startsWith('tally') || c.parent?.name.startsWith('tally')) return;
+      const mat = (m.material as THREE.MeshLambertMaterial).clone();
+      mat.color.setHex(SILHOUETTE);
+      mat.map = null;
+      m.material = mat;
+    });
+  }
+
+  /** Each drawn frame: the live camera's tally lit, the others dark; the crew's heads where the studio has them. */
+  studio(s: Studio): void {
+    for (const t of this.tallies) {
+      const lit = t.side === s.live;
+      if (lit === t.lit) continue;
+      t.lit = lit;
+      t.mat.emissiveIntensity = lit ? t.glow : t.glow * 0.05;
+    }
+    for (let i = 0; i < 2; i++) {
+      const h = this.heads[i];
+      if (h) h.quaternion.copy(this.headBase[i]).premultiply(this.turn.setFromAxisAngle(this.upAxis, s.heads[i]));
+    }
   }
 
   /** The n-th seat to fill (0-based), or null if the stage has none. */

@@ -1,6 +1,7 @@
 /**
  * The VHS layer reacting to the fight: a tracking tear and colour split
- * on big hits (drawn by the post pass, src/render/post.ts), a burst of static on a KO, and the PLEASE STAND BY card over
+ * on big hits (drawn by the post pass, src/render/post.ts), a burst of static on a KO (hard, then
+ * thin enough for the K.O. pose to read through), and the PLEASE STAND BY card over
  * the Technical Difficulties cinematic (the broadcast censoring the worst
  * of it), and a finisher's cut away: snow, colour bars, the stand-by card
  * or the set switching off. Reduce Motion keeps the cards and drops the
@@ -16,6 +17,7 @@ export class Glitch {
   /** An impact frame: steps left of the picture blown out to a negative. */
   private impactLeft = 0;
   private staticLeft = 0;
+  private staticOpacity = -1;
   private standbyLeft = 0;
   /** A finisher's cut away: opaque, until its closing card. */
   private readonly censor: HTMLElement;
@@ -60,7 +62,7 @@ export class Glitch {
         this.wobble = Math.max(this.wobble, 20);
         this.impactLeft = IMPACT_STEPS;
       }
-      else if (e.type === 'ko') this.staticLeft = 24;
+      else if (e.type === 'ko') this.staticLeft = KO_STATIC_STEPS;
       else if (e.type === 'superHit') this.standbyLeft = TD_CINEMATIC_FRAMES;
       else if (e.type === 'finisherCut') {
         if (this.censorLevel === 2) {
@@ -115,7 +117,12 @@ export class Glitch {
     }
     if (this.wobble > 0) this.wobble--;
     this.staticLayer.hidden = this.staticLeft <= 0;
-    if (this.staticLeft > 0) this.staticLeft--;
+    if (this.staticLeft > 0) {
+      // Set only when it changes: a style write every step would restyle the layer for nothing.
+      const o = koStatic(KO_STATIC_STEPS - this.staticLeft);
+      if (o !== this.staticOpacity) this.staticLayer.style.opacity = String((this.staticOpacity = o));
+      this.staticLeft--;
+    }
     this.standby.hidden = this.standbyLeft <= 0;
     if (this.standbyLeft > 0) this.standbyLeft--;
     this.censor.hidden = this.censorLeft <= 0;
@@ -130,6 +137,20 @@ export class Glitch {
 }
 
 const LATE_NIGHT_DELAY = 24;
+/** A K.O.'s burst of static: steps in all, and how many it hits hard before it clears to a veil. */
+export const KO_STATIC_STEPS = 24;
+const KO_STATIC_HARD = 4;
+/**
+ * How thick a K.O.'s static is `t` steps in, 0 to 1 (the layer's opacity):
+ * hard for a few steps, then down to a thin veil the K.O. pose reads
+ * through in the slow motion, then gone.
+ */
+export function koStatic(t: number): number {
+  if (t < KO_STATIC_HARD) return 0.6;
+  const k = Math.min(1, (t - KO_STATIC_HARD) / 4);
+  const veil = t >= KO_STATIC_STEPS - 4 ? (0.12 * (KO_STATIC_STEPS - t)) / 4 : 0.12;
+  return Math.round((0.6 + (veil - 0.6) * k) * 100) / 100;
+}
 const IMPACT_STEPS = 3;
 
 /** One frame of TV snow, made once. */

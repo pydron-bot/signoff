@@ -7,6 +7,18 @@
   display: none !important;
 }
 
+:root {
+  /* The game's faces (src/ui/fonts.ts): display for the logo and callouts, condensed for names, the HUD and menus, mono for numbers. */
+  --font-display: 'SignOff Display', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  --font-cond: 'SignOff Condensed', 'Arial Narrow', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'SignOff Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* The title waits a moment for the faces, so it doesn't jump when they swap in. */
+body[data-fonts='loading'] .title {
+  visibility: hidden;
+}
+
 html,
 body {
   margin: 0;
@@ -14,7 +26,7 @@ body {
   overflow: hidden;
   background: #0b0b0f;
   color: #f1ede0;
-  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--font-cond);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -41,23 +53,27 @@ body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* Beside the TV (the middle of the living room), not over it. */
+  align-items: flex-start;
   justify-content: center;
   gap: 0.6rem;
+  box-sizing: border-box;
+  width: min(30rem, 30vw);
+  padding-left: calc(env(safe-area-inset-left) + clamp(16px, 3vw, 48px));
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   pointer-events: none;
   text-shadow: 2px 0 rgba(255, 0, 60, 0.55), -2px 0 rgba(0, 200, 255, 0.55);
 }
 
 .title-logo {
-  font-size: clamp(3rem, 12vw, 8rem);
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-size: clamp(2rem, min(6vw, 13vh), 5rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
 }
 
 .title-caption {
-  font-size: clamp(0.8rem, 2.4vw, 1.2rem);
-  letter-spacing: 0.3em;
+  font-size: clamp(0.6rem, min(1.4vw, 3vh), 0.95rem);
+  letter-spacing: 0.25em;
   opacity: 0.85;
 }
 
@@ -71,7 +87,7 @@ body {
 }
 
 .title-version {
-  position: absolute;
+  position: fixed;
   right: calc(env(safe-area-inset-right) + 12px);
   bottom: calc(env(safe-area-inset-bottom) + 10px);
   font-size: 0.7rem;
@@ -101,9 +117,17 @@ body {
   }
 }
 
-/* ---- Title over the demo (the post pass dims it) ---- */
-.title-logo {
-  margin-top: -2rem;
+/* ---- The title's four rows, and their lists ---- */
+.menu.menu-title-screen {
+  min-width: 0;
+  width: 100%;
+}
+
+.menu.menu-title-screen .menu-row {
+  text-align: left;
+  font-size: clamp(0.9rem, min(2vw, 4.4vh), 1.35rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
 }
 
 /* ---- Menus ---- */
@@ -303,15 +327,25 @@ body {
   gap: 4px;
 }
 
+/* Rounds won: ON AIR lamps, dark until lit. */
 .hud-pip {
-  width: 10px;
-  height: 10px;
-  border: 1px solid #f1ede0;
-  border-radius: 50%;
+  padding: 0 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+  color: rgba(255, 90, 70, 0.35);
+  background: rgba(40, 6, 6, 0.6);
+  border: 1px solid rgba(255, 90, 70, 0.35);
+  border-radius: 2px;
 }
 
 .hud-pip.on {
-  background: #ff4a3a;
+  color: #fff3e8;
+  background: #e0201a;
+  border-color: #ff8a70;
+  box-shadow: 0 0 8px rgba(255, 60, 40, 0.8);
+  text-shadow: none;
 }
 
 .hud-clock {
@@ -330,11 +364,11 @@ body {
   visibility: hidden;
 }
 
-/* The station bug, clear of the coins under P2's health. */
+/* The station bug, clear of the meter, the lamps and the coins under P2's health. */
 .hud-logo {
   position: absolute;
   right: calc(env(safe-area-inset-right) + 16px);
-  top: calc(env(safe-area-inset-top) + 84px);
+  top: calc(env(safe-area-inset-top) + 106px);
   font-weight: 800;
   opacity: 0.5;
   letter-spacing: 0.1em;
@@ -439,7 +473,8 @@ body {
 }
 
 .hud-caption-main {
-  font-size: clamp(2rem, 8vw, 4.5rem);
+  /* By the screen's height too: on a phone on its side 8vw is a wall of letters. */
+  font-size: clamp(1.8rem, min(8vw, 12vh), 4.5rem);
   font-weight: 800;
   letter-spacing: 0.12em;
 }
@@ -480,27 +515,69 @@ body {
   padding: 0.2rem 0.8rem;
 }
 
-.hud-meters {
-  position: absolute;
-  left: calc(env(safe-area-inset-left) + 14px);
-  right: calc(env(safe-area-inset-right) + 14px);
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
+/* The Signal meter: under the health bar, three cells, the spends it pays for beside it. */
+.hud-meter-row {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.hud-side-1 .hud-meter-row {
+  flex-direction: row-reverse;
 }
 
 .hud-meter {
   display: flex;
   gap: 3px;
-  padding: 6px;
+  flex: 0 1 62%;
+  /* Room round it to tap (touch: tapping spends), without moving it. */
+  padding: 4px;
+  margin: -4px;
   pointer-events: auto;
 }
 
 .hud-meter-cell {
-  width: 46px;
-  height: 9px;
+  flex: 1;
+  height: 12px;
   background: rgba(241, 237, 224, 0.15);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
   overflow: hidden;
+  transform: skewX(-12deg);
+}
+
+.hud-side-1 .hud-meter-cell {
+  transform: skewX(12deg);
+}
+
+.hud-side-1 .hud-meter-fill {
+  transform-origin: right;
+}
+
+.hud-tags {
+  display: flex;
+  gap: 5px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hud-side-1 .hud-tags {
+  flex-direction: row-reverse;
+}
+
+.hud-tag {
+  padding: 0 4px;
+  color: rgba(241, 237, 224, 0.3);
+  border: 1px solid rgba(241, 237, 224, 0.15);
+}
+
+.hud-tag.on {
+  color: #0b0b0f;
+  background: #7affd8;
+  border-color: #7affd8;
+  text-shadow: none;
 }
 
 .hud-meter-fill {
@@ -519,12 +596,55 @@ body {
   outline: 2px solid #f1ede0;
 }
 
+/* The combo counter: grows with the hits (--combo-scale, hud.ts), and a heavy last hit turns it hot. */
 .hud-combo {
   position: absolute;
-  top: 26%;
-  font-size: 1.4rem;
-  font-weight: 800;
+  top: calc(env(safe-area-inset-top) + 160px);
+  font-size: calc(clamp(1.6rem, 4.4vw, 2.2rem) * var(--combo-scale, 1));
   color: #e8e04a;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8), 1px 0 rgba(255, 0, 60, 0.5), -1px 0 rgba(0, 200, 255, 0.5);
+  white-space: nowrap;
+}
+
+.hud-combo.heavy {
+  color: #ff9a3c;
+}
+
+.hud-combo.pop {
+  animation: combo-pop 0.18s ease-out;
+}
+
+@keyframes combo-pop {
+  0% { transform: scale(1.3); }
+}
+
+/* One callout slot a side, under the HUD: they queue there (hudReadout.ts) instead of stacking on the fighters. */
+.hud-callout {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 132px);
+  padding: 1px 10px;
+  font-size: clamp(0.8rem, 2.4vw, 1.05rem);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: #0b0b0f;
+  background: #ffe040;
+  text-shadow: none;
+  transform: skewX(-12deg);
+}
+
+.hud-callout-0 {
+  left: calc(env(safe-area-inset-left) + 16px);
+}
+
+.hud-callout-1 {
+  right: calc(env(safe-area-inset-right) + 16px);
+}
+
+/* The last ten seconds. */
+.hud-clock.urgent {
+  color: #fff3e8;
+  background: linear-gradient(180deg, #ff4a3a, #b01c10 55%, #700c08);
+  animation: weak-pulse 0.5s steps(2) infinite;
 }
 
 .hud-combo-0 {
@@ -723,6 +843,7 @@ body[data-tv='1'] .pause-btn {
   height: 230px;
 }
 
+/* The keys of a 1987 TV remote: rubbery, rounded, raised on a dark body; pressed, they sink and light up. */
 .touch-btn {
   position: absolute;
   width: 58px;
@@ -730,31 +851,62 @@ body[data-tv='1'] .pause-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  gap: 2px;
+  box-sizing: border-box;
+  border-radius: 14px;
   border: 2px solid rgba(241, 237, 224, 0.4);
-  background: rgba(20, 22, 40, 0.45);
-  font-size: 0.75rem;
-  font-weight: 700;
+  background: linear-gradient(180deg, rgba(78, 80, 98, 0.62), rgba(26, 27, 40, 0.62));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 3px 0 rgba(0, 0, 0, 0.55);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   white-space: pre;
   text-align: center;
   line-height: 1;
   transition: opacity 0.12s, background-color 0.12s;
 }
 
+/* A fist for the punches, a foot for the kicks. */
+.touch-btn[data-icon]::before {
+  content: '';
+  width: 13px;
+  height: 13px;
+  background: currentColor;
+  opacity: 0.8;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.touch-btn[data-icon='fist'] {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6h2V3.5a1 1 0 0 1 2 0V6h1V3a1 1 0 0 1 2 0v3h1V3.5a1 1 0 0 1 2 0V10a5 5 0 0 1-5 5H7a4 4 0 0 1-4-4z'/%3E%3C/svg%3E");
+}
+
+.touch-btn[data-icon='foot'] {
+  --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 1h4v8l5 2.5a1.5 1.5 0 0 1 1 1.4V15H2v-3l3-1z'/%3E%3C/svg%3E");
+}
+
 .touch-btn.down {
-  background: rgba(241, 237, 224, 0.45);
+  transform: translateY(3px);
   color: #0b0b0f;
+  background: linear-gradient(180deg, rgba(255, 248, 200, 0.95), rgba(232, 224, 74, 0.9));
+  border-color: #fff8c8;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.35), 0 0 12px rgba(255, 240, 150, 0.6);
 }
 
 /* A fighter behind it: the fight shows through (still pressable, and still lit while held). */
 .touch-btn.clear {
   opacity: 0.4;
   background: rgba(20, 22, 40, 0.1);
+  box-shadow: none;
 }
 
 .touch-btn.clear.down {
-  background: rgba(241, 237, 224, 0.3);
+  opacity: 0.85;
+  background: rgba(255, 248, 200, 0.75);
 }
+
+/* Its own key for the meter (Tape Skip, Cut Away, boosting): 56 points or more, as the design asks. */
+.t-meter { right: 196px; top: 128px; border-color: #7affd8; font-size: 0.6rem; letter-spacing: 0.08em; }
 
 .t-special { right: 98px; top: 0; border-color: #4ad0ff; }
 .t-fp { right: 130px; top: 64px; }
@@ -892,21 +1044,13 @@ body[data-tv='1'] .pause-btn {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(env(safe-area-inset-top) + 108px);
+  top: calc(env(safe-area-inset-top) + 124px);
   padding: 4px 0;
   background: #b0121a;
   text-align: center;
   font-weight: 800;
   letter-spacing: 0.25em;
   animation: blink 0.5s steps(1) infinite;
-}
-
-.hud-counter {
-  position: absolute;
-  top: 34%;
-  font-weight: 800;
-  color: #ffe040;
-  letter-spacing: 0.15em;
 }
 
 .t-interact { right: 196px; top: 64px; border-color: #7affd8; font-size: 0.65rem; }
@@ -1240,17 +1384,12 @@ body[data-vhs='1'] .vhs {
   transform-origin: bottom left;
 }
 
-/* A phone on its side: a smaller logo and the title menu in two even columns, all inside the screen. */
+/* A phone on its side: a smaller logo, all inside the screen. */
 @media (max-height: 500px) {
   .title {
     gap: 0.25rem;
   }
 
-  .title-logo {
-    margin-top: 0;
-    font-size: clamp(2rem, 14vh, 5rem);
-    line-height: 1;
-  }
 
   .title-caption {
     font-size: clamp(0.6rem, 3.2vh, 0.9rem);
@@ -1262,22 +1401,6 @@ body[data-vhs='1'] .vhs {
     top: calc(env(safe-area-inset-top) + 8px);
   }
 
-  .menu-title-screen {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    min-width: 0;
-    width: min(44rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 24px));
-    margin-top: 0.4rem;
-    gap: 0.25rem 0.5rem;
-  }
-
-  .menu-title-screen .menu-row {
-    padding: clamp(0.2rem, 1.4vh, 0.35rem) 0.6rem;
-    font-size: clamp(0.65rem, 3.6vh, 0.85rem);
-    letter-spacing: 0.1em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 }
 
 /* ---- Input display: recent inputs down the side, newest at the top ---- */
@@ -1288,7 +1411,7 @@ body[data-vhs='1'] .vhs {
   flex-direction: column;
   gap: 2px;
   pointer-events: none;
-  font: 600 clamp(0.6rem, 1.6vw, 0.8rem) / 1.2 ui-monospace, Menlo, Consolas, monospace;
+  font: 400 clamp(0.75rem, 2vw, 1rem) / 1.1 var(--font-mono);
   z-index: 6;
 }
 
@@ -1349,7 +1472,7 @@ body[data-vhs='1'] .vhs {
   padding: 4px 7px;
   background: rgba(0, 0, 0, 0.6);
   color: #cfe8cf;
-  font: 11px/1.35 ui-monospace, Menlo, monospace;
+  font: 13px/1.2 var(--font-mono);
   pointer-events: none;
   z-index: 30;
   white-space: nowrap;
@@ -1419,4 +1542,430 @@ body[data-vhs='1'] .vhs {
   font-size: 0.55rem;
   letter-spacing: 0.3em;
   color: rgba(241, 237, 224, 0.55);
+}
+
+/* ---- Type: which face says what (src/ui/fonts.ts) ---- */
+.title-logo,
+.hud-caption-main,
+.hud-break-ad,
+.standby-card,
+.hud-signoff-show,
+.hud-signoff-stamp,
+.arcade-title,
+.hud-combo,
+.hud-warning,
+.hud-callout {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.hud-clock,
+.hud-logo,
+.title-version,
+.replay-time,
+.hud-frames,
+.school-key {
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+/* Reduce Motion, the system's or the game's own setting: nothing pulses or pops. */
+body[data-motion='reduced'] .hud-combo.pop,
+body[data-motion='reduced'] .hud-clock.urgent,
+body[data-motion='reduced'] .hud-health-fill.weak,
+body[data-motion='reduced'] .touch-btn {
+  animation: none;
+  transition: none;
+}
+
+/* ---- Fighter select: the dial (src/ui/screens/select.ts) ---- */
+.select {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(12rem, 0.8fr) 1fr;
+  align-items: center;
+  gap: clamp(8px, 2vw, 24px);
+  padding: calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 8;
+}
+
+/* The cards sit at the sides, the TV between them; the menu under player 1's card. */
+.select-cards {
+  display: contents;
+}
+
+.select-card {
+  align-self: start;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  padding: 8px 10px;
+  background: linear-gradient(90deg, rgba(8, 10, 30, 0.88), rgba(8, 10, 30, 0.6));
+  border-left: 4px solid var(--accent, #f1ede0);
+  text-shadow: none;
+}
+
+.select-card-0 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.select-card-1 {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.select .menu-select {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  min-width: 0;
+}
+
+.select[data-mode='watch'] .menu-select {
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.select-channel {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: #5dff6a;
+  line-height: 1;
+}
+
+.select-portrait {
+  grid-row: span 2;
+  width: clamp(48px, 9vw, 96px);
+  height: clamp(48px, 9vw, 96px);
+  object-fit: cover;
+  border: 2px solid var(--accent, #f1ede0);
+  background: #11131f;
+}
+
+.select-name {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 2.4vw, 1.6rem);
+  line-height: 1.05;
+}
+
+.select-show {
+  font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+
+.select-style {
+  margin-top: 2px;
+  font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+  letter-spacing: 0.08em;
+  color: var(--accent, #f1ede0);
+}
+
+.select-bars {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 3px;
+}
+
+.select-bar {
+  display: grid;
+  grid-template-columns: 5.5em 1fr;
+  align-items: center;
+  font-size: clamp(0.55rem, 1.1vw, 0.75rem);
+  letter-spacing: 0.1em;
+}
+
+.select-bar-track {
+  height: 7px;
+  background: rgba(241, 237, 224, 0.15);
+  overflow: hidden;
+}
+
+.select-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent, #e8e04a);
+  transform-origin: left;
+}
+
+.select-trials {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: clamp(0.8rem, 1.6vw, 1rem);
+  opacity: 0.75;
+}
+
+/* A phone on its side: the TV keeps the middle (the dial is the point), the cards and the menu take the sides. */
+@media (max-height: 500px) {
+  .select {
+    grid-template-columns: 29vw 1fr 29vw;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 6px 10px;
+  }
+  .select-card {
+    gap: 2px 8px;
+    padding: 4px 8px;
+  }
+  .select-portrait {
+    width: 44px;
+    height: 44px;
+  }
+  .select-name {
+    font-size: 1rem;
+  }
+  .select-show {
+    display: none;
+  }
+  .select-style {
+    font-size: 0.6rem;
+  }
+  .select-channel {
+    font-size: 1.1rem;
+  }
+  .select-bar {
+    grid-template-columns: 4.6em 1fr;
+    font-size: 0.66rem;
+  }
+  .select-bar-track {
+    height: 8px;
+  }
+  .select-trials {
+    font-size: 0.85rem;
+  }
+  .select .menu-select {
+    grid-column: 3;
+    grid-row: 2;
+    gap: 3px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+  }
+  .select .menu-title {
+    display: none;
+  }
+  .select .menu-row {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* ---- The versus card (src/ui/screens/versus.ts) ---- */
+.versus {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: repeating-linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%, #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%, #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%, #0000c0 85.71% 100%);
+  overflow: hidden;
+}
+
+.versus-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6vw;
+  background: linear-gradient(90deg, rgba(8, 10, 30, 0.95), rgba(8, 10, 30, 0.7));
+  border-right: 6px solid var(--accent);
+  clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+  text-shadow: 2px 0 rgba(255, 0, 60, 0.55), -2px 0 rgba(0, 200, 255, 0.55);
+}
+
+.versus-side-1 {
+  align-items: flex-end;
+  text-align: right;
+  background: linear-gradient(270deg, rgba(8, 10, 30, 0.95), rgba(8, 10, 30, 0.7));
+  border-right: 0;
+  border-left: 6px solid var(--accent);
+  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.versus-portrait {
+  width: min(28vh, 22vw);
+  height: min(28vh, 22vw);
+  object-fit: cover;
+  border: 3px solid var(--accent);
+}
+
+.versus-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.versus-show {
+  font-size: clamp(0.7rem, 1.8vw, 1.1rem);
+  letter-spacing: 0.25em;
+  color: var(--accent);
+}
+
+.versus-mid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.versus-tonight,
+.versus-stage {
+  padding: 2px 12px;
+  background: #1b2fa8;
+  font-size: clamp(0.65rem, 1.6vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.25em;
+  white-space: nowrap;
+}
+
+.versus-vs {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 9vw, 6rem);
+  line-height: 1;
+  color: #ffe040;
+  text-shadow: 4px 4px 0 #0b0b0f;
+}
+
+/* ---- Results (src/ui/screens/results.ts) ---- */
+.results {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vw, 40px);
+  padding: calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 12px);
+  box-sizing: border-box;
+  background: radial-gradient(ellipse at center, rgba(8, 10, 30, 0.55), rgba(4, 4, 10, 0.9));
+}
+
+.results-card {
+  padding: 12px 16px;
+  background: rgba(8, 10, 30, 0.9);
+  border: 2px solid #1b2fa8;
+  text-shadow: none;
+}
+
+.results-winner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-left: 8px;
+  border-left: 5px solid var(--accent, #f1ede0);
+}
+
+.results-portrait {
+  width: clamp(56px, 12vh, 110px);
+  height: clamp(56px, 12vh, 110px);
+  object-fit: cover;
+  border: 2px solid var(--accent, #f1ede0);
+}
+
+.results-tag {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  opacity: 0.7;
+}
+
+.results-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 4vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.results-line {
+  max-width: 26rem;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.results-figures {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+  letter-spacing: 0.08em;
+}
+
+.results-figures th {
+  font-weight: 800;
+  text-align: right;
+  padding: 2px 8px;
+}
+
+.results-figures td {
+  padding: 1px 8px;
+  border-top: 1px solid rgba(241, 237, 224, 0.1);
+}
+
+.results-figures td + td {
+  font-family: var(--font-mono);
+  font-size: 1.2em;
+  text-align: right;
+}
+
+.results .menu-results {
+  min-width: min(14rem, 30vw);
+}
+
+/* A phone at arm's length: the figures as big as the screen lets them be, the menu beside. */
+@media (max-height: 500px) {
+  .results {
+    gap: 12px;
+  }
+  .results-card {
+    padding: 6px 12px;
+  }
+  .results-winner {
+    margin-bottom: 4px;
+  }
+  .results-portrait {
+    width: 52px;
+    height: 52px;
+  }
+  .results-name {
+    font-size: 1.4rem;
+  }
+  .results-figures {
+    font-size: 0.92rem;
+    letter-spacing: 0.04em;
+  }
+  .results-figures td {
+    padding: 0 8px;
+  }
+  .results-figures th {
+    font-size: 0.8rem;
+  }
+  .results-line {
+    font-size: 0.75rem;
+  }
+}
+
+/* An ender knocks the News's ticker out of true (hud.ts): the line tears sideways and the colour splits. */
+.hud-ticker.glitch {
+  background: rgba(40, 10, 60, 0.9);
+  text-shadow: 3px 0 rgba(255, 0, 60, 0.9), -3px 0 rgba(0, 220, 255, 0.9);
+  animation: ticker-tear 0.09s steps(2) infinite;
+}
+
+@keyframes ticker-tear {
+  0% { transform: translateX(-6px) skewX(-8deg); clip-path: inset(0 0 45% 0); }
+  50% { transform: translateX(5px) skewX(6deg); clip-path: inset(30% 0 0 0); }
+}
+
+body[data-motion='reduced'] .hud-ticker.glitch {
+  animation: none;
 }

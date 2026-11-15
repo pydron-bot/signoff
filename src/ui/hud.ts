@@ -1,8 +1,9 @@
 /**
  * The broadcast HUD: health as channel-strength meters (a bar under a
  * segment mask, with a red chunk that drains a moment after each hit),
- * name plates with each fighter's show, the round clock, round pips, Signal
- * meters, the station bug, captions for round calls, the fighters' lower
+ * name plates with each fighter's show, the round clock (urgent in the last
+ * ten seconds), ON AIR lamps for rounds won, the Signal meter under each
+ * health bar with the spends it can pay for, a callout slot a side, the station bug, captions for round calls, the fighters' lower
  * thirds as a match goes on air, the commercial break card, and training
  * mode's readout. DOM only; it reads the match and the step's events.
  */
@@ -13,11 +14,16 @@ import type { Advantage } from '../game/advantage';
 import { METER_STEPS, type FrameMeter } from '../game/frameMeter';
 import { FIGHTER_COLORS } from '../core/fighterLook';
 import { tickerText } from './ticker';
+import { CalloutQueue, SPEND_BOOST, SPEND_CUT, SPEND_SKIP, clockUrgent, comboScale, spendsReady } from './hudReadout';
 
-/** CSS pixels the HUD takes at the top of the screen, down to the foot of the station bug (style.css, .hud-logo): the cut-in stays below. */
-export const HUD_TOP = 112;
+/** CSS pixels the HUD takes at the top of the screen, down to the foot of the station bug (style.css, .hud-logo: under the meter, the ON AIR lamps and Gideon's coins): the cut-in stays below. */
+export const HUD_TOP = 126;
 /** The red chunk of lost health: held this many steps after the last hit, then drained this much a step. */
 const DRAIN_HOLD = 32;
+/** Steps the News's ticker glitches after an ender. */
+const TICKER_GLITCH_STEPS = 18;
+/** How long the K.O. call keeps the callouts away (steps, as long as its caption). */
+const KO_CALL_STEPS = 150;
 const DRAIN_RATE = 0.012;
 /** How long the fighters' lower thirds stay up at the start of a match (steps). */
 const INTRO_STEPS = 100;
@@ -67,7 +73,12 @@ interface Side {
   pips: HTMLElement[];
   meter: HTMLElement;
   meterFill: HTMLElement[];
+  /** BOOST, SKIP, CUT AWAY beside the meter: lit when the meter pays for it. */
+  tags: HTMLElement[];
   combo: HTMLElement;
+  /** This side's callout slot, and its queue. */
+  callout: HTMLElement;
+  callouts: CalloutQueue;
   /** Gideon's donations: a row of coins under the health bar. */
   coins: HTMLElement;
   coin: HTMLElement[];
@@ -85,10 +96,14 @@ export class Hud {
   private readonly meterCtx: CanvasRenderingContext2D | null;
   private meterVersion = -1;
   private readonly warning: HTMLElement;
-  private readonly counter: HTMLElement;
   private readonly ticker: HTMLElement;
   private warningLeft = 0;
-  private counterLeft = 0;
+  private lastSpends = [-1, -1];
+  /** Steps left of the ticker's glitch after an ender. */
+  private tickerGlitch = 0;
+  /** Steps left of the K.O. call, when no callout shows. */
+  private koCall = 0;
+  private lastUrgent = false;
   private captionLeft = 0;
   private comboLeft = [0, 0];
   /** Damage in each side's current combo, for the % beside the hits. */
@@ -133,17 +148,12 @@ export class Hud {
     this.meterCtx = this.meterCanvas.getContext('2d');
     this.warning = div('hud-warning');
     this.warning.hidden = true;
-    this.counter = div('hud-counter');
-    this.counter.textContent = 'COUNTER';
-    this.counter.hidden = true;
     this.ticker = div('hud-ticker');
     const crawl = div('hud-ticker-crawl');
     crawl.textContent = tickerText();
     this.ticker.append(crawl);
     this.ticker.hidden = true;
-    const meters = div('hud-meters');
-    meters.append(this.sides[0].meter, this.sides[1].meter);
-    this.root.append(top, logo, cap, this.ticker, this.warning, this.counter, this.breakCard, this.training, this.meterCanvas, meters, this.sides[0].combo, this.sides[1].combo, this.sides[0].intro, this.sides[1].intro);
+    this.root.append(top, logo, cap, this.ticker, this.warning, this.sides[0].callout, this.sides[1].callout, this.breakCard, this.training, this.meterCanvas, this.sides[0].combo, this.sides[1].combo, this.sides[0].intro, this.sides[1].intro);
     parent.append(this.root);
   }
 
@@ -163,8 +173,10 @@ export class Hud {
     const fill = div('hud-health-fill');
     health.append(damage, fill);
     const intro = div(`hud-intro hud-intro-${i}`);
+    // Rounds won: ON AIR lamps, lit red.
     const pipRow = div('hud-pips');
     const pips = [div('hud-pip'), div('hud-pip')];
+    for (const p of pips) p.textContent = 'ON AIR';
     pipRow.append(...pips);
     const coins = div('hud-coins');
     const coin: HTMLElement[] = [];
@@ -173,7 +185,6 @@ export class Hud {
       coin.push(c);
       coins.append(c);
     }
-    root.append(plate, health, pipRow, coins);
     const meter = div(`hud-meter hud-meter-${i}`);
     const meterFill: HTMLElement[] = [];
     for (let k = 0; k < 3; k++) {
@@ -183,8 +194,20 @@ export class Hud {
       meter.append(cell);
       meterFill.push(fill);
     }
+    const tagRow = div('hud-tags');
+    const tags = ['BOOST', 'SKIP', 'CUT AWAY'].map((t) => {
+      const e = div('hud-tag');
+      e.textContent = t;
+      tagRow.append(e);
+      return e;
+    });
+    const meterRow = div('hud-meter-row');
+    meterRow.append(meter, tagRow);
+    root.append(plate, health, meterRow, pipRow, coins);
     const combo = div(`hud-combo hud-combo-${i}`);
-    return { root, name, show, fill, damage, intro, pips, meter, meterFill, combo, coins, coin };
+    const callout = div(`hud-callout hud-callout-${i}`);
+    callout.hidden = true;
+    return { root, name, show, fill, damage, intro, pips, meter, meterFill, tags, combo, callout, callouts: new CalloutQueue(), coins, coin };
   }
 
   start(m: MatchState, training: boolean): void {
@@ -211,7 +234,12 @@ export class Hud {
     this.ticker.hidden = !tickerOn(m);
     this.captionLeft = 0;
     this.warningLeft = 0;
-    this.counterLeft = 0;
+    for (const s of this.sides) {
+      s.callouts.clear();
+      s.callout.hidden = true;
+    }
+    this.lastSpends = [-1, -1];
+    this.koCall = 0;
     this.caption.textContent = '';
     this.captionSub.textContent = '';
     this.lastHealth = [-1, -1];
@@ -287,6 +315,12 @@ export class Hud {
           break;
         case 'ko':
           this.say('K.O.', '', 150);
+          // The K.O. call has the screen to itself: the callouts give way.
+          this.koCall = KO_CALL_STEPS;
+          for (const s of this.sides) {
+            s.callouts.clear();
+            this.showCallout(s);
+          }
           break;
         case 'roundOver':
           if (e.reason === 'time') this.say('TIME', e.winner < 0 ? 'DRAW' : '', 150);
@@ -318,12 +352,10 @@ export class Hud {
         case 'superReady':
           this.callout(e.player, 'SIGNAL RESTORED');
           break;
-        case 'firstHit': {
-          const c = this.sides[e.player].combo;
-          c.textContent = 'FIRST HIT';
-          this.comboLeft[e.player] = 70;
+        case 'firstHit':
+          // It pays nothing now (0.62.0): a small callout in its slot, not the combo counter's size.
+          this.callout(e.player, 'FIRST HIT');
           break;
-        }
         case 'cutAway':
           this.say('CUT AWAY', '', 40);
           break;
@@ -360,11 +392,22 @@ export class Hud {
           break;
         case 'hit':
           if (e.counter) this.callout(e.attacker, 'COUNTER');
+          // An ender knocks the News's ticker out of true for a moment.
+          if (e.weight === 3 && !this.ticker.hidden) {
+            this.tickerGlitch = TICKER_GLITCH_STEPS;
+            this.ticker.classList.add('glitch');
+          }
           this.comboDamage[e.attacker] = e.combo === 1 ? e.damage : this.comboDamage[e.attacker] + e.damage;
           if (e.combo >= 2) {
             const c = this.sides[e.attacker].combo;
             const pct = Math.round((this.comboDamage[e.attacker] * 100) / m.fighters[e.defender].maxHealth);
             c.textContent = `${e.combo} HITS ${pct}%`;
+            // Bigger with the hits, heavier with the last one's weight.
+            c.style.setProperty('--combo-scale', String(comboScale(e.combo, e.weight)));
+            c.classList.toggle('heavy', e.weight >= 2);
+            c.classList.remove('pop');
+            void c.offsetWidth;
+            c.classList.add('pop');
             this.comboLeft[e.attacker] = 70;
           }
           break;
@@ -374,10 +417,16 @@ export class Hud {
 
   /** A word on one player's side for a moment: COUNTER, PUNISH, REVERSAL, FLAWLESS BLOCK. */
   private callout(player: number, text: string): void {
-    this.counter.textContent = text;
-    this.counter.style.left = player === 0 ? '20px' : '';
-    this.counter.style.right = player === 1 ? '20px' : '';
-    this.counterLeft = 45;
+    if (this.koCall > 0) return;
+    const s = this.sides[player];
+    const was = s.callouts.text;
+    s.callouts.push(text);
+    if (s.callouts.text !== was) this.showCallout(s);
+  }
+
+  private showCallout(s: Side): void {
+    s.callout.textContent = s.callouts.text;
+    s.callout.hidden = s.callouts.text === '';
   }
 
   /** The end of a finisher: the loser's show goes off the air, or (a Rerun) they wake up at home. */
@@ -407,8 +456,9 @@ export class Hud {
     }
     if (this.warningLeft > 0) this.warningLeft--;
     if (this.warning.hidden !== (this.warningLeft === 0)) this.warning.hidden = this.warningLeft === 0;
-    if (this.counterLeft > 0) this.counterLeft--;
-    if (this.counter.hidden !== (this.counterLeft === 0)) this.counter.hidden = this.counterLeft === 0;
+    if (this.koCall > 0) this.koCall--;
+    if (this.tickerGlitch > 0 && --this.tickerGlitch === 0) this.ticker.classList.remove('glitch');
+    for (const s of this.sides) if (s.callouts.step()) this.showCallout(s);
   }
 
   /** Every frame: touches the DOM only where something changed. */
@@ -443,6 +493,13 @@ export class Hud {
           s.meterFill[k].classList.toggle('full', v >= 1);
         }
       }
+      const spends = spendsReady(f);
+      if (spends !== this.lastSpends[i]) {
+        this.lastSpends[i] = spends;
+        s.tags[0].classList.toggle('on', (spends & SPEND_BOOST) !== 0);
+        s.tags[1].classList.toggle('on', (spends & SPEND_SKIP) !== 0);
+        s.tags[2].classList.toggle('on', (spends & SPEND_CUT) !== 0);
+      }
     }
     // Read every frame so training's segment switch shows it too.
     const ticker = tickerOn(m);
@@ -451,6 +508,11 @@ export class Hud {
     if (secs !== this.lastSecs) {
       this.lastSecs = secs;
       this.clock.textContent = `0:${String(secs).padStart(2, '0')}`;
+    }
+    const urgent = clockUrgent(secs, m.phase === 'fight' && this.training.hidden === true);
+    if (urgent !== this.lastUrgent) {
+      this.lastUrgent = urgent;
+      this.clock.classList.toggle('urgent', urgent);
     }
     // Rebuilt only when it changes: no string or DOM write per frame.
     if (!this.training.hidden && (adv !== this.lastAdv || trainingLine !== this.lastLine)) {

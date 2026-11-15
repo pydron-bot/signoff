@@ -455,7 +455,7 @@ export function applyHit(
     d.hitstop = stop;
     if (!projectile) a.hitstop = stop;
     gainMeter(m, a, e.damage);
-    ev.push({ type: 'armor', player: di, move: d.move });
+    ev.push({ type: 'armor', player: di, move: d.move, damage: e.damage });
     if (ko) {
       launch(d, dir, KNOCK_VY, false);
       ev.push({ type: 'ko', player: di });

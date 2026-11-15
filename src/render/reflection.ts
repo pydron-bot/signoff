@@ -21,6 +21,8 @@ interface Plane {
   fade: { value: number };
   /** Only within this rectangle on the plane: x min, x max, y min, y max. */
   bounds: { value: THREE.Vector4 };
+  /** A flash of white over the reflection (Burn's mirrors on an ender), 0 to 1. */
+  flash: { value: number };
 }
 
 function plane(normal: [number, number, number], d: number, fade: number, bounds: [number, number, number, number]): Plane {
@@ -29,6 +31,7 @@ function plane(normal: [number, number, number], d: number, fade: number, bounds
     strength: { value: 0 },
     fade: { value: fade },
     bounds: { value: new THREE.Vector4(...bounds) },
+    flash: { value: 0 },
   };
 }
 
@@ -65,6 +68,7 @@ export function reflectionMaterial(src: THREE.MeshLambertMaterial, p: ReflectPla
     shader.uniforms.uStrength = p.strength;
     shader.uniforms.uFade = p.fade;
     shader.uniforms.uBounds = p.bounds;
+    shader.uniforms.uFlash = p.flash;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nuniform vec4 uPlane;\nvarying float vAbove;\nvarying vec3 vOnPlane;')
       // Drawn back-face, three.js flips the normals; a reflection is lit as the surface it shows.
@@ -87,7 +91,9 @@ export function reflectionMaterial(src: THREE.MeshLambertMaterial, p: ReflectPla
         ].join('\n'),
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec4 uPlane;\nuniform float uStrength;\nuniform float uFade;\nuniform vec4 uBounds;\nvarying float vAbove;\nvarying vec3 vOnPlane;')
+      .replace('#include <common>', '#include <common>\nuniform vec4 uPlane;\nuniform float uStrength;\nuniform float uFade;\nuniform vec4 uBounds;\nuniform float uFlash;\nvarying float vAbove;\nvarying vec3 vOnPlane;')
+      // The flash: past white, so the glow takes it.
+      .replace('#include <opaque_fragment>', 'outgoingLight = mix(outgoingLight, vec3(2.4), uFlash);\n#include <opaque_fragment>')
       .replace(
         '#include <clipping_planes_fragment>',
         [

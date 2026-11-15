@@ -6,10 +6,14 @@
  * between, which software GL could take minutes to do. Without the
  * parameter nothing is installed and the game never looks at it. The match
  * moves by inputs, as in play, but for one shortcut: the low-health moments
- * set both fighters' health down once the round is under way.
+ * set both fighters' health down once the round is under way, the wall
+ * splat and ground bounce throw player 2 as a launcher would, and meter()
+ * sets the meter.
  */
 import type { Session } from './session';
 import { BLOCK, SPECIAL } from '../sim/input';
+import { BAR } from '../sim/constants';
+import { fx } from '../sim/fixed';
 import type { SimEvent } from '../sim';
 
 export type ShotMode = 'watch' | 'cpu' | 'training';
@@ -27,10 +31,15 @@ export interface ShotHost {
   calls(): number;
   /** Where each fighter is on screen, in CSS pixels: left, top, right, bottom for each. */
   rects(): number[];
+  /** Opens a screen round the fight ('select', 'versus'); resolves once it's up. */
+  screen(name: string): Promise<void>;
+  /** The match is over: on to the results, as the frame loop would go. */
+  matchOver(winner: number): void;
 }
 
 /** What a moment is: steps until it, and steps after it. */
-export type Moment = 'start' | 'heavy' | 'td' | 'ko';
+/** splat: a wall splat; bounce: a ground bounce; ender: any ender (a launch, knockdown, bounce or KO). */
+export type Moment = 'start' | 'heavy' | 'td' | 'ko' | 'splat' | 'bounce' | 'ender';
 
 const LIMIT = 6000;
 
@@ -63,6 +72,21 @@ export function installShots(host: ShotHost): void {
       input = 0;
       if (moment === 'start') ok = until(() => m.phase === 'fight');
       else if (moment === 'heavy') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 2));
+      else if (moment === 'splat' || moment === 'bounce') {
+        // Too rare to wait for: player 2 is thrown at the right wall (or slammed at the floor) as a launcher would, and the sim does the rest.
+        const how = moment === 'splat' ? 'wall' : 'ground';
+        ok = until(() => m.phase === 'fight');
+        for (let i = 0; i < 60; i++) step();
+        const d = m.fighters[1];
+        d.mode = 'launched';
+        d.bounce = how;
+        d.juggleable = true;
+        d.x = how === 'wall' ? fx(5.5) : fx(1);
+        d.y = fx(how === 'wall' ? 1 : 1.4);
+        d.vx = how === 'wall' ? fx(0.12) : 0;
+        d.vy = how === 'wall' ? fx(0.02) : fx(-0.12);
+        ok &&= until((e) => e.some((x) => x.type === 'relaunch' && x.how === how), 240);
+      } else if (moment === 'ender') ok = until((e) => e.some((x) => x.type === 'hit' && x.weight === 3));
       else if (moment === 'ko') {
         ok = until(() => m.phase === 'fight');
         // Both nearly out, so the next clean blow ends the round.
@@ -90,6 +114,24 @@ export function installShots(host: ShotHost): void {
       return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     },
     hideFighters: (on: boolean) => host.hideFighters(on),
+    /** A screen round the fight: 'select', 'versus', or 'results' (a whole CPU VS CPU match played out first). */
+    async screen(name: string): Promise<void> {
+      if (name !== 'results') return host.screen(name);
+      await api.start({ mode: 'watch', p1: 'rox', p2: 'gus', stage: 'burn', seed: 9 });
+      let winner = -1;
+      until((e) => e.some((x) => x.type === 'matchOver' && ((winner = x.winner), true)), 60 * 60 * 10);
+      host.matchOver(winner);
+    },
+    /** A fighter's face as a webp data URL (tools/portraits.mjs); loaded only when asked for. */
+    async portrait(id: string, mood: 'neutral' | 'hurt' | 'win'): Promise<string> {
+      const { renderPortrait } = await import('../render/portrait');
+      return renderPortrait(id, mood);
+    },
+    /** Both fighters' meter set to `bars` (0 to 3), to show the HUD's meter and its tags. */
+    meter(bars: number): void {
+      const m = host.session()?.match;
+      if (m) for (const f of m.fighters) f.meter = Math.round(bars * BAR);
+    },
     calls: () => host.calls(),
     rects: () => host.rects(),
     phase: () => host.session()?.match.phase ?? '',

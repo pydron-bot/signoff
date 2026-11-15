@@ -1,7 +1,8 @@
 /**
  * A body meeting the set: when a fighter is thrown down, slammed into a
  * ground bounce or splatted on a wall, a shock ring runs out across the
- * floor (or up the wall) and dust kicks up and drifts, caught in the studio
+ * floor (or up the wall: the art's painted `fx_impact_ring` once Dale's GLB
+ * is in, else a drawn band) and dust kicks up and drifts, caught in the studio
  * light. Two instanced meshes, so two draw calls however much is flying;
  * additive, faded by colour (instances have no opacity). Stepped with the
  * simulation; nothing is allocated per frame.
@@ -36,6 +37,10 @@ export class Dust {
   private readonly q = new THREE.Quaternion();
   private readonly flat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
   private readonly upright = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+  /** The painted ring from the art (`fx_impact_ring`, flat in x and z already): on the floor as it is, on a wall stood up. */
+  private art = false;
+  private readonly level = new THREE.Quaternion();
+  private readonly standing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
   private readonly p = new THREE.Vector3();
   private readonly s = new THREE.Vector3();
   private readonly c = new THREE.Color();
@@ -73,6 +78,23 @@ export class Dust {
       im.count = 0;
       scene.add(im);
     }
+  }
+
+  /** The art's ring (Dale's GLB, step 29) in place of the drawn one, once loaded: its glow painted bright at the rim. */
+  useRing(fx: THREE.Object3D | undefined): void {
+    if (this.art || !fx) return;
+    let src: THREE.Mesh | null = null;
+    fx.traverse((o) => {
+      if (!src && (o as THREE.Mesh).isMesh) src = o as THREE.Mesh;
+    });
+    if (!src) return;
+    const mesh = src as THREE.Mesh;
+    const from = mesh.material as THREE.MeshLambertMaterial;
+    const mat = this.rings.material as THREE.MeshBasicMaterial;
+    mat.map = from.emissiveMap ?? from.map;
+    mat.needsUpdate = true;
+    this.rings.geometry = mesh.geometry;
+    this.art = true;
   }
 
   onEvents(m: MatchState, ev: readonly SimEvent[]): void {
@@ -128,8 +150,10 @@ export class Dust {
       const reach = this.rReach[r] * (1 - (1 - t) * (1 - t) * (1 - t));
       const k = (1 - t) * (1 - t) * 1.4;
       this.p.set(this.rx[r], this.rWall[r] ? this.ry[r] : 0.02, 0);
-      this.s.set(reach, reach, 1);
-      this.q.copy(this.rWall[r] ? this.upright : this.flat);
+      // The drawn band lies in x and y, the art's ring in x and z.
+      if (this.art) this.s.set(reach, 1, reach);
+      else this.s.set(reach, reach, 1);
+      this.q.copy(this.art ? (this.rWall[r] ? this.standing : this.level) : this.rWall[r] ? this.upright : this.flat);
       this.m.compose(this.p, this.q, this.s);
       this.rings.setMatrixAt(rings, this.m);
       this.rings.setColorAt(rings, this.c.copy(RING).multiplyScalar(k));
