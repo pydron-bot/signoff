@@ -3,9 +3,10 @@
 // stage in turn (the engine is tests/bench.ts). It writes docs/MATCHUPS.md
 // (who beats whom, how many openings win a round, how rounds go, where the
 // damage comes from, what gets used), then weighs the first hit's bonus,
-// plays a pass under LIVE BROADCAST rules and counts the rarer mechanics at
-// every CPU level. It fails on alarms: a matchup worse than 35:65 (30:70
-// before 0.62.0), rounds
+// plays both levels again under LIVE BROADCAST rules and counts the rarer
+// mechanics at every CPU level. It fails on alarms: a matchup worse than
+// 35:65 (30:70 before 0.62.0); under LIVE rules a matchup that moves too far
+// from its studio result, or a set that does too much of one (0.66.0); rounds
 // that are too short or too long, too many time-outs. CPU results aren't
 // the truth about a matchup, but they catch a fighter falling off a cliff
 // after a data change. Slow (several minutes), so it runs only on request:
@@ -14,7 +15,7 @@ import { writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { CpuLevel } from '../src/ai/cpu';
 import { BAR, FIRST_HIT_METER, ROUND_FRAMES, STEPS_PER_SECOND, TD_HEALTH_PCT, fighterData, moveData } from '../src/sim';
-import { MECHANICS, RANGES, SOURCES, bench, fighterOpenings, openingDamage, openingsToWin, overall, pairKey, winPct, type Bench, type Mechanic } from './bench';
+import { MECHANICS, RANGES, SOURCES, type Source, bench, fighterOpenings, openingDamage, openingsToWin, overall, pairKey, winPct, type Bench, type Mechanic } from './bench';
 
 const RUN = process.env.MATCHUPS === '1';
 const SEEDS = Number(process.env.MATCHUP_SEEDS ?? 100);
@@ -33,8 +34,11 @@ export const MOST_TIMEOUTS = 10;
 export const OPENINGS_BAND: readonly [number, number] = [8, 11.5];
 /** A move doing more than this share of a fighter's damage is called out (not an alarm). */
 const ONE_MOVE_SHARE = 35;
-/** Under LIVE BROADCAST rules a matchup moving further than this from its studio result is called out. */
-const LIVE_SHIFT = 10;
+/** Under LIVE BROADCAST rules a matchup moving further than this from its studio result fails the run (both levels together: see the report). */
+const LIVE_SHIFT = 12;
+/** Under LIVE BROADCAST rules, the most of any one matchup's damage each of these may do, in % (alarms). */
+const LIVE_SOURCES = ['hazards', 'props', 'tie-ins'] as const;
+export const LIVE_SHARE: Readonly<Record<(typeof LIVE_SOURCES)[number], number>> = { hazards: 8, props: 8, 'tie-ins': 6 };
 const MECHANIC_LABEL: Partial<Record<Mechanic, string>> = { counter: 'counter (a read)', counterHit: 'counter hit' };
 
 const pct = (n: number, d: number) => (d ? ((100 * n) / d).toFixed(1) : '–');
@@ -149,21 +153,66 @@ function firstHitReport(runs: [number, Bench][]): string {
   return out.join('\n');
 }
 
-/** The hard bench under LIVE BROADCAST rules (three segments, hazards on) against its studio result. */
-function liveReport(live: Bench, studio: Bench): string {
-  const total = SOURCES.reduce((s, k) => s + live.source[k], 0);
-  const shift = pairs(live).filter(([a, o]) => a < o).map(([a, o]) => [a, o, winPct(live, a, o) - winPct(studio, a, o)] as const);
+/** Fighter a's share of the matches against o over several benches together, in %. */
+function pooled(bs: readonly Bench[], a: string, o: string): number {
+  const won = bs.reduce((n, b) => n + b.wins[a][o], 0);
+  const played = bs.reduce((n, b) => n + b.played[a][o], 0);
+  return (100 * won) / played;
+}
+
+/** The share (%) of a pair's damage from one source, over several benches together. */
+function pooledShare(bs: readonly Bench[], key: string, src: Source): number {
+  let part = 0;
+  let total = 0;
+  for (const b of bs) {
+    const ps = b.pairSource[key];
+    if (!ps) continue;
+    part += ps[src];
+    for (const k of SOURCES) total += ps[k];
+  }
+  return total ? (100 * part) / total : 0;
+}
+
+/** Under LIVE BROADCAST rules, the matchups that moved too far from studio rules, and the pairs where the set did too much. */
+export function liveAlarms(lives: readonly Bench[], studios: readonly Bench[]): string[] {
+  const b = lives[0];
+  const bad: string[] = [];
+  for (const [a, o] of pairs(b).filter(([a, o]) => b.ids.indexOf(a) < b.ids.indexOf(o))) {
+    const d = pooled(lives, a, o) - pooled(studios, a, o);
+    if (Math.abs(d) > LIVE_SHIFT) bad.push(`${a} against ${o} moves ${d > 0 ? '+' : ''}${d.toFixed(1)} points`);
+    const key = pairKey(b.ids, a, o);
+    for (const src of LIVE_SOURCES) {
+      const share = pooledShare(lives, key, src);
+      if (share > LIVE_SHARE[src]) bad.push(`${a} against ${o}: ${src} do ${share.toFixed(1)}% of the damage (limit ${LIVE_SHARE[src]}%)`);
+    }
+  }
+  return bad;
+}
+
+/** The bench under LIVE BROADCAST rules (three segments, hazards, tie-ins and interruptions on) against its studio result. */
+function liveReport(lives: readonly Bench[], studios: readonly Bench[]): string {
+  const b = lives[0];
+  const half = pairs(b).filter(([a, o]) => b.ids.indexOf(a) < b.ids.indexOf(o));
+  const shift = half.map(([a, o]) => [a, o, pooled(lives, a, o) - pooled(studios, a, o)] as const);
   const far = shift.filter(([, , d]) => Math.abs(d) > LIVE_SHIFT).sort((x, y) => Math.abs(y[2]) - Math.abs(x[2]));
   const mean = shift.reduce((s, [, , d]) => s + Math.abs(d), 0) / shift.length;
+  const most = (src: Source) => half.map(([a, o]) => [a, o, pooledShare(lives, pairKey(b.ids, a, o), src)] as const).sort((x, y) => y[2] - x[2])[0];
   const out = ['## Under LIVE BROADCAST rules', ''];
-  out.push(`The hard bench again with the segments changing each round and the hazards on. ${live.rounds} rounds; average round ${seconds(live).toFixed(1)} s; ${pct(live.timeouts, live.rounds)}% time out; the first hit wins the round ${pct(live.firstHitWins, live.firstHitRounds)}% of the time. Hazards did ${pct(live.source.hazards, total)}% of the damage and props ${pct(live.source.props, total)}% (props are in studio rules too: ${pct(studio.source.props, SOURCES.reduce((s, k) => s + studio.source[k], 0))}% there).`, '');
-  out.push(`A matchup moves ${mean.toFixed(1)} points from its studio result on average; ${far.length ? `further than ${LIVE_SHIFT}: ${far.map(([a, o, d]) => `${short(a)} against ${short(o)} ${d > 0 ? '+' : ''}${d.toFixed(0)}`).join(', ')}` : `none moves further than ${LIVE_SHIFT}`}. At ${seeds(live)} seeds a pair, a few points either way is noise.`, '');
-  out.push('### Win rates, live', '', 'As in studio rules, with the change from the studio result in brackets.', '');
-  out.push(...grid(live, (a, o) => {
-    const d = Math.round(winPct(live, a, o) - winPct(studio, a, o));
-    return `${Math.round(winPct(live, a, o))} (${d > 0 ? '+' : ''}${d})`;
-  }, ['Overall', (a) => `**${overall(live, a).toFixed(0)}**`]));
-  out.push('', '### Damage by source, live', '', sourceLine(live), '');
+  out.push(`Both levels again with the segments changing each round and the hazards, tie-ins and interruptions on (${seeds(b)} seeds a pair at each). The run fails if a matchup moves more than ${LIVE_SHIFT} points from its studio result, or if in any matchup ${LIVE_SOURCES.map((s) => `${s} do more than ${LIVE_SHARE[s]}% of the damage`).join(', ')}. The shift is measured over both levels together (${4 * seeds(b)} matches a pair each way): the standard error of that difference is about 3.5 points, so ${LIVE_SHIFT} is the design's ten plus a little for the noise that is left.`, '');
+  for (const l of lives) {
+    const total = SOURCES.reduce((s, k) => s + l.source[k], 0);
+    out.push(`- **${l.level}:** ${l.rounds} rounds; average round ${seconds(l).toFixed(1)} s; ${pct(l.timeouts, l.rounds)}% time out; the first hit wins the round ${pct(l.firstHitWins, l.firstHitRounds)}% of the time. Hazards ${pct(l.source.hazards, total)}% of the damage, props ${pct(l.source.props, total)}%, tie-ins ${pct(l.source['tie-ins'], total)}%.`);
+  }
+  const studioProps = studios.reduce((n, s) => n + s.source.props, 0) / studios.reduce((n, s) => n + SOURCES.reduce((t, k) => t + s.source[k], 0), 0);
+  out.push('', `Props are in studio rules too (${(100 * studioProps).toFixed(1)}% of the damage there). A matchup moves ${mean.toFixed(1)} points from its studio result on average; ${far.length ? `further than ${LIVE_SHIFT}: ${far.map(([a, o, d]) => `${short(a)} against ${short(o)} ${d > 0 ? '+' : ''}${d.toFixed(0)}`).join(', ')}` : `none moves further than ${LIVE_SHIFT}`}. The set's largest share of any one matchup: ${LIVE_SOURCES.map((s) => { const [a, o, v] = most(s); return `${s} ${v.toFixed(1)}% (${short(a)} against ${short(o)})`; }).join(', ')}.`, '');
+  out.push('### Win rates, live', '', 'Both levels together, with the change from the studio result in brackets.', '');
+  out.push(...grid(b, (a, o) => {
+    const d = Math.round(pooled(lives, a, o) - pooled(studios, a, o));
+    return `${Math.round(pooled(lives, a, o))} (${d > 0 ? '+' : ''}${d})`;
+  }, ['Overall', (a) => `**${(others(b, a).reduce((s, o) => s + pooled(lives, a, o), 0) / (b.ids.length - 1)).toFixed(0)}**`]));
+  out.push('', '### The set\'s share of each matchup, live', '', `Hazards · props · tie-ins, as a share of all the damage done in the pair's matches (%).`, '');
+  out.push(...grid(b, (a, o) => LIVE_SOURCES.map((s) => pooledShare(lives, pairKey(b.ids, a, o), s).toFixed(1)).join(' · ')));
+  out.push('', '### Damage by source, live', '', ...lives.map((l) => `- **${l.level}:** ${sourceLine(l)}`), '');
   return out.join('\n');
 }
 
@@ -189,15 +238,16 @@ function levelReport(byLevel: Bench[]): string {
 
 describe.skipIf(!RUN)('the balance bench (npm run matchups)', () => {
   const benches: Bench[] = [];
+  const lives: Bench[] = [];
   it('plays every pair at every level and writes docs/MATCHUPS.md', () => {
     for (const level of LEVELS) benches.push(bench({ level, seeds: SEEDS }));
     const hard = benches[0];
     const firstHit: [number, Bench][] = [BAR, BAR / 2, 0].map((meter) => [meter, meter === FIRST_HIT_METER ? hard : bench({ level: 'hard', seeds: SEEDS, firstHitMeter: meter })]);
-    const live = bench({ level: 'hard', seeds: SEEDS, studio: false });
+    for (const level of LEVELS) lives.push(bench({ level, seeds: SEEDS, studio: false }));
     const byLevel = [bench({ level: 'easy', seeds: LEVEL_SEEDS }), bench({ level: 'normal', seeds: LEVEL_SEEDS }), ...benches];
     writeFileSync(
       'docs/MATCHUPS.md',
-      `# SIGN-OFF — matchups\n\nWritten by \`npm run matchups\` (tests/matchups.test.ts, tests/bench.ts); do not edit by hand.\n\nThe CPU against itself: every ordered pair of fighters, ${SEEDS} seeds each, studio rules (one segment, no hazards), the stages in turn, with ${ROUND_FRAMES / STEPS_PER_SECOND}-second rounds. These are the CPU's results, not the truth about a matchup, but they show a fighter falling off a cliff after a change. The run fails on a matchup worse than ${WORST_MATCHUP}:${100 - WORST_MATCHUP}, an average round outside ${ROUND_SECONDS[0]} to ${ROUND_SECONDS[1]} seconds, or more than ${MOST_TIMEOUTS}% of rounds timing out.\n\n${benches.map((b) => report(b, SEEDS)).join('\n')}\n${firstHitReport(firstHit)}\n${liveReport(live, hard)}\n${levelReport(byLevel)}`,
+      `# SIGN-OFF — matchups\n\nWritten by \`npm run matchups\` (tests/matchups.test.ts, tests/bench.ts); do not edit by hand.\n\nThe CPU against itself: every ordered pair of fighters, ${SEEDS} seeds each, studio rules (one segment, no hazards), the stages in turn, with ${ROUND_FRAMES / STEPS_PER_SECOND}-second rounds. These are the CPU's results, not the truth about a matchup, but they show a fighter falling off a cliff after a change. The run fails on a matchup worse than ${WORST_MATCHUP}:${100 - WORST_MATCHUP}, an average round outside ${ROUND_SECONDS[0]} to ${ROUND_SECONDS[1]} seconds, or more than ${MOST_TIMEOUTS}% of rounds timing out.\n\n${benches.map((b) => report(b, SEEDS)).join('\n')}\n${firstHitReport(firstHit)}\n${liveReport(lives, benches)}\n${levelReport(byLevel)}`,
     );
   }, 3_600_000);
 
@@ -208,12 +258,16 @@ describe.skipIf(!RUN)('the balance bench (npm run matchups)', () => {
     }
   });
 
+  it(`under LIVE BROADCAST rules no matchup moves more than ${LIVE_SHIFT} points, and the set does no more than its share of any`, () => {
+    expect(liveAlarms(lives, benches)).toEqual([]);
+  });
+
   it(`rounds last ${ROUND_SECONDS[0]} to ${ROUND_SECONDS[1]} seconds on average, and few time out`, () => {
-    for (const b of benches) {
+    for (const b of [...benches, ...lives]) {
       const secs = seconds(b);
-      expect(secs, b.level).toBeGreaterThanOrEqual(ROUND_SECONDS[0]);
-      expect(secs, b.level).toBeLessThanOrEqual(ROUND_SECONDS[1]);
-      expect((100 * b.timeouts) / b.rounds, b.level).toBeLessThanOrEqual(MOST_TIMEOUTS);
+      expect(secs, `${b.level}${b.studio ? '' : ' live'}`).toBeGreaterThanOrEqual(ROUND_SECONDS[0]);
+      expect(secs, `${b.level}${b.studio ? '' : ' live'}`).toBeLessThanOrEqual(ROUND_SECONDS[1]);
+      expect((100 * b.timeouts) / b.rounds, `${b.level}${b.studio ? '' : ' live'}`).toBeLessThanOrEqual(MOST_TIMEOUTS);
     }
   });
 });

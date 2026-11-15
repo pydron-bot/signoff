@@ -390,6 +390,11 @@ export class Hud {
         case 'hazardStrike':
           this.warningLeft = 0;
           break;
+        case 'hazardOut':
+          // Put out before it struck (the extinguisher).
+          this.warningLeft = 0;
+          this.say('FIRE OUT', '', 40);
+          break;
         case 'hit':
           if (e.counter) this.callout(e.attacker, 'COUNTER');
           // An ender knocks the News's ticker out of true for a moment.

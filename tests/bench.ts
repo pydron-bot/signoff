@@ -10,7 +10,7 @@ import { ONE } from '../src/sim/fixed';
 export const MECHANICS = ['boost', 'tapeSkip', 'jumpCancel', 'relaunch', 'cutAway', 'flawless', 'punish', 'reversal', 'delayedGetup', 'ducked', 'throw', 'throwTech', 'guardCrush', 'counter', 'counterHit', 'superHit'] as const;
 export type Mechanic = (typeof MECHANICS)[number];
 /** Damage sources, by what landed the hit. Hazards and props only hit under LIVE BROADCAST rules (props stay in studio). */
-export const SOURCES = ['normals', 'air normals', 'specials', 'projectiles', 'throws', 'super', 'chip', 'props', 'hazards'] as const;
+export const SOURCES = ['normals', 'air normals', 'specials', 'projectiles', 'throws', 'super', 'chip', 'props', 'hazards', 'tie-ins'] as const;
 export type Source = (typeof SOURCES)[number];
 /** Ranges between the fighters' centres, in metres: throw range, close, mid, far (the upper bound of each). */
 export const RANGES: readonly [string, number][] = [
@@ -66,6 +66,8 @@ export interface Bench {
   pairRounds: Record<string, number>;
   pairTimeouts: Record<string, number>;
   pairSteps: Record<string, number>;
+  /** By unordered pair: damage by source, for the shares the set takes of a matchup. */
+  pairSource: Record<string, Record<Source, number>>;
   firstHitRounds: number;
   firstHitWins: number;
   /** Rounds won by someone who had been under TD_HEALTH_PCT health in that round, and rounds where anyone had. */
@@ -85,6 +87,16 @@ export interface Bench {
   ranges: Record<string, number[]>;
   combos: number[];
   comboDamage: number[];
+}
+
+/** A called strike's hazard id starts with this (src/sim/tieIns.ts). */
+export const CALLED = 'call-';
+
+/** The share (%) of a pair's damage from one source. */
+export function pairShare(b: Bench, key: string, src: Source): number {
+  const ps = b.pairSource[key];
+  const total = ps ? SOURCES.reduce((s, k) => s + ps[k], 0) : 0;
+  return total ? (100 * ps[src]) / total : 0;
 }
 
 export const pairKey = (ids: readonly string[], a: string, b: string): string => (ids.indexOf(a) <= ids.indexOf(b) ? `${a}|${b}` : `${b}|${a}`);
@@ -115,6 +127,7 @@ export function emptyBench(level: CpuLevel, studio = true): Bench {
     pairRounds: {},
     pairTimeouts: {},
     pairSteps: {},
+    pairSource: {},
     firstHitRounds: 0,
     firstHitWins: 0,
     comebacks: 0,
@@ -146,6 +159,7 @@ export function playMatch(b: Bench, p1: string, p2: string, s: number, o: Pick<B
   const m = createMatch({ p1, p2, stage, seed, studio: o.studio ?? true, firstHitMeter: o.firstHitMeter });
   const cpus = [new Cpu(0, o.level, seed * 7 + 1), new Cpu(1, o.level, seed)];
   const key = pairKey(b.ids, p1, p2);
+  const ps = (b.pairSource[key] ??= Object.fromEntries(SOURCES.map((s) => [s, 0])) as Record<Source, number>);
   let firstBy = -1;
   let roundStart = 0;
   let round1 = -2;
@@ -199,6 +213,7 @@ export function playMatch(b: Bench, p1: string, p2: string, s: number, o: Pick<B
         const f = p[e.attacker];
         const src = source(f, e.move);
         b.source[src] += e.damage;
+        ps[src] += e.damage;
         if (src !== 'super' && src !== 'throws' && src !== 'props') b.tries.strikes++;
         if (e.counter) b.mechanics.counterHit++;
         const row = (b.moves[f][e.move] ??= { hits: 0, blocks: 0, damage: 0 });
@@ -210,10 +225,14 @@ export function playMatch(b: Bench, p1: string, p2: string, s: number, o: Pick<B
         runDmg[e.attacker] += e.damage;
       } else if (e.type === 'block') {
         b.source.chip += e.chip;
+        ps.chip += e.chip;
         const f = p[e.attacker];
         (b.moves[f][e.move] ??= { hits: 0, blocks: 0, damage: 0 }).blocks++;
       } else if (e.type === 'hazardHit') {
-        b.source.hazards += e.damage;
+        // A strike a fighter called from their tie-in spot is theirs, not the set's.
+        const src: Source = e.hazard.startsWith(CALLED) ? 'tie-ins' : 'hazards';
+        b.source[src] += e.damage;
+        ps[src] += e.damage;
       } else if (e.type === 'roundOver') {
         close(0);
         close(1);

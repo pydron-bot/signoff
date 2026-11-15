@@ -564,8 +564,27 @@ export class Sound {
           // Pans clang; knives rattle.
           if (e.prop === 'pot') this.tone(520, 0.5, 0.1, 'triangle', 480);
           if (e.prop === 'knives') this.noise(0.25, 7000, 0.12, 'highpass');
+          // The later segments' props (0.66.0): a creak, a splash, a ring of glass, castors, a clatter, a hiss.
+          if (e.prop === 'windsock') this.tone(220, 0.5, 0.1, 'sawtooth', 90);
+          if (e.prop === 'crate') this.noise(0.5, 1200, 0.15, 'lowpass');
+          if (e.prop === 'shard') this.tone(2400, 0.35, 0.07, 'triangle', 1800);
+          if (e.prop === 'prompter') this.noise(0.9, 700, 0.12, 'bandpass');
+          if (e.prop === 'lamp') this.tone(700, 0.25, 0.1, 'square', 300);
+          if (e.prop === 'extinguisher') this.noise(0.9, 5000, 0.3, 'highpass');
           this.tone(160, 0.1, 0.3, 'sine', 80);
           this.noise(0.6, 250, 0.08, 'lowpass');
+          break;
+        case 'propBounce':
+          this.tone(120, 0.15, 0.2, 'sine', 70);
+          this.noise(0.3, 900, 0.1, 'lowpass');
+          break;
+        case 'propReady':
+          this.tone(1800, 0.12, 0.05, 'triangle', 2400);
+          break;
+        case 'hazardOut':
+          // The fire that didn't come: a hiss and a sigh.
+          this.noise(0.8, 4000, 0.2, 'highpass');
+          this.tone(300, 0.4, 0.06, 'sine', 150, 0.1);
           break;
         case 'commercialBreak':
           this.music?.stop(0.2);

@@ -3,7 +3,7 @@
 // `npm run matchups`).
 import { describe, expect, it } from 'vitest';
 import { BAR, FIRST_HIT_METER, Input, createMatch, fighterData } from '../src/sim';
-import { bench, openingDamage, openingsToWin, pairKey } from './bench';
+import { bench, openingDamage, openingsToWin, pairKey, pairShare } from './bench';
 import { place, ready, run } from './sim-helpers';
 
 const PAIR = [['rox', 'gus']] as const;
@@ -72,6 +72,15 @@ describe('the balance bench', () => {
     const m = createMatch({ p1: 'rox', p2: 'gus', stage: 'weather', seed: 1 });
     expect(m.hazards).toEqual([]);
     expect(createMatch({ p1: 'rox', p2: 'gus', stage: 'weather', seed: 1, studio: true }).studio).toBe(true);
+  });
+
+  it('keeps each pair’s damage by source, so the set’s share of a matchup can be limited (0.66.0)', () => {
+    const live = bench({ level: 'hard', seeds: 4, pairs: PAIR, studio: false });
+    const key = pairKey(live.ids, 'rox', 'gus');
+    expect(live.pairSource[key]).toEqual(live.source);
+    expect(pairShare(live, key, 'hazards')).toBeGreaterThan(0);
+    expect(pairShare(live, key, 'hazards') + pairShare(live, key, 'props') + pairShare(live, key, 'tie-ins')).toBeLessThan(30);
+    expect(pairShare(live, 'dale|rox', 'hazards')).toBe(0);
   });
 
   it('counts the rarer mechanics beside how often they were tried', () => {
