@@ -104,7 +104,8 @@ export class NewsSet implements StageSet {
 
     // The desk: on the floor in Headlines (shoved or not); on its riser in The Ticker; gone in Lights Out.
     const desk = this.part('prop_desk');
-    const p = m.props[0];
+    // Only Headlines' prop is the desk; later segments' are drawn by laterProps.ts.
+    const p = m.segment === 0 ? m.props[0] : undefined;
     desk.visible = m.segment < 2;
     if (p) {
       desk.position.set(toFloat(p.x), 0, p.mode === 'idle' ? DESK_Z : 0);

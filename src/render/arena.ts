@@ -37,6 +37,7 @@ import { NEUTRAL_GRADE, type Grade } from './post';
 import { SignalBurst } from './signalBurst';
 import { Sparks } from './sparks';
 import { Clutter } from './clutter';
+import { LaterProps } from './laterProps';
 import { Dust } from './dust';
 import { Marks } from './marks';
 import { StageAnswers } from './stageAnswers';
@@ -287,6 +288,7 @@ export class Arena {
   /** Each stage's own answer: rain on the lens, the mirrors' flash, the burners' sparks. */
   private readonly answers: StageAnswers;
   private readonly clutter: Clutter;
+  private readonly laterProps: LaterProps;
   private readonly light: ImpactLight;
   /** Changing channel between the endless channel's matches. */
   readonly flip: ChannelFlip;
@@ -340,6 +342,7 @@ export class Arena {
     this.marks = new Marks(this.scene);
     this.answers = new StageAnswers(this.scene, this.sparks);
     this.clutter = new Clutter(this.scene);
+    this.laterProps = new LaterProps(this.scene);
     this.light = new ImpactLight(this.scene);
     this.flip = new ChannelFlip(this.scene);
     this.fighters = [0, 1].map(() => this.fighterView());
@@ -392,7 +395,7 @@ export class Arena {
   setFighters(m: MatchState): Promise<void> {
     this.poses.reset();
     this.rig.reset();
-    const loads: Promise<void>[] = [this.stage.setStage(m.stage), this.clutter.setStage(m.stage)];
+    const loads: Promise<void>[] = [this.stage.setStage(m.stage), this.clutter.setStage(m.stage), this.laterProps.setStage(m.stage)];
     m.fighters.forEach((f, i) => {
       const v = this.fighters[i];
       v.bodyMat.color.setHex(COLORS[f.fighter] ?? 0xcccccc);
@@ -587,6 +590,7 @@ export class Arena {
     this.setMover.bind(this.stage.root, this.setMotion);
     this.setMover.update(this.setMotion);
     this.clutter.update();
+    this.laterProps.update(m);
     // After the set has lit the segment (its rim may pulse on the beat).
     setRim(this.rim);
     // The signal damage flickers on display time; held still for Reduce Motion.

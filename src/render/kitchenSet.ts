@@ -100,7 +100,7 @@ export class KitchenSet implements StageSet {
     // The props: on the counter, flying at their throw height, then on the floor where they stopped.
     for (let k = 0; k < PROPS.length; k++) {
       const o = this.part(PROPS[k]);
-      const p = m.props[k];
+      const p = m.segment === 0 ? m.props[k] : undefined;
       o.visible = p !== undefined;
       if (!p) continue;
       const flying = p.mode === 'rolling';

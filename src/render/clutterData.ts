@@ -59,7 +59,7 @@ export const CLUTTER: Readonly<Record<string, StageClutter>> = {
     places: [
       { kind: 'clipboard', x: -2.6, z: 0.25, yaw: 0.4 },
       { kind: 'clipboard', x: 3.4, z: -0.55, yaw: -0.9 },
-      { kind: 'mug', x: -0.5, z: -0.45, yaw: 1.1 },
+      { kind: 'mug', x: -0.7, z: -0.45, yaw: 1.1 },
       { kind: 'mug', x: 2.6, z: 0.3, yaw: -0.3 },
       { kind: 'tape', x: 0.8, z: 0.35, yaw: 0 },
     ],
@@ -89,7 +89,7 @@ export const CLUTTER: Readonly<Record<string, StageClutter>> = {
     places: [
       { kind: 'script', x: -2.4, z: 0.3, yaw: 0.5 },
       { kind: 'script', x: 0.95, z: -0.5, yaw: -1.2 },
-      { kind: 'script', x: 3.0, z: 0.25, yaw: 2.2 },
+      { kind: 'script', x: 2.7, z: 0.25, yaw: 2.2 },
       { kind: 'mug', x: -0.95, z: 0.3, yaw: 0.8 },
       { kind: 'bin', x: 4.2, z: -0.6, yaw: 0.3 },
     ],
@@ -101,8 +101,8 @@ export const CLUTTER: Readonly<Record<string, StageClutter>> = {
       { id: 'spoon', shape: 'flat', size: [0.36, 0.03, 0.07], mass: 0.3 },
     ],
     places: [
-      { kind: 'onion', x: -0.6, z: 0.35, yaw: 0 },
-      { kind: 'onion', x: 0.4, z: -0.4, yaw: 0 },
+      { kind: 'onion', x: -0.75, z: 0.35, yaw: 0 },
+      { kind: 'onion', x: 0.7, z: -0.4, yaw: 0 },
       { kind: 'onion', x: 2.4, z: 0.2, yaw: 0 },
       { kind: 'lid', x: -2.2, z: -0.35, yaw: 0 },
       { kind: 'spoon', x: -3.9, z: 0.3, yaw: 0.7 },

@@ -99,7 +99,8 @@ export class BurnSet implements StageSet {
     this.lights.rim.intensity = this.rimBase * (m.segment === 1 && m.roundFrame % DOUBLE_BEAT < 4 ? 2.2 : 1);
 
     const boombox = this.part('prop_boombox');
-    const p = m.props[0];
+    // Only Warm-Up's prop is the boombox; later segments' are drawn by laterProps.ts.
+    const p = m.segment === 0 ? m.props[0] : undefined;
     boombox.visible = p !== undefined;
     if (p) {
       const flying = p.mode === 'rolling';

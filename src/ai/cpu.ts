@@ -23,6 +23,8 @@ import { AFTER_BLOCK_BLOCK, AFTER_BLOCK_PRESS, AFTER_BLOCK_THROW, Habits, OKI_ST
 import { RouteRun, openerBits, routeAfter, routeOf, warm, type Opener } from './routes';
 
 const { UP, DOWN, LEFT, RIGHT, FP, BP, FK, BK, BLOCK, SPECIAL, THROW, INTERACT, METER } = Input;
+/** Frames of the Interact move before the prop is used: the CPU's reaction to a prop counts from the move's start. */
+const KICK_SEEN = 8;
 
 /** DIRECTOR is the last Arcade fight's, not offered in the menu. */
 export type CpuLevel = 'easy' | 'normal' | 'hard' | 'director';
@@ -204,6 +206,9 @@ export class Cpu {
   /** It was in blockstun on the step before, and the move it last blocked. */
   private inBlockstun = false;
   private lastBlocked = '';
+  /** The prop in use it last weighed guarding, and what it decided. */
+  private propKey = -1;
+  private propGuard = false;
   /** The step it saw the opponent start getting up (-1: not yet). */
   private getupAt = -1;
   /** What it has learned of the opponent this match. */
@@ -349,6 +354,12 @@ export class Cpu {
       this.start(hold(away, 18));
       return this.next0(me);
     }
+    // A prop on its way, or about to come down where it stands: on screen for everyone, so guarded like a projectile.
+    const guard = this.propThreat(m, me);
+    if (guard) {
+      this.start(hold(guard, 10));
+      return this.next0(me);
+    }
     // An unblockable is jumped, not blocked.
     if (s.unblockable && this.roll(this.level.block)) {
       this.start(hold(UP | (me.facing > 0 ? LEFT : RIGHT), 4));
@@ -384,10 +395,64 @@ export class Cpu {
       // A projectile on its way: guard it (crouching under a high one), even between decisions.
       return s.threat && s.shotOut ? BLOCK | (s.low ? DOWN : 0) : 0;
     }
-    if (propInReach(m, me) >= 0 && this.roll(35)) this.start(tap(INTERACT));
+    if (this.useProp(m, me, s)) this.start(tap(INTERACT));
     else this.decide(me, s);
     this.wait = this.level.think + nextInt(this.rng, this.level.think);
     return this.next0(me);
+  }
+
+  /**
+   * Whether to use the prop in reach. A travelling one goes at the opponent
+   * (it always faces them); one used where it stands (the wind sock, the
+   * extinguisher) only when the opponent is in front of it, or to put out a
+   * fire that is marked nearer to it than to them.
+   */
+  private useProp(m: MatchState, me: FighterState, s: Seen): boolean {
+    const k = propInReach(m, me);
+    if (k < 0) return false;
+    const seg = segmentData(m.stage, m.segment);
+    const pd = seg.props[k];
+    if (!pd.area) return this.roll(35);
+    const ahead = (s.x - m.props[k].x) * me.facing;
+    if (ahead > pd.area.box.x && ahead < pd.area.box.x + pd.area.box.w + fx(0.3) && !(pd.effect.height === 'high' && s.crouching)) return this.roll(70);
+    if (pd.quench) {
+      const h = seg.hazards.findIndex((hz) => hz.id === pd.quench);
+      const hz = seg.hazards[h];
+      const st = m.hazards[h];
+      if (hz && st && !st.out && st.spot >= 0 && m.roundFrame >= hz.first && (m.roundFrame - hz.first) % hz.period < hz.warn) {
+        const x = hz.spots[st.spot];
+        return Math.abs(x - me.x) < Math.abs(x - s.x) && this.roll(60);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The guard for a prop in use that will reach it, or 0: seen a reaction
+   * time after the kick that set it going began (the kick's own frames are
+   * on screen too), and weighed once (it blocks a prop as often as it
+   * blocks anything). Low ones are blocked crouching; one coming
+   * down at head height is ducked.
+   */
+  private propThreat(m: MatchState, me: FighterState): number {
+    const seg = segmentData(m.stage, m.segment);
+    for (let k = 0; k < m.props.length; k++) {
+      const p = m.props[k];
+      const pd = seg.props[k];
+      if (p.mode !== 'rolling' || p.t < Math.max(1, this.level.delay - KICK_SEEN) || (p.owner === this.player && !p.bounced)) continue;
+      const ahead = (me.x - p.x) * p.dir;
+      const near = pd.area ? ahead > pd.area.box.x - fx(0.4) && ahead < pd.area.box.x + pd.area.box.w + fx(0.4) : ahead > 0 && ahead < fx(0.8) + pd.speed * 14;
+      if (!near) continue;
+      const key = k * 100000 + (m.roundFrame - p.t) * 2 + (p.bounced ? 1 : 0);
+      if (key !== this.propKey) {
+        this.propKey = key;
+        this.propGuard = this.roll(this.level.block);
+      }
+      if (!this.propGuard) return 0;
+      if (pd.effect.height === 'high') return DOWN;
+      return BLOCK | (pd.effect.height === 'low' ? DOWN : 0);
+    }
+    return 0;
   }
 
   private next0(me: FighterState): number {

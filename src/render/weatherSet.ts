@@ -186,7 +186,7 @@ export class WeatherSet implements StageSet {
     this.lastRoundFrame = m.roundFrame;
     for (let k = 0; k < this.dollies.length; k++) {
       const d = this.dollies[k];
-      const p = m.props[k];
+      const p = m.segment === 0 ? m.props[k] : undefined;
       d.visible = p !== undefined;
       if (!p) continue;
       d.position.set(toFloat(p.x), 0, -0.2);

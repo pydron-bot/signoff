@@ -43,6 +43,14 @@ export interface PropData {
   readonly speed: Fx;
   /** Picked up and thrown at head height (the boombox), rather than kicked along the floor. */
   readonly thrown?: boolean;
+  /** Used where it stands (0.66.0): it doesn't travel; `delay` frames on it strikes this box in front of whoever used it, for `active` frames. */
+  readonly area?: { readonly delay: number; readonly active: number; readonly box: Box };
+  /** Off the wall it comes back the other way, once, and then hits whoever is in its way, its user included. */
+  readonly rebound?: boolean;
+  /** Frames after it stops until it can be used again, where it lies. */
+  readonly reuse?: number;
+  /** Using it puts this hazard out for its next strike. */
+  readonly quench?: string;
   readonly effect: HitEffect;
 }
 
@@ -145,6 +153,93 @@ function knives(): PropData {
   };
 }
 
+// Six more things to use (0.66.0): one in every later segment that has a hazard, each doing something the first segment's prop doesn't.
+// Their boxes are the sizes the art is built to (docs/BLENDER-TODO.md, step 34).
+
+/** The storm: a wind sock on a stand, tipped over. It doesn't travel: it comes down across the 1.9 m in front of whoever tipped it, at head height (duck it). */
+function windsock(): PropData {
+  return {
+    id: 'windsock',
+    name: 'Wind sock',
+    x: 0,
+    reach: fx(1.0),
+    box: box(-0.3, 0.3, 0, 1.9),
+    speed: 0,
+    area: { delay: 16, active: 4, box: box(0.3, 1.9, 0.6, 1.6) },
+    effect: effect({ damage: 65, height: 'high', hitstun: 0, blockstun: 16, chip: 10, push: 0.05, knockdown: true }),
+  };
+}
+
+/** The flood: a flight case afloat at the water's height. Shoved, it drifts to the wall and comes back for whoever is in the way. */
+function crate(): PropData {
+  return {
+    id: 'crate',
+    name: 'Flight case',
+    x: 0,
+    reach: fx(1.1),
+    box: box(-0.4, 0.4, 0.22, 0.72),
+    speed: fx(0.11),
+    rebound: true,
+    effect: effect({ damage: 55, hitstun: 0, blockstun: 16, chip: 10, push: 0.05, knockdown: true }),
+  };
+}
+
+/** Burnout: a shard of mirror, thrown low and spinning. Light, but it lies where it lands and can be thrown again. */
+function shard(): PropData {
+  return {
+    id: 'shard',
+    name: 'Mirror shard',
+    x: 0,
+    reach: fx(1.0),
+    box: box(-0.25, 0.25, 0.1, 0.3),
+    speed: fx(0.26),
+    thrown: true,
+    reuse: 150,
+    effect: effect({ damage: 40, height: 'low', hitstun: 20, blockstun: 12, chip: 6, push: 0.03 }),
+  };
+}
+
+/** The Ticker: the teleprompter on its castors. Slow like the desk, but 1.4 m tall: a low jump (Rox's, Hollis's) doesn't clear it. */
+function prompter(): PropData {
+  return {
+    id: 'prompter',
+    name: 'Teleprompter',
+    x: fx(-3.5),
+    reach: fx(1.2),
+    box: box(-0.3, 0.3, 0, 1.4),
+    speed: fx(0.09),
+    effect: effect({ damage: 60, hitstun: 0, blockstun: 22, chip: 16, push: 0.07, knockdown: true }),
+  };
+}
+
+/** Lights Out: a lamp off the grid, kicked along the floor in the dark. Low, quick, and it staggers rather than knocks down: its kicker can follow it in. */
+function lamp(): PropData {
+  return {
+    id: 'lamp',
+    name: 'Fallen lamp',
+    x: fx(3.5),
+    reach: fx(1.0),
+    box: box(-0.2, 0.2, 0, 0.4),
+    speed: fx(0.2),
+    effect: effect({ damage: 45, height: 'low', hitstun: 26, blockstun: 14, chip: 8, push: 0.03 }),
+  };
+}
+
+/** Grease Fire: the extinguisher, used where it stands. It puts the next flare out, and its cloud shoves back anyone in front of it. */
+function extinguisher(): PropData {
+  return {
+    id: 'extinguisher',
+    name: 'Fire extinguisher',
+    x: 0,
+    reach: fx(0.9),
+    box: box(-0.1, 0.1, 0, 0.55),
+    speed: 0,
+    area: { delay: 8, active: 6, box: box(0.2, 1.5, 0, 1.1) },
+    quench: 'flare',
+    effect: effect({ damage: 25, hitstun: 20, blockstun: 12, chip: 0, push: 0.1 }),
+  };
+}
+
 export const STAGES: Readonly<Record<string, StageData>> = {
   weather: {
     id: 'weather',
@@ -175,7 +270,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 80, hitstun: 0, blockstun: 1, knockdown: true },
           }),
         ],
-        props: [],
+        props: [windsock()],
       },
       {
         name: 'Flood Warning',
@@ -197,7 +292,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 50, hitstun: 36, blockstun: 1, push: 0.02 },
           }),
         ],
-        props: [],
+        props: [crate()],
       },
     ],
   },
@@ -237,7 +332,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 60, hitstun: 30, blockstun: 1, push: 0.03 },
           }),
         ],
-        props: [],
+        props: [shard()],
       },
     ],
   },
@@ -272,7 +367,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 40, hitstun: 0, blockstun: 1, launch: 0.17 },
           }),
         ],
-        props: [],
+        props: [prompter()],
       },
       {
         name: 'Lights Out',
@@ -292,7 +387,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 70, hitstun: 0, blockstun: 1, knockdown: true },
           }),
         ],
-        props: [],
+        props: [lamp()],
       },
     ],
   },
@@ -325,7 +420,7 @@ export const STAGES: Readonly<Record<string, StageData>> = {
             effect: { damage: 55, hitstun: 0, blockstun: 1, knockdown: true },
           }),
         ],
-        props: [],
+        props: [extinguisher()],
       },
       {
         name: 'The Oven',

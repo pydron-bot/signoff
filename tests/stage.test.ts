@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fx } from '../src/sim/fixed';
 import { setupRound } from '../src/sim/stage';
 import { DALE } from '../src/sim/fighters/dale';
-import { Input, STAGES, type MatchState, type SimEvent } from '../src/sim';
+import { Input, STAGES, saveMatch, step, type MatchState, type SimEvent } from '../src/sim';
 import { homeStage } from '../src/sim/stages';
 import { count, place, presses, ready, run } from './sim-helpers';
 
@@ -134,7 +134,7 @@ describe('rounds bring the next segment', () => {
     const ev: SimEvent[] = [];
     while (m.phase !== 'fight') ev.push(...run(m, 1));
     expect(m.segment).toBe(1);
-    expect(m.props).toHaveLength(0);
+    expect(m.props.map((q) => q.mode)).toEqual(['idle']);
     expect(m.hazards).toHaveLength(1);
     expect(m.wind).not.toBe(0);
   });
@@ -329,5 +329,142 @@ describe('Kitchen Live', () => {
     // The first hit's bonus bar isn't scaled; the hit's own meter is.
     expect(a2).toBeGreaterThan(a);
     expect(d2).toBe(Math.floor((d * 150) / 100));
+  });
+});
+
+describe('six more things to use (0.66.0)', () => {
+  const on = (stage: string, seg: number, p1 = 'dale', p2 = 'rox'): MatchState => {
+    const m = ready(p1, p2, { stage });
+    m.segment = seg;
+    setupRound(m);
+    return m;
+  };
+  const hits = (ev: SimEvent[], move: string) => ev.filter((e) => e.type === 'hit' && e.move === move);
+
+  it('every segment with a hazard has one, and each does something the first segment’s prop cannot', () => {
+    for (const st of Object.values(STAGES)) {
+      st.segments.forEach((seg, k) => {
+        if (k > 0) expect(seg.props.length, `${st.id} ${seg.name}`).toBe(seg.hazards.length ? 1 : 0);
+        for (const p of seg.props) if (k > 0) expect(p.area ?? p.rebound ?? p.reuse ?? p.quench ?? (p.effect.height === 'low' || p.box.h > fx(1.2)), p.id).toBeTruthy();
+      });
+    }
+  });
+
+  it('the storm: the wind sock comes down across the 1.9 m in front of whoever tipped it, and goes over a duck', () => {
+    const m = on('weather', 1);
+    place(m, -0.6, 1.4);
+    const ev = run(m, 40, presses({ 0: INTERACT }));
+    expect(count(ev, 'propKick')).toBe(1);
+    expect(hits(ev, 'windsock')).toEqual([expect.objectContaining({ attacker: 0, defender: 1, damage: 65 })]);
+    // It didn't travel.
+    expect(m.props[0]).toMatchObject({ x: 0, mode: 'spent' });
+    const d = on('weather', 1);
+    place(d, -0.6, 1.4);
+    expect(hits(run(d, 40, presses({ 0: INTERACT }), Input.DOWN), 'windsock')).toHaveLength(0);
+    expect(d.props[0].mode).toBe('spent');
+    // Out of its reach, nothing.
+    const far = on('weather', 1);
+    place(far, -0.6, 3.5);
+    expect(hits(run(far, 40, presses({ 0: INTERACT })), 'windsock')).toHaveLength(0);
+  });
+
+  it('the flood: the flight case floats to the wall and comes back for whoever is in the way, its user included', () => {
+    const m = on('weather', 2);
+    // The opponent jumps it on the way out; nobody jumps it on the way back.
+    place(m, -0.7, 2);
+    const ev = run(m, 200, presses({ 0: INTERACT }), presses({ 10: UP }));
+    expect(count(ev, 'propBounce')).toBe(1);
+    expect(hits(ev, 'crate')).toHaveLength(1);
+    expect(m.props[0].mode).toBe('spent');
+    // With the opponent out of its way, it reaches the one who shoved it.
+    const own = on('weather', 2);
+    place(own, -0.7, 5.2);
+    const back = run(own, 12, presses({ 0: INTERACT }));
+    own.fighters[1].x = fx(-4);
+    back.push(...run(own, 200));
+    expect(hits(back, 'crate')).toEqual([expect.objectContaining({ attacker: 1, defender: 0 })]);
+  });
+
+  it('Burnout: the shard goes in low, and can be picked up again where it fell', () => {
+    const m = on('burn', 2);
+    place(m, -0.5, 3);
+    const ev = run(m, 40, presses({ 0: INTERACT }), Input.BLOCK);
+    // Blocked standing, a low hits.
+    expect(hits(ev, 'shard')).toEqual([expect.objectContaining({ damage: 40, height: 'low' })]);
+    expect(m.props[0].mode).toBe('spent');
+    const again = until(m, 'propReady', 400);
+    expect(again.e).toMatchObject({ prop: 'shard', x: m.props[0].x });
+    expect(m.props[0].mode).toBe('idle');
+    m.fighters[0].x = m.props[0].x - fx(0.5);
+    expect(count(run(m, 30, presses({ 0: INTERACT })), 'propKick')).toBe(1);
+  });
+
+  it('The Ticker: the teleprompter rolls like the desk, but a low jump does not clear it', () => {
+    const jumped = (p2: string): boolean => {
+      for (let at = 0; at < 50; at++) {
+        const m = on('news', 1, 'dale', p2);
+        place(m, -4.1, 0);
+        const ev = run(m, 130, presses({ 0: INTERACT }), presses({ [at]: UP }));
+        if (m.props[0].mode === 'spent' && hits(ev, 'prompter').length === 0) return true;
+      }
+      return false;
+    };
+    expect(jumped('rox')).toBe(false);
+    expect(jumped('hollis')).toBe(false);
+    expect(jumped('mumbles')).toBe(true);
+  });
+
+  it('Lights Out: the lamp is kicked along the floor, low, and staggers instead of knocking down', () => {
+    const m = on('news', 2);
+    place(m, 2.9, 5.5);
+    const ev = run(m, 30, presses({ 0: INTERACT }), Input.BLOCK);
+    expect(hits(ev, 'lamp')).toEqual([expect.objectContaining({ height: 'low', damage: 45 })]);
+    expect(count(ev, 'knockdown')).toBe(0);
+    expect(m.fighters[1].mode).toBe('hitstun');
+  });
+
+  it('Grease Fire: the extinguisher puts the next flare out, once, and its cloud shoves back whoever is in front', () => {
+    const m = on('kitchen', 1);
+    const warn = until(m, 'hazardWarn');
+    const x = warn.e.type === 'hazardWarn' ? warn.e.x : 0;
+    // The opponent stands where the fire will flare; the extinguisher is used from the middle.
+    m.fighters[0].x = fx(-0.5);
+    m.fighters[1].x = x;
+    const ev = [...run(m, 30, presses({ 0: INTERACT }))];
+    expect(m.hazards[0].out).toBe(true);
+    const out = until(m, 'hazardOut', 200);
+    ev.push(...out.ev, ...run(m, 30));
+    expect(count(ev, 'hazardStrike')).toBe(0);
+    expect(count(ev, 'hazardHit')).toBe(0);
+    expect(m.hazards[0].out).toBe(false);
+    // The flare after that happens.
+    m.fighters[1].x = fx(3.4);
+    m.fighters[0].x = fx(-3.4);
+    const next = [...until(m, 'hazardStrike', 600).ev, ...run(m, 20)];
+    expect(count(next, 'hazardHit')).toBe(1);
+    // The cloud: 1.5 m in front, a shove.
+    const c = on('kitchen', 1);
+    place(c, -0.5, 0.9);
+    const cloud = hits(run(c, 30, presses({ 0: INTERACT })), 'extinguisher');
+    expect(cloud).toEqual([expect.objectContaining({ damage: 25, defender: 1 })]);
+  });
+
+  it('a prop in use saves and restores mid-flight, and plays on the same', () => {
+    const m = on('weather', 2);
+    place(m, -0.7, 5.2);
+    run(m, 30, presses({ 0: INTERACT }));
+    // The opponent is out of its way: it will come back for the one who shoved it.
+    m.fighters[1].x = fx(-4);
+    expect(m.props[0].mode).toBe('rolling');
+    const copy = saveMatch(m);
+    const a: SimEvent[] = [];
+    const b: SimEvent[] = [];
+    for (let t = 0; t < 200; t++) {
+      step(m, 0, 0, a);
+      step(copy, 0, 0, b);
+    }
+    expect(b).toEqual(a);
+    expect(copy.props).toEqual(m.props);
+    expect(count(a, 'propBounce')).toBe(1);
   });
 });

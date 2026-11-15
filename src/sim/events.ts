@@ -55,6 +55,11 @@ export type SimEvent =
   | { type: 'hazardStrike'; hazard: string; x: Fx; all: boolean }
   | { type: 'hazardHit'; player: number; hazard: string; damage: number }
   | { type: 'propKick'; player: number; prop: string }
+  /** A prop came back off the wall, or (reuse) can be used again where it lies. */
+  | { type: 'propBounce'; prop: string; x: Fx }
+  | { type: 'propReady'; prop: string; x: Fx }
+  /** A hazard's strike didn't happen: it had been put out (the extinguisher). */
+  | { type: 'hazardOut'; hazard: string; x: Fx; all: boolean }
   | { type: 'propStop'; prop: string; x: Fx }
   | { type: 'commercialBreak'; nextSegment: number }
   | { type: 'segmentChange'; segment: number }

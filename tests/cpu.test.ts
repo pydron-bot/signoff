@@ -9,9 +9,10 @@ import { CHOICES, leanOf } from '../src/ai/lean';
 import { ReplayPlayer } from '../src/game/replay';
 import { Session } from '../src/game/session';
 import { guides } from '../src/game/comboGuides';
-import { BAR, FIGHTERS, Input, createMatch, fighterData, step, type MatchState, type SimEvent } from '../src/sim';
+import { BAR, FIGHTERS, Input, STAGES, createMatch, fighterData, step, type MatchState, type SimEvent } from '../src/sim';
 import { fx } from '../src/sim/fixed';
-import { place } from './sim-helpers';
+import { setupRound } from '../src/sim/stage';
+import { place, ready } from './sim-helpers';
 
 const IDS = Object.keys(FIGHTERS);
 
@@ -269,5 +270,65 @@ describe('leans', () => {
         expect(lean[c], `${id}.${c}`).toBeLessThanOrEqual(5);
       }
     }
+  });
+});
+
+describe('the CPU and the later segments\' props (0.66.0)', () => {
+  const on = (stage: string, seg: number, x0: number, x1: number): MatchState => {
+    const m = ready('dale', 'gus', { stage });
+    m.segment = seg;
+    setupRound(m);
+    place(m, x0, x1);
+    return m;
+  };
+  /** The share of seeds in which `test` holds over a run with the CPU as player `side` and the other side idle but for `other`. */
+  const share = (make: () => MatchState, side: 0 | 1, frames: number, other: (m: MatchState, t: number) => number, test: (ev: SimEvent[]) => boolean): number => {
+    let yes = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const m = make();
+      const cpu = new Cpu(side, 'director', seed);
+      const ev: SimEvent[] = [];
+      // It watches for a moment first (its view of the opponent runs a reaction time late).
+      for (let t = -20; t < frames; t++) {
+        const c = t < 0 ? cpu.next(m) & 0 : cpu.next(m);
+        const o = t < 0 ? other(m, 1) : other(m, t);
+        // The opponent is held where the test put them.
+        const x = m.fighters[1 - side].x;
+        step(m, side === 0 ? c : o, side === 0 ? o : c, ev);
+        if (m.fighters[1 - side].mode === 'idle') m.fighters[1 - side].x = x;
+      }
+      if (test(ev)) yes++;
+    }
+    return yes / 20;
+  };
+  const used = (ev: SimEvent[]) => ev.some((e) => e.type === 'propKick' && e.player === 0);
+
+  it('tips the wind sock onto someone standing in front of it, and not at a croucher or at nobody', () => {
+    expect(share(() => on('weather', 1, -0.6, 1.3), 0, 60, () => 0, used)).toBeGreaterThan(0.5);
+    expect(share(() => on('weather', 1, -0.6, 4.5), 0, 60, () => 0, used)).toBe(0);
+    expect(share(() => on('weather', 1, -0.6, 1.3), 0, 60, () => Input.DOWN, used)).toBe(0);
+  });
+
+  it('puts out a fire marked on its own side, not one on theirs', () => {
+    const marked = (mine: boolean) => (): MatchState => {
+      const m = on('kitchen', 1, -0.6, 3.6);
+      const hz = STAGES.kitchen.segments[1].hazards[0];
+      m.roundFrame = hz.first + 5;
+      m.hazards[0].spot = mine ? 0 : 1;
+      return m;
+    };
+    expect(share(marked(true), 0, 40, () => 0, used)).toBeGreaterThan(0.5);
+    expect(share(marked(false), 0, 40, () => 0, used)).toBe(0);
+  });
+
+  it('blocks a lamp kicked at it low, when it is free to', () => {
+    const blocked = (ev: SimEvent[]) => ev.some((e) => e.type === 'block' && e.move === 'lamp');
+    const hit = (ev: SimEvent[]) => ev.some((e) => e.type === 'hit' && e.move === 'lamp');
+    const kick = (_m: MatchState, t: number) => (t === 0 ? Input.INTERACT : 0);
+    const make = () => on('news', 2, 2.9, 5.6);
+    // When it is free to (it may be mid-move): before 0.66.0 it never guarded a prop.
+    const b = share(make, 1, 60, kick, blocked);
+    expect(b).toBeGreaterThanOrEqual(0.2);
+    expect(b + share(make, 1, 60, kick, hit)).toBeGreaterThan(0.9);
   });
 });

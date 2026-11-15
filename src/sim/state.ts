@@ -124,13 +124,20 @@ export interface ProjectileState {
 export interface HazardState {
   spot: number;
   hitMask: number;
+  /** Put out (the extinguisher): its next strike doesn't happen. */
+  out: boolean;
 }
 
 export interface PropState {
   x: Fx;
+  /** `rolling` is in use: travelling, or (an area prop) about to strike where it stands. */
   mode: 'idle' | 'rolling' | 'spent';
   dir: 1 | -1;
   owner: number;
+  /** Steps in this mode. */
+  t: number;
+  /** It has come back off the wall (a rebounding prop): it hits either fighter now. */
+  bounced: boolean;
 }
 
 export type Phase = 'intro' | 'fight' | 'ko' | 'break' | 'stayTuned' | 'finisher' | 'over';
