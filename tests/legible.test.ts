@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUT_IN_WEAR, ECHO_WORN, Legibility, cutInWear, turns, type Moment, type Turns } from '../src/render/legible';
+import { CONTACT_IMPACT, CONTACT_TAPE, CUT_IN_WEAR, ECHO_WORN, Legibility, contactTurns, cutInWear, isReeling, turns, type Moment, type Turns } from '../src/render/legible';
 import { EchoTrail, LAGS, type Past } from '../src/render/echo';
 import { CutIn } from '../src/render/cutIn';
 import { PoseTracker, type Pose } from '../src/render/pose';
@@ -10,7 +10,7 @@ import { toFloat } from '../src/sim/fixed';
 import { BLOCK, RIGHT, SPECIAL } from '../src/sim/input';
 import { place, ready } from './sim-helpers';
 
-const calm = (o: Partial<Moment> = {}): Moment => ({ cutIn: -1, star: -1, cinematic: false, impact: false, wear: [0, 0], attacking: [false, false], ...o });
+const calm = (o: Partial<Moment> = {}): Moment => ({ cutIn: -1, star: -1, cinematic: false, impact: false, wear: [0, 0], attacking: [false, false], reeling: [false, false], ...o });
 const out = (): Turns => ({ echo: [0, 0], snow: [0, 0] });
 
 describe('effects take turns', () => {
@@ -30,6 +30,41 @@ describe('effects take turns', () => {
     expect(turns(calm({ attacking: [true, false] }), out()).snow).toEqual([0, 1]);
     expect(turns(calm({ cutIn: 1 }), out()).snow).toEqual([1, 0]);
     expect(turns(calm({ cinematic: true, star: 0 }), out()).snow).toEqual([0, 1]);
+  });
+
+  it('a body thrown about gets no echoes, whatever its speed; one moving itself keeps them', () => {
+    expect(turns(calm({ reeling: [false, true] }), out()).echo).toEqual([1, 0]);
+    for (const mode of ['hitstun', 'launched', 'down', 'getup', 'thrown', 'ko', 'dazed']) expect(isReeling(mode, false)).toBe(true);
+    for (const mode of ['idle', 'walk', 'dash', 'backdash', 'air', 'move', 'recover']) expect(isReeling(mode, false)).toBe(false);
+    // TD's cinematic: the one caught in it, not the one doing it.
+    expect(isReeling('cinematic', true)).toBe(true);
+    expect(isReeling('cinematic', false)).toBe(false);
+    const m = ready('dale', 'rox');
+    const l = new Legibility();
+    m.fighters[1].mode = 'launched';
+    l.step(m, [], -1, [0, 0]);
+    expect(l.echo).toEqual([1, 0]);
+  });
+
+  it('an ender’s contact takes turns: the impact frame, then the zoom blur, then the tape', () => {
+    const c = { zoom: 1, split: 1, tear: 1 };
+    for (let t = 0; t < CONTACT_IMPACT; t++) expect(contactTurns(t, c)).toEqual({ zoom: 0, split: 0, tear: 0 });
+    for (let t = CONTACT_IMPACT; t < CONTACT_TAPE; t++) expect(contactTurns(t, c)).toEqual({ zoom: 1, split: 0, tear: 0 });
+    expect(contactTurns(CONTACT_TAPE, c)).toEqual({ zoom: 1, split: 1, tear: 1 });
+    // Stepped with the match: nothing held back until an ender lands, then the three beats in order.
+    const m = ready('dale', 'rox');
+    const l = new Legibility();
+    l.step(m, [], -1, [0, 0]);
+    expect(l.contact).toEqual({ zoom: 1, split: 1, tear: 1 });
+    const ender = { type: 'hit', attacker: 0, defender: 1, move: 'x', damage: 90, height: 'mid', counter: false, combo: 1, weight: 3, dir: 1, x: 0, y: 0, crouched: false } as SimEvent;
+    l.step(m, [ender], -1, [0, 0]);
+    const seen: string[] = [`${l.contact.zoom}${l.contact.tear}`];
+    for (let i = 1; i <= CONTACT_TAPE; i++) (l.step(m, [], -1, [0, 0]), seen.push(`${l.contact.zoom}${l.contact.tear}`));
+    expect(seen.join(' ')).toBe('00 00 10 10 10 10 10 10 11');
+    // A heavy hit that isn't an ender holds nothing back.
+    const fresh = new Legibility();
+    fresh.step(m, [{ ...ender, weight: 2 } as SimEvent], -1, [0, 0]);
+    expect(fresh.contact).toEqual({ zoom: 1, split: 1, tear: 1 });
   });
 
   it('the snow eases out and back in over a few steps, not at once', () => {
