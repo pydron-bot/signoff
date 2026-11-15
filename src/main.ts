@@ -1266,8 +1266,9 @@ renderer.setAnimationLoop((now) => {
   // The shader TV dims the demo behind the menu; the room is dark enough already.
   post.dim = sofa ? (room.ready ? 1 : 0.8) : coldOpen.active ? 0.55 : powerOn(m);
   post.saturation = sofa ? 0.85 : 1;
-  post.tear = tapeCatch > TAPE_CATCH || rewindLeft > 0 ? 1 : glitch.tear;
-  post.split = glitch.split;
+  // On an ender's contact the tear and the split wait their turn (the impact frame, then the zoom blur, then the tape).
+  post.tear = tapeCatch > TAPE_CATCH || rewindLeft > 0 ? 1 : glitch.tear * arena.tapeTurn;
+  post.split = glitch.split * arena.tapeTurn;
   post.impact = glitch.impact;
   // The shockwave, an ender's zoom and the meter spotlight: on screen only, not on the title's TV.
   const fx = arena.impact(m);

@@ -551,7 +551,15 @@ export class Arena {
 
   /** The impact layer's numbers for the post pass, after render() has placed the camera. */
   impact(m: MatchState): ImpactTarget {
-    return this.impactScreen.project(m, this.camera);
+    const o = this.impactScreen.project(m, this.camera);
+    // An ender's contact takes turns: the zoom blur waits for the impact frame (src/render/legible.ts).
+    o.zoom *= this.legible.contact.zoom;
+    return o;
+  }
+
+  /** What the colour split and the tracking tear are scaled by now: nothing while an ender's impact frame and zoom blur have their turn. */
+  get tapeTurn(): number {
+    return this.legible.contact.tear;
   }
 
   /** Roughly the picture's colour, for the light it throws (the title's TV): the segment's key and ambient, mixed. */

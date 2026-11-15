@@ -32,6 +32,8 @@ export const NEUTRAL_GRADE: Readonly<Grade> = { lift: [0, 0, 0], gain: [1, 1, 1]
 
 /** How much less colour smear and grain the fighters get than the set. */
 const SPARE = 0.4;
+/** How much of an impact frame's negative the fighters are spared (the zoom blur and the drain spare them altogether). */
+const IMPACT_SPARE = 0.85;
 
 /** The glow's chain: half, quarter, eighth and sixteenth size, then back up. */
 const LEVELS = 4;
@@ -98,6 +100,7 @@ void main() {
 }`;
 
 const COMPOSITE = /* glsl */ `
+#define IMPACT_SPARE ${IMPACT_SPARE.toFixed(2)}
 uniform sampler2D tScene;
 uniform sampler2D tBloom;
 uniform vec2 uTexel;
@@ -162,12 +165,15 @@ void main() {
   vec4 scene0 = texture2D(tScene, uv);
   vec3 c0 = scene0.rgb;
   // The fighters marked themselves with alpha 0 (fighterLight.ts): the smear and the grain spare them a little.
-  float spare = (1.0 - scene0.a) * uSpare;
+  // Clamped: in a float buffer, additive things (beams, sparks) push alpha past 1.
+  float mask = clamp(1.0 - scene0.a, 0.0, 1.0);
+  float spare = mask * uSpare;
   if (uZoom > 0.0) {
     // An ender's zoom blur, toward the contact: the picture rushing in on it.
     vec3 acc = c0;
     for (int i = 1; i <= 4; i++) acc += texture2D(tScene, uv - fromHit * uZoom * float(i) * 0.022).rgb;
-    c0 = acc * 0.2;
+    // The set rushes in; the fighters, by their mask, stay sharp.
+    c0 = mix(acc * 0.2, c0, mask);
   }
   vec3 col = c0;
   if (uVhs > 0.0) {
@@ -203,13 +209,15 @@ void main() {
   if (uDrain.w > 0.0) {
     float k = smoothstep(uDrain.z, uDrain.z + 0.15, length((vUv - uDrain.xy) * vec2(aspect, 1.0)));
     float ld = dot(col, vec3(0.2126, 0.7152, 0.0722));
-    col = mix(col, vec3(ld) * vec3(0.95, 0.97, 1.05), uDrain.w * k);
+    // The fighters keep their colour: the set drains round them.
+    col = mix(col, vec3(ld) * vec3(0.95, 0.97, 1.05), uDrain.w * k * (1.0 - mask));
   }
 
   // An impact frame: the picture blown out to a hard negative for a moment.
   if (uImpact > 0.0) {
     float k = smoothstep(0.12, 0.3, l);
-    col = mix(col, vec3(1.0 - k) * vec3(1.0, 0.92, 0.95), uImpact);
+    // The set goes to negative; the two bodies stay themselves against it (a little of it, so they belong to the frame).
+    col = mix(col, vec3(1.0 - k) * vec3(1.0, 0.92, 0.95), uImpact * (1.0 - IMPACT_SPARE * mask));
   }
 
   // Spending meter: the set drops into shadow round the fighter, who stays lit, and the colour drains from the dark.

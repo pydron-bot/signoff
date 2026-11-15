@@ -9,11 +9,14 @@
  * Timed in simulation steps.
  */
 import { TD_CINEMATIC_FRAMES, type Censor, type SimEvent } from '../sim';
+import { CONTACT_TAPE } from '../render/legible';
 
 export class Glitch {
   private readonly staticLayer: HTMLElement;
   private readonly standby: HTMLElement;
   private wobble = 0;
+  /** Steps until an ender's wobble starts (0: none waiting). */
+  private wobbleIn = 0;
   /** An impact frame: steps left of the picture blown out to a negative. */
   private impactLeft = 0;
   private staticLeft = 0;
@@ -56,7 +59,9 @@ export class Glitch {
       // An ender or a KO lands on an impact frame (two steps of negative, one fading).
       if ((e.type === 'hit' && e.weight === 3) || e.type === 'ko') this.impactLeft = IMPACT_STEPS;
       // The tracking wobble on heavy hits and counters, longer on an ender.
-      if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, e.weight === 3 ? 16 : 10);
+      // An ender's waits its turn: the impact frame and the zoom blur come first (src/render/legible.ts).
+      if (e.type === 'hit' && e.weight === 3) this.wobbleIn = CONTACT_TAPE;
+      else if (e.type === 'hit' && (e.weight >= 2 || e.counter)) this.wobble = Math.max(this.wobble, 10);
       else if (e.type === 'hazardStrike' && e.hazard === 'lightning') this.wobble = Math.max(this.wobble, 16);
       else if (e.type === 'stageCue') {
         this.wobble = Math.max(this.wobble, 20);
@@ -81,7 +86,7 @@ export class Glitch {
   }
 
   private cut(kind: Censor, frames: number): void {
-    this.wobble = 0;
+    this.wobble = this.wobbleIn = 0;
     if (kind === 'standby') {
       this.standbyLeft = frames;
       return;
@@ -116,6 +121,7 @@ export class Glitch {
       this.pendingCut = null;
     }
     if (this.wobble > 0) this.wobble--;
+    if (this.wobbleIn > 0 && --this.wobbleIn === 0 && !this.reduceMotion && this.vhs !== 0) this.wobble = Math.max(this.wobble, 16);
     this.staticLayer.hidden = this.staticLeft <= 0;
     if (this.staticLeft > 0) {
       // Set only when it changes: a style write every step would restyle the layer for nothing.
@@ -130,7 +136,7 @@ export class Glitch {
   }
 
   clear(): void {
-    this.wobble = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = this.impactLeft = 0;
+    this.wobble = this.wobbleIn = this.staticLeft = this.standbyLeft = this.censorLeft = this.censorDelay = this.impactLeft = 0;
     this.pendingCut = null;
     this.step();
   }

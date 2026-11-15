@@ -608,7 +608,13 @@ more it reacts to a big one than a small one.
   shows its fighter with the damage capped and no snow, so Technical
   Difficulties, which only comes under 30% health, cuts to a face; its band
   sits below the health bars and the station bug, on the side away from the
-  touch buttons when they're up.
+  touch buttons when they're up. A body thrown about (hit, launched,
+  bouncing, down) trails no echoes, whatever its speed: they belong to a
+  fighter moving under their own power. And an ender's contact takes
+  turns: the impact frame for two steps, then the zoom blur, then the
+  colour split and the tear, with the fighters spared the blur, the drain
+  and most of the negative by their mask, so the set can go and the two
+  bodies and the contact can't.
 - **The cold open** (0.38.0): before round 1 of a match against someone,
   the two trade a line each in captions on their sides of the screen, typed
   on with their voices babbling under them, in the half-lit studio before

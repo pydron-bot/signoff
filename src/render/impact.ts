@@ -13,6 +13,7 @@
 import * as THREE from 'three';
 import type { MatchState, SimEvent } from '../sim';
 import { toFloat } from '../sim/fixed';
+import { CONTACT_IMPACT } from './legible';
 
 /** By hit weight (light, medium, heavy, ender): ripple steps, how far it travels (of the screen's height), and how hard it bends. */
 const SHOCK_LIFE = [0, 0, 11, 16] as const;
@@ -124,7 +125,8 @@ export class ImpactScreen {
     this.shockLife = this.shockLeft = SHOCK_LIFE[weight];
     this.shockReach = SHOCK_REACH[weight];
     this.shockStrength = SHOCK_STRENGTH[weight];
-    if (weight === 3) this.zoomLeft = ZOOM_STEPS;
+    // Held back while the impact frame has the picture to itself (legible.ts scales it to nothing for those steps).
+    if (weight === 3) this.zoomLeft = ZOOM_STEPS + CONTACT_IMPACT;
   }
 
   private speedFrom(player: number, x: number, y: number, [steps, power]: readonly [number, number]): void {
@@ -181,7 +183,7 @@ export class ImpactScreen {
       // Out fast, slowing; it fades as it goes.
       o.shockR = this.shockReach * (1 - (1 - p) * (1 - p));
       o.shock = this.shockStrength * (1 - p) * (1 - p);
-      o.zoom = this.zoomLeft / ZOOM_STEPS;
+      o.zoom = Math.min(1, this.zoomLeft / ZOOM_STEPS);
     }
     if (this.focusLeft > 0) {
       const f = m.fighters[this.focusPlayer];
